@@ -42,13 +42,13 @@ export default function TransactionForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="fromAsset">보내는 자산</Label>
+              <Label htmlFor="toAsset">받은 자산 (TO / 입금)</Label>
               <Select 
-                value={formData.fromAsset} 
-                onValueChange={(value) => setFormData({...formData, fromAsset: value})}
+                value={formData.toAsset} 
+                onValueChange={(value) => setFormData({...formData, toAsset: value})}
               >
-                <SelectTrigger data-testid="select-from-asset">
-                  <SelectValue placeholder="자산을 선택하세요" />
+                <SelectTrigger data-testid="select-to-asset">
+                  <SelectValue placeholder="받은 자산을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {allAssets.map(asset => (
@@ -61,13 +61,13 @@ export default function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="toAsset">받는 자산</Label>
+              <Label htmlFor="fromAsset">내준 자산 (FROM / 출금)</Label>
               <Select 
-                value={formData.toAsset} 
-                onValueChange={(value) => setFormData({...formData, toAsset: value})}
+                value={formData.fromAsset} 
+                onValueChange={(value) => setFormData({...formData, fromAsset: value})}
               >
-                <SelectTrigger data-testid="select-to-asset">
-                  <SelectValue placeholder="자산을 선택하세요" />
+                <SelectTrigger data-testid="select-from-asset">
+                  <SelectValue placeholder="내준 자산을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {allAssets.map(asset => (
@@ -82,17 +82,17 @@ export default function TransactionForm({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="fromAmount">보내는 금액</Label>
+              <Label htmlFor="toAmount">받은 금액 (입금)</Label>
               <Input
-                id="fromAmount"
+                id="toAmount"
                 type="text"
                 placeholder="0"
-                value={formatInputWithCommas(formData.fromAmount.toString())}
+                value={formatInputWithCommas(formData.toAmount.toString())}
                 onChange={(e) => {
                   const numericValue = parseCommaFormattedNumber(e.target.value);
-                  setFormData({...formData, fromAmount: numericValue.toString()});
+                  setFormData({...formData, toAmount: numericValue.toString()});
                 }}
-                data-testid="input-from-amount"
+                data-testid="input-to-amount"
               />
             </div>
 
@@ -112,17 +112,17 @@ export default function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="toAmount">받는 금액</Label>
+              <Label htmlFor="fromAmount">내준 금액 (출금)</Label>
               <Input
-                id="toAmount"
+                id="fromAmount"
                 type="text"
                 placeholder="0"
-                value={formatInputWithCommas(formData.toAmount.toString())}
+                value={formatInputWithCommas(formData.fromAmount.toString())}
                 onChange={(e) => {
                   const numericValue = parseCommaFormattedNumber(e.target.value);
-                  setFormData({...formData, toAmount: numericValue.toString()});
+                  setFormData({...formData, fromAmount: numericValue.toString()});
                 }}
-                data-testid="input-to-amount"
+                data-testid="input-from-amount"
               />
             </div>
           </div>
