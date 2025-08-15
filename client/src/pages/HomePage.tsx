@@ -360,23 +360,68 @@ export default function HomePage() {
           throw new Error('Failed to update asset');
         }
 
-        // 로컬 state도 업데이트
-        if (assetFormType === 'cash') {
-          setCashAssets(prev => prev.map(a => a.id === assetId ? { 
-            ...a, 
-            ...formData, 
-            denominations: formData.denominations || {},
-            balance: formData.balance 
-          } : a));
-        } else if (assetFormType === 'korean-account') {
-          setKoreanAccounts(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        } else if (assetFormType === 'vietnamese-account') {
-          setVietnameseAccounts(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        } else if (assetFormType === 'exchange') {
-          setExchangeAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        } else if (assetFormType === 'binance') {
-          setBinanceAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        }
+        const updatedAsset = await response.json();
+        console.log('Asset updated successfully:', updatedAsset);
+
+        // 서버에서 최신 데이터를 다시 불러오기
+        const assetsResponse = await fetch('/api/assets');
+        const latestAssets = await assetsResponse.json();
+        
+        // 각 타입별로 데이터 분류하여 state 업데이트
+        const cashAssetsData: CashAsset[] = [];
+        const koreanAccountsData: BankAccount[] = [];
+        const vietnameseAccountsData: BankAccount[] = [];
+        const exchangeAssetsData: ExchangeAsset[] = [];
+        const binanceAssetsData: BinanceAsset[] = [];
+
+        latestAssets.forEach((asset: any) => {
+          if (asset.type === 'cash') {
+            cashAssetsData.push({
+              id: asset.id,
+              currency: asset.currency,
+              balance: parseFloat(asset.balance),
+              denominations: asset.metadata?.denomination || {},
+              name: asset.name
+            });
+          } else if (asset.type === 'account') {
+            const accountData = {
+              id: asset.id,
+              bankName: asset.metadata?.bank || asset.name,
+              accountNumber: asset.metadata?.accountNumber || '',
+              accountHolder: asset.metadata?.accountHolder || '',
+              balance: parseFloat(asset.balance),
+              currency: asset.currency
+            };
+            
+            if (asset.currency === 'KRW') {
+              koreanAccountsData.push(accountData);
+            } else {
+              vietnameseAccountsData.push(accountData);
+            }
+          } else if (asset.type === 'exchange') {
+            exchangeAssetsData.push({
+              id: asset.id,
+              exchangeName: asset.metadata?.exchange || asset.name,
+              coinName: asset.currency,
+              quantity: parseFloat(asset.balance),
+              currency: asset.currency
+            });
+          } else if (asset.type === 'binance') {
+            binanceAssetsData.push({
+              id: asset.id,
+              coinName: asset.currency,
+              quantity: parseFloat(asset.balance),
+              currency: asset.currency
+            });
+          }
+        });
+
+        // 모든 state 업데이트
+        setCashAssets(cashAssetsData);
+        setKoreanAccounts(koreanAccountsData);
+        setVietnameseAccounts(vietnameseAccountsData);
+        setExchangeAssets(exchangeAssetsData);
+        setBinanceAssets(binanceAssetsData);
       } else {
         // Add new asset
         if (assetFormType === 'cash') {
