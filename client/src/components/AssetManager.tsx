@@ -20,7 +20,13 @@ interface AssetManagerProps {
 }
 
 export default function AssetManager({ data, onOpenModal, activeTab = "cash", onTabChange }: AssetManagerProps) {
-  const { cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets } = data;
+  const { 
+    cashAssets = [], 
+    koreanAccounts = [], 
+    vietnameseAccounts = [], 
+    exchangeAssets = [], 
+    binanceAssets = [] 
+  } = data || {};
 
   return (
     <div className="space-y-6">
@@ -76,7 +82,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {cashAssets.map(asset => (
+              {cashAssets.map((asset: any) => (
                 <Card key={asset.id} className="p-6 bg-gray-50">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -110,13 +116,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   
                   <div className="mb-4">
                     <p className="text-2xl font-bold text-gray-900">
-                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatNumberWithCommas(asset.balance)}
+                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatNumberWithCommas(parseFloat(asset.balance))}
                     </p>
                   </div>
 
                   <div className="space-y-2">
                     <h5 className="text-sm font-medium text-gray-700">지폐 구성</h5>
-                    {Object.entries(asset.denominations)
+                    {asset.metadata?.denomination && Object.entries(asset.metadata.denomination)
                       .sort(([a], [b]) => {
                         // Remove commas and convert to number for sorting
                         const numA = parseFloat(a.replace(/,/g, ''));
@@ -150,13 +156,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {koreanAccounts.map(account => (
+              {koreanAccounts.map((account: any) => (
                 <Card key={account.id} className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="font-semibold text-gray-900">{account.bankName}</h4>
-                      <p className="text-sm text-gray-600">{account.accountHolder}</p>
-                      <p className="text-sm text-gray-500">{account.accountNumber}</p>
+                      <h4 className="font-semibold text-gray-900">{account.metadata?.bank || account.name}</h4>
+                      <p className="text-sm text-gray-600">{account.metadata?.accountHolder}</p>
+                      <p className="text-sm text-gray-500">{account.metadata?.accountNumber}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -178,7 +184,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     </div>
                   </div>
                   <p className="text-xl font-bold text-blue-600">
-                    ₩{formatNumberWithCommas(account.balance)}
+                    ₩{formatNumberWithCommas(parseFloat(account.balance))}
                   </p>
                 </Card>
               ))}
@@ -195,13 +201,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {vietnameseAccounts.map(account => (
+              {vietnameseAccounts.map((account: any) => (
                 <Card key={account.id} className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="font-semibold text-gray-900">{account.bankName}</h4>
-                      <p className="text-sm text-gray-600">{account.accountHolder}</p>
-                      <p className="text-sm text-gray-500">{account.accountNumber}</p>
+                      <h4 className="font-semibold text-gray-900">{account.metadata?.bank || account.name}</h4>
+                      <p className="text-sm text-gray-600">{account.metadata?.accountHolder}</p>
+                      <p className="text-sm text-gray-500">{account.metadata?.accountNumber}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -223,7 +229,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     </div>
                   </div>
                   <p className="text-xl font-bold text-green-600">
-                    ₫{formatNumberWithCommas(account.balance)}
+                    ₫{formatNumberWithCommas(parseFloat(account.balance))}
                   </p>
                 </Card>
               ))}
@@ -240,12 +246,12 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {exchangeAssets.map(asset => (
+              {exchangeAssets.map((asset: any) => (
                 <Card key={asset.id} className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="font-semibold text-gray-900">{asset.exchangeName}</h4>
-                      <p className="text-sm text-gray-600">{asset.coinName}</p>
+                      <h4 className="font-semibold text-gray-900">{asset.metadata?.exchange || 'Exchange'}</h4>
+                      <p className="text-sm text-gray-600">{asset.currency}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -267,7 +273,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     </div>
                   </div>
                   <p className="text-xl font-bold text-purple-600">
-                    {formatNumberWithCommas(asset.quantity)} {asset.coinName}
+                    {formatNumberWithCommas(parseFloat(asset.balance))} {asset.currency}
                   </p>
                 </Card>
               ))}
@@ -284,11 +290,12 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {binanceAssets.map(asset => (
+              {binanceAssets.map((asset: any) => (
                 <Card key={asset.id} className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="font-semibold text-gray-900">{asset.coinName}</h4>
+                      <h4 className="font-semibold text-gray-900">{asset.metadata?.exchange || 'Binance'}</h4>
+                      <p className="text-sm text-gray-600">{asset.currency}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -310,7 +317,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     </div>
                   </div>
                   <p className="text-xl font-bold text-yellow-600">
-                    {formatNumberWithCommas(asset.quantity)} {asset.coinName}
+                    {formatNumberWithCommas(parseFloat(asset.balance))} {asset.currency}
                   </p>
                 </Card>
               ))}

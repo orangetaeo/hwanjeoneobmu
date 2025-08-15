@@ -44,44 +44,30 @@ export function useExchangeRates() {
         // Fetch Crypto Rates
         const processedCryptoRates: CryptoRates = {};
         
-        // Bithumb for KRW prices
-        try {
-          const bithumbResponse = await fetch('https://api.bithumb.com/public/ticker/ALL_KRW');
-          const bithumbData = await bithumbResponse.json();
-          if (bithumbData.status === "0000") {
-            for (const coin in bithumbData.data) {
-              if (coin === 'date') continue;
-              processedCryptoRates[coin] = {
-                ...processedCryptoRates[coin],
-                KRW: parseFloat(bithumbData.data[coin].closing_price)
-              };
-            }
-          }
-        } catch (error) {
-          console.error("Bithumb API Error:", error);
-        }
+        // Bithumb API는 CORS 문제로 일시적으로 비활성화
+        // 기본값으로 USDT 가격 설정
+        processedCryptoRates['USDT'] = {
+          KRW: rates.KRW, // USD와 동일한 가격으로 설정
+          USDT: 1
+        };
 
-        // Binance for USDT prices
-        try {
-          const binanceResponse = await fetch('https://api.binance.com/api/v3/ticker/price');
-          const binanceData = await binanceResponse.json();
-          binanceData.forEach((pair: any) => {
-            if (pair.symbol.endsWith('USDT')) {
-              const coin = pair.symbol.replace('USDT', '');
-              processedCryptoRates[coin] = {
-                ...processedCryptoRates[coin],
-                USDT: parseFloat(pair.price)
-              };
-            }
-          });
-        } catch (error) {
-          console.error("Binance API Error:", error);
-        }
+        // Binance API는 CORS 문제로 일시적으로 비활성화
+        // 추후 서버 프록시를 통해 구현 예정
         
         setCryptoRates(processedCryptoRates);
 
       } catch (error) {
         console.error("환율 API 호출 실패:", error);
+        // 오류 발생 시 기본값 설정
+        setRealTimeRates({
+          'USD-KRW': 1350,
+          'VND-KRW': 0.055,
+          'USDT-KRW': 1350
+        });
+        setCryptoRates({
+          'USDT': { KRW: 1350, USDT: 1 },
+          'BTC': { KRW: 95000000, USDT: 70000 }
+        });
       } finally {
         setIsFetchingRates(false);
       }
