@@ -82,5 +82,7 @@ export const CURRENCY_SYMBOLS = {
   KRW: '₩',
   USD: '$',
   VND: '₫',
-  USDT: '₮'
+  USDT: '₮',
+  BTC: '₿',
+  ETH: 'Ξ'
 };
