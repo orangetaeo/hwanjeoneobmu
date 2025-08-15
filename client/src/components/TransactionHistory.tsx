@@ -31,7 +31,7 @@ export default function TransactionHistory({ transactions }: TransactionHistoryP
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date':
-          return new Date(b.timestamp?.toDate() || 0).getTime() - new Date(a.timestamp?.toDate() || 0).getTime();
+          return new Date(b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp)).getTime() - new Date(a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp)).getTime();
         case 'amount':
           return b.toAmount - a.toAmount;
         case 'profit':
@@ -109,7 +109,10 @@ export default function TransactionHistory({ transactions }: TransactionHistoryP
                         <span className="font-semibold text-gray-900">{transaction.toAssetName}</span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
-                        {transaction.timestamp?.toDate().toLocaleString('ko-KR', {
+                        {(transaction.timestamp instanceof Date 
+                          ? transaction.timestamp 
+                          : new Date(transaction.timestamp)
+                        ).toLocaleString('ko-KR', {
                           year: 'numeric',
                           month: '2-digit',
                           day: '2-digit',
