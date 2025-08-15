@@ -258,9 +258,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       return (
                         <div key={denom} className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
                           <label className="text-xs font-semibold text-gray-800 block text-center">
-                            {form.watch('currency') === 'KRW' ? `${denom}원권` :
+                            {form.watch('currency') === 'KRW' ? `${denom.toLocaleString()}원권` :
                              form.watch('currency') === 'USD' ? `$${denom}` :
-                             `${denom}₫`}
+                             `${denom.toLocaleString()}₫`}
                           </label>
                           <div className="flex items-center space-x-2">
                             <Button
@@ -277,7 +277,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               type="number"
                               value={countValue.toString()}
                               onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
-                              className="text-center text-sm font-medium h-10 flex-1 min-w-0 w-16 sm:w-20 md:w-28 lg:w-36 xl:w-44"
+                              className="text-center text-sm font-medium h-10 flex-1 min-w-0 w-16 sm:w-20 md:w-32 lg:w-40 xl:w-52"
                               min="0"
                               data-testid={`input-denom-${denom}`}
                             />
