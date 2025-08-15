@@ -158,9 +158,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         field.onChange(value);
                         // Update denominations based on selected currency
                         const defaultDenoms: Record<string, Record<string, number>> = {
-                          'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0, '500': 0, '100': 0, '50': 0, '10': 0, '5': 0, '1': 0 },
+                          'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
                           'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-                          'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
+                          'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
                         };
                         setDenominations(defaultDenoms[value] || {});
                       }} 
@@ -245,7 +245,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                   </div>
 
                   <h3 className="font-medium text-gray-900">지폐 구성</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     {Object.entries(denominations)
                       .sort(([a], [b]) => {
                         // Remove commas and convert to number for sorting
@@ -277,7 +277,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               type="number"
                               value={countValue.toString()}
                               onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
-                              className="text-center text-sm font-medium h-8 flex-1 min-w-0 w-12 sm:w-16 md:w-24 lg:w-32 xl:w-40"
+                              className="text-center text-sm font-medium h-10 flex-1 min-w-0 w-16 sm:w-20 md:w-28 lg:w-36 xl:w-44"
                               min="0"
                               data-testid={`input-denom-${denom}`}
                             />
