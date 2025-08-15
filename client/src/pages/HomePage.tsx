@@ -468,108 +468,140 @@ export default function HomePage() {
         setExchangeAssets(exchangeAssetsData);
         setBinanceAssets(binanceAssetsData);
       } else {
-        // Add new asset
+        // Add new asset - PostgreSQL API 사용
+        let createData: any = {};
+        
         if (assetFormType === 'cash') {
-          // 같은 통화의 현금 자산이 이미 있는지 확인
-          const existingCashAsset = cashAssets.find(asset => asset.currency === formData.currency);
-          
-          if (existingCashAsset) {
-            // 기존 자산에 추가 (기존 수량 + 새로운 수량)
-            setCashAssets(prev => prev.map(asset => {
-              if (asset.id === existingCashAsset.id) {
-                const updatedDenominations = { ...asset.denominations };
-                
-                // 각 지폐별로 수량 합산
-                Object.entries(formData.denominations).forEach(([denom, newCount]) => {
-                  const existingCount = updatedDenominations[denom] || 0;
-                  const newAmount = typeof newCount === 'number' ? newCount : 0;
-                  updatedDenominations[denom] = existingCount + newAmount;
-                });
-                
-                // 새로운 총 잔액 계산
-                const newBalance = Object.entries(updatedDenominations).reduce((total, [denom, count]) => {
-                  const denomValue = parseFloat(denom.replace(/,/g, ''));
-                  const countValue = typeof count === 'number' ? count : 0;
-                  return total + (denomValue * countValue);
-                }, 0);
-                
-                return {
-                  ...asset,
-                  denominations: updatedDenominations,
-                  balance: newBalance
-                };
-              }
-              return asset;
-            }));
-          } else {
-            // 새로운 통화이므로 새 카드 생성
-            setCashAssets(prev => [...prev, formData as CashAsset]);
-          }
+          createData = {
+            name: `${formData.currency} 현금`,
+            type: 'cash',
+            currency: formData.currency,
+            balance: formData.balance.toString(),
+            metadata: {
+              denomination: formData.denominations
+            }
+          };
         } else if (assetFormType === 'korean-account') {
-          // 같은 은행/계좌가 이미 있는지 확인
-          const existingAccount = koreanAccounts.find(acc => 
-            acc.bankName === formData.bankName && acc.accountNumber === formData.accountNumber
-          );
-          
-          if (existingAccount) {
-            // 기존 계좌에 잔액 합산
-            setKoreanAccounts(prev => prev.map(acc => 
-              acc.id === existingAccount.id 
-                ? { ...acc, balance: acc.balance + formData.balance }
-                : acc
-            ));
-          } else {
-            setKoreanAccounts(prev => [...prev, formData as BankAccount]);
-          }
+          createData = {
+            name: formData.bankName,
+            type: 'account',
+            currency: 'KRW',
+            balance: formData.balance.toString(),
+            metadata: {
+              bank: formData.bankName,
+              accountNumber: formData.accountNumber,
+              accountHolder: formData.accountHolder
+            }
+          };
         } else if (assetFormType === 'vietnamese-account') {
-          // 같은 은행/계좌가 이미 있는지 확인
-          const existingAccount = vietnameseAccounts.find(acc => 
-            acc.bankName === formData.bankName && acc.accountNumber === formData.accountNumber
-          );
-          
-          if (existingAccount) {
-            // 기존 계좌에 잔액 합산
-            setVietnameseAccounts(prev => prev.map(acc => 
-              acc.id === existingAccount.id 
-                ? { ...acc, balance: acc.balance + formData.balance }
-                : acc
-            ));
-          } else {
-            setVietnameseAccounts(prev => [...prev, formData as BankAccount]);
-          }
+          createData = {
+            name: formData.bankName,
+            type: 'account',
+            currency: 'VND',
+            balance: formData.balance.toString(),
+            metadata: {
+              bank: formData.bankName,
+              accountNumber: formData.accountNumber,
+              accountHolder: formData.accountHolder,
+              country: '베트남'
+            }
+          };
         } else if (assetFormType === 'exchange') {
-          // 같은 거래소/코인이 이미 있는지 확인
-          const existingAsset = exchangeAssets.find(asset => 
-            asset.exchangeName === formData.exchangeName && asset.coinName === formData.coinName
-          );
-          
-          if (existingAsset) {
-            // 기존 자산에 수량 합산
-            setExchangeAssets(prev => prev.map(asset => 
-              asset.id === existingAsset.id 
-                ? { ...asset, quantity: asset.quantity + formData.quantity }
-                : asset
-            ));
-          } else {
-            setExchangeAssets(prev => [...prev, formData as ExchangeAsset]);
-          }
+          createData = {
+            name: formData.exchangeName,
+            type: 'exchange',
+            currency: formData.coinName,
+            balance: formData.quantity.toString(),
+            metadata: {
+              exchange: formData.exchangeName
+            }
+          };
         } else if (assetFormType === 'binance') {
-          // 같은 코인이 이미 있는지 확인
-          const existingAsset = binanceAssets.find(asset => 
-            asset.coinName === formData.coinName
-          );
-          
-          if (existingAsset) {
-            // 기존 자산에 수량 합산
-            setBinanceAssets(prev => prev.map(asset => 
-              asset.id === existingAsset.id 
-                ? { ...asset, quantity: asset.quantity + formData.quantity }
-                : asset
-            ));
-          } else {
-            setBinanceAssets(prev => [...prev, formData as BinanceAsset]);
-          }
+          createData = {
+            name: 'Binance',
+            type: 'binance',
+            currency: formData.coinName,
+            balance: formData.quantity.toString(),
+            metadata: {}
+          };
         }
+
+        console.log('Creating new asset:', createData);
+        
+        // API 호출
+        const response = await fetch('/api/assets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(createData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create asset');
+        }
+
+        const createdAsset = await response.json();
+        console.log('Asset created successfully:', createdAsset);
+
+        // 서버에서 최신 데이터를 다시 불러오기
+        const assetsResponse = await fetch('/api/assets');
+        const latestAssets = await assetsResponse.json();
+        
+        // 각 타입별로 데이터 분류하여 state 업데이트
+        const cashAssetsData: CashAsset[] = [];
+        const koreanAccountsData: BankAccount[] = [];
+        const vietnameseAccountsData: BankAccount[] = [];
+        const exchangeAssetsData: ExchangeAsset[] = [];
+        const binanceAssetsData: BinanceAsset[] = [];
+
+        latestAssets.forEach((asset: any) => {
+          if (asset.type === 'cash') {
+            cashAssetsData.push({
+              id: asset.id,
+              type: 'cash',
+              currency: asset.currency,
+              balance: parseFloat(asset.balance),
+              denominations: asset.metadata?.denomination || {},
+              name: asset.name
+            });
+          } else if (asset.type === 'account') {
+            const accountData = {
+              id: asset.id,
+              bankName: asset.metadata?.bank || asset.name,
+              accountNumber: asset.metadata?.accountNumber || '',
+              accountHolder: asset.metadata?.accountHolder || '',
+              balance: parseFloat(asset.balance),
+              currency: asset.currency
+            };
+            
+            if (asset.currency === 'KRW') {
+              koreanAccountsData.push(accountData);
+            } else {
+              vietnameseAccountsData.push(accountData);
+            }
+          } else if (asset.type === 'exchange') {
+            exchangeAssetsData.push({
+              id: asset.id,
+              exchangeName: asset.metadata?.exchange || asset.name,
+              coinName: asset.currency,
+              quantity: parseFloat(asset.balance),
+              currency: asset.currency
+            });
+          } else if (asset.type === 'binance') {
+            binanceAssetsData.push({
+              id: asset.id,
+              coinName: asset.currency,
+              quantity: parseFloat(asset.balance),
+              currency: asset.currency
+            });
+          }
+        });
+
+        // 모든 state 업데이트
+        setCashAssets(cashAssetsData);
+        setKoreanAccounts(koreanAccountsData);
+        setVietnameseAccounts(vietnameseAccountsData);
+        setExchangeAssets(exchangeAssetsData);
+        setBinanceAssets(binanceAssetsData);
       }
       
       setShowAssetForm(false);

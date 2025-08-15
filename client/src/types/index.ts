@@ -36,9 +36,11 @@ export interface Transaction {
   fromAssetType?: 'bank' | 'exchange' | 'binance' | 'cash';
   fromAssetId?: string;
   fromAssetName: string;
+  fromCurrency?: string;
   toAssetType?: 'bank' | 'exchange' | 'binance' | 'cash';
   toAssetId?: string;
   toAssetName: string;
+  toCurrency: string;
   fromAmount: number;
   toAmount: number;
   rate: number;

@@ -135,49 +135,12 @@ export default function Dashboard({
   // Save today's assets and load yesterday's data
   useEffect(() => {
     if (!isFetchingRates && totalAssets.krw > 0) {
-      const today = new Date().toDateString();
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-      
-      // Load yesterday's data
-      try {
-        const savedYesterday = localStorage.getItem(`assets-${yesterday}`);
-        if (savedYesterday) {
-          const parsedData = JSON.parse(savedYesterday);
-          // Validate parsed data structure
-          if (parsedData && typeof parsedData.krw === 'number' && typeof parsedData.vnd === 'number') {
-            setYesterdayAssets(parsedData);
-          } else {
-            console.warn('Invalid yesterday assets data structure');
-            setYesterdayAssets({
-              krw: totalAssets.krw * 0.97, // 3% lower than today
-              vnd: totalAssets.vnd * 0.97
-            });
-          }
-        } else {
-          // For demo purposes, set mock yesterday data if none exists
-          setYesterdayAssets({
-            krw: totalAssets.krw * 0.97, // 3% lower than today
-            vnd: totalAssets.vnd * 0.97
-          });
-        }
-      } catch (e) {
-        console.error('Failed to access localStorage or parse yesterday assets:', e);
-        // Fallback for localStorage access issues
-        setYesterdayAssets({
-          krw: totalAssets.krw * 0.97,
-          vnd: totalAssets.vnd * 0.97
-        });
-      }
-      
-      // Save today's data
-      try {
-        localStorage.setItem(`assets-${today}`, JSON.stringify({
-          krw: totalAssets.krw,
-          vnd: totalAssets.vnd
-        }));
-      } catch (e) {
-        console.warn('Failed to save today assets to localStorage:', e);
-      }
+      // PostgreSQL API를 통한 히스토리 데이터 처리로 변경 예정
+      // 임시적으로 데모 데이터 사용
+      setYesterdayAssets({
+        krw: totalAssets.krw * 0.97, // 3% lower than today
+        vnd: totalAssets.vnd * 0.97
+      });
     }
   }, [totalAssets, isFetchingRates]);
 
