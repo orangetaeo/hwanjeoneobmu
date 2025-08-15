@@ -94,11 +94,30 @@ export default function HomePage() {
             account.metadata?.country === '베트남'
           );
 
+          // 거래소와 바이낸스 자산에 balance 필드 추가 (quantity -> balance 매핑)
+          const processedExchanges = exchanges.map((asset: any) => ({
+            ...asset,
+            exchangeName: asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange',
+            coinName: asset.currency,
+            quantity: parseFloat(asset.balance) || 0,
+            balance: parseFloat(asset.balance) || 0
+          }));
+          
+          const processedBinanceAssets = binanceAssets.map((asset: any) => ({
+            ...asset,
+            coinName: asset.currency,
+            quantity: parseFloat(asset.balance) || 0,
+            balance: parseFloat(asset.balance) || 0
+          }));
+
+          console.log('Processed exchanges:', processedExchanges);
+          console.log('Processed binance assets:', processedBinanceAssets);
+
           setCashAssets(cashAssets || []);
           setKoreanAccounts(koreanAccounts || []);
           setVietnameseAccounts(vietnameseAccounts || []);
-          setExchangeAssets(exchanges || []);
-          setBinanceAssets(binanceAssets || []);
+          setExchangeAssets(processedExchanges || []);
+          setBinanceAssets(processedBinanceAssets || []);
           setTransactions(transactionsData || []);
         }
       } catch (error) {
@@ -127,7 +146,8 @@ export default function HomePage() {
       ...asset,
       type: 'crypto' as const,
       assetId: `${type}_${asset.id}`,
-      displayName: `${(asset as ExchangeAsset).exchangeName || '바이낸스'} (${asset.coinName})`
+      displayName: `${(asset as ExchangeAsset).exchangeName || '바이낸스'} (${asset.coinName})`,
+      balance: asset.quantity || asset.balance // quantity 필드를 balance로 매핑
     });
     
     return [

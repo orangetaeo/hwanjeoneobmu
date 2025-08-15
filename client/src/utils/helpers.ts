@@ -59,11 +59,9 @@ export const parseCommaFormattedNumber = (value: string): number => {
 };
 
 export const formatCurrency = (amount: number | string, currency: string): string => {
-  console.log('formatCurrency input:', { amount, currency, type: typeof amount });
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   
   if (amount === null || amount === undefined || isNaN(num)) {
-    console.error('formatCurrency - Invalid amount:', { amount, currency, num });
     return '0';
   }
   
