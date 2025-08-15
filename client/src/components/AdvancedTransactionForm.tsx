@@ -79,6 +79,21 @@ export default function AdvancedTransactionForm({
         setFormData(prev => ({ ...prev, fees: '' })); // 다른 네트워크는 수동 입력
       }
     }
+    
+    // 은행→거래소 송금에서 거래소 변경 시 은행 계좌 유효성 검사
+    if (field === 'exchangeName' && activeTab === 'bank_to_exchange') {
+      // 빗썸을 선택했는데 현재 선택된 계좌가 국민은행이 아닌 경우 초기화
+      if (value === 'Bithumb' && formData.fromAsset && !formData.fromAsset.includes('국민은행')) {
+        setFormData(prev => ({ ...prev, fromAsset: '' }));
+      }
+      // 빗썸이 아닌 거래소를 선택했는데 수수료가 설정되어 있지 않은 경우 초기화
+      if (value !== 'Bithumb') {
+        setFormData(prev => ({ ...prev, fees: '' }));
+      } else {
+        // 빗썸 선택 시 수수료 0으로 설정
+        setFormData(prev => ({ ...prev, fees: '0' }));
+      }
+    }
   };
 
   const calculateToAmount = () => {
@@ -184,15 +199,28 @@ export default function AdvancedTransactionForm({
                         {/* 빗썸 선택 시 국민은행만 표시, 아니면 모든 은행 계좌 표시 */}
                         {allAssets
                           .filter(asset => asset.type === 'account')
-                          .filter(asset => 
-                            formData.exchangeName !== 'Bithumb' || 
-                            asset.displayName?.includes('국민은행')
-                          )
+                          .filter(asset => {
+                            // 빗썸이 선택되지 않았거나, 빗썸이지만 국민은행인 경우만 표시
+                            if (formData.exchangeName !== 'Bithumb') {
+                              return true; // 빗썸이 아니면 모든 계좌 표시
+                            }
+                            return asset.displayName?.includes('국민은행') || asset.name?.includes('국민은행');
+                          })
                           .map(asset => (
                             <SelectItem key={asset.assetId || asset.id} value={asset.displayName || asset.name || ''}>
                               {asset.displayName || asset.name} - ₩{asset.balance?.toLocaleString()}
                             </SelectItem>
                           ))}
+                        {/* 빗썸 선택 시 국민은행 계좌가 없는 경우 안내 메시지 */}
+                        {formData.exchangeName === 'Bithumb' && 
+                         !allAssets.some(asset => 
+                           asset.type === 'account' && 
+                           (asset.displayName?.includes('국민은행') || asset.name?.includes('국민은행'))
+                         ) && (
+                          <div className="p-3 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded m-2">
+                            빗썸으로 송금하려면 국민은행 계좌가 필요합니다.
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
