@@ -245,7 +245,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                   </div>
 
                   <h3 className="font-medium text-gray-900">지폐 구성</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
                     {Object.entries(denominations)
                       .sort(([a], [b]) => {
                         // Remove commas and convert to number for sorting
