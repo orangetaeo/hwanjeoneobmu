@@ -27,29 +27,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, Transaction, Asset, ModalInfo } from '@/types';
 
-const initialAssets = [
-  { 
-    name: 'KRW 현금', 
-    type: 'cash', 
-    currency: 'KRW', 
-    balance: 3540000, 
-    denominations: { '50000': 59, '10000': 59, '5000': 0, '1000': 0 } 
-  },
-  { 
-    name: 'USD 현금', 
-    type: 'cash', 
-    currency: 'USD', 
-    balance: 436, 
-    denominations: { '100': 2, '50': 1, '20': 3, '10': 8, '5': 3, '2': 0, '1': 31 } 
-  },
-  { 
-    name: 'VND 현금', 
-    type: 'cash', 
-    currency: 'VND', 
-    balance: 30790000, 
-    denominations: { '500000': 56, '200000': 10, '100000': 5, '50000': 4, '20000': 1, '10000': 7 } 
-  },
-];
+// 기초 데이터는 사용자가 직접 설정하므로 초기 자산 제거
 
 export default function HomePage() {
   const { user, loading: authLoading } = useFirebaseAuth();
@@ -74,175 +52,46 @@ export default function HomePage() {
   const [showAdvancedTransactionForm, setShowAdvancedTransactionForm] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
 
-  // Initialize with sample data for development and save to localStorage
+  // PostgreSQL 데이터베이스에서 실제 데이터 로드
   useEffect(() => {
     if (!user || authLoading) return;
 
-    // Try to load from localStorage first
-    const savedData = localStorage.getItem(`exchangeManagerData_${user.uid}`);
-    if (savedData) {
+    // PostgreSQL에서 실제 데이터 로드 - localStorage 제거
+    const loadDatabaseData = async () => {
       try {
-        const parsed = JSON.parse(savedData);
-        setCashAssets(parsed.cashAssets || []);
-        setKoreanAccounts(parsed.koreanAccounts || []);
-        setVietnameseAccounts(parsed.vietnameseAccounts || []);
-        setExchangeAssets(parsed.exchangeAssets || []);
-        setBinanceAssets(parsed.binanceAssets || []);
-        setTransactions(parsed.transactions || []);
+        const [assetsRes, transactionsRes] = await Promise.all([
+          fetch('/api/assets'),
+          fetch('/api/transactions')
+        ]);
+
+        if (assetsRes.ok && transactionsRes.ok) {
+          const assetsData = await assetsRes.json();
+          const transactionsData = await transactionsRes.json();
+
+          // 자산을 타입별로 분류
+          const cashAssets = assetsData.filter(asset => asset.type === 'cash');
+          const accounts = assetsData.filter(asset => asset.type === 'account');
+          const exchanges = assetsData.filter(asset => asset.type === 'exchange');
+          const binanceAssets = assetsData.filter(asset => asset.type === 'binance');
+
+          setCashAssets(cashAssets);
+          setKoreanAccounts(accounts); // 한국 계좌
+          setVietnameseAccounts([]); // 베트남 계좌는 별도 분리 필요시
+          setExchangeAssets(exchanges);
+          setBinanceAssets(binanceAssets);
+          setTransactions(transactionsData);
+        }
+      } catch (error) {
+        console.error('Failed to load data from database:', error);
+      } finally {
         setLoading(false);
-        return;
-      } catch (e) {
-        console.log('Failed to load saved data, using default');
       }
-    }
-
-    // Sample data initialization
-    setCashAssets([
-      {
-        id: '1',
-        name: '원화 현금',
-        type: 'cash',
-        currency: 'KRW',
-        balance: 1025000,
-        denominations: { '50000': 10, '10000': 20, '5000': 15, '1000': 25 }
-      },
-      {
-        id: '2',
-        name: '달러 현금',
-        type: 'cash',
-        currency: 'USD',
-        balance: 1025,
-        denominations: { '100': 5, '50': 10, '20': 15, '10': 20, '5': 25, '1': 50 }
-      }
-    ]);
-    
-    setKoreanAccounts([
-      {
-        id: '1',
-        bankName: '신한은행',
-        accountNumber: '110-123-456789',
-        accountHolder: 'Hong Gil Dong',
-        balance: 5000000
-      }
-    ]);
-    
-    setVietnameseAccounts([
-      {
-        id: 'vn1', 
-        bankName: 'Vietcombank',
-        accountNumber: '0123456789',
-        accountHolder: 'Nguyen Van A',
-        balance: 50000000
-      },
-      {
-        id: 'vn2',
-        bankName: 'BIDV',
-        accountNumber: '0987654321', 
-        accountHolder: 'Tran Thi B',
-        balance: 25000000
-      }
-    ]);
-    
-    setExchangeAssets([
-      {
-        id: '1',
-        exchangeName: 'Bithumb',
-        coinName: 'USDT',
-        quantity: 2563.07,
-        currency: 'USDT'
-      },
-      {
-        id: '2',
-        exchangeName: 'Upbit',
-        coinName: 'Bitcoin',
-        quantity: 0.15,
-        currency: 'BTC'
-      }
-    ]);
-    
-    setBinanceAssets([
-      {
-        id: '1',
-        coinName: 'USDT',
-        quantity: 1000.18,
-        currency: 'USDT'
-      },
-      {
-        id: '2',
-        coinName: 'BTC',
-        quantity: 0.025,
-        currency: 'BTC'
-      }
-    ]);
-    
-    setTransactions([
-      {
-        id: '1',
-        type: 'exchange',
-        fromAssetName: 'KRW 현금',
-        toAssetName: 'USD 현금',
-        fromAmount: 1350000,
-        toAmount: 1000,
-        rate: 1350,
-        profit: 0,
-        timestamp: new Date('2024-08-15T10:30:00Z')
-      },
-      {
-        id: '2',
-        type: 'transfer',
-        fromAssetName: 'Bithumb USDT',
-        toAssetName: 'Binance USDT',
-        fromAmount: 500,
-        toAmount: 500,
-        rate: 1,
-        profit: 0,
-        timestamp: new Date('2024-08-15T09:15:00Z')
-      }
-    ]);
-    
-    setLoading(false);
-
-    // Save sample data to localStorage
-    const sampleData = {
-      cashAssets: [
-        { id: '1', name: '원화 현금', type: 'cash', currency: 'KRW', balance: 1025000, denominations: { '50000': 10, '10000': 20, '5000': 15, '1000': 25 } },
-        { id: '2', name: '달러 현금', type: 'cash', currency: 'USD', balance: 1025, denominations: { '100': 5, '50': 10, '20': 15, '10': 20, '5': 25, '1': 50 } }
-      ],
-      koreanAccounts: [{ id: '1', bankName: '신한은행', accountNumber: '110-123-456789', accountHolder: 'Hong Gil Dong', balance: 5000000 }],
-      vietnameseAccounts: [
-        { id: 'vn1', bankName: 'Vietcombank', accountNumber: '0123456789', accountHolder: 'Nguyen Van A', balance: 50000000 },
-        { id: 'vn2', bankName: 'BIDV', accountNumber: '0987654321', accountHolder: 'Tran Thi B', balance: 25000000 }
-      ],
-      exchangeAssets: [
-        { id: '1', exchangeName: 'Bithumb', coinName: 'USDT', quantity: 2563.07, currency: 'USDT' },
-        { id: '2', exchangeName: 'Upbit', coinName: 'Bitcoin', quantity: 0.15, currency: 'BTC' }
-      ],
-      binanceAssets: [
-        { id: '1', coinName: 'USDT', quantity: 1000.18, currency: 'USDT' },
-        { id: '2', coinName: 'BTC', quantity: 0.025, currency: 'BTC' }
-      ],
-      transactions: [
-        { id: '1', type: 'exchange', fromAssetName: 'KRW 현금', toAssetName: 'USD 현금', fromAmount: 1350000, toAmount: 1000, rate: 1350, profit: 0, timestamp: new Date('2024-08-15T10:30:00Z') },
-        { id: '2', type: 'transfer', fromAssetName: 'Bithumb USDT', toAssetName: 'Binance USDT', fromAmount: 500, toAmount: 500, rate: 1, profit: 0, timestamp: new Date('2024-08-15T09:15:00Z') }
-      ]
     };
-    localStorage.setItem(`exchangeManagerData_${user.uid}`, JSON.stringify(sampleData));
+
+    loadDatabaseData();
   }, [user, authLoading]);
 
-  // Save data to localStorage whenever state changes
-  useEffect(() => {
-    if (!user?.uid || loading) return;
-    
-    const dataToSave = {
-      cashAssets,
-      koreanAccounts, 
-      vietnameseAccounts,
-      exchangeAssets,
-      binanceAssets,
-      transactions
-    };
-    localStorage.setItem(`exchangeManagerData_${user.uid}`, JSON.stringify(dataToSave));
-  }, [user?.uid, cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets, transactions, loading]);
+  // PostgreSQL 중심 운영 - localStorage 사용 중단
 
   // Prepare all assets for transaction form
   const allAssetsForTransaction = useMemo(() => {
