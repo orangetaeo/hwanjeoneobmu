@@ -137,7 +137,7 @@ export default function ExchangeRateManager({
               <span className="font-semibold">KRW → VND</span>
             </div>
             <p className="text-xl font-bold text-green-600">
-              {formatCurrency(getCurrentRate('KRW', 'VND'), 'VND')}
+              {getCurrentRate('KRW', 'VND').toFixed(2)}
             </p>
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
