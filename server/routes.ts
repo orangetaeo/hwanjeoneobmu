@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
-import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema } from '@shared/schema';
+import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema } from '@shared/schema';
 
 const router = Router();
 
@@ -182,6 +182,48 @@ router.put('/settings', requireAuth, async (req: AuthenticatedRequest, res: Resp
     console.error('Error updating settings:', error);
     const errorMessage = error instanceof Error ? error.message : 'Invalid settings data';
     res.status(400).json({ error: 'Invalid settings data', details: errorMessage });
+  }
+});
+
+// Exchange Rates Routes
+router.post('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const dataWithUserId = {
+      ...req.body,
+      userId: req.user!.id
+    };
+    
+    console.log('Exchange rate creation request:', dataWithUserId);
+    const validatedData = insertExchangeRateSchema.parse(dataWithUserId);
+    
+    const exchangeRate = await storage.createExchangeRate(validatedData);
+    res.json(exchangeRate);
+  } catch (error) {
+    console.error('Error creating exchange rate:', error);
+    res.status(400).json({ error: 'Invalid exchange rate data', details: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
+router.get('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const exchangeRates = await storage.getExchangeRates(req.user!.id);
+    res.json(exchangeRates);
+  } catch (error) {
+    console.error('Error fetching exchange rates:', error);
+    res.status(500).json({ error: 'Failed to fetch exchange rates' });
+  }
+});
+
+router.patch('/exchange-rates/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const exchangeRate = await storage.updateExchangeRate(req.params.id, req.body);
+    if (!exchangeRate) {
+      return res.status(404).json({ error: 'Exchange rate not found' });
+    }
+    res.json(exchangeRate);
+  } catch (error) {
+    console.error('Error updating exchange rate:', error);
+    res.status(500).json({ error: 'Failed to update exchange rate' });
   }
 });
 

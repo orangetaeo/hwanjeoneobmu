@@ -3,6 +3,7 @@ import {
   assets, 
   rates, 
   userSettings,
+  exchangeRates,
   type InsertTransaction, 
   type Transaction, 
   type InsertAsset, 
@@ -10,7 +11,9 @@ import {
   type InsertRate, 
   type Rate,
   type UserSettings,
-  type InsertUserSettings
+  type InsertUserSettings,
+  type ExchangeRate,
+  type InsertExchangeRate
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -36,6 +39,11 @@ export interface IStorage {
   // User Settings
   getUserSettings(userId: string): Promise<UserSettings | undefined>;
   updateUserSettings(userId: string, settings: Partial<InsertUserSettings>): Promise<UserSettings>;
+  
+  // Exchange Rates
+  createExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate>;
+  getExchangeRates(userId: string): Promise<ExchangeRate[]>;
+  updateExchangeRate(id: string, updates: Partial<InsertExchangeRate>): Promise<ExchangeRate | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -304,7 +312,32 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // 테스트 데이터 자동 초기화 제거 - 사용자가 직접 기초 데이터 설정
+  // Exchange Rates methods
+  async createExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate> {
+    const [result] = await db
+      .insert(exchangeRates)
+      .values(rate)
+      .returning();
+    return result;
+  }
+
+  async getExchangeRates(userId: string): Promise<ExchangeRate[]> {
+    const result = await db
+      .select()
+      .from(exchangeRates)
+      .where(eq(exchangeRates.userId, userId))
+      .orderBy(desc(exchangeRates.updatedAt));
+    return result;
+  }
+
+  async updateExchangeRate(id: string, updates: Partial<InsertExchangeRate>): Promise<ExchangeRate | undefined> {
+    const [result] = await db
+      .update(exchangeRates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(exchangeRates.id, id))
+      .returning();
+    return result || undefined;
+  }
 }
 
 export const storage = new DatabaseStorage();

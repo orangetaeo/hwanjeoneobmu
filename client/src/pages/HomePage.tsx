@@ -22,10 +22,12 @@ import TransactionHistory from '@/components/TransactionHistory';
 import AssetForm from '@/components/AssetForm';
 import AdvancedTransactionForm from '@/components/AdvancedTransactionForm';
 import UserSettingsForm from '@/components/UserSettingsForm';
+import ExchangeRateManager from '@/components/ExchangeRateManager';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, Transaction, Asset, ModalInfo } from '@/types';
+import { ExchangeRate, InsertExchangeRate } from '@shared/schema';
 
 // 기초 데이터는 사용자가 직접 설정하므로 초기 자산 제거
 
@@ -40,6 +42,7 @@ export default function HomePage() {
   const [exchangeAssets, setExchangeAssets] = useState<ExchangeAsset[]>([]);
   const [binanceAssets, setBinanceAssets] = useState<BinanceAsset[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
   
   // UI states
   const [currentView, setCurrentView] = useState('dashboard');
@@ -59,14 +62,16 @@ export default function HomePage() {
     // PostgreSQL에서 실제 데이터 로드 - localStorage 제거
     const loadDatabaseData = async () => {
       try {
-        const [assetsRes, transactionsRes] = await Promise.all([
+        const [assetsRes, transactionsRes, exchangeRatesRes] = await Promise.all([
           fetch('/api/assets'),
-          fetch('/api/transactions')
+          fetch('/api/transactions'),
+          fetch('/api/exchange-rates')
         ]);
 
-        if (assetsRes.ok && transactionsRes.ok) {
+        if (assetsRes.ok && transactionsRes.ok && exchangeRatesRes.ok) {
           const assetsData = await assetsRes.json();
           const transactionsData = await transactionsRes.json();
+          const exchangeRatesData = await exchangeRatesRes.json();
 
           // 자산을 타입별로 분류 - 디버깅 로그 추가
           console.log('All assets from API:', assetsData);
@@ -119,6 +124,7 @@ export default function HomePage() {
           setExchangeAssets(processedExchanges || []);
           setBinanceAssets(processedBinanceAssets || []);
           setTransactions(transactionsData || []);
+          setExchangeRates(exchangeRatesData || []);
         }
       } catch (error) {
         console.error('Failed to load data from database:', error);
@@ -804,15 +810,30 @@ export default function HomePage() {
             <Card className="p-4">
               <nav>
                 <ul className="space-y-2">
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'dashboard' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('dashboard')}
-                      data-testid="desktop-nav-dashboard"
-                    >
-                      <Home className="mr-3" size={18} />
-                      <span>대시보드</span>
+                  {/* 네비게이션 메뉴 항목들 */}
+                  {[
+                    { id: 'dashboard', label: '대시보드', icon: Home },
+                    { id: 'assets', label: '자산 관리', icon: Wallet },
+                    { id: 'transactions', label: '거래 내역', icon: List },
+                    { id: 'rates', label: '환율 관리', icon: TrendingUp },
+                    { id: 'exchange-rates', label: '환전상 시세', icon: DollarSign },
+                    { id: 'settings', label: '설정', icon: Settings }
+                  ].map((item) => (
+                    <li key={item.id}>
+                      <Button 
+                        variant="ghost" 
+                        className={`w-full justify-start ${currentView === item.id ? 'bg-primary/10 text-primary' : ''}`}
+                        onClick={() => {
+                          if (item.id === 'settings') {
+                            setShowUserSettings(true);
+                          } else {
+                            setCurrentView(item.id);
+                          }
+                        }}
+                        data-testid={`desktop-nav-${item.id}`}
+                      >
+                        <item.icon className="mr-3" size={18} />
+                        <span>{item.label}</span>
                     </Button>
                   </li>
                   <li>
@@ -1020,6 +1041,50 @@ export default function HomePage() {
                     realTimeRates={realTimeRates}
                     cryptoRates={cryptoRates}
                     isFetchingRates={isFetchingRates}
+                  />
+                )}
+                {currentView === 'exchange-rates' && (
+                  <ExchangeRateManager
+                    rates={exchangeRates}
+                    onSave={async (rate) => {
+                      try {
+                        const response = await fetch('/api/exchange-rates', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(rate)
+                        });
+
+                        if (!response.ok) {
+                          throw new Error('Failed to save exchange rate');
+                        }
+
+                        const exchangeRatesRes = await fetch('/api/exchange-rates');
+                        const exchangeRatesData = await exchangeRatesRes.json();
+                        setExchangeRates(exchangeRatesData);
+                      } catch (error) {
+                        console.error('환율 저장 실패:', error);
+                      }
+                    }}
+                    onUpdate={async (id, rate) => {
+                      try {
+                        const response = await fetch(`/api/exchange-rates/${id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(rate)
+                        });
+
+                        if (!response.ok) {
+                          throw new Error('Failed to update exchange rate');
+                        }
+
+                        const exchangeRatesRes = await fetch('/api/exchange-rates');
+                        const exchangeRatesData = await exchangeRatesRes.json();
+                        setExchangeRates(exchangeRatesData);
+                      } catch (error) {
+                        console.error('환율 수정 실패:', error);
+                      }
+                    }}
+                    realTimeRates={realTimeRates}
                   />
                 )}
                 {currentView === 'transactions' && (

@@ -56,6 +56,22 @@ export const rates = pgTable("rates", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// 금은방 시세 및 환전상 요율 관리 테이블
+export const exchangeRates = pgTable("exchange_rates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  fromCurrency: text("from_currency").notNull(), // 'USD', 'KRW'
+  toCurrency: text("to_currency").notNull(), // 'VND'
+  denomination: text("denomination"), // '100', '50', '20_10', '5_2_1', '50000', '10000', '5000_1000' 등
+  goldShopRate: decimal("gold_shop_rate", { precision: 18, scale: 8 }), // 금은방 시세 (참고용)
+  myBuyRate: decimal("my_buy_rate", { precision: 18, scale: 8 }), // 내가 사는 가격
+  mySellRate: decimal("my_sell_rate", { precision: 18, scale: 8 }), // 내가 파는 가격
+  isActive: text("is_active").default("true"), // 'true', 'false'
+  memo: text("memo"), // 급변상황 메모
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // 사용자 설정 테이블
 export const userSettings = pgTable("user_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -105,3 +121,12 @@ export type Rate = typeof rates.$inferSelect;
 export type InsertRate = z.infer<typeof insertRateSchema>;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
+
+export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ExchangeRate = typeof exchangeRates.$inferSelect;
+export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
