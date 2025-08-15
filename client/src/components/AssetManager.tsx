@@ -98,7 +98,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => onOpenModal('editAsset', asset)}
+                        onClick={() => onOpenModal('editCashAsset', asset)}
                         data-testid={`button-edit-${asset.id}`}
                       >
                         <Edit size={16} />
@@ -106,7 +106,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('deleteAsset', asset)}
+                        onClick={() => onOpenModal('deleteCashAsset', asset)}
                         data-testid={`button-delete-${asset.id}`}
                       >
                         <Trash2 size={16} className="text-red-600" />
@@ -168,7 +168,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('editAccount', account)}
+                        onClick={() => onOpenModal('editKoreanAccount', account)}
                         data-testid={`button-edit-account-${account.id}`}
                       >
                         <Edit size={16} />
@@ -176,7 +176,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('deleteAccount', account)}
+                        onClick={() => onOpenModal('deleteKoreanAccount', account)}
                         data-testid={`button-delete-account-${account.id}`}
                       >
                         <Trash2 size={16} className="text-red-600" />
@@ -213,7 +213,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('editAccount', account)}
+                        onClick={() => onOpenModal('editVietnameseAccount', account)}
                         data-testid={`button-edit-account-${account.id}`}
                       >
                         <Edit size={16} />
@@ -221,7 +221,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('deleteAccount', account)}
+                        onClick={() => onOpenModal('deleteVietnameseAccount', account)}
                         data-testid={`button-delete-account-${account.id}`}
                       >
                         <Trash2 size={16} className="text-red-600" />
@@ -257,7 +257,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('editAsset', asset)}
+                        onClick={() => onOpenModal('editExchangeAsset', asset)}
                         data-testid={`button-edit-exchange-${asset.id}`}
                       >
                         <Edit size={16} />
@@ -265,7 +265,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('deleteAsset', asset)}
+                        onClick={() => onOpenModal('deleteExchangeAsset', asset)}
                         data-testid={`button-delete-exchange-${asset.id}`}
                       >
                         <Trash2 size={16} className="text-red-600" />
@@ -301,7 +301,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('editAsset', asset)}
+                        onClick={() => onOpenModal('editBinanceAsset', asset)}
                         data-testid={`button-edit-binance-${asset.id}`}
                       >
                         <Edit size={16} />
@@ -309,7 +309,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('deleteAsset', asset)}
+                        onClick={() => onOpenModal('deleteBinanceAsset', asset)}
                         data-testid={`button-delete-binance-${asset.id}`}
                       >
                         <Trash2 size={16} className="text-red-600" />
