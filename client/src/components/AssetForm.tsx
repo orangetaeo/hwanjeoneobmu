@@ -11,7 +11,6 @@ import { Plus, Minus } from 'lucide-react';
 // import { handleNumericInput, handleDecimalInput } from '@/utils/helpers';
 
 const cashAssetSchema = z.object({
-  name: z.string().min(1, "자산 이름을 입력해주세요"),
   currency: z.enum(['KRW', 'USD', 'VND'], { required_error: "통화를 선택해주세요" }),
   balance: z.number().min(0, "잔액은 0 이상이어야 합니다"),
   denominations: z.record(z.string(), z.number().min(0))
@@ -43,9 +42,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     if (editData?.denominations) return editData.denominations;
     
     const defaultDenoms: Record<string, Record<string, number>> = {
-      'KRW': { '50000': 0, '10000': 0, '5000': 0, '1000': 0 },
+      'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
       'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-      'VND': { '500000': 0, '200000': 0, '100000': 0, '50000': 0, '20000': 0, '10000': 0 }
+      'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
     };
     
     return type === 'cash' ? (defaultDenoms[editData?.currency] || defaultDenoms['KRW']) : {};
@@ -70,7 +69,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   function getDefaultValues() {
     switch (type) {
       case 'cash':
-        return { name: '', currency: 'KRW', balance: 0, denominations: {} };
+        return { currency: 'KRW', balance: 0, denominations: {} };
       case 'korean-account':
       case 'vietnamese-account':
         return { bankName: '', accountNumber: '', accountHolder: '', balance: 0 };
@@ -87,8 +86,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     if (type === 'cash') {
       data.denominations = denominations;
       data.balance = Object.entries(denominations).reduce((total, [denom, count]) => {
-        return total + (parseFloat(denom) * count);
+        // Remove commas from denomination string before parsing
+        const denomValue = parseFloat(denom.replace(/,/g, ''));
+        const countValue = typeof count === 'number' ? count : 0;
+        return total + (denomValue * countValue);
       }, 0);
+      // Generate name based on selected currency
+      data.name = `${data.currency} 현금`;
+      data.type = 'cash';
     }
     onSubmit(data);
   };
@@ -121,25 +126,20 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
             <>
               <FormField
                 control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>자산명</FormLabel>
-                    <FormControl>
-                      <Input placeholder="예: KRW 현금" {...field} data-testid="input-asset-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
                 name="currency"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>통화</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      // Update denominations based on selected currency
+                      const defaultDenoms: Record<string, Record<string, number>> = {
+                        'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+                        'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
+                        'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
+                      };
+                      setDenominations(defaultDenoms[value] || {});
+                    }} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-currency">
                           <SelectValue placeholder="통화를 선택하세요" />
