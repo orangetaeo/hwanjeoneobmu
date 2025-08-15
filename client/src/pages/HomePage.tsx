@@ -110,8 +110,8 @@ export default function HomePage() {
             balance: parseFloat(asset.balance) || 0
           }));
 
-          console.log('Processed exchanges:', processedExchanges);
-          console.log('Processed binance assets:', processedBinanceAssets);
+          console.log('Processed exchanges for Dashboard:', processedExchanges);
+          console.log('Processed binance assets for Dashboard:', processedBinanceAssets);
 
           setCashAssets(cashAssets || []);
           setKoreanAccounts(koreanAccounts || []);

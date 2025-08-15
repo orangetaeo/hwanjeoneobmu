@@ -57,9 +57,10 @@ export default function Dashboard({
         const currency = (asset as any).currency;
         const coinName = (asset as any).coinName;
 
-        // Validate numeric balance
-        if (isNaN(balance) || balance < 0) {
-          console.warn(`Invalid balance for asset ${(asset as any).name || 'unknown'}: ${balance}`);
+        // Validate numeric balance - support both balance and quantity fields
+        const balanceValue = balance || ((asset as any).quantity);
+        if (isNaN(balanceValue) || balanceValue < 0) {
+          console.warn(`Invalid balance for asset ${(asset as any).name || 'unknown'}: ${balanceValue}`);
           return;
         }
 
@@ -69,32 +70,39 @@ export default function Dashboard({
           return;
         }
 
+        console.log('Dashboard asset calculation:', { 
+          name: (asset as any).name, 
+          currency, 
+          balanceValue, 
+          coinName, 
+          usdtRate: realTimeRates['USDT-KRW'],
+          cryptoRates: cryptoRates
+        });
+
         switch(currency) {
           case 'KRW': 
             if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
-              totalKrw += (balance * cryptoRates[coinName].KRW);
+              totalKrw += (balanceValue * cryptoRates[coinName].KRW);
             } else {
-              totalKrw += balance;
+              totalKrw += balanceValue;
             }
             break;
           case 'VND': 
-            totalKrw += balance * (realTimeRates['VND-KRW'] || 0); 
+            totalKrw += balanceValue * (realTimeRates['VND-KRW'] || 0); 
             break;
           case 'USD': 
-            totalKrw += balance * (realTimeRates['USD-KRW'] || 0); 
+            totalKrw += balanceValue * (realTimeRates['USD-KRW'] || 0); 
             break;
           case 'USDT': 
-            if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) {
-              totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
-            } else {
-              totalKrw += balance * (realTimeRates['USDT-KRW'] || 0);
-            }
+            const usdtRate = realTimeRates['USDT-KRW'] || 0;
+            console.log('USDT calculation:', { balanceValue, usdtRate, result: balanceValue * usdtRate });
+            totalKrw += balanceValue * usdtRate;
             break;
           default: 
             if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
-              totalKrw += balance * cryptoRates[coinName].KRW;
+              totalKrw += balanceValue * cryptoRates[coinName].KRW;
             } else if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) {
-              totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
+              totalKrw += (balanceValue * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
             } else {
               console.warn(`Unknown currency or missing rate data for asset: ${currency}, coinName: ${coinName}`);
             }
@@ -121,7 +129,9 @@ export default function Dashboard({
     allAssets.forEach(asset => {
       const assetData = asset as any;
       const currency = assetData.currency || 'Unknown';
-      const balance = parseFloat(assetData.balance) || 0;
+      const balance = parseFloat(assetData.balance || assetData.quantity) || 0;
+      
+      console.log('Dashboard asset summary:', { asset: assetData.name, currency, balance, balance_field: assetData.balance, quantity_field: assetData.quantity });
       
       if (currency && balance > 0) {
         summary[currency] = (summary[currency] || 0) + balance;
