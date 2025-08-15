@@ -67,77 +67,115 @@ export default function HomePage() {
   const [assetFormType, setAssetFormType] = useState<'cash' | 'korean-account' | 'vietnamese-account' | 'exchange' | 'binance'>('cash');
   const [editingAsset, setEditingAsset] = useState(null);
 
-  // Firebase data setup and subscriptions
+  // Initialize with sample data for development
   useEffect(() => {
     if (!user || authLoading) return;
 
-    const uid = user.uid;
-    const dataPath = `artifacts/exchange-manager/users/${uid}`;
-
-    const setupInitialData = async () => {
-      const collectionsToSetup = {
-        'cash_assets': initialAssets,
-        'korean_accounts': [],
-        'vietnamese_accounts': [
-          { bankName: 'Shinhan Bank', accountNumber: '123-456', accountHolder: 'Test User', balance: 26684000 },
-          { bankName: 'BIDV', accountNumber: '789-012', accountHolder: 'Test User', balance: 1200000 }
-        ],
-        'exchange_assets': [
-          { exchangeName: 'Bithumb', coinName: 'USDT', quantity: 2563.07363534, currency: 'USDT' }
-        ],
-        'binance_assets': [
-          { coinName: 'USDT', quantity: 1.18, currency: 'USDT' }
-        ],
-      };
-
-      for (const [name, data] of Object.entries(collectionsToSetup)) {
-        const ref = collection(db, `${dataPath}/${name}`);
-        const snapshot = await getDocs(query(ref));
-        if (snapshot.empty && data.length > 0) {
-          for (const item of data) {
-            await addDoc(ref, item);
-          }
-        }
+    // Sample data initialization
+    setCashAssets([
+      {
+        id: '1',
+        name: '원화 현금',
+        type: 'cash',
+        currency: 'KRW',
+        balance: 1025000,
+        denominations: { '50000': 10, '10000': 20, '5000': 15, '1000': 25 }
+      },
+      {
+        id: '2',
+        name: '달러 현금',
+        type: 'cash',
+        currency: 'USD',
+        balance: 1025,
+        denominations: { '100': 5, '50': 10, '20': 15, '10': 20, '5': 25, '1': 50 }
       }
-
-      const ratesToSetup = {
-        'goldsmith_rates': { 
-          USD: { '100': 25500, '50': 25450, '20_10': 25400, '5_2_1': 25350 }, 
-          KRW: { '50000': 21.5, '10000': 21.4, '5000_1000': 21.3 } 
-        },
-        'transaction_rates': { 
-          USD: { '100_buy': 25400, '100_sell': 25500, '50_buy': 25350, '50_sell': 25450 }, 
-          KRW: { '50000_buy': 21.3, '50000_sell': 21.5, '10000_buy': 21.2, '10000_sell': 21.4 }, 
-          USDT: { 'USDT_buy': 0.99, 'USDT_sell': 1.01 } 
-        }
-      };
-
-      for (const [name, data] of Object.entries(ratesToSetup)) {
-        const ref = doc(db, `${dataPath}/rates`, name);
-        await setDoc(ref, data);
+    ]);
+    
+    setKoreanAccounts([
+      {
+        id: '1',
+        bankName: '신한은행',
+        accountNumber: '110-123-456789',
+        accountHolder: 'Hong Gil Dong',
+        balance: 5000000
       }
-    };
-
-    setupInitialData().then(() => {
-      const unsubscribers = [
-        onSnapshot(collection(db, `${dataPath}/cash_assets`), s => {
-          setCashAssets(s.docs.map(d => ({ id: d.id, ...d.data() } as CashAsset)));
-          setLoading(false);
-        }),
-        onSnapshot(collection(db, `${dataPath}/korean_accounts`), s => 
-          setKoreanAccounts(s.docs.map(d => ({ id: d.id, ...d.data() } as BankAccount)))),
-        onSnapshot(collection(db, `${dataPath}/vietnamese_accounts`), s => 
-          setVietnameseAccounts(s.docs.map(d => ({ id: d.id, ...d.data() } as BankAccount)))),
-        onSnapshot(collection(db, `${dataPath}/exchange_assets`), s => 
-          setExchangeAssets(s.docs.map(d => ({ id: d.id, ...d.data() } as ExchangeAsset)))),
-        onSnapshot(collection(db, `${dataPath}/binance_assets`), s => 
-          setBinanceAssets(s.docs.map(d => ({ id: d.id, ...d.data() } as BinanceAsset)))),
-        onSnapshot(query(collection(db, `${dataPath}/transactions`), orderBy('timestamp', 'desc'), limit(20)), s => 
-          setTransactions(s.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)))),
-      ];
-      
-      return () => unsubscribers.forEach(unsub => unsub());
-    });
+    ]);
+    
+    setVietnameseAccounts([
+      {
+        id: '1', 
+        bankName: 'Vietcombank',
+        accountNumber: '0123456789',
+        accountHolder: 'Nguyen Van A',
+        balance: 50000000
+      },
+      {
+        id: '2',
+        bankName: 'BIDV',
+        accountNumber: '0987654321', 
+        accountHolder: 'Tran Thi B',
+        balance: 25000000
+      }
+    ]);
+    
+    setExchangeAssets([
+      {
+        id: '1',
+        exchangeName: 'Bithumb',
+        coinName: 'USDT',
+        quantity: 2563.07,
+        currency: 'USDT'
+      },
+      {
+        id: '2',
+        exchangeName: 'Upbit',
+        coinName: 'Bitcoin',
+        quantity: 0.15,
+        currency: 'BTC'
+      }
+    ]);
+    
+    setBinanceAssets([
+      {
+        id: '1',
+        coinName: 'USDT',
+        quantity: 1000.18,
+        currency: 'USDT'
+      },
+      {
+        id: '2',
+        coinName: 'BTC',
+        quantity: 0.025,
+        currency: 'BTC'
+      }
+    ]);
+    
+    setTransactions([
+      {
+        id: '1',
+        type: 'exchange',
+        fromAssetName: 'KRW 현금',
+        toAssetName: 'USD 현금',
+        fromAmount: 1350000,
+        toAmount: 1000,
+        rate: 1350,
+        profit: 0,
+        timestamp: new Date('2024-08-15T10:30:00Z')
+      },
+      {
+        id: '2',
+        type: 'transfer',
+        fromAssetName: 'Bithumb USDT',
+        toAssetName: 'Binance USDT',
+        fromAmount: 500,
+        toAmount: 500,
+        rate: 1,
+        profit: 0,
+        timestamp: new Date('2024-08-15T09:15:00Z')
+      }
+    ]);
+    
+    setLoading(false);
   }, [user, authLoading]);
 
   // Prepare all assets for transaction form

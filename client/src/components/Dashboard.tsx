@@ -297,7 +297,9 @@ export default function Dashboard({
                         {transaction.fromAssetName} → {transaction.toAssetName}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {transaction.timestamp?.toDate().toLocaleString('ko-KR')}
+                        {transaction.timestamp instanceof Date 
+                          ? transaction.timestamp.toLocaleString('ko-KR')
+                          : new Date(transaction.timestamp).toLocaleString('ko-KR')}
                       </p>
                     </div>
                   </div>
