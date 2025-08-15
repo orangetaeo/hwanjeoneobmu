@@ -114,13 +114,23 @@ export default function Dashboard({
   // Asset summary for simple view
   const assetSummary = useMemo(() => {
     const summary: Record<string, number> = {};
-    cashAssets.forEach(a => summary[a.currency] = (summary[a.currency] || 0) + a.balance);
-    koreanAccounts.forEach(a => summary['KRW'] = (summary['KRW'] || 0) + a.balance);
-    vietnameseAccounts.forEach(a => summary['VND'] = (summary['VND'] || 0) + a.balance);
-    exchangeAssets.forEach(a => summary[a.coinName] = (summary[a.coinName] || 0) + a.quantity);
-    binanceAssets.forEach(a => summary[a.coinName] = (summary[a.coinName] || 0) + a.quantity);
+    
+    // PostgreSQL 데이터 구조에 맞게 수정
+    const allAssets = [...cashAssets, ...koreanAccounts, ...vietnameseAccounts, ...exchangeAssets, ...binanceAssets];
+    
+    allAssets.forEach(asset => {
+      const assetData = asset as any;
+      const currency = assetData.currency || 'Unknown';
+      const balance = parseFloat(assetData.balance) || 0;
+      
+      if (currency && balance > 0) {
+        summary[currency] = (summary[currency] || 0) + balance;
+      }
+    });
+    
+    console.log('Asset Summary:', summary); // 디버깅용
     return summary;
-  }, [assets]);
+  }, [cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets]);
 
   // Save today's assets and load yesterday's data
   useEffect(() => {
@@ -246,23 +256,21 @@ export default function Dashboard({
       {simpleView ? (
         /* Simple View - Asset Summary Cards */
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Object.entries(assetSummary).map(([currency, total]) => {
-            let formattedTotal;
-            if (currency === 'USDT') {
-              const numberTotal = typeof total === 'number' ? total : parseFloat(total);
-              formattedTotal = formatCurrency(numberTotal, currency);
-            } else {
-              formattedTotal = formatCurrency(total, currency);
-            }
-            return (
-              <Card key={currency} className="p-6">
-                <h3 className="text-lg font-bold text-gray-600 mb-2">{currency}</h3>
-                <p className="text-xl font-semibold text-gray-800">
-                  {CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || ''} {formattedTotal}
-                </p>
-              </Card>
-            );
-          })}
+          {Object.entries(assetSummary)
+            .filter(([currency, total]) => currency && total > 0) // 유효한 데이터만 표시
+            .map(([currency, total]) => {
+              const formattedTotal = formatCurrency(total, currency);
+              const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
+              
+              return (
+                <Card key={currency} className="p-6">
+                  <h3 className="text-lg font-bold text-gray-600 mb-2">{currency}</h3>
+                  <p className="text-xl font-semibold text-gray-800">
+                    {currencySymbol} {formattedTotal}
+                  </p>
+                </Card>
+              );
+            })}
         </div>
       ) : (
         /* Detailed View - Asset Breakdown */
