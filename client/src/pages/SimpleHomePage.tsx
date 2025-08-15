@@ -200,16 +200,18 @@ export default function SimpleHomePage() {
                 variant="outline"
                 onClick={() => setShowUserSettings(true)}
                 className="flex items-center gap-2"
+                data-testid="button-user-settings"
               >
                 <Settings size={16} />
                 설정
               </Button>
               <Button
                 onClick={() => setShowAdvancedTransactionForm(true)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                data-testid="button-advanced-transaction"
               >
                 <DollarSign size={16} />
-                고급 거래
+                새 거래
               </Button>
             </div>
           </div>
