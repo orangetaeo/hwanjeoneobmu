@@ -122,6 +122,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       // PostgreSQL 데이터 구조에 맞게 변환
       const formData: any = {};
       
+      console.log('Raw editData received:', editData);
+      
       if (type === 'cash') {
         formData.currency = editData.currency;
         formData.balance = parseFloat(editData.balance) || 0;
@@ -134,42 +136,48 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           denominations: denominations
         });
       } else if (type === 'korean-account' || type === 'vietnamese-account') {
-        formData.bankName = editData.bankName || editData.metadata?.bank || editData.name || '';
-        formData.accountNumber = editData.accountNumber || editData.metadata?.accountNumber || '';
-        formData.accountHolder = editData.accountHolder || editData.metadata?.accountHolder || '';
+        // 데이터베이스에서는 metadata에 저장됨
+        formData.bankName = editData.metadata?.bank || editData.bankName || editData.name?.split(' ')[0] || '';
+        formData.accountNumber = editData.metadata?.accountNumber || editData.accountNumber || '';
+        formData.accountHolder = editData.metadata?.accountHolder || editData.accountHolder || '';
         formData.balance = parseFloat(editData.balance) || 0;
         
         console.log('Account edit data processed:', {
           bankName: formData.bankName,
           accountNumber: formData.accountNumber,
           accountHolder: formData.accountHolder,
-          balance: formData.balance
+          balance: formData.balance,
+          rawMetadata: editData.metadata
         });
       } else if (type === 'exchange') {
-        formData.exchangeName = editData.exchangeName || editData.metadata?.exchange || editData.name || '';
-        formData.coinName = editData.coinName || editData.currency || '';
-        formData.quantity = editData.quantity || parseFloat(editData.balance) || 0;
+        // 데이터베이스에서는 metadata.exchange에 거래소명이 저장됨
+        formData.exchangeName = editData.metadata?.exchange || editData.exchangeName || editData.name?.split(' ')[0] || '';
+        formData.coinName = editData.currency || editData.coinName || editData.name?.split(' ')[1] || '';
+        formData.quantity = parseFloat(editData.balance) || editData.quantity || 0;
         formData.currency = editData.currency || 'USDT';
         
         console.log('Exchange edit data processed:', {
           exchangeName: formData.exchangeName,
           coinName: formData.coinName,
           quantity: formData.quantity,
-          currency: formData.currency
+          currency: formData.currency,
+          rawMetadata: editData.metadata
         });
       } else if (type === 'binance') {
-        formData.coinName = editData.coinName || editData.currency || '';
-        formData.quantity = editData.quantity || parseFloat(editData.balance) || 0;
+        // 데이터베이스에서는 metadata.exchange에 "Binance"가 저장됨
+        formData.coinName = editData.currency || editData.coinName || editData.name?.split(' ')[1] || '';
+        formData.quantity = parseFloat(editData.balance) || editData.quantity || 0;
         formData.currency = editData.currency || 'USDT';
         
         console.log('Binance edit data processed:', {
           coinName: formData.coinName,
           quantity: formData.quantity,
-          currency: formData.currency
+          currency: formData.currency,
+          rawMetadata: editData.metadata
         });
       }
       
-      console.log('Edit form data:', formData); // 디버깅용
+      console.log('Final edit form data:', formData);
       return formData;
     }
     
