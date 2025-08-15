@@ -291,7 +291,7 @@ export class DatabaseStorage implements IStorage {
   async initializeTestData(userId: string): Promise<void> {
     // Check if data already exists
     const existingAssets = await this.getAssets(userId);
-    if (existingAssets.length > 5) { // Allow some existing data but ensure we have comprehensive test data
+    if (existingAssets.length > 0) {
       return; // Data already exists
     }
 
