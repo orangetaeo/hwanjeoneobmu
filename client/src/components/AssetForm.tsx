@@ -160,7 +160,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900">지폐 구성</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {Object.entries(denominations).map(([denom, count]) => {
+                    {Object.entries(denominations)
+                      .sort(([a], [b]) => {
+                        // Remove commas and convert to number for sorting
+                        const numA = parseFloat(a.replace(/,/g, ''));
+                        const numB = parseFloat(b.replace(/,/g, ''));
+                        return numB - numA; // Sort descending (largest first)
+                      })
+                      .map(([denom, count]) => {
                       const countValue = typeof count === 'number' ? count : 0;
                       return (
                         <div key={denom} className="space-y-2">
