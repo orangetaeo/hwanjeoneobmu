@@ -129,7 +129,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                         const numB = parseFloat(b.replace(/,/g, ''));
                         return numB - numA; // Sort descending (largest first)
                       })
-                      .filter(([denom, count]) => count > 0) // Only show denominations with count > 0
+                      .filter(([denom, count]) => Number(count) > 0) // Only show denominations with count > 0
                       .map(([denom, count]) => (
                       <div key={denom} className="flex justify-between text-sm">
                         <span className="text-gray-600">
@@ -137,7 +137,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                            asset.currency === 'USD' ? `$${denom}` :
                            asset.currency === 'VND' ? `${formatCurrency(denom, 'VND')}₫` : denom}
                         </span>
-                        <span className="font-medium">{count}장</span>
+                        <span className="font-medium">{Number(count)}장</span>
                       </div>
                     ))}
                   </div>
