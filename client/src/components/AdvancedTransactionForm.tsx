@@ -80,18 +80,14 @@ export default function AdvancedTransactionForm({
       }
     }
     
-    // 은행→거래소 송금에서 거래소 변경 시 은행 계좌 유효성 검사
+    // 은행→거래소 송금에서 거래소 변경 시 수수료 설정
     if (field === 'exchangeName' && activeTab === 'bank_to_exchange') {
-      // 빗썸을 선택했는데 현재 선택된 계좌가 국민은행이 아닌 경우 초기화
-      if (value === 'Bithumb' && formData.fromAsset && !formData.fromAsset.includes('국민은행')) {
-        setFormData(prev => ({ ...prev, fromAsset: '' }));
-      }
-      // 빗썸이 아닌 거래소를 선택했는데 수수료가 설정되어 있지 않은 경우 초기화
-      if (value !== 'Bithumb') {
-        setFormData(prev => ({ ...prev, fees: '' }));
-      } else {
+      if (value === 'Bithumb') {
         // 빗썸 선택 시 수수료 0으로 설정
         setFormData(prev => ({ ...prev, fees: '0' }));
+      } else {
+        // 빗썸이 아닌 거래소 선택 시 수수료 초기화 (수동 입력)
+        setFormData(prev => ({ ...prev, fees: '' }));
       }
     }
   };
@@ -118,9 +114,19 @@ export default function AdvancedTransactionForm({
     e.preventDefault();
     
     // 거래 타입별 검증
-    if (activeTab === 'bank_to_exchange' && formData.exchangeName === 'Bithumb') {
-      if (!formData.fromAsset.includes('국민은행')) {
+    if (activeTab === 'bank_to_exchange') {
+      if (!formData.fromAsset) {
+        alert('은행 계좌를 선택해주세요.');
+        return;
+      }
+      
+      if (formData.exchangeName === 'Bithumb' && !formData.fromAsset.includes('국민은행')) {
         alert('빗썸으로는 국민은행에서만 송금이 가능합니다.');
+        return;
+      }
+      
+      if (!formData.fromAmount || parseCommaFormattedNumber(formData.fromAmount) <= 0) {
+        alert('송금 금액을 입력해주세요.');
         return;
       }
     }
