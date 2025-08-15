@@ -9,8 +9,9 @@ import {
   ChartLine,
   Plus
 } from 'lucide-react';
-import { collection, onSnapshot, doc, addDoc, query, orderBy, limit, setDoc, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+// Firebase는 실시간 환율 전용으로 제한 - 데이터 저장은 PostgreSQL 사용
+// import { collection, onSnapshot, doc, addDoc, query, orderBy, limit, setDoc, getDocs } from 'firebase/firestore';
+// import { db } from '@/lib/firebase';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import Dashboard from '@/components/Dashboard';

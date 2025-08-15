@@ -4,9 +4,17 @@ This is a full-stack asset management and exchange tracking application built wi
 
 ## Recent Major Updates (August 15, 2025)
 
-### Version: "환전상 시스템 v1.2 - 네트워크 선택 & 데이터 정리" (2025-08-15 10:00 AM)
+### Version: "환전상 시스템 v1.3 - Firebase 보류 & PostgreSQL 주력" (2025-08-15 10:10 AM)
 
-### Bug Fixes & System Stabilization
+### Firebase to PostgreSQL Migration & System Optimization
+- **Firebase Isolation**: Limited Firebase usage to real-time exchange rates only
+- **PostgreSQL Primary**: Migrated all data storage (transactions, assets, user settings) to PostgreSQL
+- **Authentication Simplification**: Replaced Firebase Auth with PostgreSQL-based dev authentication
+- **RateManager Rewrite**: Completely rewrote RateManager component to use PostgreSQL API instead of Firestore
+- **Security Enhancement**: Added environment variable support for Firebase config (fallback to hardcoded for dev)
+- **Data Consistency**: Eliminated dual storage system reducing complexity and potential sync issues
+
+### Bug Fixes & System Stabilization  
 - **Plus Icon Import Error**: Fixed missing Plus icon import in HomePage.tsx causing web console errors
 - **Database Data Cleanup**: Removed inconsistent asset type data ('exchange_asset' → 'account', 'exchange', 'binance')
 - **Test Data Initialization**: Improved automatic test data creation with proper asset types and user settings

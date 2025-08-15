@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
-import { User, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
+// PostgreSQL 기반 인증 시스템 (Firebase 보류)
 export function useFirebaseAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // For development - create a mock user immediately to bypass Firebase auth issues
-    const mockUser = {
-      uid: 'demo-user-' + Date.now(),
-      email: 'demo@example.com',
-      displayName: 'Demo User'
-    } as User;
+    // PostgreSQL 기반 개발용 사용자
+    const postgresUser = {
+      uid: 'dev-user-1', // PostgreSQL과 일치하는 사용자 ID
+      email: 'dev@example.com',
+      displayName: '개발 사용자'
+    };
     
-    setUser(mockUser);
+    setUser(postgresUser);
     setLoading(false);
   }, []);
 
