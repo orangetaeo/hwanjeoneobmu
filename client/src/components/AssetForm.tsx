@@ -42,7 +42,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     if (editData?.denominations) return editData.denominations;
     
     const defaultDenoms: Record<string, Record<string, number>> = {
-      'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0, '500': 0, '100': 0, '50': 0, '10': 0, '5': 0, '1': 0 },
+      'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
       'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
       'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
     };
