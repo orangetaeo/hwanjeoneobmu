@@ -128,7 +128,7 @@ export default function Dashboard({
       }
     });
     
-    console.log('Asset Summary:', summary); // 디버깅용
+
     return summary;
   }, [cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets]);
 

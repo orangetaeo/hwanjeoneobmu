@@ -4,7 +4,14 @@ This is a full-stack asset management and exchange tracking application built wi
 
 ## Recent Major Updates (August 15, 2025)
 
-### Version: "환전상 시스템 v1.4 - 테스트 데이터 초기화 완료" (2025-08-15 10:30 AM)
+### Version: "환전상 시스템 v1.5 - 표시 포맷팅 최적화 완료" (2025-08-15 10:46 AM)
+
+### 사용자 친화적 표시 포맷팅 시스템 구축
+- **통화별 소숫점 최적화**: KRW/VND/USD는 정수 표시, 암호화폐는 소숫점 2자리 고정
+- **텍스트 오버플로우 방지**: 모든 자산 카드에 overflow-hidden과 truncate 적용으로 레이아웃 깨짐 방지
+- **통화 기호 완성**: USDT(₮), BTC(₿), ETH(Ξ) 포함한 전체 암호화폐 기호 지원
+- **레이아웃 최적화**: Flexbox 구조로 편집/삭제 버튼과 텍스트 영역 완전 분리
+- **Dashboard 일관성**: AssetManager와 Dashboard 전반에 걸친 동일한 포맷팅 규칙 적용
 
 ### 테스트 데이터 초기화 시스템 구축
 - **Clean State Initialization**: 모든 자동 테스트 데이터 생성 로직 제거
