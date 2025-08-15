@@ -167,20 +167,25 @@ export default function HomePage() {
         break;
       case 'editAsset':
       case 'editAccount':
+      case 'editCashAsset':
+      case 'editKoreanAccount':
+      case 'editVietnameseAccount':
+      case 'editExchangeAsset':
+      case 'editBinanceAsset':
         if (data) {
           // Determine asset type based on data structure
-          if (data.denominations) {
+          if (data.denominations || type === 'editCashAsset') {
             setAssetFormType('cash');
             setActiveAssetTab('cash');
-          } else if (data.exchangeName) {
+          } else if (data.exchangeName || type === 'editExchangeAsset') {
             setAssetFormType('exchange');
             setActiveAssetTab('exchanges');
-          } else if (data.coinName && !data.exchangeName) {
+          } else if ((data.coinName && !data.exchangeName) || type === 'editBinanceAsset') {
             setAssetFormType('binance');
             setActiveAssetTab('binance');
-          } else if (data.bankName) {
+          } else if (data.bankName || type === 'editKoreanAccount' || type === 'editVietnameseAccount') {
             // Check if it's Korean or Vietnamese account based on existing data
-            const isKorean = koreanAccounts.find(acc => acc.id === data.id);
+            const isKorean = koreanAccounts.find(acc => acc.id === data.id) || type === 'editKoreanAccount';
 
             if (isKorean) {
               setAssetFormType('korean-account');
@@ -196,6 +201,11 @@ export default function HomePage() {
         break;
       case 'deleteAsset':
       case 'deleteAccount':
+      case 'deleteCashAsset':
+      case 'deleteKoreanAccount':
+      case 'deleteVietnameseAccount':
+      case 'deleteExchangeAsset':
+      case 'deleteBinanceAsset':
         setModalInfo({
           title: '자산 삭제',
           message: '삭제 사유를 필수로 입력해주세요:',
