@@ -258,9 +258,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       return (
                         <div key={denom} className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
                           <label className="text-xs font-semibold text-gray-800 block text-center">
-                            {form.watch('currency') === 'KRW' ? `${denom.toLocaleString()}원권` :
+                            {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
                              form.watch('currency') === 'USD' ? `$${denom}` :
-                             `${denom.toLocaleString()}₫`}
+                             `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}
                           </label>
                           <div className="flex items-center space-x-2">
                             <Button
