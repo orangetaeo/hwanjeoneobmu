@@ -146,14 +146,27 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           balance: formData.balance
         });
       } else if (type === 'exchange') {
-        formData.exchangeName = editData.metadata?.exchange || '';
-        formData.coinName = editData.currency || '';
-        formData.quantity = parseFloat(editData.balance) || 0;
+        formData.exchangeName = editData.exchangeName || editData.metadata?.exchange || editData.name || '';
+        formData.coinName = editData.coinName || editData.currency || '';
+        formData.quantity = editData.quantity || parseFloat(editData.balance) || 0;
         formData.currency = editData.currency || 'USDT';
+        
+        console.log('Exchange edit data processed:', {
+          exchangeName: formData.exchangeName,
+          coinName: formData.coinName,
+          quantity: formData.quantity,
+          currency: formData.currency
+        });
       } else if (type === 'binance') {
-        formData.coinName = editData.currency || '';
-        formData.quantity = parseFloat(editData.balance) || 0;
+        formData.coinName = editData.coinName || editData.currency || '';
+        formData.quantity = editData.quantity || parseFloat(editData.balance) || 0;
         formData.currency = editData.currency || 'USDT';
+        
+        console.log('Binance edit data processed:', {
+          coinName: formData.coinName,
+          quantity: formData.quantity,
+          currency: formData.currency
+        });
       }
       
       console.log('Edit form data:', formData); // 디버깅용
