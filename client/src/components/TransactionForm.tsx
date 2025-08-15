@@ -23,7 +23,7 @@ export default function TransactionForm({
   const [givenAsset, setGivenAsset] = useState('VND 현금');
   const [receivedAmount, setReceivedAmount] = useState('');
   
-  // VND 지폐 구성 상태
+  // VND 지폐 구성 상태 (고액권부터 정렬)
   const [vndDenominations, setVndDenominations] = useState({
     '500000': 0,
     '200000': 0, 
@@ -32,6 +32,30 @@ export default function TransactionForm({
     '20000': 0,
     '10000': 0
   });
+
+  // 고액권 우선 자동 계산 함수
+  const calculateOptimalDenominations = (amount: number) => {
+    const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000'];
+    const newDenoms = { ...vndDenominations };
+    let remaining = amount;
+
+    // 모든 지폐 수량 초기화
+    denomOrder.forEach(denom => {
+      newDenoms[denom] = 0;
+    });
+
+    // 고액권부터 순서대로 계산
+    denomOrder.forEach(denom => {
+      const denomValue = parseInt(denom);
+      if (remaining >= denomValue) {
+        const count = Math.floor(remaining / denomValue);
+        newDenoms[denom] = count;
+        remaining = remaining % denomValue;
+      }
+    });
+
+    setVndDenominations(newDenoms);
+  };
 
   // VND 지폐별 수량 업데이트
   const updateVndDenomination = (denom: string, count: number) => {
@@ -93,7 +117,16 @@ export default function TransactionForm({
                     type="text"
                     placeholder="0"
                     value={receivedAmount}
-                    onChange={(e) => setReceivedAmount(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setReceivedAmount(value);
+                      
+                      // 숫자가 입력되고 내준 자산이 VND 현금일 때 자동 계산
+                      const numericValue = parseFloat(value.replace(/,/g, ''));
+                      if (!isNaN(numericValue) && numericValue > 0 && givenAsset === 'VND 현금') {
+                        calculateOptimalDenominations(numericValue);
+                      }
+                    }}
                   />
                 </div>
 
@@ -111,7 +144,17 @@ export default function TransactionForm({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>자산 선택</Label>
-                  <Select value={givenAsset} onValueChange={setGivenAsset}>
+                  <Select value={givenAsset} onValueChange={(value) => {
+                    setGivenAsset(value);
+                    
+                    // VND 현금 선택 시 자동 계산
+                    if (value === 'VND 현금' && receivedAmount) {
+                      const numericValue = parseFloat(receivedAmount.replace(/,/g, ''));
+                      if (!isNaN(numericValue) && numericValue > 0) {
+                        calculateOptimalDenominations(numericValue);
+                      }
+                    }
+                  }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -126,9 +169,11 @@ export default function TransactionForm({
                   </Select>
                 </div>
 
-                {/* VND 지폐별 입력 */}
+                {/* VND 지폐별 입력 (고액권부터) */}
                 <div className="space-y-3">
-                  {Object.entries(vndDenominations).map(([denom, count]) => (
+                  {Object.entries(vndDenominations)
+                    .sort(([a], [b]) => parseInt(b) - parseInt(a)) // 고액권부터 정렬
+                    .map(([denom, count]) => (
                     <div key={denom} className="flex items-center justify-between bg-white p-3 rounded border">
                       <span className="text-sm font-medium">
                         {parseInt(denom).toLocaleString()} ₫
