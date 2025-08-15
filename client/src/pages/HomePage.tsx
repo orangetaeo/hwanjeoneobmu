@@ -477,7 +477,7 @@ export default function HomePage() {
                       data-testid="desktop-nav-rates"
                     >
                       <TrendingUp className="mr-3" size={18} />
-                      <span>실시간 환율</span>
+                      <span>환율/시세 관리</span>
                     </Button>
                   </li>
                   <li>
