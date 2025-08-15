@@ -19,6 +19,7 @@ import RateManager from '@/components/RateManager';
 import TransactionHistory from '@/components/TransactionHistory';
 import AssetForm from '@/components/AssetForm';
 import AdvancedTransactionForm from '@/components/AdvancedTransactionForm';
+import UserSettingsForm from '@/components/UserSettingsForm';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,7 @@ export default function HomePage() {
   const [editingAsset, setEditingAsset] = useState(null);
   const [activeAssetTab, setActiveAssetTab] = useState('cash');
   const [showAdvancedTransactionForm, setShowAdvancedTransactionForm] = useState(false);
+  const [showUserSettings, setShowUserSettings] = useState(false);
 
   // Initialize with sample data for development and save to localStorage
   useEffect(() => {
@@ -647,7 +649,12 @@ export default function HomePage() {
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-sm text-gray-600">실시간 연동</span>
               </div>
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowUserSettings(true)}
+                data-testid="header-settings"
+              >
                 <Settings size={18} />
               </Button>
             </div>
@@ -771,6 +778,17 @@ export default function HomePage() {
                       <span>거래 내역</span>
                     </Button>
                   </li>
+                  <li>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={() => setShowUserSettings(true)}
+                      data-testid="desktop-nav-settings"
+                    >
+                      <Settings className="mr-3" size={18} />
+                      <span>거래 설정</span>
+                    </Button>
+                  </li>
                 </ul>
               </nav>
             </Card>
@@ -843,6 +861,25 @@ export default function HomePage() {
                       allAssets={allAssetsForTransaction}
                       onTransactionSuccess={handleAdvancedTransactionSuccess}
                       onCancel={() => setShowAdvancedTransactionForm(false)}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : showUserSettings ? (
+              <>
+                {/* User Settings Modal Backdrop */}
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                  onClick={(e) => {
+                    // Close modal if clicking on backdrop
+                    if (e.target === e.currentTarget) {
+                      setShowUserSettings(false);
+                    }
+                  }}
+                >
+                  <div className="w-full max-w-md">
+                    <UserSettingsForm
+                      onClose={() => setShowUserSettings(false)}
                     />
                   </div>
                 </div>

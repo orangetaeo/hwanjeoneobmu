@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, Calculator, Clock, TrendingUp } from 'lucide-react';
+import { ArrowRight, Calculator, Clock, TrendingUp, Settings } from 'lucide-react';
 import { formatInputWithCommas, parseCommaFormattedNumber } from '@/utils/helpers';
 import { Asset, Transaction } from '@/types';
+import { useUserSettings } from '@/hooks/useUserSettings';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface AdvancedTransactionFormProps {
   allAssets: Asset[];
@@ -36,8 +39,36 @@ export default function AdvancedTransactionForm({
     p2pPlatform: ''
   });
 
+  const { data: userSettings } = useUserSettings();
+  const queryClient = useQueryClient();
+  
+  const createTransactionMutation = useMutation({
+    mutationFn: async (transactionData: any) => {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactionData),
+      });
+      if (!response.ok) throw new Error('Failed to create transaction');
+      return response.json();
+    },
+    onSuccess: (transaction) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+      onTransactionSuccess(transaction);
+    },
+  });
+
   const handleFormDataChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // 자동 수수료 계산
+    if (field === 'toAmount' && activeTab === 'exchange_purchase' && formData.exchangeName === 'Bithumb') {
+      const toAmount = parseCommaFormattedNumber(value);
+      const feeRate = parseFloat((userSettings as any)?.bithumbFeeRate || '0.0004');
+      const calculatedFees = toAmount * feeRate;
+      setFormData(prev => ({ ...prev, fees: calculatedFees.toString() }));
+    }
   };
 
   const calculateToAmount = () => {
@@ -61,27 +92,33 @@ export default function AdvancedTransactionForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const transaction: Transaction = {
-      id: Date.now().toString(),
-      type: activeTab as any,
+    // 거래 타입별 검증
+    if (activeTab === 'bank_to_exchange' && formData.exchangeName === 'Bithumb') {
+      if (!formData.fromAsset.includes('국민은행')) {
+        alert('빗썸으로는 국민은행에서만 송금이 가능합니다.');
+        return;
+      }
+    }
+    
+    const transactionData = {
+      type: activeTab,
       fromAssetName: formData.fromAsset,
-      toAssetName: formData.toAsset,
-      fromAmount: parseCommaFormattedNumber(formData.fromAmount),
-      toAmount: parseCommaFormattedNumber(formData.toAmount),
-      rate: parseCommaFormattedNumber(formData.rate),
-      customPrice: formData.customPrice ? parseCommaFormattedNumber(formData.customPrice) : undefined,
-      marketPrice: formData.marketPrice ? parseCommaFormattedNumber(formData.marketPrice) : undefined,
-      fees: formData.fees ? parseCommaFormattedNumber(formData.fees) : 0,
-      profit: 0, // 계산 필요
-      memo: formData.memo,
+      toAssetName: formData.toAsset || `${formData.exchangeName} KRW`,
+      fromAmount: parseCommaFormattedNumber(formData.fromAmount).toString(),
+      toAmount: parseCommaFormattedNumber(formData.toAmount).toString(),
+      rate: parseCommaFormattedNumber(formData.rate).toString(),
+      customPrice: formData.customPrice ? parseCommaFormattedNumber(formData.customPrice).toString() : null,
+      marketPrice: formData.marketPrice ? parseCommaFormattedNumber(formData.marketPrice).toString() : null,
+      fees: formData.fees ? parseCommaFormattedNumber(formData.fees).toString() : '0',
+      profit: '0',
+      memo: formData.memo || null,
       metadata: {
         exchangeName: formData.exchangeName,
         p2pPlatform: formData.p2pPlatform
-      },
-      timestamp: new Date()
+      }
     };
     
-    onTransactionSuccess(transaction);
+    createTransactionMutation.mutate(transactionData);
   };
 
   const getFormTitle = () => {
@@ -133,11 +170,18 @@ export default function AdvancedTransactionForm({
                         <SelectValue placeholder="은행 계좌를 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
-                        {allAssets.filter(asset => asset.type === 'account').map(asset => (
-                          <SelectItem key={asset.assetId} value={asset.displayName}>
-                            {asset.displayName} - ₩{asset.balance?.toLocaleString()}
-                          </SelectItem>
-                        ))}
+                        {/* 빗썸 선택 시 국민은행만 표시, 아니면 모든 은행 계좌 표시 */}
+                        {allAssets
+                          .filter(asset => asset.type === 'account')
+                          .filter(asset => 
+                            formData.exchangeName !== 'Bithumb' || 
+                            asset.displayName?.includes('국민은행')
+                          )
+                          .map(asset => (
+                            <SelectItem key={asset.assetId || asset.id} value={asset.displayName || asset.name || ''}>
+                              {asset.displayName || asset.name} - ₩{asset.balance?.toLocaleString()}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -176,12 +220,18 @@ export default function AdvancedTransactionForm({
 
                   <div className="space-y-2">
                     <Label>수수료 (KRW)</Label>
-                    <Input
-                      type="text"
-                      placeholder="0"
-                      value={formatInputWithCommas(formData.fees)}
-                      onChange={(e) => handleFormDataChange('fees', parseCommaFormattedNumber(e.target.value).toString())}
-                    />
+                    {formData.exchangeName === 'Bithumb' ? (
+                      <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                        빗썸 송금 수수료: 무료
+                      </div>
+                    ) : (
+                      <Input
+                        type="text"
+                        placeholder="0"
+                        value={formatInputWithCommas(formData.fees)}
+                        onChange={(e) => handleFormDataChange('fees', parseCommaFormattedNumber(e.target.value).toString())}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -285,13 +335,31 @@ export default function AdvancedTransactionForm({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>거래 수수료</Label>
-                    <Input
-                      type="text"
-                      placeholder="0"
-                      value={formatInputWithCommas(formData.fees)}
-                      onChange={(e) => handleFormDataChange('fees', parseCommaFormattedNumber(e.target.value).toString())}
-                    />
+                    <Label>거래 수수료 ({formData.exchangeName === 'Bithumb' ? (userSettings as any)?.bithumbFeeRate ? (parseFloat((userSettings as any).bithumbFeeRate) * 100).toFixed(2) + '%' : '0.04%' : '수동 입력'})</Label>
+                    {formData.exchangeName === 'Bithumb' && formData.fromAmount && formData.customPrice ? (
+                      <div className="space-y-2">
+                        <Input
+                          type="text"
+                          placeholder="자동 계산됨"
+                          value={formatInputWithCommas(
+                            ((parseCommaFormattedNumber(formData.fromAmount) / parseCommaFormattedNumber(formData.customPrice)) * 
+                             parseFloat((userSettings as any)?.bithumbFeeRate || '0.0004')).toString()
+                          )}
+                          readOnly
+                          className="bg-gray-50"
+                        />
+                        <div className="text-xs text-gray-500">
+                          빗썸 등급: {(userSettings as any)?.bithumbGrade || 'White'} | 현재 수수료율: {(userSettings as any)?.bithumbFeeRate ? (parseFloat((userSettings as any).bithumbFeeRate) * 100).toFixed(2) + '%' : '0.04%'}
+                        </div>
+                      </div>
+                    ) : (
+                      <Input
+                        type="text"
+                        placeholder="0"
+                        value={formatInputWithCommas(formData.fees)}
+                        onChange={(e) => handleFormDataChange('fees', parseCommaFormattedNumber(e.target.value).toString())}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

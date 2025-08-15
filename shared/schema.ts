@@ -56,6 +56,17 @@ export const rates = pgTable("rates", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// 사용자 설정 테이블
+export const userSettings = pgTable("user_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  bithumbFeeRate: decimal("bithumb_fee_rate", { precision: 5, scale: 4 }).default("0.0004"), // 0.04%
+  bithumbGrade: text("bithumb_grade").default("white"), // 'white', 'gold', 'platinum' 등
+  defaultFeeRates: jsonb("default_fee_rates"), // 각 거래소별 기본 수수료
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -77,6 +88,12 @@ export const insertRateSchema = createInsertSchema(rates).omit({
   timestamp: true,
 });
 
+export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
@@ -85,3 +102,5 @@ export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
 export type Rate = typeof rates.$inferSelect;
 export type InsertRate = z.infer<typeof insertRateSchema>;
+export type UserSettings = typeof userSettings.$inferSelect;
+export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;

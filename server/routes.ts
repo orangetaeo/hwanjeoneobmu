@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
-import { insertTransactionSchema, insertAssetSchema, insertRateSchema } from '@shared/schema';
+import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema } from '@shared/schema';
 
 const router = Router();
 
@@ -23,7 +23,7 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunctio
 router.post('/transactions', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const validatedData = insertTransactionSchema.parse(req.body);
-    const transaction = await storage.createTransaction(req.user!.id, validatedData);
+    const transaction = await storage.createTransactionWithAssetMovement(req.user!.id, validatedData);
     res.json(transaction);
   } catch (error) {
     console.error('Error creating transaction:', error);
@@ -136,6 +136,28 @@ router.get('/rates/:fromCurrency/:toCurrency/latest', requireAuth, async (req: A
   } catch (error) {
     console.error('Error fetching latest rate:', error);
     res.status(500).json({ error: 'Failed to fetch latest rate' });
+  }
+});
+
+// User Settings Routes
+router.get('/settings', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const settings = await storage.getUserSettings(req.user!.id);
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+router.put('/settings', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const validatedData = insertUserSettingsSchema.partial().parse(req.body);
+    const settings = await storage.updateUserSettings(req.user!.id, validatedData);
+    res.json(settings);
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(400).json({ error: 'Invalid settings data' });
   }
 });
 
