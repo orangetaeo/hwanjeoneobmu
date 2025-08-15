@@ -166,9 +166,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
 
   const handleFormSubmit = (data: any) => {
     try {
+      console.log('Form submit started, data:', data);
+      console.log('Current denominations state:', denominations);
+      
       if (type === 'cash') {
         // 수정 시에는 새로운 값으로 대체 (기존 + 추가가 아님)
         const finalDenominations = { ...denominations };
+        
+        console.log('Final denominations for submission:', finalDenominations);
         
         // Validate denominations object
         if (typeof finalDenominations !== 'object' || finalDenominations === null) {
@@ -188,6 +193,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           
           return total + (denomValue * countValue);
         }, 0);
+        
+        console.log('Calculated balance:', data.balance);
         
         // Ensure currency is set
         if (!data.currency) {
@@ -212,6 +219,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         }
       }
       
+      console.log('Final data being submitted:', data);
       onSubmit(data);
     } catch (error) {
       console.error('Error in form submission:', error);
@@ -220,10 +228,15 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   };
 
   const updateDenomination = (denom: string, value: number) => {
-    setDenominations((prev: Record<string, number>) => ({
-      ...prev,
-      [denom]: Math.max(0, value)
-    }));
+    console.log(`Updating denomination ${denom} to ${value}`);
+    setDenominations((prev: Record<string, number>) => {
+      const newDenominations = {
+        ...prev,
+        [denom]: Math.max(0, value)
+      };
+      console.log('New denominations state:', newDenominations);
+      return newDenominations;
+    });
   };
 
   const getTitle = () => {
