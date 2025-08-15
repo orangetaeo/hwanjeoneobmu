@@ -1,0 +1,1830 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, onSnapshot, doc, runTransaction, addDoc, query, orderBy, limit, setDoc, getDoc, deleteDoc, getDocs, serverTimestamp, writeBatch, updateDoc, where, Timestamp } from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+
+// --- Firebase Config ---
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIza...", authDomain: "...", projectId: "..." };
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// --- Helper Functions ---
+const formatNumberWithCommas = (value, decimalPlaces) => {
+    if (value === null || value === undefined || value === '') return '';
+    const num = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(num)) return '';
+    
+    const fixedValue = decimalPlaces !== undefined ? num.toFixed(decimalPlaces) : num.toString();
+    let [integer, decimal] = fixedValue.split('.');
+    integer = integer.replace(/,/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return decimal !== undefined ? `${integer}.${decimal}` : integer;
+};
+
+const parseNumberWithCommas = (value) => {
+    if (typeof value !== 'string') return value;
+    const parsed = parseFloat(value.replace(/,/g, ''));
+    return isNaN(parsed) ? '' : parsed;
+};
+
+const handleNumericInput = (value, setter) => {
+    const sanitized = value.replace(/[^0-9]/g, '');
+    setter(sanitized);
+};
+
+const handleDecimalInput = (value, setter) => {
+    const sanitized = value.replace(/[^0-9.]/g, '');
+    const parts = sanitized.split('.');
+    if (parts.length > 2) {
+        setter(parts[0] + '.' + parts.slice(1).join(''));
+    } else {
+        setter(sanitized);
+    }
+};
+
+
+// --- Icons (SVG) ---
+const SaveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
+const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+const TrendingUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
+const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
+const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
+const DollarSignIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>;
+const AlertTriangleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+const ChevronDownIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 12 15 18 9"></polyline></svg>;
+const ListIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
+
+// --- Initial Data & Config ---
+const initialAssets = [
+    { name: 'KRW 현금', type: 'cash', currency: 'KRW', balance: 3540000, denominations: { '50000': 59, '10000': 59, '5000': 0, '1000': 0 } },
+    { name: 'USD 현금', type: 'cash', currency: 'USD', balance: 436, denominations: { '100': 2, '50': 1, '20': 3, '10': 8, '5': 3, '2': 0, '1': 31 } },
+    { name: 'VND 현금', type: 'cash', currency: 'VND', balance: 30790000, denominations: { '500000': 56, '200000': 10, '100000': 5, '50000': 4, '20000': 1, '10000': 7 } },
+];
+
+const CURRENCY_SYMBOLS = { KRW: '₩', USD: '$', VND: '₫', USDT: '₮' };
+
+const RATE_GROUPS = {
+    USD: [ { label: '100', denoms: ['100'] }, { label: '50', denoms: ['50'] }, { label: '20, 10', denoms: ['20', '10'] }, { label: '5, 2, 1', denoms: ['5', '2', '1'] }, ],
+    KRW: [ { label: '50,000', denoms: ['50000'] }, { label: '10,000', denoms: ['10000'] }, { label: '5,000, 1,000', denoms: ['5000', '1000'] }, ],
+    USDT: [ { label: 'USDT', denoms: ['USDT']} ]
+};
+
+// --- Reusable Modal Component ---
+function Modal({ title, message, children, onConfirm, onCancel, confirmDisabled, type = 'info' }) {
+    const Icon = {
+        'success': <CheckCircleIcon />,
+        'error': <AlertTriangleIcon />,
+        'confirm': <AlertTriangleIcon />,
+    }[type] || null;
+
+    const colorClasses = {
+        'success': 'text-green-500',
+        'error': 'text-red-500',
+        'confirm': 'text-yellow-500',
+        'info': 'text-blue-500',
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm transform transition-all">
+                <div className="flex flex-col items-center text-center">
+                    {Icon && <div className={`mb-4 ${colorClasses[type]}`}>{Icon}</div>}
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+                    {message && <p className="text-sm text-gray-600 mb-6">{message}</p>}
+                    {children}
+                    <div className="flex justify-center gap-4 w-full mt-6">
+                        {onConfirm && (
+                             <button onClick={onConfirm} disabled={confirmDisabled} className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-400">
+                                확인
+                            </button>
+                        )}
+                        <button onClick={onCancel} className={`w-full px-4 py-2 rounded-md ${onConfirm ? 'bg-gray-200 hover:bg-gray-300' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                           {onConfirm ? '취소' : '닫기'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+// --- Main App Component ---
+export default function App() {
+    const [user, setUser] = useState(null);
+    const [cashAssets, setCashAssets] = useState([]);
+    const [koreanAccounts, setKoreanAccounts] = useState([]);
+    const [vietnameseAccounts, setVietnameseAccounts] = useState([]);
+    const [exchangeAssets, setExchangeAssets] = useState([]);
+    const [binanceAssets, setBinanceAssets] = useState([]);
+    const [transactions, setTransactions] = useState([]);
+    const [transactionRates, setTransactionRates] = useState({});
+    const [goldsmithRates, setGoldsmithRates] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [currentView, setCurrentView] = useState('dashboard');
+    const [modalInfo, setModalInfo] = useState(null);
+    const [realTimeRates, setRealTimeRates] = useState({});
+    const [cryptoRates, setCryptoRates] = useState({});
+    const [isFetchingRates, setIsFetchingRates] = useState(true);
+
+    // Fetch Real-time Exchange Rates
+    useEffect(() => {
+        const fetchAllRates = async () => {
+            setIsFetchingRates(true);
+            try {
+                // Fetch Fiat Rates
+                const fiatResponse = await fetch('https://open.er-api.com/v6/latest/USD');
+                if (!fiatResponse.ok) throw new Error('Fiat API request failed');
+                const fiatData = await fiatResponse.json();
+                const rates = fiatData.rates;
+                setRealTimeRates({
+                    'KRW-USD': 1 / rates.KRW, 'USD-KRW': rates.KRW,
+                    'KRW-VND': rates.VND / rates.KRW, 'VND-KRW': rates.KRW / rates.VND,
+                    'USD-VND': rates.VND, 'VND-USD': 1 / rates.VND,
+                    'USDT-USD': 1, 'USD-USDT': 1,
+                    'USDT-KRW': rates.KRW, 'KRW-USDT': 1 / rates.KRW,
+                    'USDT-VND': rates.VND, 'VND-USDT': 1 / rates.VND,
+                });
+
+                // Fetch Crypto Rates
+                const processedCryptoRates = {};
+                // Bithumb for KRW prices
+                const bithumbResponse = await fetch('https://api.bithumb.com/public/ticker/ALL_KRW');
+                const bithumbData = await bithumbResponse.json();
+                if (bithumbData.status === "0000") {
+                    for (const coin in bithumbData.data) {
+                        if (coin === 'date') continue;
+                        processedCryptoRates[coin] = { ...processedCryptoRates[coin], KRW: parseFloat(bithumbData.data[coin].closing_price) };
+                    }
+                }
+
+                // Binance for USDT prices
+                const binanceResponse = await fetch('https://api.binance.com/api/v3/ticker/price');
+                const binanceData = await binanceResponse.json();
+                binanceData.forEach(pair => {
+                    if (pair.symbol.endsWith('USDT')) {
+                        const coin = pair.symbol.replace('USDT', '');
+                        processedCryptoRates[coin] = { ...processedCryptoRates[coin], USDT: parseFloat(pair.price) };
+                    }
+                });
+                setCryptoRates(processedCryptoRates);
+
+            } catch (error) {
+                console.error("환율 API 호출 실패:", error);
+            } finally {
+                setIsFetchingRates(false);
+            }
+        };
+        fetchAllRates();
+    }, []);
+
+    // Firebase Authentication
+    useEffect(() => {
+        const authSubscription = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) setUser(currentUser);
+            else {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                    else await signInAnonymously(auth);
+                } catch (error) { console.error("Authentication Error:", error); }
+            }
+        });
+        return () => authSubscription();
+    }, []);
+    
+    // Data Loading & Initial Data Setup
+    useEffect(() => {
+        if (!user) return;
+        const uid = user.uid;
+        const dataPath = `artifacts/${appId}/users/${uid}`;
+
+        const setupInitialData = async () => {
+            const collectionsToSetup = {
+                'cash_assets': [
+                    { name: 'KRW 현금', type: 'cash', currency: 'KRW', balance: 3540000, denominations: { '50000': 59, '10000': 59, '5000': 0, '1000': 0 } },
+                    { name: 'USD 현금', type: 'cash', currency: 'USD', balance: 436, denominations: { '100': 2, '50': 1, '20': 3, '10': 8, '5': 3, '2': 0, '1': 31 } },
+                    { name: 'VND 현금', type: 'cash', currency: 'VND', balance: 30790000, denominations: { '500000': 56, '200000': 10, '100000': 5, '50000': 4, '20000': 1, '10000': 7 } },
+                ],
+                'korean_accounts': [],
+                'vietnamese_accounts': [ 
+                    { bankName: 'Shinhan Bank', accountNumber: '123-456', accountHolder: 'Test User', balance: 26684000 },
+                    { bankName: 'BIDV', accountNumber: '789-012', accountHolder: 'Test User', balance: 1200000 } 
+                ],
+                'exchange_assets': [ 
+                    { exchangeName: 'Bithumb', coinName: 'USDT', quantity: 2563.07363534, currency: 'USDT' }
+                ],
+                'binance_assets': [ 
+                    { coinName: 'USDT', quantity: 1.18, currency: 'USDT' }
+                ],
+            };
+
+            for (const [name, data] of Object.entries(collectionsToSetup)) {
+                const ref = collection(db, `${dataPath}/${name}`);
+                const snapshot = await getDocs(query(ref));
+                // Clear existing data before setting up new data
+                if (snapshot.empty) {
+                    for (const item of data) {
+                        await addDoc(ref, item);
+                    }
+                }
+            }
+
+            const ratesToSetup = {
+                'goldsmith_rates': { USD: { '100': 25500, '50': 25450, '20_10': 25400, '5_2_1': 25350 }, KRW: { '50000': 21.5, '10000': 21.4, '5000_1000': 21.3 } },
+                'transaction_rates': { USD: { '100_buy': 25400, '100_sell': 25500, '50_buy': 25350, '50_sell': 25450 }, KRW: { '50000_buy': 21.3, '50000_sell': 21.5, '10000_buy': 21.2, '10000_sell': 21.4 }, USDT: { 'USDT_buy': 0.99, 'USDT_sell': 1.01 } }
+            };
+
+            for (const [name, data] of Object.entries(ratesToSetup)) {
+                const ref = doc(db, `${dataPath}/rates`, name);
+                await setDoc(ref, data);
+            }
+        };
+
+        setupInitialData().then(() => {
+            const unsubscribers = [
+                onSnapshot(collection(db, `${dataPath}/cash_assets`), s => { setCashAssets(s.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }),
+                onSnapshot(collection(db, `${dataPath}/korean_accounts`), s => setKoreanAccounts(s.docs.map(d => ({ id: d.id, ...d.data()})))),
+                onSnapshot(collection(db, `${dataPath}/vietnamese_accounts`), s => setVietnameseAccounts(s.docs.map(d => ({ id: d.id, ...d.data()})))),
+                onSnapshot(collection(db, `${dataPath}/exchange_assets`), s => setExchangeAssets(s.docs.map(d => ({ id: d.id, ...d.data()})))),
+                onSnapshot(collection(db, `${dataPath}/binance_assets`), s => setBinanceAssets(s.docs.map(d => ({ id: d.id, ...d.data()})))),
+                onSnapshot(query(collection(db, `${dataPath}/transactions`), orderBy('timestamp', 'desc'), limit(20)), s => setTransactions(s.docs.map(d => ({ id: d.id, ...d.data() })))),
+                onSnapshot(doc(db, `${dataPath}/rates`, 'transaction_rates'), s => s.exists() && setTransactionRates(s.data())),
+                onSnapshot(doc(db, `${dataPath}/rates`, 'goldsmith_rates'), s => s.exists() && setGoldsmithRates(s.data())),
+            ];
+            return () => unsubscribers.forEach(unsub => unsub());
+        });
+    }, [user]);
+
+    const allAssetsForTransaction = useMemo(() => {
+        const formatAccount = (acc, type, currency) => ({ ...acc, type: 'account', assetId: `${type}_${acc.id}`, displayName: `${acc.bankName} (${acc.accountHolder})`, currency });
+        const formatCrypto = (asset, type) => ({ ...asset, type: 'crypto', assetId: `${type}_${asset.id}`, displayName: `${asset.exchangeName || '바이낸스'} (${asset.coinName})` });
+        
+        return [
+            ...cashAssets.map(a => ({...a, assetId: `cash_${a.id}`, displayName: a.name})),
+            ...koreanAccounts.map(a => formatAccount(a, 'korean_account', 'KRW')),
+            ...vietnameseAccounts.map(a => formatAccount(a, 'vietnamese_account', 'VND')),
+            ...exchangeAssets.map(a => formatCrypto(a, 'exchange_asset')),
+            ...binanceAssets.map(a => formatCrypto(a, 'binance_asset')),
+        ];
+    }, [cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets]);
+
+    if (loading) return <div className="flex justify-center items-center h-screen bg-gray-100"><div>로딩 중...</div></div>;
+
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans">
+            <div className="max-w-4xl mx-auto p-4">
+                {modalInfo && <Modal {...modalInfo} onCancel={() => setModalInfo(null)} />}
+                <header className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800">환전 관리</h1>
+                </header>
+                <nav className="flex flex-wrap justify-center bg-white rounded-lg shadow-sm p-2 mb-6 gap-2">
+                    <button onClick={() => setCurrentView('dashboard')} className={`px-4 py-2 rounded-md flex items-center gap-2 transition ${currentView === 'dashboard' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'}`}><HomeIcon /> 대시보드</button>
+                    <button onClick={() => setCurrentView('transaction')} className={`px-4 py-2 rounded-md flex items-center gap-2 transition ${currentView === 'transaction' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'}`}><TrendingUpIcon/> 새 거래</button>
+                    <button onClick={() => setCurrentView('assets')} className={`px-4 py-2 rounded-md flex items-center gap-2 transition ${currentView === 'assets' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'}`}><SettingsIcon/> 자산 관리</button>
+                    <button onClick={() => setCurrentView('rates')} className={`px-4 py-2 rounded-md flex items-center gap-2 transition ${currentView === 'rates' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'}`}><DollarSignIcon/> 환율/시세 관리</button>
+                </nav>
+                <main>
+                    {currentView === 'dashboard' && <Dashboard assets={{cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets}} transactions={transactions} realTimeRates={realTimeRates} cryptoRates={cryptoRates} isFetchingRates={isFetchingRates} />}
+                    {currentView === 'transaction' && <TransactionForm allAssets={allAssetsForTransaction} transactionRates={transactionRates} userId={user.uid} onTransactionSuccess={() => setCurrentView('dashboard')} setModalInfo={setModalInfo} />}
+                    {currentView === 'assets' && <AssetManager userId={user.uid} data={{cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets}} allAssetsForTransaction={allAssetsForTransaction} setModalInfo={setModalInfo} realTimeRates={realTimeRates} cryptoRates={cryptoRates} isFetchingRates={isFetchingRates} />}
+                    {currentView === 'rates' && <RateManager currentTransactionRates={transactionRates} currentGoldsmithRates={goldsmithRates} userId={user.uid} setModalInfo={setModalInfo} realTimeRates={realTimeRates} cryptoRates={cryptoRates} isFetchingRates={isFetchingRates} />}
+                </main>
+            </div>
+        </div>
+    );
+}
+
+// --- Total Asset Summary Component ---
+function TotalAssetSummary({ assets, realTimeRates, cryptoRates, isFetchingRates }) {
+    const totalAssets = useMemo(() => {
+        if (isFetchingRates || !realTimeRates['USD-KRW']) {
+            return { krw: 0, vnd: 0 };
+        }
+        const { cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets } = assets;
+        const all = [...cashAssets, ...koreanAccounts, ...vietnameseAccounts, ...exchangeAssets, ...binanceAssets];
+
+        let totalKrw = 0;
+        all.forEach(asset => {
+            const balance = asset.balance ?? asset.quantity ?? 0;
+            const currency = asset.currency;
+            const coinName = asset.coinName;
+
+            switch(currency) {
+                case 'KRW': 
+                    if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) { // Upbit KRW market
+                        totalKrw += (balance * cryptoRates[coinName].KRW);
+                    } else { // Fiat KRW
+                        totalKrw += balance;
+                    }
+                    break;
+                case 'VND': totalKrw += balance * (realTimeRates['VND-KRW'] || 0); break;
+                case 'USD': totalKrw += balance * (realTimeRates['USD-KRW'] || 0); break;
+                case 'USDT': 
+                     if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) { // Binance USDT market
+                        totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
+                    } else { // Fiat USDT
+                        totalKrw += balance * (realTimeRates['USDT-KRW'] || 0);
+                    }
+                    break;
+                default: 
+                    if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
+                        totalKrw += balance * cryptoRates[coinName].KRW;
+                    } else if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) {
+                        totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
+                    }
+                    break;
+            }
+        });
+
+        return {
+            krw: totalKrw,
+            vnd: totalKrw * (realTimeRates['KRW-VND'] || 0)
+        };
+    }, [assets, realTimeRates, cryptoRates, isFetchingRates]);
+
+    return (
+        <div className="bg-white p-4 rounded-lg shadow mb-6">
+            <h2 className="text-lg font-bold mb-2">총 자산 요약</h2>
+            {isFetchingRates ? <p>환율 정보 로딩 중...</p> : (
+                <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <p className="text-sm text-gray-500">원화 환산</p>
+                        <p className="text-2xl font-bold text-blue-600">{CURRENCY_SYMBOLS.KRW} {formatNumberWithCommas(Math.round(totalAssets.krw))}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">동화 환산</p>
+                        <p className="text-2xl font-bold text-green-600">{CURRENCY_SYMBOLS.VND} {formatNumberWithCommas(Math.round(totalAssets.vnd))}</p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+
+// --- Dashboard Component (Updated)---
+function Dashboard({ assets, transactions, realTimeRates, cryptoRates, isFetchingRates }) {
+    const { cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets } = assets;
+    const [simpleView, setSimpleView] = useState(true);
+
+    const assetSummary = useMemo(() => {
+        const summary = {};
+        cashAssets.forEach(a => summary[a.currency] = (summary[a.currency] || 0) + a.balance);
+        koreanAccounts.forEach(a => summary['KRW'] = (summary['KRW'] || 0) + a.balance);
+        vietnameseAccounts.forEach(a => summary['VND'] = (summary['VND'] || 0) + a.balance);
+        exchangeAssets.forEach(a => summary[a.coinName] = (summary[a.coinName] || 0) + a.quantity);
+        binanceAssets.forEach(a => summary[a.coinName] = (summary[a.coinName] || 0) + a.quantity);
+        return summary;
+    }, [assets]);
+
+
+    return (
+        <div className="space-y-6">
+            <TotalAssetSummary assets={assets} realTimeRates={realTimeRates} cryptoRates={cryptoRates} isFetchingRates={isFetchingRates} />
+            
+            <div className="flex justify-end">
+                <button onClick={() => setSimpleView(!simpleView)} className="text-sm bg-gray-200 px-3 py-1 rounded-md">
+                    {simpleView ? '자세히 보기' : '간단히 보기'}
+                </button>
+            </div>
+
+            {simpleView ? (
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {Object.entries(assetSummary).map(([currency, total]) => {
+                        let formattedTotal;
+                        if (currency === 'USDT') {
+                            const numberTotal = typeof total === 'number' ? total : parseFloat(total);
+                            formattedTotal = formatNumberWithCommas(numberTotal, 2);
+                        } else {
+                            formattedTotal = formatNumberWithCommas(total);
+                        }
+                        return (
+                            <div key={currency} className="bg-white p-4 rounded-lg shadow">
+                                <h3 className="text-lg font-bold text-gray-600">{currency}</h3>
+                                <p className="text-xl font-semibold text-gray-800">{CURRENCY_SYMBOLS[currency] || ''} {formattedTotal}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    <div className="bg-white p-4 rounded-lg shadow">
+                        <h2 className="text-lg font-bold mb-3">현금 자산</h2>
+                        {cashAssets.map(asset => (
+                             <div key={asset.id} className="p-2 bg-gray-50 rounded-md mb-2">
+                                <div className="flex justify-between">
+                                    <p className="font-semibold">{asset.name}</p>
+                                    <p className="font-mono text-gray-800">{formatNumberWithCommas(asset.balance)} {asset.currency}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-white p-4 rounded-lg shadow">
+                            <h2 className="text-lg font-bold mb-3">한국 계좌</h2>
+                            {koreanAccounts.map(acc => (
+                                <div key={acc.id} className="p-2 bg-gray-50 rounded-md mb-2">
+                                    <p className="font-semibold">{acc.bankName} <span className="text-sm font-normal text-gray-600">({acc.accountHolder})</span></p>
+                                    <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                                    <p className="text-right font-mono text-blue-600">{formatNumberWithCommas(acc.balance)} KRW</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white p-4 rounded-lg shadow">
+                            <h2 className="text-lg font-bold mb-3">베트남 계좌</h2>
+                            {vietnameseAccounts.map(acc => (
+                                <div key={acc.id} className="p-2 bg-gray-50 rounded-md mb-2">
+                                    <p className="font-semibold">{acc.bankName} <span className="text-sm font-normal text-gray-600">({acc.accountHolder})</span></p>
+                                    <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                                    <p className="text-right font-mono text-green-600">{formatNumberWithCommas(acc.balance)} VND</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white p-4 rounded-lg shadow">
+                            <h2 className="text-lg font-bold mb-3">코인 거래소</h2>
+                            {exchangeAssets.map(asset => (
+                                <div key={asset.id} className="p-2 bg-gray-50 rounded-md mb-2">
+                                    <p className="font-semibold">{asset.exchangeName}</p>
+                                    <p className="text-sm text-gray-600">{asset.coinName}</p>
+                                    <p className="text-right font-mono text-purple-600">{formatNumberWithCommas(asset.quantity)} {asset.coinName}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white p-4 rounded-lg shadow">
+                            <h2 className="text-lg font-bold mb-3">바이낸스</h2>
+                            {binanceAssets.map(asset => (
+                                <div key={asset.id} className="p-2 bg-gray-50 rounded-md mb-2">
+                                    <p className="font-semibold">{asset.coinName}</p>
+                                    <p className="text-right font-mono text-yellow-600">{formatNumberWithCommas(asset.quantity)} {asset.coinName}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            <div className="bg-white p-4 rounded-lg shadow">
+                <h2 className="text-xl font-bold mb-4">최근 거래 내역</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="p-2">일시</th>
+                                <th className="p-2">거래유형</th>
+                                <th className="p-2 text-right">받은 자산</th>
+                                <th className="p-2 text-right">내준 자산</th>
+                                <th className="p-2 text-right">수익(KRW)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {transactions.map(t => (
+                                <tr key={t.id} className="border-b">
+                                    <td className="p-2 text-gray-500">{t.timestamp?.toDate().toLocaleString('ko-KR')}</td>
+                                    <td className="p-2 font-medium">{t.fromAssetName} → {t.toAssetName}</td>
+                                    <td className="p-2 text-green-600 text-right">+{formatNumberWithCommas(t.toAmount)} {t.toCurrency}</td>
+                                    <td className="p-2 text-red-600 text-right">-{formatNumberWithCommas(t.fromAmount)} {t.fromCurrency}</td>
+                                    <td className={`p-2 text-right font-semibold ${t.profitKRW > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {t.profitKRW > 0 ? '+' : ''}{formatNumberWithCommas(Math.round(t.profitKRW))}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// --- New Transaction Component (Updated) ---
+function TransactionForm({ allAssets, transactionRates, userId, onTransactionSuccess, setModalInfo }) {
+    const [fromAssetId, setFromAssetId] = useState('');
+    const [toAssetId, setToAssetId] = useState('');
+    const [fromDenominations, setFromDenominations] = useState({});
+    const [toDenominations, setToDenominations] = useState({});
+    const [fromAmount, setFromAmount] = useState('');
+    const [toAmount, setToAmount] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (allAssets.length > 0) {
+            const defaultToAsset = allAssets.find(a => a.assetId.startsWith('korean_account'));
+            const defaultFromAsset = allAssets.find(a => a.displayName === 'VND 현금');
+            
+            setToAssetId(defaultToAsset ? defaultToAsset.assetId : '');
+            setFromAssetId(defaultFromAsset ? defaultFromAsset.assetId : '');
+        }
+    }, [allAssets]);
+
+    const fromAsset = useMemo(() => allAssets.find(a => a.assetId === fromAssetId), [allAssets, fromAssetId]);
+    const toAsset = useMemo(() => allAssets.find(a => a.assetId === toAssetId), [allAssets, toAssetId]);
+
+    useEffect(() => {
+        const parsedToAmount = parseNumberWithCommas(toAmount);
+        if (!parsedToAmount || !toAsset || !fromAsset || !transactionRates) {
+            setFromAmount('');
+            setFromDenominations({});
+            return;
+        };
+
+        let calculatedFromAmount = 0;
+        
+        const toCurrency = toAsset.currency;
+        const fromCurrency = fromAsset.currency;
+
+        if ((['USD', 'KRW', 'USDT'].includes(toCurrency) && fromCurrency === 'VND') || (toCurrency === 'VND' && ['USD', 'KRW', 'USDT'].includes(fromCurrency))) {
+            const baseCurrency = (fromCurrency === 'VND') ? toCurrency : fromCurrency;
+            const isBuyingBase = (fromCurrency === 'VND');
+
+            let rate = 0;
+            let highestDenomStr = '0';
+            if (toAsset.type === 'cash' && Object.keys(toDenominations).length > 0) {
+                 highestDenomStr = Object.keys(toDenominations).filter(d => toDenominations[d] > 0).map(d => parseInt(d)).sort((a, b) => b - a)[0]?.toString() || '0';
+            } else if (toAsset.type !== 'cash') {
+                 highestDenomStr = RATE_GROUPS[baseCurrency]?.[0].denoms[0] || '0';
+            }
+            
+            if(highestDenomStr !== '0'){
+                const groups = RATE_GROUPS[baseCurrency];
+                const group = groups?.find(g => g.denoms.includes(highestDenomStr));
+                if(group){
+                    const groupKey = group.denoms.join('_');
+                    const rateField = isBuyingBase ? `${groupKey}_buy` : `${groupKey}_sell`;
+                    rate = transactionRates[baseCurrency]?.[rateField] || 0;
+                }
+            }
+            
+            if (rate > 0) {
+                calculatedFromAmount = isBuyingBase ? (parsedToAmount * rate) : (parsedToAmount / rate);
+            }
+        }
+        else {
+            const krwBuyRate = transactionRates?.KRW?.[RATE_GROUPS.KRW[0].denoms.join('_') + '_buy'] || 0;
+            const usdSellRate = transactionRates?.USD?.[RATE_GROUPS.USD[0].denoms.join('_') + '_sell'] || 0;
+            if(krwBuyRate > 0 && usdSellRate > 0){
+                if(toCurrency === 'KRW' && fromCurrency === 'USD'){ 
+                    calculatedFromAmount = parsedToAmount / (usdSellRate / krwBuyRate);
+                } else if(toCurrency === 'USD' && fromCurrency === 'KRW'){
+                    calculatedFromAmount = parsedToAmount * (usdSellRate / krwBuyRate);
+                }
+            }
+        }
+
+        setFromAmount(String(calculatedFromAmount));
+
+        if (fromAsset.type === 'cash' && calculatedFromAmount > 0) {
+            let remaining = calculatedFromAmount;
+            const newFromDenoms = Object.keys(fromAsset.denominations).reduce((acc, denom) => ({ ...acc, [denom]: 0 }), {});
+            const sortedDenoms = Object.keys(fromAsset.denominations).sort((a, b) => parseInt(b) - parseInt(a));
+
+            for (const denomStr of sortedDenoms) {
+                const denom = parseInt(denomStr);
+                if (remaining < denom) continue;
+
+                const availableQty = fromAsset.denominations[denomStr] || 0;
+                const neededQty = Math.floor(remaining / denom);
+                const qtyToUse = Math.min(availableQty, neededQty);
+
+                if (qtyToUse > 0) {
+                    newFromDenoms[denomStr] = qtyToUse;
+                    remaining -= qtyToUse * denom;
+                }
+            }
+            setFromDenominations(newFromDenoms);
+        } else {
+            setFromDenominations({});
+        }
+
+    }, [toAmount, toDenominations, toAsset, fromAsset, transactionRates]);
+
+    const handleToDenominationChange = (denom, value) => {
+        const qty = parseInt(value) || 0;
+        const newDenoms = { ...toDenominations, [denom]: qty };
+        setToDenominations(newDenoms);
+        const total = Object.entries(newDenoms).reduce((sum, [d, q]) => sum + (parseInt(d) * (q || 0)), 0);
+        setToAmount(String(total));
+    };
+    
+    const calculatedFromAmountFromDenoms = useMemo(() => {
+        const parsedFromAmount = parseNumberWithCommas(fromAmount);
+        if (!fromAsset || fromAsset.type !== 'cash') return parsedFromAmount;
+        return Object.entries(fromDenominations).reduce((sum, [d, q]) => sum + (parseInt(d) * (q || 0)), 0);
+    }, [fromDenominations, fromAsset, fromAmount]);
+
+    const getAssetRefAndCollection = (asset) => {
+        if (!asset) return null;
+        const [typePrefix] = asset.assetId.split('_');
+        let collectionName = '';
+
+        switch(typePrefix) {
+            case 'cash': collectionName = 'cash_assets'; break;
+            case 'korean': collectionName = 'korean_accounts'; break;
+            case 'vietnamese': collectionName = 'vietnamese_accounts'; break;
+            case 'exchange': collectionName = 'exchange_assets'; break;
+            case 'binance': collectionName = 'binance_assets'; break;
+            default: return null;
+        }
+        return { ref: doc(db, `artifacts/${appId}/users/${userId}/${collectionName}`, asset.id), collectionName };
+    };
+
+    const handleToAssetChange = (newToAssetId) => {
+        setToAssetId(newToAssetId);
+        if (newToAssetId && newToAssetId === fromAssetId) {
+            setFromAssetId(''); 
+        }
+    };
+
+    const handleFromAssetChange = (newFromAssetId) => {
+        setFromAssetId(newFromAssetId);
+        if (newFromAssetId && newFromAssetId === toAssetId) {
+            setToAssetId('');
+        }
+    };
+
+    const getKrwValue = (asset, amount, rates) => {
+        if (!asset || !amount || !rates) return 0;
+        
+        const krw_vnd_rate = rates?.KRW?.[`${RATE_GROUPS.KRW[0].denoms.join('_')}_sell`] || 0;
+        const usd_vnd_rate = rates?.USD?.[`${RATE_GROUPS.USD[0].denoms.join('_')}_sell`] || 0;
+
+        switch (asset.currency) {
+            case 'KRW':
+                return amount;
+            case 'VND':
+                return krw_vnd_rate > 0 ? amount / krw_vnd_rate : 0;
+            case 'USD':
+            case 'USDT':
+                if (krw_vnd_rate > 0 && usd_vnd_rate > 0) {
+                    const krw_usd_rate = usd_vnd_rate / krw_vnd_rate;
+                    return amount * krw_usd_rate;
+                }
+                return 0;
+            default:
+                return 0;
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const parsedToAmount = parseNumberWithCommas(toAmount);
+        const parsedFromAmount = parseNumberWithCommas(fromAmount);
+
+        if (!fromAsset || !toAsset || parsedToAmount <= 0) {
+            setModalInfo({ title: "입력 오류", message: "모든 필드를 올바르게 입력해주세요.", type: 'error' }); return;
+        }
+        if (fromAsset.assetId === toAsset.assetId) {
+            setModalInfo({ title: "입력 오류", message: "동일한 자산 간에 거래할 수 없습니다.", type: 'error' }); return;
+        }
+        
+        const fromBalanceField = fromAsset.hasOwnProperty('balance') ? 'balance' : 'quantity';
+        if (parsedFromAmount > fromAsset[fromBalanceField]) {
+            setModalInfo({ 
+                title: "잔액 부족", 
+                message: `${fromAsset.displayName}의 보유 자산을 초과하여 출금할 수 없습니다. (요청: ${formatNumberWithCommas(Math.ceil(parsedFromAmount))}, 보유: ${formatNumberWithCommas(fromAsset[fromBalanceField])})`, 
+                type: 'error' 
+            });
+            return;
+        }
+
+        setIsSubmitting(true);
+        const finalFromAmount = fromAsset.type === 'cash' ? calculatedFromAmountFromDenoms : parsedFromAmount;
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const { ref: fromAssetRef } = getAssetRefAndCollection(fromAsset);
+                const { ref: toAssetRef } = getAssetRefAndCollection(toAsset);
+
+                const fromAssetDoc = await transaction.get(fromAssetRef);
+                const toAssetDoc = await transaction.get(toAssetRef);
+                if (!fromAssetDoc.exists() || !toAssetDoc.exists()) throw new Error("자산 문서를 찾을 수 없습니다.");
+
+                const fromData = fromAssetDoc.data();
+                const toData = toAssetDoc.data();
+                
+                let newFromData = {};
+                const newFromBalance = fromData[fromBalanceField] - finalFromAmount;
+                if (newFromBalance < 0) throw new Error(`${fromAsset.displayName}의 잔액/수량이 부족합니다. (부족분: ${formatNumberWithCommas(Math.abs(newFromBalance))})`);
+                newFromData[fromBalanceField] = newFromBalance;
+
+                if (fromAsset.type === 'cash') {
+                    const newFromDenominations = { ...fromData.denominations };
+                    for (const [denom, qty] of Object.entries(fromDenominations)) {
+                        if (newFromDenominations[denom] < qty) throw new Error(`${fromAsset.name}의 ${denom}권 재고가 부족합니다.`);
+                        newFromDenominations[denom] -= qty;
+                    }
+                    newFromData.denominations = newFromDenominations;
+                }
+                transaction.update(fromAssetRef, newFromData);
+
+                let newToData = {};
+                const toBalanceField = toData.hasOwnProperty('balance') ? 'balance' : 'quantity';
+                const newToBalance = toData[toBalanceField] + parsedToAmount;
+                newToData[toBalanceField] = newToBalance;
+                
+                if (toAsset.type === 'cash') {
+                    const newToDenominations = { ...toData.denominations };
+                     for (const [denom, qty] of Object.entries(toDenominations)) {
+                         newToDenominations[denom] = (newToDenominations[denom] || 0) + qty;
+                    }
+                    newToData.denominations = newToDenominations;
+                }
+                transaction.update(toAssetRef, newToData);
+
+                const toAssetKrwValue = getKrwValue(toAsset, parsedToAmount, transactionRates);
+                const fromAssetKrwValue = getKrwValue(fromAsset, finalFromAmount, transactionRates);
+                const profitKRW = toAssetKrwValue - fromAssetKrwValue;
+
+                const transactionsCol = collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+                transaction.set(doc(transactionsCol), {
+                    fromAssetName: fromAsset.displayName, toAssetName: toAsset.displayName,
+                    fromAmount: finalFromAmount, toAmount: parsedToAmount, fromCurrency: fromAsset.currency, toCurrency: toAsset.currency,
+                    timestamp: new Date(), userId, profitKRW
+                });
+            });
+            setModalInfo({ title: "성공", message: "거래가 성공적으로 등록되었습니다.", type: 'success' });
+            onTransactionSuccess();
+        } catch (error) {
+            console.error("거래 처리 중 오류 발생: ", error);
+            setModalInfo({ title: "거래 오류", message: error.message, type: 'error' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+                 <div className="bg-white p-6 rounded-lg shadow">
+                    <h2 className="text-xl font-bold mb-4">받은 자산 (TO / 입금)</h2>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">자산 선택</label>
+                        <select value={toAssetId} onChange={(e) => handleToAssetChange(e.target.value)} className="w-full p-2 border rounded-md">
+                            <option value="" disabled>자산 선택</option>
+                            {allAssets.map(a => <option key={a.assetId} value={a.assetId}>{a.displayName}</option>)}
+                        </select>
+                    </div>
+                    {toAsset?.type === 'cash' ? (
+                        Object.keys(toAsset.denominations).sort((a,b) => b-a).map(denom => (
+                            <div key={denom} className="flex items-center gap-2 mb-2">
+                                <span className="w-24 text-right">{parseInt(denom).toLocaleString()} {CURRENCY_SYMBOLS[toAsset.currency]}</span>
+                                <input type="text" placeholder="수량" value={toDenominations[denom] || ''} onChange={(e) => handleNumericInput(e.target.value, (val) => handleToDenominationChange(denom, val))} className="w-24 p-1 border rounded-md" />
+                            </div>
+                        ))
+                    ) : (
+                        <input type="text" value={formatNumberWithCommas(toAmount)} onChange={(e) => handleNumericInput(e.target.value, setToAmount)} className="w-full p-2 border rounded-md" placeholder="금액/수량 입력" />
+                    )}
+                    {fromAsset && (
+                        <div className="text-right text-sm text-gray-600 mt-2">
+                            출금 가능 최대: {formatNumberWithCommas(fromAsset.hasOwnProperty('balance') ? fromAsset.balance : fromAsset.quantity)} {fromAsset.currency}
+                        </div>
+                    )}
+                    <div className="text-right font-bold text-lg mt-1 text-green-600"> 합계: {formatNumberWithCommas(toAmount)} {toAsset?.currency} </div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <h2 className="text-xl font-bold mb-4">내준 자산 (FROM / 출금)</h2>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">자산 선택</label>
+                        <select value={fromAssetId} onChange={(e) => handleFromAssetChange(e.target.value)} className="w-full p-2 border rounded-md">
+                            <option value="" disabled>자산 선택</option>
+                            {allAssets.map(a => <option key={a.assetId} value={a.assetId}>{a.displayName}</option>)}
+                        </select>
+                    </div>
+                    {fromAsset?.type === 'cash' ? (
+                        <>
+                            {Object.keys(fromAsset.denominations).sort((a,b) => parseInt(b) - parseInt(a)).map(denom => (
+                                <div key={denom} className="flex items-center gap-2 mb-2">
+                                    <span className="w-24 text-right">{parseInt(denom).toLocaleString()} {CURRENCY_SYMBOLS[fromAsset.currency]}</span>
+                                    <input type="number" value={fromDenominations[denom] || '0'} readOnly className="w-24 p-1 border rounded-md bg-gray-100" />
+                                    <span className="text-xs text-gray-500">(보유: {fromAsset.denominations[denom] || 0}장)</span>
+                                </div>
+                            ))}
+                            <div className="text-right font-bold text-lg mt-4 text-red-600"> 합계: {formatNumberWithCommas(calculatedFromAmountFromDenoms)} {fromAsset?.currency} </div>
+                        </>
+                    ) : (
+                        <input type="text" value={formatNumberWithCommas(fromAmount)} readOnly className="w-full p-2 border rounded-md bg-gray-100" placeholder="자동 계산" />
+                    )}
+                </div>
+            </div>
+            <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400">
+                {isSubmitting ? '처리 중...' : '저장'}
+            </button>
+        </form>
+    );
+}
+
+// --- Asset Manager Component (Updated) ---
+function AssetManager({ userId, data, setModalInfo, realTimeRates, cryptoRates, isFetchingRates }) {
+    const [activeTab, setActiveTab] = useState('cash');
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [modalType, setModalType] = useState('');
+    const [editingAsset, setEditingAsset] = useState(null); // For cash asset denomination editing
+    const [assetToEdit, setAssetToEdit] = useState(null);
+    const [adjustmentModalInfo, setAdjustmentModalInfo] = useState(null); // For deposit/withdrawal
+    const [confirmDelete, setConfirmDelete] = useState(null);
+    const [reason, setReason] = useState('');
+
+    const handleEditRequest = (collectionName, asset) => {
+        setAssetToEdit({ ...asset, collectionName });
+        setShowEditModal(true);
+    };
+
+    const handleDeleteRequest = (collectionName, asset) => {
+        setConfirmDelete({
+            title: "삭제 확인",
+            message: `'${asset.name || asset.bankName || asset.coinName}' 항목을 정말 삭제하시겠습니까?`,
+            type: 'confirm',
+            onConfirm: () => {
+                performDelete(collectionName, asset, reason);
+                setReason('');
+            },
+            onCancel: () => {
+                setConfirmDelete(null);
+                setReason('');
+            }
+        });
+    };
+
+    const performDelete = async (collectionName, asset, reason) => {
+        if (!reason.trim()) {
+            setModalInfo({ title: "입력 오류", message: "삭제 사유를 입력해주세요.", type: 'error' });
+            return;
+        }
+        
+        const assetRef = doc(db, `artifacts/${appId}/users/${userId}/${collectionName}`, asset.id);
+        const adjustmentCol = collection(db, `artifacts/${appId}/users/${userId}/asset_adjustments`);
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const assetDoc = await transaction.get(assetRef);
+                if (!assetDoc.exists()) throw new Error("삭제할 자산을 찾을 수 없습니다.");
+
+                transaction.set(doc(adjustmentCol), {
+                    assetId: asset.id,
+                    assetName: asset.name || asset.bankName || asset.coinName,
+                    collectionName,
+                    type: 'deletion',
+                    amount: asset.balance ?? asset.quantity ?? 0,
+                    memo: reason,
+                    timestamp: serverTimestamp(),
+                    userId: auth.currentUser?.uid || 'unknown'
+                });
+
+                transaction.delete(assetRef);
+            });
+
+            setModalInfo({ title: "성공", message: "삭제되었습니다.", type: 'success' });
+        } catch (error) {
+            console.error("삭제 오류:", error);
+            setModalInfo({ title: "오류", message: "삭제 중 오류가 발생했습니다.", type: 'error' });
+        } finally {
+            setConfirmDelete(null);
+        }
+    };
+
+    const handleCashEditSave = async (originalAsset, updatedAsset) => {
+        try {
+            const assetRef = doc(db, `artifacts/${appId}/users/${userId}/cash_assets`, originalAsset.id);
+            const newDenominations = { ...updatedAsset.denominations };
+            Object.keys(newDenominations).forEach(key => {
+                newDenominations[key] = parseInt(newDenominations[key] || '0') || 0;
+            });
+
+            const newBalance = Object.entries(newDenominations).reduce((sum, [d, q]) => sum + (parseInt(d) * q), 0);
+            const difference = newBalance - originalAsset.balance;
+
+            await runTransaction(db, async (transaction) => {
+                transaction.update(assetRef, { denominations: newDenominations, balance: newBalance });
+
+                if (difference !== 0) {
+                    const adjustmentCol = collection(db, `artifacts/${appId}/users/${userId}/asset_adjustments`);
+                    transaction.set(doc(adjustmentCol), {
+                        assetId: originalAsset.id,
+                        assetName: originalAsset.name,
+                        collectionName: 'cash_assets',
+                        type: difference > 0 ? 'deposit' : 'withdrawal',
+                        amount: Math.abs(difference),
+                        memo: '재고 조정',
+                        timestamp: serverTimestamp()
+                    });
+                }
+            });
+
+            setModalInfo({ title: "성공", message: `${originalAsset.name}의 재고가 업데이트되었습니다.`, type: 'success' });
+            setEditingAsset(null);
+        } catch (error) {
+            console.error("현금 재고 업데이트 오류:", error);
+            setModalInfo({ title: "오류", message: "업데이트 중 오류가 발생했습니다.", type: 'error' });
+        }
+    };
+    
+    const handleAssetAdjustment = async ({ asset, collectionName, type, amount, memo }) => {
+        const parsedAmount = parseNumberWithCommas(amount);
+        if (!parsedAmount || parsedAmount <= 0) {
+            setModalInfo({ title: "입력 오류", message: "올바른 금액을 입력해주세요.", type: 'error' });
+            return;
+        }
+
+        const balanceField = asset.hasOwnProperty('balance') ? 'balance' : 'quantity';
+        if (type === 'withdrawal' && parsedAmount > asset[balanceField]) {
+            setModalInfo({ title: "잔액 부족", message: "보유 자산을 초과하여 출금할 수 없습니다.", type: 'error' });
+            return;
+        }
+
+        try {
+            const assetRef = doc(db, `artifacts/${appId}/users/${userId}/${collectionName}`, asset.id);
+            await runTransaction(db, async (transaction) => {
+                const assetDoc = await transaction.get(assetRef);
+                if (!assetDoc.exists()) throw new Error("자산 문서를 찾을 수 없습니다.");
+
+                const currentBalance = assetDoc.data()[balanceField];
+                const newBalance = type === 'deposit' ? currentBalance + parsedAmount : currentBalance - parsedAmount;
+
+                transaction.update(assetRef, { [balanceField]: newBalance });
+
+                const adjustmentCol = collection(db, `artifacts/${appId}/users/${userId}/asset_adjustments`);
+                transaction.set(doc(adjustmentCol), {
+                    assetId: asset.id,
+                    assetName: asset.displayName || asset.name || `${asset.bankName} (${asset.accountHolder})`,
+                    collectionName,
+                    type,
+                    amount: parsedAmount,
+                    memo,
+                    timestamp: serverTimestamp()
+                });
+            });
+            setModalInfo({ title: "성공", message: "자산이 업데이트되었습니다.", type: 'success' });
+            setAdjustmentModalInfo(null);
+        } catch (error) {
+            console.error("자산 조정 오류:", error);
+            setModalInfo({ title: "오류", message: `자산 조정 중 오류가 발생했습니다: ${error.message}`, type: 'error' });
+        }
+    };
+
+
+    const renderCashAssets = () => (
+        <div className="space-y-4">
+            {data.cashAssets.map(asset => (
+                <div key={asset.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                    <div className="p-4">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="font-bold text-lg text-gray-800">{asset.name}</p>
+                                <p className="text-2xl font-mono text-blue-600">{formatNumberWithCommas(asset.balance)} {CURRENCY_SYMBOLS[asset.currency]}</p>
+                            </div>
+                            <button onClick={() => setEditingAsset(editingAsset?.id === asset.id ? null : { ...asset, originalAsset: asset })} className="text-sm bg-gray-200 text-gray-800 px-3 py-1 rounded-md hover:bg-gray-300 transition">
+                                재고 조정
+                            </button>
+                        </div>
+                    </div>
+                    {editingAsset?.id === asset.id && (
+                        <div className="bg-gray-50 p-4 border-t">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {Object.keys(asset.denominations).sort((a,b) => parseInt(b) - parseInt(a)).map(denom => (
+                                    <div key={denom} className="flex items-center gap-2">
+                                        <label className="w-20 text-sm text-right text-gray-600">{formatNumberWithCommas(denom)}</label>
+                                        <input 
+                                          type="text"
+                                          value={editingAsset.denominations[denom]}
+                                          onChange={(e) => handleNumericInput(e.target.value, (val) => setEditingAsset(prev => ({...prev, denominations: {...prev.denominations, [denom]: val }})))}
+                                          className="p-1 border rounded-md w-full"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={() => handleCashEditSave(editingAsset.originalAsset, editingAsset)} className="mt-4 bg-green-600 text-white px-4 py-2 rounded-md w-full hover:bg-green-700 transition">
+                                조정 내역 저장
+                            </button>
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+    
+    const renderAssetCards = (collectionName, items, fields) => (
+        <div className="space-y-4">
+            {items.map(item => {
+                const currencyCode = fields.currency || item[fields.currencyField];
+                return (
+                    <div key={item.id} className="bg-white rounded-lg shadow-md border border-gray-200">
+                        <div className="p-4">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-bold text-lg text-gray-800">{fields.title(item)}</p>
+                                    <p className="text-sm text-gray-500">{fields.subtitle(item)}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleEditRequest(collectionName, item)} className="text-gray-400 hover:text-blue-600 p-2 rounded-full transition"><EditIcon/></button>
+                                    <button onClick={() => handleDeleteRequest(collectionName, item)} className="text-gray-400 hover:text-red-600 p-2 rounded-full transition"><TrashIcon/></button>
+                                </div>
+                            </div>
+                            <p className="text-2xl font-mono text-blue-600 mt-2">{formatNumberWithCommas(item[fields.balanceField])} {CURRENCY_SYMBOLS[currencyCode] || currencyCode}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2 flex justify-end gap-2 border-t">
+                            <button onClick={() => setAdjustmentModalInfo({ asset: item, collectionName, type: 'deposit' })} className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-md hover:bg-blue-200 transition">입금</button>
+                            <button onClick={() => setAdjustmentModalInfo({ asset: item, collectionName, type: 'withdrawal' })} className="text-sm bg-red-100 text-red-800 px-3 py-1 rounded-md hover:bg-red-200 transition">출금</button>
+                        </div>
+                    </div>
+                );
+            })}
+            {items.length < 5 && (
+                 <button onClick={() => { setModalType(collectionName); setShowAddModal(true); }} className="w-full mt-4 p-3 border-2 border-dashed rounded-lg flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition">
+                    <PlusIcon /> {collectionName.includes('account') ? '계좌' : '자산'} 추가하기
+                </button>
+            )}
+        </div>
+    );
+
+    const fieldConfig = {
+        korean_accounts: {
+            title: item => item.bankName,
+            subtitle: item => `${item.accountNumber} (${item.accountHolder})`,
+            balanceField: 'balance',
+            currency: 'KRW'
+        },
+        vietnamese_accounts: {
+            title: item => item.bankName,
+            subtitle: item => `${item.accountNumber} (${item.accountHolder})`,
+            balanceField: 'balance',
+            currency: 'VND'
+        },
+        exchange_assets: {
+            title: item => `${item.exchangeName} - ${item.coinName}`,
+            subtitle: item => `가상자산`,
+            balanceField: 'quantity',
+            currencyField: 'coinName'
+        },
+        binance_assets: {
+            title: item => `Binance - ${item.coinName}`,
+            subtitle: item => `가상자산`,
+            balanceField: 'quantity',
+            currencyField: 'coinName'
+        }
+    };
+
+    return (
+        <div className="bg-gray-100 p-4 rounded-lg">
+            {confirmDelete && (
+                <Modal 
+                    {...confirmDelete}
+                    confirmDisabled={!reason.trim()}
+                    onCancel={() => { setConfirmDelete(null); setReason(''); }}
+                >
+                     <textarea
+                        className="w-full p-2 border rounded-md mt-4"
+                        placeholder="삭제 사유를 입력하세요 (필수)"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                    />
+                </Modal>
+            )}
+            {adjustmentModalInfo && <AssetAdjustmentModal {...adjustmentModalInfo} onClose={() => setAdjustmentModalInfo(null)} onSave={handleAssetAdjustment} />}
+            <TotalAssetSummary assets={data} realTimeRates={realTimeRates} cryptoRates={cryptoRates} isFetchingRates={isFetchingRates} />
+            <div className="flex border-b mb-6 overflow-x-auto bg-white rounded-t-lg">
+                {['cash', 'korean_accounts', 'vietnamese_accounts', 'exchange_assets', 'binance_assets'].map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab)} className={`py-3 px-4 text-sm font-semibold shrink-0 ${activeTab === tab ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}>
+                        {{cash: '현금', korean_accounts: '한국계좌', vietnamese_accounts: '베트남계좌', exchange_assets: '거래소', binance_assets: '바이낸스'}[tab]}
+                    </button>
+                ))}
+            </div>
+            
+            <div className="space-y-4">
+                {activeTab === 'cash' && renderCashAssets()}
+                {activeTab === 'korean_accounts' && renderAssetCards('korean_accounts', data.koreanAccounts, fieldConfig.korean_accounts)}
+                {activeTab === 'vietnamese_accounts' && renderAssetCards('vietnamese_accounts', data.vietnameseAccounts, fieldConfig.vietnamese_accounts)}
+                {activeTab === 'exchange_assets' && renderAssetCards('exchange_assets', data.exchangeAssets, fieldConfig.exchange_assets)}
+                {activeTab === 'binance_assets' && renderAssetCards('binance_assets', data.binanceAssets, fieldConfig.binance_assets)}
+            </div>
+
+            {showAddModal && <AddAssetModal type={modalType} userId={userId} onClose={() => setShowAddModal(false)} setModalInfo={setModalInfo} />}
+            {showEditModal && <EditAssetModal asset={assetToEdit} userId={userId} onClose={() => setShowEditModal(false)} setModalInfo={setModalInfo} />}
+        </div>
+    );
+}
+
+function AssetAdjustmentModal({ asset, collectionName, type, onClose, onSave }) {
+    const [amount, setAmount] = useState('');
+    const [memo, setMemo] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const title = `${asset.displayName || asset.name || `${asset.bankName} (${asset.accountHolder})`} ${type === 'deposit' ? '입금' : '출금'}`;
+    
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        await onSave({ asset, collectionName, type, amount, memo });
+        setIsSubmitting(false);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4">{title}</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">금액</label>
+                        <input 
+                            type="text"
+                            value={formatNumberWithCommas(amount)}
+                            onChange={(e) => handleDecimalInput(e.target.value, setAmount)}
+                            required
+                            autoFocus
+                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">메모</label>
+                        <input 
+                            type="text"
+                            value={memo}
+                            onChange={(e) => setMemo(e.target.value)}
+                            required
+                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-4 pt-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">취소</button>
+                        <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400">
+                            {isSubmitting ? '저장 중...' : '저장'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function EditAssetModal({ asset, userId, onClose, setModalInfo }) {
+    const [formData, setFormData] = useState(asset);
+    const [memo, setMemo] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const getFields = () => {
+        switch(asset.collectionName) {
+            case 'korean_accounts': return [{key: 'bankName', label: '은행명'}, {key: 'accountNumber', label: '계좌번호'}, {key: 'accountHolder', label: '예금주'}, {key: 'balance', label: '잔액', type: 'number'}];
+            case 'vietnamese_accounts': return [{key: 'bankName', label: '은행명'}, {key: 'accountNumber', label: '계좌번호'}, {key: 'accountHolder', label: '예금주'}, {key: 'balance', label: '잔액', type: 'number'}];
+            case 'exchange_assets': return [{key: 'exchangeName', label: '거래소명'}];
+            case 'binance_assets': return [];
+            default: return [];
+        }
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+         if (!memo.trim()) {
+            setModalInfo({ title: "입력 오류", message: "수정 사유를 입력해주세요.", type: 'error' });
+            return;
+        }
+        setIsSubmitting(true);
+        const { collectionName, id, ...dataToSave } = formData;
+        
+        try {
+            const assetRef = doc(db, `artifacts/${appId}/users/${userId}/${collectionName}`, id);
+             await runTransaction(db, async (transaction) => {
+                const assetDoc = await transaction.get(assetRef);
+                if (!assetDoc.exists()) throw new Error("자산을 찾을 수 없습니다.");
+                const originalAsset = assetDoc.data();
+
+                transaction.update(assetRef, dataToSave);
+                
+                const adjustmentCol = collection(db, `artifacts/${appId}/users/${userId}/asset_adjustments`);
+                transaction.set(doc(adjustmentCol), {
+                    assetId: id,
+                    assetName: dataToSave.displayName || dataToSave.name || `${dataToSave.bankName} (${dataToSave.accountHolder})`,
+                    collectionName,
+                    type: 'modification',
+                    memo: memo,
+                    timestamp: serverTimestamp(),
+                    userId: auth.currentUser?.uid || 'unknown',
+                    changeDetails: { from: originalAsset, to: dataToSave }
+                });
+            });
+            setModalInfo({ title: "성공", message: "성공적으로 수정되었습니다.", type: 'success' });
+            onClose();
+        } catch (error) {
+            console.error("수정 오류:", error);
+            setModalInfo({ title: "오류", message: "수정 중 오류가 발생했습니다.", type: 'error' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4">항목 수정</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {getFields().map(field => (
+                        <div key={field.key}>
+                            <label className="block text-sm font-medium text-gray-700">{field.label}</label>
+                            <input 
+                                type="text"
+                                name={field.key} 
+                                value={formData[field.key] || ''}
+                                onChange={handleChange} 
+                                required 
+                                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                    ))}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">수정 사유</label>
+                        <textarea
+                            value={memo}
+                            onChange={(e) => setMemo(e.target.value)}
+                            required
+                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-4 pt-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">취소</button>
+                        <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-400">
+                           {isSubmitting ? '저장 중...' : '저장'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+
+function AddAssetModal({ type, userId, onClose, setModalInfo }) {
+    const [formData, setFormData] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const getFields = () => {
+        switch(type) {
+            case 'korean_accounts': return [{key: 'bankName', label: '은행명'}, {key: 'accountNumber', label: '계좌번호'}, {key: 'accountHolder', label: '예금주'}, {key: 'balance', label: '초기잔액', type: 'number'}];
+            case 'vietnamese_accounts': return [{key: 'bankName', label: '은행명'}, {key: 'accountNumber', label: '계좌번호'}, {key: 'accountHolder', label: '예금주'}, {key: 'balance', label: '초기잔액', type: 'number'}];
+            case 'exchange_assets': return [{key: 'exchangeName', label: '거래소명'}, {key: 'coinName', label: '코인명', type: 'select', options: ['BTC', 'ETH', 'USDT']}, {key: 'quantity', label: '수량', type: 'decimal'}];
+            case 'binance_assets': return [{key: 'coinName', label: '코인명', type: 'select', options: ['BTC', 'ETH', 'USDT']}, {key: 'quantity', label: '수량', type: 'decimal'}];
+            default: return [];
+        }
+    };
+
+    const handleChange = (key, value, fieldType = 'text') => {
+        if (fieldType === 'number') {
+            handleNumericInput(value, (val) => setFormData(prev => ({...prev, [key]: val })));
+        } else if (fieldType === 'decimal') {
+            handleDecimalInput(value, (val) => setFormData(prev => ({...prev, [key]: val })));
+        } else {
+            setFormData(prev => ({...prev, [key]: value }));
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        const dataToSave = { ...formData };
+        getFields().forEach(field => {
+            if (field.type === 'number' || field.type === 'decimal') {
+                dataToSave[field.key] = parseNumberWithCommas(dataToSave[field.key] || '0');
+            }
+        });
+        
+        if(type === 'exchange_assets' || type === 'binance_assets') {
+            dataToSave.currency = dataToSave.coinName;
+        }
+
+        try {
+            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/${type}`), dataToSave);
+            setModalInfo({ title: "성공", message: "성공적으로 추가되었습니다.", type: 'success' });
+            onClose();
+        } catch (error) {
+            console.error("추가 오류:", error);
+            setModalInfo({ title: "오류", message: "추가 중 오류가 발생했습니다.", type: 'error' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4">새 항목 추가</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {getFields().map(field => (
+                        <div key={field.key}>
+                            <label className="block text-sm font-medium text-gray-700">{field.label}</label>
+                            {field.type === 'select' ? (
+                                <select name={field.key} value={formData[field.key] || ''} onChange={(e) => handleChange(field.key, e.target.value)} required className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="" disabled>코인명 선택</option>
+                                    {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            ) : (
+                                <input 
+                                    type="text"
+                                    name={field.key} 
+                                    value={field.type === 'number' || field.type === 'decimal' ? formatNumberWithCommas(formData[field.key] || '') : formData[field.key] || ''}
+                                    onChange={(e) => handleChange(field.key, e.target.value, field.type)} 
+                                    required 
+                                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            )}
+                        </div>
+                    ))}
+                    <div className="flex justify-end gap-4 pt-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">취소</button>
+                        <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-400">
+                           {isSubmitting ? '저장 중...' : '저장'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// --- Rate Manager Component (Updated) ---
+function RateManager({ currentTransactionRates, currentGoldsmithRates, userId, setModalInfo, realTimeRates, cryptoRates, isFetchingRates }) {
+    const [view, setView] = useState('transaction');
+    const [transactionRates, setTransactionRates] = useState({});
+    const [goldsmithRates, setGoldsmithRates] = useState({});
+    const [transactionRateHistory, setTransactionRateHistory] = useState([]);
+    const [goldsmithRateHistory, setGoldsmithRateHistory] = useState([]);
+    const [isInputOpen, setIsInputOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    
+    const initialFilters = {
+        startDate: '', endDate: '', category: '', denomination: '',
+        buyRate: '', sellRate: '', rate: '', user: ''
+    };
+    const [searchFilters, setSearchFilters] = useState(initialFilters);
+    const [appliedFilters, setAppliedFilters] = useState(initialFilters);
+
+    const filteredHistory = useMemo(() => {
+        const history = view === 'transaction' ? transactionRateHistory : goldsmithRateHistory;
+        return history.filter(item => {
+            const itemDate = item.timestamp?.toDate();
+            if (appliedFilters.startDate && itemDate < new Date(appliedFilters.startDate)) return false;
+            if (appliedFilters.endDate) {
+                const endDate = new Date(appliedFilters.endDate);
+                endDate.setHours(23, 59, 59, 999); // Include the whole day
+                if (itemDate > endDate) return false;
+            }
+            if (appliedFilters.category && item.category !== appliedFilters.category) return false;
+            if (appliedFilters.denomination && item.denomination !== appliedFilters.denomination) return false;
+            if (appliedFilters.user && !item.userId.toLowerCase().includes(appliedFilters.user.toLowerCase())) return false;
+            if (view === 'transaction') {
+                if (appliedFilters.buyRate && item.buyRate < parseFloat(appliedFilters.buyRate)) return false;
+                if (appliedFilters.sellRate && item.sellRate < parseFloat(appliedFilters.sellRate)) return false;
+            } else {
+                if (appliedFilters.rate && item.rate < parseFloat(appliedFilters.rate)) return false;
+            }
+            return true;
+        });
+    }, [view, transactionRateHistory, goldsmithRateHistory, appliedFilters]);
+
+
+    useEffect(() => {
+        setIsInputOpen(false);
+    }, [view]);
+
+    useEffect(() => {
+        if (!userId) return;
+        const dataPath = `artifacts/${appId}/users/${userId}`;
+
+        const unsubTransactionHistory = onSnapshot(query(collection(db, `${dataPath}/transaction_rate_history`), orderBy('timestamp', 'desc'), limit(50)), (snapshot) => {
+            setTransactionRateHistory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+
+        const unsubGoldsmithHistory = onSnapshot(query(collection(db, `${dataPath}/goldsmith_rate_history`), orderBy('timestamp', 'desc'), limit(50)), (snapshot) => {
+            setGoldsmithRateHistory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+
+        return () => {
+            unsubTransactionHistory();
+            unsubGoldsmithHistory();
+        };
+    }, [userId]);
+
+    useEffect(() => {
+        setTransactionRates(currentTransactionRates);
+    }, [currentTransactionRates]);
+
+    useEffect(() => {
+        setGoldsmithRates(currentGoldsmithRates || {});
+    }, [currentGoldsmithRates]);
+
+    const handleRateChange = (setter, currency, groupKey, field, value) => {
+        const sanitizedValue = value.replace(/[^0-9.]/g, '');
+        const parts = sanitizedValue.split('.');
+        if (parts.length > 2) return;
+        
+        let rateKey = field ? `${groupKey}_${field}` : groupKey;
+
+        setter(prev => ({
+            ...prev,
+            [currency]: {
+                ...prev[currency],
+                [rateKey]: sanitizedValue
+            }
+        }));
+    };
+
+    const handleSaveTransactionRates = async () => {
+        setIsSaving(true);
+        const batch = writeBatch(db);
+        const ratesRef = doc(db, `artifacts/${appId}/users/${userId}/rates`, 'transaction_rates');
+        const historyCol = collection(db, `artifacts/${appId}/users/${userId}/transaction_rate_history`);
+        
+        for (const currency of Object.keys(RATE_GROUPS)) {
+            for (const group of RATE_GROUPS[currency]) {
+                const groupKey = group.denoms.join('_');
+                const newBuyRate = parseNumberWithCommas(transactionRates[currency]?.[`${groupKey}_buy`] || '0');
+                const newSellRate = parseNumberWithCommas(transactionRates[currency]?.[`${groupKey}_sell`] || '0');
+                const oldBuyRate = currentTransactionRates[currency]?.[`${groupKey}_buy`] || 0;
+                const oldSellRate = currentTransactionRates[currency]?.[`${groupKey}_sell`] || 0;
+
+                if (newBuyRate !== oldBuyRate || newSellRate !== oldSellRate) {
+                    batch.set(doc(historyCol), {
+                        timestamp: serverTimestamp(),
+                        category: `${currency} ⇆ ${currency === 'USDT' ? 'USD' : 'VND'}`,
+                        denomination: group.label,
+                        buyRate: newBuyRate,
+                        sellRate: newSellRate,
+                        userId: auth.currentUser?.uid || 'unknown'
+                    });
+                }
+            }
+        }
+
+        try {
+            batch.set(ratesRef, transactionRates);
+            await batch.commit();
+            setModalInfo({ title: "성공", message: "금일 환율이 저장되었습니다.", type: 'success' });
+        } catch (error) {
+            console.error("금일 환율 저장 오류: ", error);
+            setModalInfo({ title: "오류", message: "저장 중 오류가 발생했습니다.", type: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveGoldsmith = async () => {
+        setIsSaving(true);
+        const batch = writeBatch(db);
+        const ratesRef = doc(db, `artifacts/${appId}/users/${userId}/rates`, 'goldsmith_rates');
+        const historyCol = collection(db, `artifacts/${appId}/users/${userId}/goldsmith_rate_history`);
+
+        for (const currency of Object.keys(goldsmithRates)) {
+             for (const groupKey in goldsmithRates[currency]) {
+                const newRate = parseNumberWithCommas(goldsmithRates[currency][groupKey] || '0');
+                const oldRate = currentGoldsmithRates[currency]?.[groupKey] || 0;
+
+                if (newRate !== oldRate) {
+                    const group = RATE_GROUPS[currency].find(g => g.denoms.join('_') === groupKey);
+                    batch.set(doc(historyCol), {
+                        timestamp: serverTimestamp(),
+                        category: `${currency} → VND`,
+                        denomination: group ? group.label : groupKey,
+                        rate: newRate,
+                        userId: auth.currentUser?.uid || 'unknown'
+                    });
+                }
+            }
+        }
+        
+        try {
+            batch.set(ratesRef, goldsmithRates);
+            await batch.commit();
+            setModalInfo({ title: "성공", message: "금은방 시세가 저장되었습니다.", type: 'success' });
+        } catch (error) {
+            console.error("금은방 시세 저장 오류: ", error);
+            setModalInfo({ title: "오류", message: "저장 중 오류가 발생했습니다.", type: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    const renderRealTimeRates = () => {
+        const formatRate = (rate) => {
+            if (!rate && rate !== 0) return 'N/A';
+            if (rate < 0.1) return rate.toFixed(4);
+            if (rate < 100) return rate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return rate.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        };
+
+        const ratePairsLayout = [
+            ['KRW-VND', 'USD-KRW', 'VND-KRW', 'USDT-KRW'],
+            ['KRW-USD', 'USD-VND', 'VND-USD', 'USDT-VND'],
+            ['KRW-USDT', null, 'VND-USDT', null]
+        ];
+
+        return (
+            <div className="mb-8 p-4 border rounded-lg bg-indigo-50">
+                <h2 className="text-xl font-bold mb-4 text-indigo-800">실시간 환율 정보 (API 참고용)</h2>
+                {isFetchingRates ? (
+                    <p>실시간 환율 정보를 불러오는 중...</p>
+                ) : (
+                    <>
+                    <div className="space-y-2">
+                        {ratePairsLayout.map((row, rowIndex) => (
+                            <div key={rowIndex} className="grid grid-cols-2 md:grid-cols-4 gap-x-4">
+                                {row.map((pairKey, colIndex) => {
+                                    if (!pairKey) {
+                                        return <div key={`${rowIndex}-${colIndex}`} />;
+                                    }
+                                    const [from, to] = pairKey.split('-');
+                                    const rate = realTimeRates[pairKey];
+                                    return (
+                                        <div key={pairKey} className="text-sm p-1">
+                                            <span className="font-semibold text-gray-600">{from} → {to}: </span>
+                                            <span className="font-mono text-indigo-700">{formatRate(rate)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="border-t mt-4 pt-4">
+                         <h3 className="text-lg font-semibold mb-2 text-indigo-700">주요 암호화폐 시세</h3>
+                         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4">
+                            {['BTC', 'ETH'].map(coin => (
+                                <div key={coin} className="text-sm p-1">
+                                     <span className="font-semibold text-gray-600">{coin}: </span>
+                                     <span className="font-mono text-indigo-700">
+                                        {cryptoRates[coin]?.KRW ? `₩${formatNumberWithCommas(cryptoRates[coin].KRW)}` : ''}
+                                        {cryptoRates[coin]?.KRW && cryptoRates[coin]?.USDT ? ' / ' : ''}
+                                        {cryptoRates[coin]?.USDT ? `$${formatNumberWithCommas(cryptoRates[coin].USDT)}` : ''}
+                                    </span>
+                                </div>
+                            ))}
+                         </div>
+                    </div>
+                    </>
+                )}
+            </div>
+        );
+    };
+
+    const renderTransactionRateSection = () => (
+        <div>
+            <div onClick={() => setIsInputOpen(!isInputOpen)} className="flex justify-between items-center cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100">
+                <h2 className="text-xl font-bold">금일 환율 설정 (거래 계산용)</h2>
+                <ChevronDownIcon className={`w-6 h-6 transition-transform text-gray-500 ${isInputOpen ? 'rotate-180' : ''}`} />
+            </div>
+            {isInputOpen && (
+                <div className="mb-6">
+                    <div className="space-y-6">
+                        <div className="p-4 border rounded-lg bg-gray-50">
+                            <h3 className="font-semibold text-lg mb-3 text-blue-700">USD ⇆ VND</h3>
+                            {renderTransactionRateInputs('USD')}
+                        </div>
+                        <div className="p-4 border rounded-lg bg-gray-50">
+                            <h3 className="font-semibold text-lg mb-3 text-green-700">KRW ⇆ VND</h3>
+                            {renderTransactionRateInputs('KRW')}
+                        </div>
+                        <div className="p-4 border rounded-lg bg-gray-50">
+                            <h3 className="font-semibold text-lg mb-3 text-yellow-600">USDT ⇆ USD</h3>
+                            {renderTransactionRateInputs('USDT')}
+                        </div>
+                    </div>
+                    <button onClick={handleSaveTransactionRates} disabled={isSaving} className="w-full mt-6 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:bg-gray-400">
+                        {isSaving ? '저장 중...' : <><SaveIcon /> 금일 환율 저장</>}
+                    </button>
+                </div>
+            )}
+            <div className="mt-8">
+                <h3 className="text-lg font-bold mb-4">변경 내역</h3>
+                <AdvancedSearchPanel filters={searchFilters} setFilters={setSearchFilters} onSearch={setAppliedFilters} type="transaction" />
+                {renderHistoryTable(filteredHistory, ['거래일', '구분', '권별', '내가 살때', '내가 팔때', '사용자'])}
+            </div>
+        </div>
+    );
+    
+    const renderGoldsmithRateSection = () => (
+        <div>
+            <div onClick={() => setIsInputOpen(!isInputOpen)} className="flex justify-between items-center cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100">
+                <h2 className="text-xl font-bold">금은방 시세 (참고용)</h2>
+                <ChevronDownIcon className={`w-6 h-6 transition-transform text-gray-500 ${isInputOpen ? 'rotate-180' : ''}`} />
+            </div>
+            {isInputOpen && (
+                 <div className="mb-6">
+                    <div className="p-4 border rounded-lg bg-gray-50 space-y-6">
+                        <div>
+                            <h3 className="font-semibold text-lg mb-2 text-blue-700">USD → VND</h3>
+                            {renderGoldsmithInputs('USD')}
+                        </div>
+                         <div>
+                            <h3 className="font-semibold text-lg mb-2 text-green-700">KRW → VND</h3>
+                            {renderGoldsmithInputs('KRW')}
+                        </div>
+                    </div>
+                    <button onClick={handleSaveGoldsmith} disabled={isSaving} className="w-full mt-4 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition flex items-center justify-center gap-2 disabled:bg-gray-400">
+                        {isSaving ? '저장 중...' : <><SaveIcon /> 금은방 시세 저장</>}
+                    </button>
+                </div>
+            )}
+            <div className="mt-8">
+                <h3 className="text-lg font-bold mb-4">변경 내역</h3>
+                <AdvancedSearchPanel filters={searchFilters} setFilters={setSearchFilters} onSearch={setAppliedFilters} type="goldsmith" />
+                {renderHistoryTable(filteredHistory, ['거래일', '구분', '권별', '시세', '사용자'])}
+            </div>
+        </div>
+    );
+
+    const renderTransactionRateInputs = (currency) => {
+        const groups = RATE_GROUPS[currency];
+        if (!groups) return null;
+
+        return (
+            <div className="space-y-4">
+                {groups.map(group => {
+                    const groupKey = group.denoms.join('_');
+                    const label = `${group.label} ${CURRENCY_SYMBOLS[currency]}`;
+                    const buyRate = transactionRates[currency]?.[`${groupKey}_buy`] || '';
+                    const sellRate = transactionRates[currency]?.[`${groupKey}_sell`] || '';
+
+                    return (
+                        <div key={`${currency}-${groupKey}`}>
+                            <label className="block font-medium text-gray-700 mb-1">{label}</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-gray-600">내가 살 때 (VND)</label>
+                                    <input type="text" value={formatNumberWithCommas(buyRate)} onChange={(e) => handleRateChange(setTransactionRates, currency, groupKey, 'buy', e.target.value)} className="w-full p-2 border rounded-md" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600">내가 팔 때 (VND)</label>
+                                    <input type="text" value={formatNumberWithCommas(sellRate)} onChange={(e) => handleRateChange(setTransactionRates, currency, groupKey, 'sell', e.target.value)} className="w-full p-2 border rounded-md" />
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        );
+    };
+
+     const renderGoldsmithInputs = (currency) => {
+        const groups = RATE_GROUPS[currency];
+        if (!groups) return null;
+
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                {groups.map(group => {
+                    const groupKey = group.denoms.join('_');
+                    const label = `${group.label} ${CURRENCY_SYMBOLS[currency]}`;
+                    
+                    return (
+                        <div key={`${currency}-${groupKey}`} className="flex items-center gap-2">
+                            <label className="w-32 text-sm text-right shrink-0">{label}</label>
+                            <input 
+                                type="text"
+                                value={formatNumberWithCommas(goldsmithRates[currency]?.[groupKey] || '')}
+                                onChange={(e) => handleRateChange(setGoldsmithRates, currency, groupKey, null, e.target.value)}
+                                className="w-full p-2 border rounded-md"
+                                placeholder="VND 시세"
+                            />
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const renderHistoryTable = (history, headers) => (
+        <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left bg-white rounded-lg shadow">
+                <thead className="bg-gray-50">
+                    <tr>
+                        {headers.map(h => <th key={h} className="p-2">{h}</th>)}
+                    </tr>
+                </thead>
+                <tbody>
+                    {history.map(item => (
+                        <tr key={item.id} className="border-b">
+                            <td className="p-2 text-gray-500">{item.timestamp?.toDate().toLocaleString('ko-KR')}</td>
+                            <td className="p-2">{item.category}</td>
+                            <td className="p-2">{item.denomination}</td>
+                            {headers.includes('내가 살때') && <td className="p-2">{formatNumberWithCommas(item.buyRate)}</td>}
+                            {headers.includes('내가 팔때') && <td className="p-2">{formatNumberWithCommas(item.sellRate)}</td>}
+                            {headers.includes('시세') && <td className="p-2">{formatNumberWithCommas(item.rate)}</td>}
+                            <td className="p-2 text-gray-500 truncate" style={{maxWidth: '100px'}} title={item.userId}>{item.userId}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow">
+            {renderRealTimeRates()}
+            <div className="flex border-b mb-6">
+                <button onClick={() => setView('transaction')} className={`py-2 px-4 font-semibold ${view === 'transaction' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}>
+                    금일 환율 설정
+                </button>
+                <button onClick={() => setView('goldsmith')} className={`py-2 px-4 font-semibold ${view === 'goldsmith' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}>
+                    금은방 시세
+                </button>
+            </div>
+            {view === 'transaction' ? renderTransactionRateSection() : renderGoldsmithRateSection()}
+        </div>
+    );
+}
+
+function AdvancedSearchPanel({ filters, setFilters, onSearch, type }) {
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const resetFilters = () => {
+        const initialFilters = {
+            startDate: '', endDate: '', category: '', denomination: '',
+            buyRate: '', sellRate: '', rate: '', user: ''
+        };
+        setFilters(initialFilters);
+        onSearch(initialFilters);
+    };
+
+    const denominations = useMemo(() => {
+        const allDenomsWithOptions = [];
+        Object.entries(RATE_GROUPS).forEach(([currency, groups]) => {
+            const symbol = CURRENCY_SYMBOLS[currency] || '';
+            groups.forEach(group => {
+                allDenomsWithOptions.push({
+                    value: group.label,
+                    text: `${symbol} ${group.label}`
+                });
+            });
+        });
+        const uniqueDenoms = Array.from(new Map(allDenomsWithOptions.map(item => [item.value, item])).values());
+        return uniqueDenoms;
+    }, []);
+
+    const categories = useMemo(() => {
+        if (type === 'transaction') {
+            return ['USD ⇆ VND', 'KRW ⇆ VND', 'USDT ⇆ USD'];
+        }
+        return ['USD → VND', 'KRW → VND'];
+    }, [type]);
+
+    return (
+        <div className="p-4 border rounded-lg bg-gray-50 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">거래일</label>
+                    <div className="flex items-center gap-2">
+                        <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} className="w-full p-1 border rounded-md text-sm" />
+                        <span>~</span>
+                        <input type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} className="w-full p-1 border rounded-md text-sm" />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">구분</label>
+                    <select name="category" value={filters.category} onChange={handleFilterChange} className="w-full p-2 border rounded-md text-sm">
+                        <option value="">전체</option>
+                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                </div>
+                 <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">권별</label>
+                    <select name="denomination" value={filters.denomination} onChange={handleFilterChange} className="w-full p-2 border rounded-md text-sm">
+                        <option value="">전체</option>
+                        {denominations.map(d => <option key={d.value} value={d.value}>{d.text}</option>)}
+                    </select>
+                </div>
+                {type === 'transaction' && (
+                    <>
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 mb-1 block">내가 살때 (이상)</label>
+                            <input type="text" name="buyRate" placeholder="금액 입력" value={filters.buyRate} onChange={(e) => handleNumericInput(e.target.value, (val) => handleFilterChange({target: {name: 'buyRate', value: val}}))} className="w-full p-2 border rounded-md text-sm" />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-700 mb-1 block">내가 팔때 (이상)</label>
+                            <input type="text" name="sellRate" placeholder="금액 입력" value={filters.sellRate} onChange={(e) => handleNumericInput(e.target.value, (val) => handleFilterChange({target: {name: 'sellRate', value: val}}))} className="w-full p-2 border rounded-md text-sm" />
+                        </div>
+                    </>
+                )}
+                {type === 'goldsmith' && (
+                    <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">시세 (이상)</label>
+                        <input type="text" name="rate" placeholder="금액 입력" value={filters.rate} onChange={(e) => handleNumericInput(e.target.value, (val) => handleFilterChange({target: {name: 'rate', value: val}}))} className="w-full p-2 border rounded-md text-sm" />
+                    </div>
+                )}
+                <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">사용자</label>
+                    <input type="text" name="user" placeholder="사용자명" value={filters.user} onChange={handleFilterChange} className="w-full p-2 border rounded-md text-sm" />
+                </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+                <button onClick={resetFilters} className="text-sm bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">초기화</button>
+                <button onClick={() => onSearch(filters)} className="text-sm bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">검색</button>
+            </div>
+        </div>
+    );
+}
