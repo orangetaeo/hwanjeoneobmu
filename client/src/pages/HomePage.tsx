@@ -153,7 +153,7 @@ export default function HomePage() {
       type: 'crypto' as const,
       assetId: `${type}_${asset.id}`,
       displayName: `${(asset as ExchangeAsset).exchangeName || '바이낸스'} (${asset.coinName})`,
-      balance: asset.quantity || asset.balance // quantity 필드를 balance로 매핑
+      balance: asset.quantity || (asset as any).balance // quantity 필드를 balance로 매핑
     });
     
     return [
@@ -834,74 +834,9 @@ export default function HomePage() {
                       >
                         <item.icon className="mr-3" size={18} />
                         <span>{item.label}</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'assets' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('assets')}
-                      data-testid="desktop-nav-assets"
-                    >
-                      <Wallet className="mr-3" size={18} />
-                      <span>자산 관리</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'rates' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('rates')}
-                      data-testid="desktop-nav-rates"
-                    >
-                      <TrendingUp className="mr-3" size={18} />
-                      <span>환율/시세 관리</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'transaction' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('transaction')}
-                      data-testid="desktop-nav-transaction"
-                    >
-                      <DollarSign className="mr-3" size={18} />
-                      <span>간편 거래</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'advanced-transaction' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setShowAdvancedTransactionForm(true)}
-                      data-testid="desktop-nav-advanced-transaction"
-                    >
-                      <TrendingUp className="mr-3" size={18} />
-                      <span>고급 거래</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'transactions' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('transactions')}
-                      data-testid="desktop-nav-transactions"
-                    >
-                      <List className="mr-3" size={18} />
-                      <span>거래 내역</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start"
-                      onClick={() => setShowUserSettings(true)}
-                      data-testid="desktop-nav-settings"
-                    >
-                      <Settings className="mr-3" size={18} />
-                      <span>거래 설정</span>
-                    </Button>
-                  </li>
+                      </Button>
+                    </li>
+                  ))}
                 </ul>
               </nav>
             </Card>
