@@ -60,9 +60,18 @@ export function useExchangeRates() {
         console.error("환율 API 호출 실패:", error);
         // 오류 발생 시 기본값 설정
         setRealTimeRates({
+          'KRW-USD': 1 / 1350,
           'USD-KRW': 1350,
+          'KRW-VND': 1 / 0.055, // 약 18.18
           'VND-KRW': 0.055,
-          'USDT-KRW': 1350
+          'USD-VND': 24500,
+          'VND-USD': 1 / 24500,
+          'USDT-USD': 1,
+          'USD-USDT': 1,
+          'USDT-KRW': 1350,
+          'KRW-USDT': 1 / 1350,
+          'USDT-VND': 24500,
+          'VND-USDT': 1 / 24500,
         });
         setCryptoRates({
           'USDT': { KRW: 1350, USDT: 1 },
