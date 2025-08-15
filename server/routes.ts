@@ -67,12 +67,22 @@ router.get('/transactions/:id', requireAuth, async (req: AuthenticatedRequest, r
 // Assets Routes
 router.post('/assets', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const validatedData = insertAssetSchema.parse(req.body);
+    // userId를 자동으로 추가
+    const dataWithUserId = {
+      ...req.body,
+      userId: req.user!.id
+    };
+    
+    console.log('Asset creation request:', JSON.stringify(dataWithUserId, null, 2));
+    const validatedData = insertAssetSchema.parse(dataWithUserId);
     const asset = await storage.createAsset(req.user!.id, validatedData);
     res.json(asset);
   } catch (error) {
     console.error('Error creating asset:', error);
-    res.status(400).json({ error: 'Invalid asset data' });
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+    }
+    res.status(400).json({ error: 'Invalid asset data', details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
