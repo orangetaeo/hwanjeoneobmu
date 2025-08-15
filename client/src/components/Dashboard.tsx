@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import CurrencyIcon from '@/components/CurrencyIcon';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, Transaction, CURRENCY_SYMBOLS } from '@/types';
 import { formatNumberWithCommas, formatCurrency } from '@/utils/helpers';
 
@@ -236,11 +237,30 @@ export default function Dashboard({
               const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
               
               return (
-                <Card key={currency} className="p-6">
+                <Card key={currency} className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-center mb-3">
+                    <CurrencyIcon currency={currency} size={40} />
+                  </div>
                   <h3 className="text-lg font-bold text-gray-600 mb-2">{currency}</h3>
                   <p className="text-xl font-semibold text-gray-800">
                     {currencySymbol} {formattedTotal}
                   </p>
+                  {/* 환율 정보 표시 */}
+                  {currency === 'USDT' && realTimeRates['USDT-KRW'] && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      ≈ ₩{formatCurrency(total * realTimeRates['USDT-KRW'], 'KRW')}
+                    </p>
+                  )}
+                  {currency === 'USD' && realTimeRates['USD-KRW'] && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      ≈ ₩{formatCurrency(total * realTimeRates['USD-KRW'], 'KRW')}
+                    </p>
+                  )}
+                  {currency === 'VND' && realTimeRates['VND-KRW'] && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      ≈ ₩{formatCurrency(total * realTimeRates['VND-KRW'], 'KRW')}
+                    </p>
+                  )}
                 </Card>
               );
             })}
@@ -258,7 +278,10 @@ export default function Dashboard({
               {cashAssets.map(asset => (
                 <div key={asset.id} className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-center">
-                    <p className="font-semibold">{asset.name}</p>
+                    <div className="flex items-center">
+                      <CurrencyIcon currency={asset.currency} size={24} className="mr-3" />
+                      <p className="font-semibold">{asset.name}</p>
+                    </div>
                     <p className="font-mono text-gray-800">
                       {formatCurrency(asset.balance, asset.currency)} {asset.currency}
                     </p>
@@ -278,16 +301,23 @@ export default function Dashboard({
               <div className="space-y-3">
                 {koreanAccounts.map(acc => (
                   <div key={acc.id} className="p-4 bg-gray-50 rounded-lg">
-                    <p className="font-semibold">
-                      {acc.bankName} 
-                      <span className="text-sm font-normal text-gray-600 ml-2">
-                        ({acc.accountHolder})
-                      </span>
-                    </p>
-                    <p className="text-sm text-gray-500">{acc.accountNumber}</p>
-                    <p className="text-right font-mono text-blue-600 mt-2">
-                      {formatCurrency(acc.balance, 'KRW')} KRW
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CurrencyIcon currency="KRW" size={24} className="mr-3" />
+                        <div>
+                          <p className="font-semibold">
+                            {acc.bankName} 
+                            <span className="text-sm font-normal text-gray-600 ml-2">
+                              ({acc.accountHolder})
+                            </span>
+                          </p>
+                          <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                        </div>
+                      </div>
+                      <p className="font-mono text-blue-600">
+                        {formatCurrency(acc.balance, 'KRW')} KRW
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -302,16 +332,23 @@ export default function Dashboard({
               <div className="space-y-3">
                 {vietnameseAccounts.map(acc => (
                   <div key={acc.id} className="p-4 bg-gray-50 rounded-lg">
-                    <p className="font-semibold">
-                      {acc.bankName}
-                      <span className="text-sm font-normal text-gray-600 ml-2">
-                        ({acc.accountHolder})
-                      </span>
-                    </p>
-                    <p className="text-sm text-gray-500">{acc.accountNumber}</p>
-                    <p className="text-right font-mono text-green-600 mt-2">
-                      {formatCurrency(acc.balance, 'VND')} VND
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CurrencyIcon currency="VND" size={24} className="mr-3" />
+                        <div>
+                          <p className="font-semibold">
+                            {acc.bankName}
+                            <span className="text-sm font-normal text-gray-600 ml-2">
+                              ({acc.accountHolder})
+                            </span>
+                          </p>
+                          <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                        </div>
+                      </div>
+                      <p className="font-mono text-green-600">
+                        {formatCurrency(acc.balance, 'VND')} VND
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -326,11 +363,18 @@ export default function Dashboard({
               <div className="space-y-3">
                 {exchangeAssets.map(asset => (
                   <div key={asset.id} className="p-4 bg-gray-50 rounded-lg">
-                    <p className="font-semibold">{asset.exchangeName}</p>
-                    <p className="text-sm text-gray-600">{asset.coinName}</p>
-                    <p className="text-right font-mono text-purple-600 mt-2">
-                      {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CurrencyIcon currency={asset.coinName} size={24} className="mr-3" />
+                        <div>
+                          <p className="font-semibold">{asset.exchangeName}</p>
+                          <p className="text-sm text-gray-600">{asset.coinName}</p>
+                        </div>
+                      </div>
+                      <p className="font-mono text-purple-600">
+                        {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -345,10 +389,15 @@ export default function Dashboard({
               <div className="space-y-3">
                 {binanceAssets.map(asset => (
                   <div key={asset.id} className="p-4 bg-gray-50 rounded-lg">
-                    <p className="font-semibold">{asset.coinName}</p>
-                    <p className="text-right font-mono text-yellow-600 mt-2">
-                      {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <CurrencyIcon currency={asset.coinName} size={24} className="mr-3" />
+                        <p className="font-semibold">{asset.coinName}</p>
+                      </div>
+                      <p className="font-mono text-yellow-600">
+                        {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
