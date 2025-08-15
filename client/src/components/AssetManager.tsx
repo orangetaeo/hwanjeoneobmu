@@ -160,9 +160,9 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <Card key={account.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h4 className="font-semibold text-gray-900 truncate">{account.metadata?.bank || account.name}</h4>
-                      <p className="text-sm text-gray-600 truncate">{account.metadata?.accountHolder}</p>
-                      <p className="text-sm text-gray-500 truncate">{account.metadata?.accountNumber}</p>
+                      <h4 className="font-semibold text-gray-900 truncate">{account.bankName || account.metadata?.bank || account.name}</h4>
+                      <p className="text-sm text-gray-600 truncate">{account.accountHolder || account.metadata?.accountHolder}</p>
+                      <p className="text-sm text-gray-500 truncate">{account.accountNumber || account.metadata?.accountNumber}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -205,9 +205,9 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <Card key={account.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h4 className="font-semibold text-gray-900 truncate">{account.metadata?.bank || account.name}</h4>
-                      <p className="text-sm text-gray-600 truncate">{account.metadata?.accountHolder}</p>
-                      <p className="text-sm text-gray-500 truncate">{account.metadata?.accountNumber}</p>
+                      <h4 className="font-semibold text-gray-900 truncate">{account.bankName || account.metadata?.bank || account.name}</h4>
+                      <p className="text-sm text-gray-600 truncate">{account.accountHolder || account.metadata?.accountHolder}</p>
+                      <p className="text-sm text-gray-500 truncate">{account.accountNumber || account.metadata?.accountNumber}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
