@@ -117,10 +117,11 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">{getTitle()}</h2>
-      
-      <Form {...form}>
+    <Card className="max-h-[80vh] overflow-y-auto relative">
+      <div className="p-6 pb-20">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">{getTitle()}</h2>
+        
+        <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
           {type === 'cash' && (
             <>
@@ -335,16 +336,35 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
             </>
           )}
 
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel">
-              취소
-            </Button>
-            <Button type="submit" data-testid="button-submit">
-              {editData ? '수정' : '추가'}
-            </Button>
+          {/* Fixed bottom buttons with enhanced visibility */}
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 -m-6 mt-6">
+            <div className="flex justify-between space-x-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel} 
+                size="lg"
+                className="flex-1 h-12 text-base font-medium border-2 hover:bg-gray-50"
+                data-testid="button-cancel"
+              >
+                ✕ 취소
+              </Button>
+              <Button 
+                type="submit" 
+                size="lg"
+                className="flex-1 h-12 text-base font-medium bg-blue-600 hover:bg-blue-700"
+                data-testid="button-submit"
+              >
+                {editData ? '✓ 수정하기' : '✓ 추가하기'}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              취소하려면 왼쪽 버튼을, 저장하려면 오른쪽 버튼을 클릭하세요
+            </p>
           </div>
         </form>
-      </Form>
+        </Form>
+      </div>
     </Card>
   );
 }
