@@ -160,7 +160,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
               {form.watch('currency') && (
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900">지폐 구성</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {Object.entries(denominations)
                       .sort(([a], [b]) => {
                         // Remove commas and convert to number for sorting
@@ -171,39 +171,45 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       .map(([denom, count]) => {
                       const countValue = typeof count === 'number' ? count : 0;
                       return (
-                        <div key={denom} className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
+                        <div key={denom} className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                          <label className="text-sm font-semibold text-gray-800 block text-center">
                             {form.watch('currency') === 'KRW' ? `${denom}원권` :
                              form.watch('currency') === 'USD' ? `$${denom}` :
                              `${denom}₫`}
                           </label>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-3">
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
+                              size="default"
                               onClick={() => updateDenomination(denom, countValue - 1)}
+                              className="h-10 w-10 p-0 flex-shrink-0"
                               data-testid={`button-decrease-${denom}`}
                             >
-                              <Minus size={16} />
+                              <Minus size={18} />
                             </Button>
                             <Input
                               type="number"
                               value={countValue.toString()}
                               onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
-                              className="text-center"
+                              className="text-center text-lg font-medium h-12 flex-1 min-w-0"
                               min="0"
                               data-testid={`input-denom-${denom}`}
                             />
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
+                              size="default"
                               onClick={() => updateDenomination(denom, countValue + 1)}
+                              className="h-10 w-10 p-0 flex-shrink-0"
                               data-testid={`button-increase-${denom}`}
                             >
-                              <Plus size={16} />
+                              <Plus size={18} />
                             </Button>
+                          </div>
+                          <div className="text-xs text-gray-500 text-center">
+                            총액: {form.watch('currency') === 'KRW' ? '₩' : 
+                                  form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
                           </div>
                         </div>
                       );
