@@ -68,11 +68,23 @@ export default function HomePage() {
           const assetsData = await assetsRes.json();
           const transactionsData = await transactionsRes.json();
 
-          // 자산을 타입별로 분류
+          // 자산을 타입별로 분류 - 디버깅 로그 추가
+          console.log('All assets from API:', assetsData);
+          
           const cashAssets = assetsData.filter((asset: any) => asset.type === 'cash');
           const allAccounts = assetsData.filter((asset: any) => asset.type === 'account');
           const exchanges = assetsData.filter((asset: any) => asset.type === 'exchange');
           const binanceAssets = assetsData.filter((asset: any) => asset.type === 'binance');
+
+          console.log('Filtered assets:', {
+            cashAssets: cashAssets.length,
+            allAccounts: allAccounts.length, 
+            exchanges: exchanges.length,
+            binanceAssets: binanceAssets.length
+          });
+          
+          console.log('Exchange assets details:', exchanges);
+          console.log('Binance assets details:', binanceAssets);
 
           // 계좌를 한국/베트남으로 분리
           const koreanAccounts = allAccounts.filter((account: any) => 
