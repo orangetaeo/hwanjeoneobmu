@@ -521,15 +521,31 @@ export default function HomePage() {
           {/* Main Content */}
           <main className="flex-1 min-w-0">
             {showAssetForm ? (
-              <AssetForm
-                type={assetFormType}
-                editData={editingAsset}
-                onSubmit={handleAssetFormSubmit}
-                onCancel={() => {
-                  setShowAssetForm(false);
-                  setEditingAsset(null);
-                }}
-              />
+              <>
+                {/* Modal Backdrop */}
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                  onClick={(e) => {
+                    // Close modal if clicking on backdrop
+                    if (e.target === e.currentTarget) {
+                      setShowAssetForm(false);
+                      setEditingAsset(null);
+                    }
+                  }}
+                >
+                  <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                    <AssetForm
+                      type={assetFormType}
+                      editData={editingAsset}
+                      onSubmit={handleAssetFormSubmit}
+                      onCancel={() => {
+                        setShowAssetForm(false);
+                        setEditingAsset(null);
+                      }}
+                    />
+                  </div>
+                </div>
+              </>
             ) : (
               <>
                 {currentView === 'dashboard' && (
