@@ -15,15 +15,17 @@ interface AssetManagerProps {
     binanceAssets: BinanceAsset[];
   };
   onOpenModal: (type: string, data?: any) => void;
+  activeTab?: string;
+  onTabChange?: (value: string) => void;
 }
 
-export default function AssetManager({ data, onOpenModal }: AssetManagerProps) {
+export default function AssetManager({ data, onOpenModal, activeTab = "cash", onTabChange }: AssetManagerProps) {
   const { cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets } = data;
 
   return (
     <div className="space-y-6">
       <Card>
-        <Tabs defaultValue="cash" className="w-full">
+        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
           <div className="border-b border-gray-200">
             <TabsList className="grid w-full grid-cols-5 bg-transparent p-0 h-auto">
               <TabsTrigger 

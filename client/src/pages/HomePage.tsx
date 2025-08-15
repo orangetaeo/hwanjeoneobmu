@@ -66,6 +66,7 @@ export default function HomePage() {
   const [showAssetForm, setShowAssetForm] = useState(false);
   const [assetFormType, setAssetFormType] = useState<'cash' | 'korean-account' | 'vietnamese-account' | 'exchange' | 'binance'>('cash');
   const [editingAsset, setEditingAsset] = useState(null);
+  const [activeAssetTab, setActiveAssetTab] = useState('cash');
 
   // Initialize with sample data for development and save to localStorage
   useEffect(() => {
@@ -273,26 +274,31 @@ export default function HomePage() {
       case 'addCash':
       case 'addCashAsset':
         setAssetFormType('cash');
+        setActiveAssetTab('cash');
         setEditingAsset(null);
         setShowAssetForm(true);
         break;
       case 'addKoreanAccount':
         setAssetFormType('korean-account');
+        setActiveAssetTab('korean-banks');
         setEditingAsset(null);
         setShowAssetForm(true);
         break;
       case 'addVietnameseAccount':
         setAssetFormType('vietnamese-account');
+        setActiveAssetTab('vietnamese-banks');
         setEditingAsset(null);
         setShowAssetForm(true);
         break;
       case 'addExchangeAsset':
         setAssetFormType('exchange');
+        setActiveAssetTab('exchanges');
         setEditingAsset(null);
         setShowAssetForm(true);
         break;
       case 'addBinanceAsset':
         setAssetFormType('binance');
+        setActiveAssetTab('binance');
         setEditingAsset(null);
         setShowAssetForm(true);
         break;
@@ -300,13 +306,25 @@ export default function HomePage() {
       case 'editAccount':
         if (data) {
           // Determine asset type based on data structure
-          if (data.denominations) setAssetFormType('cash');
-          else if (data.exchangeName) setAssetFormType('exchange');
-          else if (data.coinName && !data.exchangeName) setAssetFormType('binance');
-          else if (data.bankName) {
+          if (data.denominations) {
+            setAssetFormType('cash');
+            setActiveAssetTab('cash');
+          } else if (data.exchangeName) {
+            setAssetFormType('exchange');
+            setActiveAssetTab('exchanges');
+          } else if (data.coinName && !data.exchangeName) {
+            setAssetFormType('binance');
+            setActiveAssetTab('binance');
+          } else if (data.bankName) {
             // Check if it's Korean or Vietnamese account based on existing data
             const isKorean = koreanAccounts.find(acc => acc.id === data.id);
-            setAssetFormType(isKorean ? 'korean-account' : 'vietnamese-account');
+            if (isKorean) {
+              setAssetFormType('korean-account');
+              setActiveAssetTab('korean-banks');
+            } else {
+              setAssetFormType('vietnamese-account');
+              setActiveAssetTab('vietnamese-banks');
+            }
           }
           setEditingAsset(data);
           setShowAssetForm(true);
@@ -693,6 +711,8 @@ export default function HomePage() {
                   <AssetManager
                     data={{ cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets }}
                     onOpenModal={handleOpenModal}
+                    activeTab={activeAssetTab}
+                    onTabChange={setActiveAssetTab}
                   />
                 )}
                 {currentView === 'transaction' && (
