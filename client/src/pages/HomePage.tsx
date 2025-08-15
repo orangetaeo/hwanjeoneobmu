@@ -6,12 +6,17 @@ import {
   DollarSign, 
   Wallet,
   List,
-  ChartLine
+  ChartLine,
+  Plus,
+  Building,
+  Coins,
+  Bitcoin
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { collection, onSnapshot, doc, addDoc, query, orderBy, limit, setDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
-import { useExchangeRates } from '@/hooks/useExchangeRates';
+// import { useFirebaseAuth } from '@/hooks/useFirebaseAuth'; // 임시 비활성화
+// import { useExchangeRates } from '@/hooks/useExchangeRates'; // CORS 문제로 임시 비활성화
 import Dashboard from '@/components/Dashboard';
 import AssetManager from '@/components/AssetManager';
 import TransactionForm from '@/components/TransactionForm';
@@ -25,41 +30,103 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, Transaction, Asset, ModalInfo } from '@/types';
 
-const initialAssets = [
-  { 
-    name: 'KRW 현금', 
-    type: 'cash', 
-    currency: 'KRW', 
-    balance: 3540000, 
-    denominations: { '50000': 59, '10000': 59, '5000': 0, '1000': 0 } 
-  },
-  { 
-    name: 'USD 현금', 
-    type: 'cash', 
-    currency: 'USD', 
-    balance: 436, 
-    denominations: { '100': 2, '50': 1, '20': 3, '10': 8, '5': 3, '2': 0, '1': 31 } 
-  },
-  { 
-    name: 'VND 현금', 
-    type: 'cash', 
-    currency: 'VND', 
-    balance: 30790000, 
-    denominations: { '500000': 56, '200000': 10, '100000': 5, '50000': 4, '20000': 1, '10000': 7 } 
-  },
-];
-
 export default function HomePage() {
-  const { user, loading: authLoading } = useFirebaseAuth();
-  const { realTimeRates, cryptoRates, isFetchingRates } = useExchangeRates();
+  // Firebase 인증 임시 비활성화 - 개발용
+  const user = { uid: 'dev-user' };
+  const authLoading = false;
   
-  // Data states
-  const [cashAssets, setCashAssets] = useState<CashAsset[]>([]);
-  const [koreanAccounts, setKoreanAccounts] = useState<BankAccount[]>([]);
-  const [vietnameseAccounts, setVietnameseAccounts] = useState<BankAccount[]>([]);
-  const [exchangeAssets, setExchangeAssets] = useState<ExchangeAsset[]>([]);
-  const [binanceAssets, setBinanceAssets] = useState<BinanceAsset[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  // 환율 데이터를 단순화하여 CORS 문제 회피
+  const realTimeRates = { 'USD-KRW': 1300, 'VND-KRW': 0.055, 'USDT-KRW': 1300 };
+  const cryptoRates = {};
+  const isFetchingRates = false;
+  
+  // Fetch assets from server
+  const { data: serverAssets = [], isLoading: assetsLoading } = useQuery({
+    queryKey: ['/api/assets'],
+    enabled: true,
+  });
+
+  const { data: serverTransactions = [], isLoading: transactionsLoading } = useQuery({
+    queryKey: ['/api/transactions'],
+    enabled: true,
+  });
+
+  // Transform server assets to UI format
+  const { cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets } = useMemo(() => {
+    const cash: CashAsset[] = [];
+    const korean: BankAccount[] = [];
+    const vietnamese: BankAccount[] = [];
+    const exchange: ExchangeAsset[] = [];
+    const binance: BinanceAsset[] = [];
+
+    (serverAssets as any[]).forEach((asset: any) => {
+      switch (asset.type) {
+        case 'cash':
+          cash.push({
+            id: asset.id,
+            name: asset.name,
+            type: 'cash',
+            currency: asset.currency,
+            balance: parseFloat(asset.balance),
+            denominations: asset.metadata || {}
+          });
+          break;
+        case 'account':
+          const accountData = {
+            id: asset.id,
+            bankName: asset.metadata?.bank || 'Unknown Bank',
+            accountNumber: asset.id,
+            accountHolder: asset.metadata?.holder || 'Unknown',
+            balance: parseFloat(asset.balance)
+          };
+          if (asset.metadata?.country === '베트남') {
+            vietnamese.push(accountData);
+          } else {
+            korean.push(accountData);
+          }
+          break;
+        case 'exchange':
+          if (asset.metadata?.exchange === 'Binance') {
+            binance.push({
+              id: asset.id,
+              coinName: asset.currency,
+              quantity: parseFloat(asset.balance),
+              currency: asset.currency
+            });
+          } else {
+            exchange.push({
+              id: asset.id,
+              exchangeName: asset.metadata?.exchange || 'Unknown Exchange',
+              coinName: asset.currency,
+              quantity: parseFloat(asset.balance),
+              currency: asset.currency
+            });
+          }
+          break;
+      }
+    });
+
+    return { cashAssets: cash, koreanAccounts: korean, vietnameseAccounts: vietnamese, exchangeAssets: exchange, binanceAssets: binance };
+  }, [serverAssets]);
+
+  const transactions = useMemo(() => {
+    return (serverTransactions as any[]).map((tx: any) => ({
+      id: tx.id,
+      type: tx.type,
+      fromAsset: tx.fromAssetName,
+      toAsset: tx.toAssetName,
+      fromAssetName: tx.fromAssetName, // 추가된 필드
+      toAssetName: tx.toAssetName, // 추가된 필드
+      fromAmount: parseFloat(tx.fromAmount),
+      toAmount: parseFloat(tx.toAmount),
+      rate: parseFloat(tx.rate),
+      fees: parseFloat(tx.fees || '0'),
+      profit: parseFloat(tx.profit || '0'),
+      timestamp: new Date(tx.timestamp),
+      memo: tx.memo,
+      metadata: tx.metadata
+    }));
+  }, [serverTransactions]);
   
   // UI states
   const [currentView, setCurrentView] = useState('dashboard');
@@ -72,869 +139,265 @@ export default function HomePage() {
   const [showAdvancedTransactionForm, setShowAdvancedTransactionForm] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
 
-  // Initialize with sample data for development and save to localStorage
+  // Set loading state based on server data loading only
   useEffect(() => {
-    if (!user || authLoading) return;
+    setLoading(assetsLoading || transactionsLoading);
+  }, [assetsLoading, transactionsLoading]);
 
-    // Try to load from localStorage first
-    const savedData = localStorage.getItem(`exchangeManagerData_${user.uid}`);
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setCashAssets(parsed.cashAssets || []);
-        setKoreanAccounts(parsed.koreanAccounts || []);
-        setVietnameseAccounts(parsed.vietnameseAccounts || []);
-        setExchangeAssets(parsed.exchangeAssets || []);
-        setBinanceAssets(parsed.binanceAssets || []);
-        setTransactions(parsed.transactions || []);
-        setLoading(false);
-        return;
-      } catch (e) {
-        console.log('Failed to load saved data, using default');
-      }
-    }
+  // Navigation menu
+  const menuItems = [
+    { id: 'dashboard', label: '대시보드', icon: Home },
+    { id: 'assets', label: '자산 관리', icon: Wallet },
+    { id: 'transactions', label: '거래 내역', icon: List },
+    { id: 'rates', label: '환율 관리', icon: TrendingUp }
+  ];
 
-    // Sample data initialization
-    setCashAssets([
-      {
-        id: '1',
-        name: '원화 현금',
-        type: 'cash',
-        currency: 'KRW',
-        balance: 1025000,
-        denominations: { '50000': 10, '10000': 20, '5000': 15, '1000': 25 }
-      },
-      {
-        id: '2',
-        name: '달러 현금',
-        type: 'cash',
-        currency: 'USD',
-        balance: 1025,
-        denominations: { '100': 5, '50': 10, '20': 15, '10': 20, '5': 25, '1': 50 }
-      }
-    ]);
-    
-    setKoreanAccounts([
-      {
-        id: '1',
-        bankName: '신한은행',
-        accountNumber: '110-123-456789',
-        accountHolder: 'Hong Gil Dong',
-        balance: 5000000
-      }
-    ]);
-    
-    setVietnameseAccounts([
-      {
-        id: 'vn1', 
-        bankName: 'Vietcombank',
-        accountNumber: '0123456789',
-        accountHolder: 'Nguyen Van A',
-        balance: 50000000
-      },
-      {
-        id: 'vn2',
-        bankName: 'BIDV',
-        accountNumber: '0987654321', 
-        accountHolder: 'Tran Thi B',
-        balance: 25000000
-      }
-    ]);
-    
-    setExchangeAssets([
-      {
-        id: '1',
-        exchangeName: 'Bithumb',
-        coinName: 'USDT',
-        quantity: 2563.07,
-        currency: 'USDT'
-      },
-      {
-        id: '2',
-        exchangeName: 'Upbit',
-        coinName: 'Bitcoin',
-        quantity: 0.15,
-        currency: 'BTC'
-      }
-    ]);
-    
-    setBinanceAssets([
-      {
-        id: '1',
-        coinName: 'USDT',
-        quantity: 1000.18,
-        currency: 'USDT'
-      },
-      {
-        id: '2',
-        coinName: 'BTC',
-        quantity: 0.025,
-        currency: 'BTC'
-      }
-    ]);
-    
-    setTransactions([
-      {
-        id: '1',
-        type: 'exchange',
-        fromAssetName: 'KRW 현금',
-        toAssetName: 'USD 현금',
-        fromAmount: 1350000,
-        toAmount: 1000,
-        rate: 1350,
-        profit: 0,
-        timestamp: new Date('2024-08-15T10:30:00Z')
-      },
-      {
-        id: '2',
-        type: 'transfer',
-        fromAssetName: 'Bithumb USDT',
-        toAssetName: 'Binance USDT',
-        fromAmount: 500,
-        toAmount: 500,
-        rate: 1,
-        profit: 0,
-        timestamp: new Date('2024-08-15T09:15:00Z')
-      }
-    ]);
-    
-    setLoading(false);
-
-    // Save sample data to localStorage
-    const sampleData = {
-      cashAssets: [
-        { id: '1', name: '원화 현금', type: 'cash', currency: 'KRW', balance: 1025000, denominations: { '50000': 10, '10000': 20, '5000': 15, '1000': 25 } },
-        { id: '2', name: '달러 현금', type: 'cash', currency: 'USD', balance: 1025, denominations: { '100': 5, '50': 10, '20': 15, '10': 20, '5': 25, '1': 50 } }
-      ],
-      koreanAccounts: [{ id: '1', bankName: '신한은행', accountNumber: '110-123-456789', accountHolder: 'Hong Gil Dong', balance: 5000000 }],
-      vietnameseAccounts: [
-        { id: 'vn1', bankName: 'Vietcombank', accountNumber: '0123456789', accountHolder: 'Nguyen Van A', balance: 50000000 },
-        { id: 'vn2', bankName: 'BIDV', accountNumber: '0987654321', accountHolder: 'Tran Thi B', balance: 25000000 }
-      ],
-      exchangeAssets: [
-        { id: '1', exchangeName: 'Bithumb', coinName: 'USDT', quantity: 2563.07, currency: 'USDT' },
-        { id: '2', exchangeName: 'Upbit', coinName: 'Bitcoin', quantity: 0.15, currency: 'BTC' }
-      ],
-      binanceAssets: [
-        { id: '1', coinName: 'USDT', quantity: 1000.18, currency: 'USDT' },
-        { id: '2', coinName: 'BTC', quantity: 0.025, currency: 'BTC' }
-      ],
-      transactions: [
-        { id: '1', type: 'exchange', fromAssetName: 'KRW 현금', toAssetName: 'USD 현금', fromAmount: 1350000, toAmount: 1000, rate: 1350, profit: 0, timestamp: new Date('2024-08-15T10:30:00Z') },
-        { id: '2', type: 'transfer', fromAssetName: 'Bithumb USDT', toAssetName: 'Binance USDT', fromAmount: 500, toAmount: 500, rate: 1, profit: 0, timestamp: new Date('2024-08-15T09:15:00Z') }
-      ]
-    };
-    localStorage.setItem(`exchangeManagerData_${user.uid}`, JSON.stringify(sampleData));
-  }, [user, authLoading]);
-
-  // Save data to localStorage whenever state changes
-  useEffect(() => {
-    if (!user?.uid || loading) return;
-    
-    const dataToSave = {
-      cashAssets,
-      koreanAccounts, 
-      vietnameseAccounts,
-      exchangeAssets,
-      binanceAssets,
-      transactions
-    };
-    localStorage.setItem(`exchangeManagerData_${user.uid}`, JSON.stringify(dataToSave));
-  }, [user?.uid, cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets, transactions, loading]);
-
-  // Prepare all assets for transaction form
-  const allAssetsForTransaction = useMemo(() => {
-    const formatAccount = (acc: BankAccount, type: string, currency: string): Asset => ({
-      ...acc,
-      type: 'account' as const,
-      assetId: `${type}_${acc.id}`,
-      displayName: `${acc.bankName} (${acc.accountHolder})`,
-      currency
-    });
-    
-    const formatCrypto = (asset: ExchangeAsset | BinanceAsset, type: string): Asset => ({
-      ...asset,
-      type: 'crypto' as const,
-      assetId: `${type}_${asset.id}`,
-      displayName: `${(asset as ExchangeAsset).exchangeName || '바이낸스'} (${asset.coinName})`
-    });
-    
-    return [
-      ...cashAssets.map(a => ({
-        ...a,
-        type: 'cash' as const,
-        assetId: `cash_${a.id}`,
-        displayName: a.name
-      })),
-      ...koreanAccounts.map(a => formatAccount(a, 'korean_account', 'KRW')),
-      ...vietnameseAccounts.map(a => formatAccount(a, 'vietnamese_account', 'VND')),
-      ...exchangeAssets.map(a => formatCrypto(a, 'exchange_asset')),
-      ...binanceAssets.map(a => formatCrypto(a, 'binance_asset')),
-    ];
-  }, [cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets]);
-
-  const handleOpenModal = (type: string, data?: any) => {
+  const openModal = (type: string) => {
     switch (type) {
-      case 'addCash':
-      case 'addCashAsset':
+      case 'add-cash':
         setAssetFormType('cash');
-        setActiveAssetTab('cash');
-        setEditingAsset(null);
         setShowAssetForm(true);
         break;
-      case 'addKoreanAccount':
+      case 'add-korean-account':
         setAssetFormType('korean-account');
-        setActiveAssetTab('korean-banks');
-        setEditingAsset(null);
         setShowAssetForm(true);
         break;
-      case 'addVietnameseAccount':
+      case 'add-vietnamese-account':
         setAssetFormType('vietnamese-account');
-        setActiveAssetTab('vietnamese-banks');
-        setEditingAsset(null);
         setShowAssetForm(true);
         break;
-      case 'addExchangeAsset':
+      case 'add-exchange':
         setAssetFormType('exchange');
-        setActiveAssetTab('exchanges');
-        setEditingAsset(null);
         setShowAssetForm(true);
         break;
-      case 'addBinanceAsset':
+      case 'add-binance':
         setAssetFormType('binance');
-        setActiveAssetTab('binance');
-        setEditingAsset(null);
         setShowAssetForm(true);
         break;
-      case 'editAsset':
-      case 'editAccount':
-        if (data) {
-          // Determine asset type based on data structure
-          if (data.denominations) {
-            setAssetFormType('cash');
-            setActiveAssetTab('cash');
-          } else if (data.exchangeName) {
-            setAssetFormType('exchange');
-            setActiveAssetTab('exchanges');
-          } else if (data.coinName && !data.exchangeName) {
-            setAssetFormType('binance');
-            setActiveAssetTab('binance');
-          } else if (data.bankName) {
-            // Check if it's Korean or Vietnamese account based on existing data
-            const isKorean = koreanAccounts.find(acc => acc.id === data.id);
-
-            if (isKorean) {
-              setAssetFormType('korean-account');
-              setActiveAssetTab('korean-banks');
-            } else {
-              setAssetFormType('vietnamese-account');
-              setActiveAssetTab('vietnamese-banks');
-            }
-          }
-          setEditingAsset(data);
-          setShowAssetForm(true);
-        }
+      case 'add-transaction':
+        setShowAdvancedTransactionForm(true);
         break;
-      case 'deleteAsset':
-      case 'deleteAccount':
-        setModalInfo({
-          title: '자산 삭제',
-          message: '삭제 사유를 필수로 입력해주세요:',
-          type: 'delete',
-          onConfirm: (memo?: string) => {
-            if (memo?.trim()) {
-              handleDeleteAsset(data, memo);
-            }
-          },
-          asset: data
-        });
+      case 'settings':
+        setShowUserSettings(true);
         break;
-      case 'exchange':
-        setCurrentView('transaction');
-        break;
-      case 'transfer':
-        setCurrentView('transaction');
-        break;
-      case 'reports':
-        setModalInfo({
-          title: '리포트 기능',
-          message: '리포트 기능은 현재 개발 중입니다.',
-          type: 'info'
-        });
-        break;
-      default:
-        setModalInfo({
-          title: '기능 준비 중',
-          message: '해당 기능은 현재 개발 중입니다.',
-          type: 'info'
-        });
     }
   };
 
-  const handleDeleteAsset = async (asset: any, memo?: string) => {
-    if (!user) return;
-    
-    try {
-      const uid = user.uid;
-      const dataPath = `exchangeManagerData_${uid}`;
-      
-      // Log deletion with memo to localStorage
-      const deletionLog = {
-        asset,
-        memo,
-        timestamp: new Date().toISOString(),
-        deletedBy: user.uid
-      };
-      
-      const existingLogs = JSON.parse(localStorage.getItem(`${dataPath}_deletions`) || '[]');
-      existingLogs.push(deletionLog);
-      localStorage.setItem(`${dataPath}_deletions`, JSON.stringify(existingLogs));
-      
-      // Delete from localStorage data
-      if (asset.denominations) {
-        setCashAssets(prev => prev.filter(a => a.id !== asset.id));
-      } else if (asset.exchangeName) {
-        setExchangeAssets(prev => prev.filter(a => a.id !== asset.id));
-      } else if (asset.coinName && !asset.exchangeName) {
-        setBinanceAssets(prev => prev.filter(a => a.id !== asset.id));
-      } else if (asset.bankName) {
-        const isKorean = koreanAccounts.find(acc => acc.id === asset.id);
-        if (isKorean) {
-          setKoreanAccounts(prev => prev.filter(a => a.id !== asset.id));
-        } else {
-          setVietnameseAccounts(prev => prev.filter(a => a.id !== asset.id));
-        }
-      }
-        
-      setModalInfo({
-        title: '삭제 완료',
-        message: `항목이 성공적으로 삭제되었습니다.\n삭제 사유: ${memo}`,
-        type: 'success'
-      });
-    } catch (error) {
-      console.error('Error deleting asset:', error);
-      setModalInfo({
-        title: '삭제 실패',
-        message: '항목 삭제 중 오류가 발생했습니다.',
-        type: 'error'
-      });
-    }
-  };
-
-  const handleAssetFormSubmit = (formData: any) => {
-    if (!user) return;
-    
-    try {
-      if (editingAsset) {
-        // Update existing asset
-        const assetId = (editingAsset as any).id;
-        if (assetFormType === 'cash') {
-          setCashAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        } else if (assetFormType === 'korean-account') {
-          setKoreanAccounts(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        } else if (assetFormType === 'vietnamese-account') {
-          setVietnameseAccounts(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        } else if (assetFormType === 'exchange') {
-          setExchangeAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        } else if (assetFormType === 'binance') {
-          setBinanceAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
-        }
-      } else {
-        // Add new asset
-        if (assetFormType === 'cash') {
-          // 같은 통화의 현금 자산이 이미 있는지 확인
-          const existingCashAsset = cashAssets.find(asset => asset.currency === formData.currency);
-          
-          if (existingCashAsset) {
-            // 기존 자산에 추가 (기존 수량 + 새로운 수량)
-            setCashAssets(prev => prev.map(asset => {
-              if (asset.id === existingCashAsset.id) {
-                const updatedDenominations = { ...asset.denominations };
-                
-                // 각 지폐별로 수량 합산
-                Object.entries(formData.denominations).forEach(([denom, newCount]) => {
-                  const existingCount = updatedDenominations[denom] || 0;
-                  const newAmount = typeof newCount === 'number' ? newCount : 0;
-                  updatedDenominations[denom] = existingCount + newAmount;
-                });
-                
-                // 새로운 총 잔액 계산
-                const newBalance = Object.entries(updatedDenominations).reduce((total, [denom, count]) => {
-                  const denomValue = parseFloat(denom.replace(/,/g, ''));
-                  const countValue = typeof count === 'number' ? count : 0;
-                  return total + (denomValue * countValue);
-                }, 0);
-                
-                return {
-                  ...asset,
-                  denominations: updatedDenominations,
-                  balance: newBalance
-                };
-              }
-              return asset;
-            }));
-          } else {
-            // 새로운 통화이므로 새 카드 생성
-            setCashAssets(prev => [...prev, formData as CashAsset]);
-          }
-        } else if (assetFormType === 'korean-account') {
-          // 같은 은행/계좌가 이미 있는지 확인
-          const existingAccount = koreanAccounts.find(acc => 
-            acc.bankName === formData.bankName && acc.accountNumber === formData.accountNumber
-          );
-          
-          if (existingAccount) {
-            // 기존 계좌에 잔액 합산
-            setKoreanAccounts(prev => prev.map(acc => 
-              acc.id === existingAccount.id 
-                ? { ...acc, balance: acc.balance + formData.balance }
-                : acc
-            ));
-          } else {
-            setKoreanAccounts(prev => [...prev, formData as BankAccount]);
-          }
-        } else if (assetFormType === 'vietnamese-account') {
-          // 같은 은행/계좌가 이미 있는지 확인
-          const existingAccount = vietnameseAccounts.find(acc => 
-            acc.bankName === formData.bankName && acc.accountNumber === formData.accountNumber
-          );
-          
-          if (existingAccount) {
-            // 기존 계좌에 잔액 합산
-            setVietnameseAccounts(prev => prev.map(acc => 
-              acc.id === existingAccount.id 
-                ? { ...acc, balance: acc.balance + formData.balance }
-                : acc
-            ));
-          } else {
-            setVietnameseAccounts(prev => [...prev, formData as BankAccount]);
-          }
-        } else if (assetFormType === 'exchange') {
-          // 같은 거래소/코인이 이미 있는지 확인
-          const existingAsset = exchangeAssets.find(asset => 
-            asset.exchangeName === formData.exchangeName && asset.coinName === formData.coinName
-          );
-          
-          if (existingAsset) {
-            // 기존 자산에 수량 합산
-            setExchangeAssets(prev => prev.map(asset => 
-              asset.id === existingAsset.id 
-                ? { ...asset, quantity: asset.quantity + formData.quantity }
-                : asset
-            ));
-          } else {
-            setExchangeAssets(prev => [...prev, formData as ExchangeAsset]);
-          }
-        } else if (assetFormType === 'binance') {
-          // 같은 코인이 이미 있는지 확인
-          const existingAsset = binanceAssets.find(asset => 
-            asset.coinName === formData.coinName
-          );
-          
-          if (existingAsset) {
-            // 기존 자산에 수량 합산
-            setBinanceAssets(prev => prev.map(asset => 
-              asset.id === existingAsset.id 
-                ? { ...asset, quantity: asset.quantity + formData.quantity }
-                : asset
-            ));
-          } else {
-            setBinanceAssets(prev => [...prev, formData as BinanceAsset]);
-          }
-        }
-      }
-      
-      setShowAssetForm(false);
-      setEditingAsset(null);
-      
-      let successMessage = '';
-      if (editingAsset) {
-        successMessage = '수정이 성공적으로 완료되었습니다.';
-      } else if (assetFormType === 'cash') {
-        const existingCashAsset = cashAssets.find(asset => asset.currency === formData.currency);
-        if (existingCashAsset) {
-          successMessage = `기존 ${formData.currency} 현금 자산에 추가되었습니다.`;
-        } else {
-          successMessage = `새로운 ${formData.currency} 현금 자산이 등록되었습니다.`;
-        }
-      } else if (assetFormType === 'korean-account') {
-        const existingAccount = koreanAccounts.find(acc => 
-          acc.bankName === formData.bankName && acc.accountNumber === formData.accountNumber
-        );
-        if (existingAccount) {
-          successMessage = `기존 ${formData.bankName} 계좌에 잔액이 추가되었습니다.`;
-        } else {
-          successMessage = `새로운 ${formData.bankName} 계좌가 등록되었습니다.`;
-        }
-      } else if (assetFormType === 'vietnamese-account') {
-        const existingAccount = vietnameseAccounts.find(acc => 
-          acc.bankName === formData.bankName && acc.accountNumber === formData.accountNumber
-        );
-        if (existingAccount) {
-          successMessage = `기존 ${formData.bankName} 계좌에 잔액이 추가되었습니다.`;
-        } else {
-          successMessage = `새로운 ${formData.bankName} 계좌가 등록되었습니다.`;
-        }
-      } else if (assetFormType === 'exchange') {
-        const existingAsset = exchangeAssets.find(asset => 
-          asset.exchangeName === formData.exchangeName && asset.coinName === formData.coinName
-        );
-        if (existingAsset) {
-          successMessage = `기존 ${formData.exchangeName} ${formData.coinName} 자산에 수량이 추가되었습니다.`;
-        } else {
-          successMessage = `새로운 ${formData.exchangeName} ${formData.coinName} 자산이 등록되었습니다.`;
-        }
-      } else if (assetFormType === 'binance') {
-        const existingAsset = binanceAssets.find(asset => 
-          asset.coinName === formData.coinName
-        );
-        if (existingAsset) {
-          successMessage = `기존 바이낸스 ${formData.coinName} 자산에 수량이 추가되었습니다.`;
-        } else {
-          successMessage = `새로운 바이낸스 ${formData.coinName} 자산이 등록되었습니다.`;
-        }
-      } else {
-        successMessage = '추가가 성공적으로 완료되었습니다.';
-      }
-      
-      setModalInfo({
-        title: editingAsset ? '수정 완료' : '추가 완료',
-        message: successMessage,
-        type: 'success'
-      });
-    } catch (error) {
-      console.error('Error saving asset:', error);
-      setModalInfo({
-        title: editingAsset ? '수정 실패' : '추가 실패',
-        message: '저장 중 오류가 발생했습니다.',
-        type: 'error'
-      });
-    }
-  };
-
-  // Handle advanced transaction form submission
-  const handleAdvancedTransactionSuccess = (transaction: Transaction) => {
-    setTransactions(prev => [transaction, ...prev]);
+  const closeModal = () => {
+    setModalInfo(null);
+    setShowAssetForm(false);
     setShowAdvancedTransactionForm(false);
-    setModalInfo({
-      title: '거래 기록 저장 완료',
-      message: `${transaction.type === 'bank_to_exchange' ? '은행→거래소' : 
-                 transaction.type === 'exchange_purchase' ? '코인 구매' : 
-                 transaction.type === 'exchange_transfer' ? '거래소 이동' : 
-                 transaction.type === 'p2p_trade' ? 'P2P 거래' : '거래'} 내역이 저장되었습니다.`,
-      type: 'success'
-    });
+    setShowUserSettings(false);
+    setEditingAsset(null);
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
-        <div className="text-lg text-gray-600">로딩 중...</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">데이터를 불러오는 중...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <ChartLine className="text-primary text-2xl" />
-              <h1 className="text-xl font-bold text-gray-900">자산 관리</h1>
+            <div className="flex items-center">
+              <DollarSign className="h-8 w-8 text-blue-600 mr-3" />
+              <h1 className="text-2xl font-bold text-gray-900">환전상 관리 시스템</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">실시간 연동</span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setShowUserSettings(true)}
-                data-testid="header-settings"
+              <Button
+                variant="outline"
+                onClick={() => openModal('add-transaction')}
+                className="text-blue-600 border-blue-600 hover:bg-blue-50"
               >
-                <Settings size={18} />
+                <Plus className="mr-2 h-4 w-4" />
+                새 거래
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => openModal('settings')}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <Settings className="h-5 w-5" />
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Navigation */}
-      <nav className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
-        <div className="flex justify-around items-center h-16">
-          <Button 
-            variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 ${currentView === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('dashboard')}
-            data-testid="mobile-nav-dashboard"
-          >
-            <Home size={20} />
-            <span className="text-xs font-medium">대시보드</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 ${currentView === 'assets' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('assets')}
-            data-testid="mobile-nav-assets"
-          >
-            <Wallet size={20} />
-            <span className="text-xs">자산</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 ${currentView === 'rates' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('rates')}
-            data-testid="mobile-nav-rates"
-          >
-            <TrendingUp size={20} />
-            <span className="text-xs">환율</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 ${currentView === 'transactions' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('transactions')}
-            data-testid="mobile-nav-transactions"
-          >
-            <List size={20} />
-            <span className="text-xs">거래내역</span>
-          </Button>
+      {/* Navigation */}
+      <nav className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentView(item.id)}
+                  className={`flex items-center px-3 py-4 text-sm font-medium border-b-2 transition-colors ${
+                    currentView === item.id
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          
-          {/* Desktop Sidebar */}
-          <aside className="hidden md:block w-64 flex-shrink-0">
-            <Card className="p-4">
-              <nav>
-                <ul className="space-y-2">
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'dashboard' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('dashboard')}
-                      data-testid="desktop-nav-dashboard"
-                    >
-                      <Home className="mr-3" size={18} />
-                      <span>대시보드</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'assets' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('assets')}
-                      data-testid="desktop-nav-assets"
-                    >
-                      <Wallet className="mr-3" size={18} />
-                      <span>자산 관리</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'rates' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('rates')}
-                      data-testid="desktop-nav-rates"
-                    >
-                      <TrendingUp className="mr-3" size={18} />
-                      <span>환율/시세 관리</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'transaction' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('transaction')}
-                      data-testid="desktop-nav-transaction"
-                    >
-                      <DollarSign className="mr-3" size={18} />
-                      <span>간편 거래</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'advanced-transaction' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setShowAdvancedTransactionForm(true)}
-                      data-testid="desktop-nav-advanced-transaction"
-                    >
-                      <TrendingUp className="mr-3" size={18} />
-                      <span>고급 거래</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className={`w-full justify-start ${currentView === 'transactions' ? 'bg-primary/10 text-primary' : ''}`}
-                      onClick={() => setCurrentView('transactions')}
-                      data-testid="desktop-nav-transactions"
-                    >
-                      <List className="mr-3" size={18} />
-                      <span>거래 내역</span>
-                    </Button>
-                  </li>
-                  <li>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start"
-                      onClick={() => setShowUserSettings(true)}
-                      data-testid="desktop-nav-settings"
-                    >
-                      <Settings className="mr-3" size={18} />
-                      <span>거래 설정</span>
-                    </Button>
-                  </li>
-                </ul>
-              </nav>
-            </Card>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {currentView === 'dashboard' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* 총 자산 요약 */}
+              <Card className="p-6">
+                <div className="flex items-center">
+                  <Wallet className="h-8 w-8 text-blue-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">한국 계좌</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {koreanAccounts.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString()}원
+                    </p>
+                  </div>
+                </div>
+              </Card>
 
-            {/* Real-time Rates Widget */}
-            <Card className="mt-6 p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                <ChartLine className="mr-2 text-primary" size={16} />
-                실시간 환율
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">USD/KRW</span>
-                  <div className="text-right">
-                    <div className="font-medium text-gray-900">
-                      {realTimeRates['USD-KRW'] ? realTimeRates['USD-KRW'].toFixed(2) : '로딩중...'}
-                    </div>
-                    <div className="text-xs text-green-600 flex items-center">
-                      <TrendingUp size={12} className="mr-1" />
-                      <span>+0.15%</span>
-                    </div>
+              <Card className="p-6">
+                <div className="flex items-center">
+                  <Building className="h-8 w-8 text-green-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">베트남 계좌</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {vietnameseAccounts.reduce((sum, acc) => sum + acc.balance, 0).toLocaleString()}₫
+                    </p>
                   </div>
                 </div>
-              </div>
-            </Card>
-          </aside>
+              </Card>
 
-          {/* Main Content */}
-          <main className="flex-1 min-w-0">
-            {showAssetForm ? (
-              <>
-                {/* Modal Backdrop */}
-                <div 
-                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-8 overflow-y-auto"
-                  onClick={(e) => {
-                    // Close modal if clicking on backdrop
-                    if (e.target === e.currentTarget) {
-                      setShowAssetForm(false);
-                      setEditingAsset(null);
-                    }
-                  }}
-                >
-                  <div className="w-full max-w-2xl min-h-full sm:min-h-0 sm:max-h-[90vh] my-auto">
-                    <AssetForm
-                      type={assetFormType}
-                      editData={editingAsset}
-                      onSubmit={handleAssetFormSubmit}
-                      onCancel={() => {
-                        setShowAssetForm(false);
-                        setEditingAsset(null);
-                      }}
-                    />
+              <Card className="p-6">
+                <div className="flex items-center">
+                  <Coins className="h-8 w-8 text-yellow-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">거래소 자산</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {exchangeAssets.reduce((sum, asset) => sum + asset.quantity, 0).toFixed(2)} USDT
+                    </p>
                   </div>
                 </div>
-              </>
-            ) : showAdvancedTransactionForm ? (
-              <>
-                {/* Advanced Transaction Modal Backdrop */}
-                <div 
-                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-8 overflow-y-auto"
-                  onClick={(e) => {
-                    // Close modal if clicking on backdrop
-                    if (e.target === e.currentTarget) {
-                      setShowAdvancedTransactionForm(false);
-                    }
-                  }}
-                >
-                  <div className="w-full max-w-6xl min-h-full sm:min-h-0 sm:max-h-[95vh] my-auto">
-                    <AdvancedTransactionForm
-                      allAssets={allAssetsForTransaction}
-                      onTransactionSuccess={handleAdvancedTransactionSuccess}
-                      onCancel={() => setShowAdvancedTransactionForm(false)}
-                    />
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center">
+                  <Bitcoin className="h-8 w-8 text-orange-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">바이낸스</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {binanceAssets.reduce((sum, asset) => sum + asset.quantity, 0).toFixed(2)} USDT
+                    </p>
                   </div>
                 </div>
-              </>
-            ) : showUserSettings ? (
-              <>
-                {/* User Settings Modal Backdrop */}
-                <div 
-                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-                  onClick={(e) => {
-                    // Close modal if clicking on backdrop
-                    if (e.target === e.currentTarget) {
-                      setShowUserSettings(false);
-                    }
-                  }}
-                >
-                  <div className="w-full max-w-md">
-                    <UserSettingsForm
-                      onClose={() => setShowUserSettings(false)}
-                    />
-                  </div>
+              </Card>
+            </div>
+
+            {/* 자산 상세 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">현금 자산</h3>
+                <div className="space-y-3">
+                  {cashAssets.map((asset) => (
+                    <div key={asset.id} className="flex justify-between items-center">
+                      <span className="text-gray-700">{asset.name}</span>
+                      <span className="font-medium">{asset.balance.toLocaleString()} {asset.currency}</span>
+                    </div>
+                  ))}
                 </div>
-              </>
-            ) : (
-              <>
-                {currentView === 'dashboard' && (
-                  <Dashboard
-                    assets={{ cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets }}
-                    transactions={transactions}
-                    realTimeRates={realTimeRates}
-                    cryptoRates={cryptoRates}
-                    isFetchingRates={isFetchingRates}
-                    onOpenModal={handleOpenModal}
-                  />
-                )}
-                {currentView === 'assets' && (
-                  <AssetManager
-                    data={{ cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets }}
-                    onOpenModal={handleOpenModal}
-                    activeTab={activeAssetTab}
-                    onTabChange={setActiveAssetTab}
-                  />
-                )}
-                {currentView === 'transaction' && (
-                  <TransactionForm
-                    allAssets={allAssetsForTransaction}
-                    onTransactionSuccess={() => setCurrentView('dashboard')}
-                    onOpenModal={handleOpenModal}
-                  />
-                )}
-                {currentView === 'rates' && (
-                  <RateManager
-                    realTimeRates={realTimeRates}
-                    cryptoRates={cryptoRates}
-                    isFetchingRates={isFetchingRates}
-                  />
-                )}
-                {currentView === 'transactions' && (
-                  <TransactionHistory
-                    transactions={transactions}
-                  />
-                )}
-              </>
-            )}
-          </main>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 거래</h3>
+                <div className="space-y-3">
+                  {transactions.slice(0, 5).map((tx) => (
+                    <div key={tx.id} className="flex justify-between items-center text-sm">
+                      <span className="text-gray-700">{tx.type}</span>
+                      <span className="font-medium">{tx.fromAmount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+        
+        {currentView === 'assets' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">자산 관리</h2>
+            <p className="text-gray-600">현재 보유 자산 현황을 확인하세요.</p>
+          </div>
+        )}
+        
+        {currentView === 'transactions' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">거래 내역</h2>
+            <div className="space-y-3">
+              {transactions.map((tx) => (
+                <Card key={tx.id} className="p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium">{tx.type}</span>
+                      <p className="text-sm text-gray-600">{tx.fromAsset} → {tx.toAsset}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{tx.fromAmount.toLocaleString()}</p>
+                      <p className="text-sm text-gray-600">{new Date(tx.timestamp).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {currentView === 'rates' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">환율 관리</h2>
+            <p className="text-gray-600">실시간 환율 정보를 확인하세요.</p>
+          </div>
+        )}
+      </main>
+
+      {/* Modals */}
+      {showAdvancedTransactionForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto m-4">
+            <AdvancedTransactionForm 
+              allAssets={[...cashAssets, ...koreanAccounts, ...vietnameseAccounts, ...exchangeAssets, ...binanceAssets]}
+              onCancel={closeModal}
+              onTransactionSuccess={closeModal}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Modal */}
-      {modalInfo && (
-        <Modal
-          {...modalInfo}
-          onCancel={() => setModalInfo(null)}
-        />
+      {showUserSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto m-4">
+            <UserSettingsForm />
+          </div>
+        </div>
       )}
     </div>
   );
