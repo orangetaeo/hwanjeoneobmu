@@ -20,6 +20,11 @@ export const handleNumericInput = (value: string, setter: (value: string) => voi
   setter(sanitized);
 };
 
+export const handleIntegerInput = (value: string): string => {
+  // 숫자와 콤마만 허용, 소숫점 제거
+  return value.replace(/[^0-9,]/g, '');
+};
+
 export const handleDecimalInput = (value: string, setter: (value: string) => void): void => {
   const sanitized = value.replace(/[^0-9.]/g, '');
   const parts = sanitized.split('.');

@@ -437,8 +437,10 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         placeholder="0"
                         value={formatInputWithCommas(field.value?.toString() || '')}
                         onChange={(e) => {
-                          const numericValue = parseCommaFormattedNumber(e.target.value);
-                          field.onChange(numericValue);
+                          // 은행 계좌는 정수만 허용 (소숫점 입력 방지)
+                          const value = e.target.value.replace(/[^0-9,]/g, ''); // 숫자와 콤마만 허용
+                          const numericValue = parseCommaFormattedNumber(value);
+                          field.onChange(Math.floor(numericValue)); // 정수로 변환
                         }}
                         data-testid="input-balance"
                       />
