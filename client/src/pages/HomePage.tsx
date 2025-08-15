@@ -318,6 +318,7 @@ export default function HomePage() {
           } else if (data.bankName) {
             // Check if it's Korean or Vietnamese account based on existing data
             const isKorean = koreanAccounts.find(acc => acc.id === data.id);
+            console.log('Edit account:', data.id, 'isKorean:', !!isKorean, 'koreanAccounts:', koreanAccounts.length, 'vietnameseAccounts:', vietnameseAccounts.length);
             if (isKorean) {
               setAssetFormType('korean-account');
               setActiveAssetTab('korean-banks');
