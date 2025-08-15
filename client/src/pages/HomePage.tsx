@@ -244,36 +244,80 @@ export default function HomePage() {
     if (!user) return;
     
     try {
-      const uid = user.uid;
-      const dataPath = `exchangeManagerData_${uid}`;
+      console.log('Deleting asset:', asset.id, 'with memo:', memo);
       
-      // Log deletion with memo to localStorage
-      const deletionLog = {
-        asset,
-        memo,
-        timestamp: new Date().toISOString(),
-        deletedBy: user.uid
-      };
-      
-      const existingLogs = JSON.parse(localStorage.getItem(`${dataPath}_deletions`) || '[]');
-      existingLogs.push(deletionLog);
-      localStorage.setItem(`${dataPath}_deletions`, JSON.stringify(existingLogs));
-      
-      // Delete from localStorage data
-      if (asset.denominations) {
-        setCashAssets(prev => prev.filter(a => a.id !== asset.id));
-      } else if (asset.exchangeName) {
-        setExchangeAssets(prev => prev.filter(a => a.id !== asset.id));
-      } else if (asset.coinName && !asset.exchangeName) {
-        setBinanceAssets(prev => prev.filter(a => a.id !== asset.id));
-      } else if (asset.bankName) {
-        const isKorean = koreanAccounts.find(acc => acc.id === asset.id);
-        if (isKorean) {
-          setKoreanAccounts(prev => prev.filter(a => a.id !== asset.id));
-        } else {
-          setVietnameseAccounts(prev => prev.filter(a => a.id !== asset.id));
-        }
+      // PostgreSQL API 호출로 자산 삭제
+      const response = await fetch(`/api/assets/${asset.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete asset');
       }
+
+      console.log('Asset deleted successfully from database');
+
+      // 서버에서 최신 데이터를 다시 불러오기
+      const assetsResponse = await fetch('/api/assets');
+      const latestAssets = await assetsResponse.json();
+      
+      // 각 타입별로 데이터 분류하여 state 업데이트
+      const cashAssetsData: CashAsset[] = [];
+      const koreanAccountsData: BankAccount[] = [];
+      const vietnameseAccountsData: BankAccount[] = [];
+      const exchangeAssetsData: ExchangeAsset[] = [];
+      const binanceAssetsData: BinanceAsset[] = [];
+
+      latestAssets.forEach((asset: any) => {
+        if (asset.type === 'cash') {
+          cashAssetsData.push({
+            id: asset.id,
+            type: 'cash',
+            currency: asset.currency,
+            balance: parseFloat(asset.balance),
+            denominations: asset.metadata?.denomination || {},
+            name: asset.name
+          });
+        } else if (asset.type === 'account') {
+          const accountData = {
+            id: asset.id,
+            bankName: asset.metadata?.bank || asset.name,
+            accountNumber: asset.metadata?.accountNumber || '',
+            accountHolder: asset.metadata?.accountHolder || '',
+            balance: parseFloat(asset.balance),
+            currency: asset.currency
+          };
+          
+          if (asset.currency === 'KRW') {
+            koreanAccountsData.push(accountData);
+          } else {
+            vietnameseAccountsData.push(accountData);
+          }
+        } else if (asset.type === 'exchange') {
+          exchangeAssetsData.push({
+            id: asset.id,
+            exchangeName: asset.metadata?.exchange || asset.name,
+            coinName: asset.currency,
+            quantity: parseFloat(asset.balance),
+            currency: asset.currency
+          });
+        } else if (asset.type === 'binance') {
+          binanceAssetsData.push({
+            id: asset.id,
+            coinName: asset.currency,
+            quantity: parseFloat(asset.balance),
+            currency: asset.currency
+          });
+        }
+      });
+
+      // 모든 state 업데이트
+      setCashAssets(cashAssetsData);
+      setKoreanAccounts(koreanAccountsData);
+      setVietnameseAccounts(vietnameseAccountsData);
+      setExchangeAssets(exchangeAssetsData);
+      setBinanceAssets(binanceAssetsData);
         
       setModalInfo({
         title: '삭제 완료',
