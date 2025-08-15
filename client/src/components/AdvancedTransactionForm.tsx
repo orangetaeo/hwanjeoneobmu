@@ -36,7 +36,8 @@ export default function AdvancedTransactionForm({
     fees: '',
     memo: '',
     exchangeName: '',
-    p2pPlatform: ''
+    p2pPlatform: '',
+    networkType: 'TRC20' // 트론 기본값
   });
 
   const { data: userSettings } = useUserSettings();
@@ -68,6 +69,15 @@ export default function AdvancedTransactionForm({
       const feeRate = parseFloat((userSettings as any)?.bithumbFeeRate || '0.0004');
       const calculatedFees = toAmount * feeRate;
       setFormData(prev => ({ ...prev, fees: calculatedFees.toString() }));
+    }
+    
+    // 거래소 이동 시 네트워크별 수수료 자동 설정
+    if (field === 'networkType' && activeTab === 'exchange_transfer') {
+      if (value === 'TRC20') {
+        setFormData(prev => ({ ...prev, fees: '0' })); // 트론 무료
+      } else {
+        setFormData(prev => ({ ...prev, fees: '' })); // 다른 네트워크는 수동 입력
+      }
     }
   };
 
@@ -114,7 +124,8 @@ export default function AdvancedTransactionForm({
       memo: formData.memo || null,
       metadata: {
         exchangeName: formData.exchangeName,
-        p2pPlatform: formData.p2pPlatform
+        p2pPlatform: formData.p2pPlatform,
+        networkType: formData.networkType
       }
     };
     
@@ -416,13 +427,33 @@ export default function AdvancedTransactionForm({
                   </div>
 
                   <div className="space-y-2">
+                    <Label>네트워크 선택</Label>
+                    <Select value={formData.networkType} onValueChange={(value) => handleFormDataChange('networkType', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="네트워크를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="TRC20">TRC20 (트론) - 수수료 무료</SelectItem>
+                        <SelectItem value="ERC20">ERC20 (이더리움) - 수수료 있음</SelectItem>
+                        <SelectItem value="BSC">BSC (바이낸스 스마트 체인) - 수수료 있음</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>네트워크 수수료</Label>
-                    <Input
-                      type="text"
-                      placeholder="0"
-                      value={formatInputWithCommas(formData.fees)}
-                      onChange={(e) => handleFormDataChange('fees', parseCommaFormattedNumber(e.target.value).toString())}
-                    />
+                    {formData.networkType === 'TRC20' ? (
+                      <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                        TRC20 (트론) 수수료: 무료
+                      </div>
+                    ) : (
+                      <Input
+                        type="text"
+                        placeholder="네트워크 수수료 입력"
+                        value={formatInputWithCommas(formData.fees)}
+                        onChange={(e) => handleFormDataChange('fees', parseCommaFormattedNumber(e.target.value).toString())}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

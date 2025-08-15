@@ -310,6 +310,13 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                               {transaction.metadata.p2pPlatform}
                             </Badge>
                           )}
+                          {transaction.metadata.networkType && (
+                            <Badge variant="outline" className="text-xs">
+                              {transaction.metadata.networkType === 'TRC20' ? 'TRC20 (무료)' : 
+                               transaction.metadata.networkType === 'ERC20' ? 'ERC20' :
+                               transaction.metadata.networkType === 'BSC' ? 'BSC' : transaction.metadata.networkType}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     )}
