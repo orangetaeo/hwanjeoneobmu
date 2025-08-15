@@ -655,7 +655,7 @@ export default function HomePage() {
               <>
                 {/* Modal Backdrop */}
                 <div 
-                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-8 overflow-y-auto"
                   onClick={(e) => {
                     // Close modal if clicking on backdrop
                     if (e.target === e.currentTarget) {
@@ -664,7 +664,7 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                  <div className="w-full max-w-2xl min-h-full sm:min-h-0 sm:max-h-[90vh] my-auto">
                     <AssetForm
                       type={assetFormType}
                       editData={editingAsset}

@@ -114,7 +114,15 @@ export default function AssetManager({ data, onOpenModal }: AssetManagerProps) {
 
                   <div className="space-y-2">
                     <h5 className="text-sm font-medium text-gray-700">지폐 구성</h5>
-                    {Object.entries(asset.denominations).map(([denom, count]) => (
+                    {Object.entries(asset.denominations)
+                      .sort(([a], [b]) => {
+                        // Remove commas and convert to number for sorting
+                        const numA = parseFloat(a.replace(/,/g, ''));
+                        const numB = parseFloat(b.replace(/,/g, ''));
+                        return numB - numA; // Sort descending (largest first)
+                      })
+                      .filter(([denom, count]) => count > 0) // Only show denominations with count > 0
+                      .map(([denom, count]) => (
                       <div key={denom} className="flex justify-between text-sm">
                         <span className="text-gray-600">
                           {asset.currency === 'KRW' ? `${formatNumberWithCommas(denom)}원권` :

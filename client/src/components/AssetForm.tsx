@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, X } from 'lucide-react';
 // import { handleNumericInput, handleDecimalInput } from '@/utils/helpers';
 
 const cashAssetSchema = z.object({
@@ -42,7 +42,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     if (editData?.denominations) return editData.denominations;
     
     const defaultDenoms: Record<string, Record<string, number>> = {
-      'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+      'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0, '500': 0, '100': 0, '50': 0, '10': 0, '5': 0, '1': 0 },
       'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
       'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
     };
@@ -134,12 +134,17 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   };
 
   return (
-    <Card className="bg-white rounded-lg shadow-xl">
-      <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">{getTitle()}</h2>
+    <Card className="bg-white rounded-lg shadow-xl overflow-y-auto max-h-[95vh] sm:max-h-none">
+      <div className="p-4 sm:p-6">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">{getTitle()}</h2>
+          <Button variant="ghost" size="sm" onClick={onCancel} data-testid="button-close">
+            <X size={20} />
+          </Button>
+        </div>
         
         <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 sm:space-y-6">
           {type === 'cash' && (
             <>
               <FormField
@@ -153,7 +158,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         field.onChange(value);
                         // Update denominations based on selected currency
                         const defaultDenoms: Record<string, Record<string, number>> = {
-                          'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+                          'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0, '500': 0, '100': 0, '50': 0, '10': 0, '5': 0, '1': 0 },
                           'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
                           'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
                         };
@@ -181,75 +186,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
 
               {form.watch('currency') && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {Object.entries(denominations)
-                      .sort(([a], [b]) => {
-                        // Remove commas and convert to number for sorting
-                        const numA = parseFloat(a.replace(/,/g, ''));
-                        const numB = parseFloat(b.replace(/,/g, ''));
-                        return numB - numA; // Sort descending (largest first)
-                      })
-                      .map(([denom, count]) => {
-                      const countValue = typeof count === 'number' ? count : 0;
-                      return (
-                        <div key={denom} className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
-                          <label className="text-xs font-semibold text-gray-800 block text-center">
-                            {form.watch('currency') === 'KRW' ? `${denom}원권` :
-                             form.watch('currency') === 'USD' ? `$${denom}` :
-                             `${denom}₫`}
-                          </label>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateDenomination(denom, countValue - 1)}
-                              className="h-8 w-8 p-0 flex-shrink-0"
-                              data-testid={`button-decrease-${denom}`}
-                            >
-                              <Minus size={14} />
-                            </Button>
-                            <Input
-                              type="number"
-                              value={countValue.toString()}
-                              onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
-                              className="text-center text-sm font-medium h-8 flex-1 min-w-0 w-12 sm:w-16 md:w-20"
-                              min="0"
-                              data-testid={`input-denom-${denom}`}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateDenomination(denom, countValue + 1)}
-                              className="h-8 w-8 p-0 flex-shrink-0"
-                              data-testid={`button-increase-${denom}`}
-                            >
-                              <Plus size={14} />
-                            </Button>
-                          </div>
-                          <div className="text-xs text-gray-500 text-center space-y-1">
-                            {!editData && (
-                              <div>
-                                총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                      form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
-                              </div>
-                            )}
-                            {editData && (
-                              <div>
-                                수정 후: {countValue}장
-                                <br />
-                                총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                      form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* 전체 합산 총계 - 셀렉터 아래에 배치 */}
+                  {/* 전체 합산 총계 - 셀렉터 위에 배치 */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-4">
@@ -306,6 +243,76 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       </div>
                     </div>
                   </div>
+
+                  <h3 className="font-medium text-gray-900">지폐 구성</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {Object.entries(denominations)
+                      .sort(([a], [b]) => {
+                        // Remove commas and convert to number for sorting
+                        const numA = parseFloat(a.replace(/,/g, ''));
+                        const numB = parseFloat(b.replace(/,/g, ''));
+                        return numB - numA; // Sort descending (largest first)
+                      })
+                      .map(([denom, count]) => {
+                      const countValue = typeof count === 'number' ? count : 0;
+                      return (
+                        <div key={denom} className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                          <label className="text-xs font-semibold text-gray-800 block text-center">
+                            {form.watch('currency') === 'KRW' ? `${denom}원권` :
+                             form.watch('currency') === 'USD' ? `$${denom}` :
+                             `${denom}₫`}
+                          </label>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateDenomination(denom, countValue - 1)}
+                              className="h-8 w-8 p-0 flex-shrink-0"
+                              data-testid={`button-decrease-${denom}`}
+                            >
+                              <Minus size={14} />
+                            </Button>
+                            <Input
+                              type="number"
+                              value={countValue.toString()}
+                              onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
+                              className="text-center text-sm font-medium h-8 flex-1 min-w-0 w-12 sm:w-16 md:w-24 lg:w-32 xl:w-40"
+                              min="0"
+                              data-testid={`input-denom-${denom}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateDenomination(denom, countValue + 1)}
+                              className="h-8 w-8 p-0 flex-shrink-0"
+                              data-testid={`button-increase-${denom}`}
+                            >
+                              <Plus size={14} />
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500 text-center space-y-1">
+                            {!editData && (
+                              <div>
+                                총액: {form.watch('currency') === 'KRW' ? '₩' : 
+                                      form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
+                              </div>
+                            )}
+                            {editData && (
+                              <div>
+                                수정 후: {countValue}장
+                                <br />
+                                총액: {form.watch('currency') === 'KRW' ? '₩' : 
+                                      form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
                 </div>
               )}
             </>
