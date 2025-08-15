@@ -60,7 +60,12 @@ export const parseCommaFormattedNumber = (value: string): number => {
 
 export const formatCurrency = (amount: number | string, currency: string): string => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(num)) return '0';
+  if (isNaN(num) || num === 0) {
+    console.log('formatCurrency - Invalid or zero amount:', { amount, currency, num });
+    return '0';
+  }
+  
+  console.log('formatCurrency - Processing:', { amount, currency, num });
   
   // 베트남돈, 원화, 달러는 소숫점 표시 안함
   if (currency === 'VND' || currency === 'KRW' || currency === 'USD') {

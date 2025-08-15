@@ -273,6 +273,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     </div>
                   </div>
                   <p className="text-xl font-bold text-purple-600 break-words">
+                    {console.log('Exchange asset balance:', asset.balance, typeof asset.balance)}
                     {formatCurrency(asset.balance, asset.currency)} {asset.currency}
                   </p>
                 </Card>
@@ -317,6 +318,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     </div>
                   </div>
                   <p className="text-xl font-bold text-yellow-600 break-words">
+                    {console.log('Binance asset balance:', asset.balance, typeof asset.balance)}
                     {formatCurrency(asset.balance, asset.currency)} {asset.currency}
                   </p>
                 </Card>
