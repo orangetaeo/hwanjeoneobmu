@@ -176,4 +176,16 @@ router.put('/settings', requireAuth, async (req: AuthenticatedRequest, res: Resp
   }
 });
 
+// Data Reset Routes
+router.post('/reset-all-data', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    await storage.resetAllUserData(req.user!.id);
+    res.json({ success: true, message: 'All data has been reset successfully' });
+  } catch (error) {
+    console.error('Error resetting all data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to reset data';
+    res.status(500).json({ error: 'Failed to reset data', details: errorMessage });
+  }
+});
+
 export default router;
