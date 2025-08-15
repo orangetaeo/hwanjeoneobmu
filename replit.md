@@ -4,6 +4,15 @@ This is a full-stack asset management and exchange tracking application built wi
 
 ## Recent Major Updates (August 15, 2025)
 
+### Version: "환전상 시스템 v1.2 - 네트워크 선택 & 데이터 정리" (2025-08-15 10:00 AM)
+
+### Bug Fixes & System Stabilization
+- **Plus Icon Import Error**: Fixed missing Plus icon import in HomePage.tsx causing web console errors
+- **Database Data Cleanup**: Removed inconsistent asset type data ('exchange_asset' → 'account', 'exchange', 'binance')
+- **Test Data Initialization**: Improved automatic test data creation with proper asset types and user settings
+- **Transaction Schema**: Fixed userId field handling in transaction creation workflow
+- **Network Selection Enhancement**: Added TRC20/ERC20/BSC network selection for exchange transfers with automatic fee handling
+
 ### Advanced Transaction System Implementation
 - **Complex Trading Workflows**: Implemented sophisticated transaction types for exchange operations:
   - KRW Bank → Exchange (Bithumb) transfers with fee tracking

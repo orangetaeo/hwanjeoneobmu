@@ -6,7 +6,8 @@ import {
   DollarSign, 
   Wallet,
   List,
-  ChartLine
+  ChartLine,
+  Plus
 } from 'lucide-react';
 import { collection, onSnapshot, doc, addDoc, query, orderBy, limit, setDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
