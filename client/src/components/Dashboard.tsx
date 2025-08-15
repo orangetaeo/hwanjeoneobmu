@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { 
   TrendingUp, 
+  TrendingDown,
   Plus, 
   ArrowRightLeft, 
   BarChart3,
@@ -39,6 +40,7 @@ export default function Dashboard({
 }: DashboardProps) {
   const { cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets } = assets;
   const [simpleView, setSimpleView] = useState(true);
+  const [yesterdayAssets, setYesterdayAssets] = useState<{ krw: number; vnd: number } | null>(null);
 
   // Calculate total assets in KRW and VND
   const totalAssets = useMemo(() => {
@@ -102,6 +104,53 @@ export default function Dashboard({
     return summary;
   }, [assets]);
 
+  // Save today's assets and load yesterday's data
+  useEffect(() => {
+    if (!isFetchingRates && totalAssets.krw > 0) {
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+      
+      // Load yesterday's data
+      const savedYesterday = localStorage.getItem(`assets-${yesterday}`);
+      if (savedYesterday) {
+        try {
+          setYesterdayAssets(JSON.parse(savedYesterday));
+        } catch (e) {
+          console.error('Failed to parse yesterday assets:', e);
+        }
+      } else {
+        // For demo purposes, set mock yesterday data if none exists
+        setYesterdayAssets({
+          krw: totalAssets.krw * 0.97, // 3% lower than today
+          vnd: totalAssets.vnd * 0.97
+        });
+      }
+      
+      // Save today's data
+      localStorage.setItem(`assets-${today}`, JSON.stringify({
+        krw: totalAssets.krw,
+        vnd: totalAssets.vnd
+      }));
+    }
+  }, [totalAssets, isFetchingRates]);
+
+  // Calculate change from yesterday
+  const assetChange = useMemo(() => {
+    if (!yesterdayAssets) return null;
+    
+    const krwChange = totalAssets.krw - yesterdayAssets.krw;
+    const vndChange = totalAssets.vnd - yesterdayAssets.vnd;
+    const krwPercentage = yesterdayAssets.krw > 0 ? (krwChange / yesterdayAssets.krw) * 100 : 0;
+    const vndPercentage = yesterdayAssets.vnd > 0 ? (vndChange / yesterdayAssets.vnd) * 100 : 0;
+    
+    return {
+      krw: krwChange,
+      vnd: vndChange,
+      krwPercentage,
+      vndPercentage
+    };
+  }, [totalAssets, yesterdayAssets]);
+
   return (
     <div className="space-y-6">
       {/* Total Asset Summary */}
@@ -110,18 +159,36 @@ export default function Dashboard({
         {isFetchingRates ? (
           <p className="text-gray-500">환율 정보 로딩 중...</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="text-center">
               <p className="text-sm text-gray-500 mb-2">원화 환산</p>
               <p className="text-3xl font-bold text-blue-600">
                 {CURRENCY_SYMBOLS.KRW} {formatNumberWithCommas(Math.round(totalAssets.krw))}
               </p>
+              {assetChange && (
+                <div className={`flex items-center justify-center mt-2 text-sm ${assetChange.krw >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {assetChange.krw >= 0 ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                  <span>
+                    {assetChange.krw >= 0 ? '+' : ''}{formatNumberWithCommas(Math.round(assetChange.krw))} 
+                    ({assetChange.krwPercentage >= 0 ? '+' : ''}{assetChange.krwPercentage.toFixed(2)}%)
+                  </span>
+                </div>
+              )}
             </div>
-            <div>
+            <div className="text-center">
               <p className="text-sm text-gray-500 mb-2">동화 환산</p>
               <p className="text-3xl font-bold text-green-600">
                 {CURRENCY_SYMBOLS.VND} {formatNumberWithCommas(Math.round(totalAssets.vnd))}
               </p>
+              {assetChange && (
+                <div className={`flex items-center justify-center mt-2 text-sm ${assetChange.vnd >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {assetChange.vnd >= 0 ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
+                  <span>
+                    {assetChange.vnd >= 0 ? '+' : ''}{formatNumberWithCommas(Math.round(assetChange.vnd))} 
+                    ({assetChange.vndPercentage >= 0 ? '+' : ''}{assetChange.vndPercentage.toFixed(2)}%)
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
