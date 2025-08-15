@@ -290,13 +290,77 @@ export default function HomePage() {
     }
   };
 
-  const handleAssetFormSubmit = (formData: any) => {
+  const handleAssetFormSubmit = async (formData: any) => {
     if (!user) return;
     
     try {
       if (editingAsset) {
-        // Update existing asset - 수정 모드에서는 완전히 대체
+        // Update existing asset - API 호출로 데이터베이스 업데이트
         const assetId = (editingAsset as any).id;
+        
+        // PostgreSQL 형식으로 데이터 변환
+        let updateData: any = {};
+        
+        if (assetFormType === 'cash') {
+          updateData = {
+            id: assetId,
+            name: formData.name || `${formData.currency} 현금`,
+            type: 'cash',
+            currency: formData.currency,
+            balance: formData.balance.toString(),
+            metadata: {
+              denomination: formData.denominations || {}
+            }
+          };
+        } else if (assetFormType === 'korean-account' || assetFormType === 'vietnamese-account') {
+          updateData = {
+            id: assetId,
+            name: formData.bankName,
+            type: 'account',
+            currency: assetFormType === 'korean-account' ? 'KRW' : 'VND',
+            balance: formData.balance.toString(),
+            metadata: {
+              bank: formData.bankName,
+              accountNumber: formData.accountNumber,
+              accountHolder: formData.accountHolder
+            }
+          };
+        } else if (assetFormType === 'exchange') {
+          updateData = {
+            id: assetId,
+            name: formData.exchangeName,
+            type: 'exchange',
+            currency: formData.coinName,
+            balance: formData.quantity.toString(),
+            metadata: {
+              exchange: formData.exchangeName
+            }
+          };
+        } else if (assetFormType === 'binance') {
+          updateData = {
+            id: assetId,
+            name: 'Binance',
+            type: 'binance',
+            currency: formData.coinName,
+            balance: formData.quantity.toString(),
+            metadata: {}
+          };
+        }
+
+        console.log('Updating asset:', updateData);
+        
+        // API 호출
+        const response = await fetch(`/api/assets/${assetId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update asset');
+        }
+
+        // 로컬 state도 업데이트
         if (assetFormType === 'cash') {
           setCashAssets(prev => prev.map(a => a.id === assetId ? { 
             ...a, 
