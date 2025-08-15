@@ -18,6 +18,7 @@ import TransactionForm from '@/components/TransactionForm';
 import RateManager from '@/components/RateManager';
 import TransactionHistory from '@/components/TransactionHistory';
 import AssetForm from '@/components/AssetForm';
+import AdvancedTransactionForm from '@/components/AdvancedTransactionForm';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ export default function HomePage() {
   const [assetFormType, setAssetFormType] = useState<'cash' | 'korean-account' | 'vietnamese-account' | 'exchange' | 'binance'>('cash');
   const [editingAsset, setEditingAsset] = useState(null);
   const [activeAssetTab, setActiveAssetTab] = useState('cash');
+  const [showAdvancedTransactionForm, setShowAdvancedTransactionForm] = useState(false);
 
   // Initialize with sample data for development and save to localStorage
   useEffect(() => {
@@ -608,6 +610,20 @@ export default function HomePage() {
     }
   };
 
+  // Handle advanced transaction form submission
+  const handleAdvancedTransactionSuccess = (transaction: Transaction) => {
+    setTransactions(prev => [transaction, ...prev]);
+    setShowAdvancedTransactionForm(false);
+    setModalInfo({
+      title: '거래 기록 저장 완료',
+      message: `${transaction.type === 'bank_to_exchange' ? '은행→거래소' : 
+                 transaction.type === 'exchange_purchase' ? '코인 구매' : 
+                 transaction.type === 'exchange_transfer' ? '거래소 이동' : 
+                 transaction.type === 'p2p_trade' ? 'P2P 거래' : '거래'} 내역이 저장되었습니다.`,
+      type: 'success'
+    });
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -730,7 +746,29 @@ export default function HomePage() {
                       data-testid="desktop-nav-transaction"
                     >
                       <DollarSign className="mr-3" size={18} />
-                      <span>새 거래</span>
+                      <span>간편 거래</span>
+                    </Button>
+                  </li>
+                  <li>
+                    <Button 
+                      variant="ghost" 
+                      className={`w-full justify-start ${currentView === 'advanced-transaction' ? 'bg-primary/10 text-primary' : ''}`}
+                      onClick={() => setShowAdvancedTransactionForm(true)}
+                      data-testid="desktop-nav-advanced-transaction"
+                    >
+                      <TrendingUp className="mr-3" size={18} />
+                      <span>고급 거래</span>
+                    </Button>
+                  </li>
+                  <li>
+                    <Button 
+                      variant="ghost" 
+                      className={`w-full justify-start ${currentView === 'transactions' ? 'bg-primary/10 text-primary' : ''}`}
+                      onClick={() => setCurrentView('transactions')}
+                      data-testid="desktop-nav-transactions"
+                    >
+                      <List className="mr-3" size={18} />
+                      <span>거래 내역</span>
                     </Button>
                   </li>
                 </ul>
@@ -784,6 +822,27 @@ export default function HomePage() {
                         setShowAssetForm(false);
                         setEditingAsset(null);
                       }}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : showAdvancedTransactionForm ? (
+              <>
+                {/* Advanced Transaction Modal Backdrop */}
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-8 overflow-y-auto"
+                  onClick={(e) => {
+                    // Close modal if clicking on backdrop
+                    if (e.target === e.currentTarget) {
+                      setShowAdvancedTransactionForm(false);
+                    }
+                  }}
+                >
+                  <div className="w-full max-w-6xl min-h-full sm:min-h-0 sm:max-h-[95vh] my-auto">
+                    <AdvancedTransactionForm
+                      allAssets={allAssetsForTransaction}
+                      onTransactionSuccess={handleAdvancedTransactionSuccess}
+                      onCancel={() => setShowAdvancedTransactionForm(false)}
                     />
                   </div>
                 </div>

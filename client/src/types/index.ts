@@ -32,14 +32,23 @@ export interface BinanceAsset {
 
 export interface Transaction {
   id: string;
+  type: 'bank_to_exchange' | 'exchange_purchase' | 'exchange_transfer' | 'p2p_trade' | 'exchange' | 'transfer';
+  fromAssetType?: 'bank' | 'exchange' | 'binance' | 'cash';
+  fromAssetId?: string;
   fromAssetName: string;
+  toAssetType?: 'bank' | 'exchange' | 'binance' | 'cash';
+  toAssetId?: string;
   toAssetName: string;
   fromAmount: number;
   toAmount: number;
   rate: number;
+  fees?: number;
   profit: number;
+  marketPrice?: number; // 시장 가격
+  customPrice?: number; // 사용자 입력 가격
+  memo?: string;
+  metadata?: Record<string, any>; // 추가 정보
   timestamp: any;
-  type: string;
 }
 
 export interface Asset {

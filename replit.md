@@ -2,6 +2,18 @@
 
 This is a full-stack asset management and exchange tracking application built with React, Express, and PostgreSQL. The application allows users to manage various types of financial assets including cash, bank accounts, cryptocurrency holdings, and track exchange transactions. It features real-time exchange rate monitoring, Firebase integration for data persistence, and a comprehensive dashboard for portfolio management.
 
+## Recent Major Updates (August 15, 2025)
+
+### Advanced Transaction System Implementation
+- **Complex Trading Workflows**: Implemented sophisticated transaction types for exchange operations:
+  - KRW Bank → Exchange (Bithumb) transfers with fee tracking
+  - Exchange cryptocurrency purchases with market vs. custom price comparison
+  - Inter-exchange transfers (Bithumb → Binance) with network fees
+  - P2P trading system with profit/loss calculations
+- **Enhanced Database Schema**: Added PostgreSQL support with comprehensive transaction, asset, and rate tracking
+- **Professional Transaction History**: Full-featured transaction history with filtering, searching, and detailed analytics
+- **Real-time Price Integration**: Market price vs. actual trade price comparison with profit rate calculations
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -24,9 +36,13 @@ Preferred communication style: Simple, everyday language.
 - **API Design**: RESTful API structure with /api prefix routing
 
 ## Data Storage Solutions
-- **Primary Database**: PostgreSQL configured through Drizzle ORM
+- **Primary Database**: PostgreSQL configured through Drizzle ORM with comprehensive transaction tracking
 - **Database Provider**: Neon Database (serverless PostgreSQL)
 - **ORM**: Drizzle ORM with schema-first approach and automatic type generation
+- **Advanced Schema**: Multi-table structure supporting complex financial transactions:
+  - `transactions`: Advanced transaction tracking with metadata and custom pricing
+  - `assets`: Unified asset management with JSON metadata storage
+  - `rates`: Historical exchange rate and price tracking
 - **Session Storage**: PostgreSQL-based session storage using connect-pg-simple
 - **Development Storage**: In-memory storage implementation for rapid prototyping
 
@@ -49,7 +65,18 @@ Preferred communication style: Simple, everyday language.
 - **Monorepo Structure**: Shared schema between client and server in /shared directory
 - **Type Safety**: End-to-end TypeScript with shared types and schema validation using Zod
 - **Component Composition**: Radix UI primitives composed into custom components
+- **Advanced Transaction Architecture**: Multi-step transaction workflows with comprehensive tracking:
+  - Transaction form validation with real-time calculations
+  - Metadata storage for platform-specific information
+  - Profit/loss analysis with market price comparison
 - **Hook-based Architecture**: Custom React hooks for authentication, exchange rates, and data fetching
 - **Error Handling**: Centralized error handling with toast notifications
 - **Responsive Design**: Mobile-first approach with Tailwind CSS breakpoints
 - **Development Experience**: Hot module replacement, runtime error overlay, and Replit integration
+
+## Advanced Features Implemented
+- **Professional Trading Interface**: Tabbed interface supporting multiple transaction types
+- **Smart Calculation System**: Real-time price calculations with market rate comparisons
+- **Comprehensive History**: Advanced filtering, sorting, and search capabilities
+- **Data Integrity**: PostgreSQL constraints and validation ensuring data consistency
+- **User Experience**: Modal-based workflows with proper state management and error handling
