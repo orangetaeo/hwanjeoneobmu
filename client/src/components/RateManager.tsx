@@ -182,29 +182,33 @@ export default function RateManager({ realTimeRates, cryptoRates, isFetchingRate
           <div className="bg-blue-50 p-3 rounded">
             <div className="text-sm text-gray-600">USD/KRW</div>
             <div className="text-lg font-bold">
-              {realTimeRates.USD ? realTimeRates.USD.toLocaleString() : '로딩 중...'}
+              {realTimeRates['USD-KRW'] ? realTimeRates['USD-KRW'].toLocaleString() : 
+               isFetchingRates ? '로딩 중...' : '데이터 없음'}
             </div>
           </div>
           
           <div className="bg-green-50 p-3 rounded">
             <div className="text-sm text-gray-600">VND/KRW</div>
             <div className="text-lg font-bold">
-              {realTimeRates.VND ? realTimeRates.VND.toFixed(4) : '로딩 중...'}
+              {realTimeRates['VND-KRW'] ? realTimeRates['VND-KRW'].toFixed(4) : 
+               isFetchingRates ? '로딩 중...' : '데이터 없음'}
             </div>
           </div>
           
           <div className="bg-yellow-50 p-3 rounded">
             <div className="text-sm text-gray-600">USDT/KRW</div>
             <div className="text-lg font-bold">
-              {cryptoRates?.tether?.krw ? cryptoRates.tether.krw.toLocaleString() : '로딩 중...'}
+              {realTimeRates['USDT-KRW'] ? realTimeRates['USDT-KRW'].toLocaleString() : 
+               isFetchingRates ? '로딩 중...' : '데이터 없음'}
             </div>
           </div>
           
           <div className="bg-purple-50 p-3 rounded">
             <div className="text-sm text-gray-600">BTC/KRW</div>
             <div className="text-lg font-bold">
-              {cryptoRates?.bitcoin?.krw ? 
-                `${Math.round(cryptoRates.bitcoin.krw / 1000000)}M` : '로딩 중...'}
+              {cryptoRates?.BTC?.KRW ? 
+                `${Math.round(cryptoRates.BTC.KRW / 1000000)}M` : 
+                isFetchingRates ? '로딩 중...' : '데이터 없음'}
             </div>
           </div>
         </div>
