@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -45,7 +45,10 @@ const DEFAULT_COINS = ['BTC', 'ETH', 'XRP', 'ADA', 'DOT', 'USDT', 'USDC'];
 
 export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetFormProps) {
   const [denominations, setDenominations] = useState(() => {
-    if (editData?.denominations) return editData.denominations;
+    // editData가 있고 metadata.denomination이 있을 때
+    if (editData?.metadata?.denomination) {
+      return editData.metadata.denomination;
+    }
     
     const defaultDenoms: Record<string, Record<string, number>> = {
       'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
@@ -82,6 +85,13 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     }
   };
 
+  // editData 변경 시 denominations 업데이트
+  useEffect(() => {
+    if (editData?.metadata?.denomination && type === 'cash') {
+      setDenominations(editData.metadata.denomination);
+    }
+  }, [editData, type]);
+
   const getSchema = () => {
     switch (type) {
       case 'cash': return cashAssetSchema;
@@ -112,6 +122,11 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         formData.currency = editData.currency;
         formData.balance = parseFloat(editData.balance) || 0;
         formData.denominations = editData.metadata?.denomination || {};
+        
+        // denominations state도 업데이트
+        if (editData.metadata?.denomination) {
+          setDenominations(editData.metadata.denomination);
+        }
       } else if (type === 'korean-account' || type === 'vietnamese-account') {
         formData.bankName = editData.metadata?.bank || editData.name || '';
         formData.accountNumber = editData.metadata?.accountNumber || '';
@@ -249,14 +264,17 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     <Select 
                       onValueChange={(value) => {
                         field.onChange(value);
-                        // Update denominations based on selected currency
-                        const defaultDenoms: Record<string, Record<string, number>> = {
-                          'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
-                          'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-                          'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
-                        };
-                        setDenominations(defaultDenoms[value] || {});
+                        // 새로 추가할 때만 denominations 초기화
+                        if (!editData) {
+                          const defaultDenoms: Record<string, Record<string, number>> = {
+                            'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+                            'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
+                            'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
+                          };
+                          setDenominations(defaultDenoms[value] || {});
+                        }
                       }} 
+                      value={field.value}
                       defaultValue={field.value}
                       disabled={!!editData} // 수정 시 통화 변경 불가
                     >
