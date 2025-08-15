@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Plus, Minus, X } from 'lucide-react';
-// import { handleNumericInput, handleDecimalInput } from '@/utils/helpers';
+import { formatInputWithCommas, parseCommaFormattedNumber } from '@/utils/helpers';
 
 const cashAssetSchema = z.object({
   currency: z.enum(['KRW', 'USD', 'VND'], { required_error: "통화를 선택해주세요" }),
@@ -306,11 +306,13 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               <Minus size={14} />
                             </Button>
                             <Input
-                              type="number"
-                              value={countValue.toString()}
-                              onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
+                              type="text"
+                              value={formatInputWithCommas(countValue.toString())}
+                              onChange={(e) => {
+                                const numericValue = parseCommaFormattedNumber(e.target.value);
+                                updateDenomination(denom, Math.floor(numericValue));
+                              }}
                               className="text-center text-sm font-medium h-10 w-full max-w-full"
-                              min="0"
                               data-testid={`input-denom-${denom}`}
                             />
                             <Button
@@ -402,11 +404,13 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     <FormLabel>잔액</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="any"
+                        type="text"
                         placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        value={formatInputWithCommas(field.value?.toString() || '')}
+                        onChange={(e) => {
+                          const numericValue = parseCommaFormattedNumber(e.target.value);
+                          field.onChange(numericValue);
+                        }}
                         data-testid="input-balance"
                       />
                     </FormControl>
@@ -547,11 +551,13 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     <FormLabel>수량</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="any"
+                        type="text"
                         placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        value={formatInputWithCommas(field.value?.toString() || '')}
+                        onChange={(e) => {
+                          const numericValue = parseCommaFormattedNumber(e.target.value);
+                          field.onChange(numericValue);
+                        }}
                         data-testid="input-quantity"
                       />
                     </FormControl>

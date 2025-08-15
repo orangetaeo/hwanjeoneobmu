@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Asset } from '@/types';
+import { formatInputWithCommas, parseCommaFormattedNumber } from '@/utils/helpers';
 
 interface TransactionFormProps {
   allAssets: Asset[];
@@ -84,11 +85,13 @@ export default function TransactionForm({
               <Label htmlFor="fromAmount">보내는 금액</Label>
               <Input
                 id="fromAmount"
-                type="number"
-                step="any"
+                type="text"
                 placeholder="0"
-                value={formData.fromAmount}
-                onChange={(e) => setFormData({...formData, fromAmount: e.target.value})}
+                value={formatInputWithCommas(formData.fromAmount.toString())}
+                onChange={(e) => {
+                  const numericValue = parseCommaFormattedNumber(e.target.value);
+                  setFormData({...formData, fromAmount: numericValue.toString()});
+                }}
                 data-testid="input-from-amount"
               />
             </div>
@@ -97,11 +100,13 @@ export default function TransactionForm({
               <Label htmlFor="rate">환율</Label>
               <Input
                 id="rate"
-                type="number"
-                step="any"
+                type="text"
                 placeholder="0"
-                value={formData.rate}
-                onChange={(e) => setFormData({...formData, rate: e.target.value})}
+                value={formatInputWithCommas(formData.rate.toString())}
+                onChange={(e) => {
+                  const numericValue = parseCommaFormattedNumber(e.target.value);
+                  setFormData({...formData, rate: numericValue.toString()});
+                }}
                 data-testid="input-rate"
               />
             </div>
@@ -110,11 +115,13 @@ export default function TransactionForm({
               <Label htmlFor="toAmount">받는 금액</Label>
               <Input
                 id="toAmount"
-                type="number"
-                step="any"
+                type="text"
                 placeholder="0"
-                value={formData.toAmount}
-                onChange={(e) => setFormData({...formData, toAmount: e.target.value})}
+                value={formatInputWithCommas(formData.toAmount.toString())}
+                onChange={(e) => {
+                  const numericValue = parseCommaFormattedNumber(e.target.value);
+                  setFormData({...formData, toAmount: numericValue.toString()});
+                }}
                 data-testid="input-to-amount"
               />
             </div>
