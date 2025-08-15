@@ -70,16 +70,24 @@ export default function HomePage() {
 
           // 자산을 타입별로 분류
           const cashAssets = assetsData.filter((asset: any) => asset.type === 'cash');
-          const accounts = assetsData.filter((asset: any) => asset.type === 'account');
+          const allAccounts = assetsData.filter((asset: any) => asset.type === 'account');
           const exchanges = assetsData.filter((asset: any) => asset.type === 'exchange');
           const binanceAssets = assetsData.filter((asset: any) => asset.type === 'binance');
 
-          setCashAssets(cashAssets);
-          setKoreanAccounts(accounts); // 한국 계좌
-          setVietnameseAccounts([]); // 베트남 계좌는 별도 분리 필요시
-          setExchangeAssets(exchanges);
-          setBinanceAssets(binanceAssets);
-          setTransactions(transactionsData);
+          // 계좌를 한국/베트남으로 분리
+          const koreanAccounts = allAccounts.filter((account: any) => 
+            account.currency === 'KRW' || !account.metadata?.country
+          );
+          const vietnameseAccounts = allAccounts.filter((account: any) => 
+            account.metadata?.country === '베트남'
+          );
+
+          setCashAssets(cashAssets || []);
+          setKoreanAccounts(koreanAccounts || []);
+          setVietnameseAccounts(vietnameseAccounts || []);
+          setExchangeAssets(exchanges || []);
+          setBinanceAssets(binanceAssets || []);
+          setTransactions(transactionsData || []);
         }
       } catch (error) {
         console.error('Failed to load data from database:', error);
@@ -739,8 +747,14 @@ export default function HomePage() {
               <>
                 {currentView === 'dashboard' && (
                   <Dashboard
-                    assets={{ cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets }}
-                    transactions={transactions}
+                    assets={{ 
+                      cashAssets: cashAssets || [], 
+                      koreanAccounts: koreanAccounts || [], 
+                      vietnameseAccounts: vietnameseAccounts || [], 
+                      exchangeAssets: exchangeAssets || [], 
+                      binanceAssets: binanceAssets || [] 
+                    }}
+                    transactions={transactions || []}
                     realTimeRates={realTimeRates}
                     cryptoRates={cryptoRates}
                     isFetchingRates={isFetchingRates}
@@ -749,7 +763,13 @@ export default function HomePage() {
                 )}
                 {currentView === 'assets' && (
                   <AssetManager
-                    data={{ cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets }}
+                    data={{ 
+                      cashAssets: cashAssets || [], 
+                      koreanAccounts: koreanAccounts || [], 
+                      vietnameseAccounts: vietnameseAccounts || [], 
+                      exchangeAssets: exchangeAssets || [], 
+                      binanceAssets: binanceAssets || [] 
+                    }}
                     onOpenModal={handleOpenModal}
                     activeTab={activeAssetTab}
                     onTabChange={setActiveAssetTab}
