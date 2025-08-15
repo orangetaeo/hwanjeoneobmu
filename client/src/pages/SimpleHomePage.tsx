@@ -206,12 +206,20 @@ export default function SimpleHomePage() {
                 설정
               </Button>
               <Button
-                onClick={() => setShowAdvancedTransactionForm(true)}
+                onClick={() => setCurrentView('transaction')}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                data-testid="button-advanced-transaction"
+                data-testid="button-new-transaction"
               >
                 <DollarSign size={16} />
                 새 거래
+              </Button>
+              <Button
+                onClick={() => setShowAdvancedTransactionForm(true)}
+                className="flex items-center gap-2"
+                data-testid="button-advanced-transaction"
+              >
+                <ChartLine size={16} />
+                고급 거래
               </Button>
             </div>
           </div>
@@ -252,6 +260,18 @@ export default function SimpleHomePage() {
             >
               <TrendingUp size={16} />
               환율 관리
+            </button>
+            <button
+              onClick={() => setCurrentView('transaction')}
+              className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                currentView === 'transaction'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+              data-testid="nav-new-transaction"
+            >
+              <DollarSign size={16} />
+              새 거래
             </button>
             <button
               onClick={() => setCurrentView('history')}
@@ -298,6 +318,17 @@ export default function SimpleHomePage() {
               onOpenModal={() => {}}
               activeTab={activeAssetTab}
               onTabChange={setActiveAssetTab}
+            />
+          )}
+
+          {currentView === 'transaction' && (
+            <TransactionForm
+              allAssets={getAllAssets()}
+              onTransactionSuccess={() => {
+                setCurrentView('dashboard');
+                refreshData();
+              }}
+              onOpenModal={() => {}}
             />
           )}
 
