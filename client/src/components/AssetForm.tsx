@@ -85,12 +85,16 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     }
   };
 
-  // editData 변경 시 denominations 업데이트 (한 번만 실행)
+  // editData 변경 시 denominations 업데이트
   useEffect(() => {
-    if (editData?.metadata?.denomination && type === 'cash') {
-      setDenominations(editData.metadata.denomination);
+    if (editData && type === 'cash') {
+      const denomData = editData.metadata?.denomination || editData.denominations;
+      if (denomData && Object.keys(denomData).length > 0) {
+        console.log('Setting denominations from editData:', denomData);
+        setDenominations(denomData);
+      }
     }
-  }, [editData?.id, type]); // editData.id만 의존성으로 사용
+  }, [editData?.id, type, editData?.metadata?.denomination, editData?.denominations]);
 
   const getSchema = () => {
     switch (type) {
@@ -121,9 +125,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       if (type === 'cash') {
         formData.currency = editData.currency;
         formData.balance = parseFloat(editData.balance) || 0;
-        formData.denominations = editData.metadata?.denomination || {};
+        const denominations = editData.metadata?.denomination || editData.denominations || {};
+        formData.denominations = denominations;
         
-        // denominations state는 useEffect에서 처리
+        console.log('Cash edit data processed:', {
+          currency: formData.currency,
+          balance: formData.balance,
+          denominations: denominations
+        });
       } else if (type === 'korean-account' || type === 'vietnamese-account') {
         formData.bankName = editData.metadata?.bank || editData.name || '';
         formData.accountNumber = editData.metadata?.accountNumber || '';
