@@ -245,7 +245,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                   </div>
 
                   <h3 className="font-medium text-gray-900">지폐 구성</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {Object.entries(denominations)
                       .sort(([a], [b]) => {
                         // Remove commas and convert to number for sorting
@@ -256,7 +256,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       .map(([denom, count]) => {
                       const countValue = typeof count === 'number' ? count : 0;
                       return (
-                        <div key={denom} className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                        <div key={denom} className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50 min-w-0">
                           <label className="text-xs font-semibold text-gray-800 block text-center">
                             {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
                              form.watch('currency') === 'USD' ? `$${denom}` :
@@ -277,7 +277,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               type="number"
                               value={countValue.toString()}
                               onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
-                              className="text-center text-sm font-medium h-10 w-20 sm:w-24 md:w-36 lg:w-44 xl:w-60"
+                              className="text-center text-sm font-medium h-10 w-full max-w-full"
                               min="0"
                               data-testid={`input-denom-${denom}`}
                             />
