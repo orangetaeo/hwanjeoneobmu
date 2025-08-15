@@ -7,7 +7,8 @@ import {
   Wallet,
   List,
   ChartLine,
-  Plus
+  Plus,
+  Coins
 } from 'lucide-react';
 // Firebase는 실시간 환율 전용으로 제한 - 데이터 저장은 PostgreSQL 사용
 // import { collection, onSnapshot, doc, addDoc, query, orderBy, limit, setDoc, getDocs } from 'firebase/firestore';
@@ -23,6 +24,7 @@ import AssetForm from '@/components/AssetForm';
 import AdvancedTransactionForm from '@/components/AdvancedTransactionForm';
 import UserSettingsForm from '@/components/UserSettingsForm';
 import ExchangeRateManager from '@/components/ExchangeRateManager';
+import ExchangeOperations from '@/components/ExchangeOperations';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -814,6 +816,7 @@ export default function HomePage() {
                   {[
                     { id: 'dashboard', label: '대시보드', icon: Home },
                     { id: 'assets', label: '자산 관리', icon: Wallet },
+                    { id: 'exchange-operations', label: '거래소 운영', icon: Coins },
                     { id: 'transactions', label: '거래 내역', icon: List },
                     { id: 'rates', label: '환율 관리', icon: TrendingUp },
                     { id: 'exchange-rates', label: '환전상 시세', icon: DollarSign },
@@ -975,6 +978,9 @@ export default function HomePage() {
                     activeTab={activeAssetTab}
                     onTabChange={setActiveAssetTab}
                   />
+                )}
+                {currentView === 'exchange-operations' && (
+                  <ExchangeOperations />
                 )}
                 {currentView === 'transaction' && (
                   <TransactionForm
