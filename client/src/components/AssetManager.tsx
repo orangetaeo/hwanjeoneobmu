@@ -233,7 +233,7 @@ export default function AssetManager({ data, onOpenModal }: AssetManagerProps) {
               <h3 className="text-lg font-semibold text-gray-900">거래소 자산</h3>
               <Button onClick={() => onOpenModal('addExchangeAsset')} data-testid="button-add-exchange-asset">
                 <Plus size={16} className="mr-2" />
-                자산 추가
+                거래소/ 자산 추가
               </Button>
             </div>
 

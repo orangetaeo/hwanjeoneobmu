@@ -37,6 +37,12 @@ interface AssetFormProps {
   onCancel: () => void;
 }
 
+// 거래소 목록
+const DEFAULT_EXCHANGES = ['Bithumb', 'Upbit', 'Coinone', 'Korbit', 'Binance', 'OKX'];
+
+// 코인 목록  
+const DEFAULT_COINS = ['BTC', 'ETH', 'XRP', 'ADA', 'DOT', 'USDT', 'USDC'];
+
 export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetFormProps) {
   const [denominations, setDenominations] = useState(() => {
     if (editData?.denominations) return editData.denominations;
@@ -44,11 +50,37 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     const defaultDenoms: Record<string, Record<string, number>> = {
       'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
       'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-      'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
+      'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
     };
     
     return type === 'cash' ? (defaultDenoms[editData?.currency] || defaultDenoms['KRW']) : {};
   });
+
+  // 거래소 및 코인 관리 state
+  const [exchanges, setExchanges] = useState(DEFAULT_EXCHANGES);
+  const [coins, setCoins] = useState(DEFAULT_COINS);
+  const [showExchangeInput, setShowExchangeInput] = useState(false);
+  const [showCoinInput, setShowCoinInput] = useState(false);
+  const [newExchange, setNewExchange] = useState('');
+  const [newCoin, setNewCoin] = useState('');
+
+  // 거래소 추가 함수
+  const addExchange = () => {
+    if (newExchange.trim() && !exchanges.includes(newExchange.trim())) {
+      setExchanges([...exchanges, newExchange.trim()]);
+      setNewExchange('');
+      setShowExchangeInput(false);
+    }
+  };
+
+  // 코인 추가 함수
+  const addCoin = () => {
+    if (newCoin.trim() && !coins.includes(newCoin.trim().toUpperCase())) {
+      setCoins([...coins, newCoin.trim().toUpperCase()]);
+      setNewCoin('');
+      setShowCoinInput(false);
+    }
+  };
 
   const getSchema = () => {
     switch (type) {
@@ -394,9 +426,54 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>거래소명</FormLabel>
-                      <FormControl>
-                        <Input placeholder="예: Bithumb" {...field} data-testid="input-exchange-name" />
-                      </FormControl>
+                      <div className="flex space-x-2">
+                        <div className="flex-1">
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-exchange">
+                                <SelectValue placeholder="거래소를 선택하세요" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {exchanges.map(exchange => (
+                                <SelectItem key={exchange} value={exchange}>{exchange}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setShowExchangeInput(!showExchangeInput)}
+                          data-testid="button-add-exchange"
+                        >
+                          <Plus size={16} />
+                        </Button>
+                      </div>
+                      {showExchangeInput && (
+                        <div className="flex space-x-2 mt-2">
+                          <Input
+                            placeholder="새 거래소명"
+                            value={newExchange}
+                            onChange={(e) => setNewExchange(e.target.value)}
+                            data-testid="input-new-exchange"
+                          />
+                          <Button type="button" onClick={addExchange} data-testid="button-confirm-exchange">
+                            추가
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setShowExchangeInput(false);
+                              setNewExchange('');
+                            }}
+                            data-testid="button-cancel-exchange"
+                          >
+                            취소
+                          </Button>
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -409,9 +486,54 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>코인명</FormLabel>
-                    <FormControl>
-                      <Input placeholder="예: BTC" {...field} data-testid="input-coin-name" />
-                    </FormControl>
+                    <div className="flex space-x-2">
+                      <div className="flex-1">
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-coin">
+                              <SelectValue placeholder="코인을 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {coins.map(coin => (
+                              <SelectItem key={coin} value={coin}>{coin}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setShowCoinInput(!showCoinInput)}
+                        data-testid="button-add-coin"
+                      >
+                        <Plus size={16} />
+                      </Button>
+                    </div>
+                    {showCoinInput && (
+                      <div className="flex space-x-2 mt-2">
+                        <Input
+                          placeholder="새 코인명"
+                          value={newCoin}
+                          onChange={(e) => setNewCoin(e.target.value)}
+                          data-testid="input-new-coin"
+                        />
+                        <Button type="button" onClick={addCoin} data-testid="button-confirm-coin">
+                          추가
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => {
+                            setShowCoinInput(false);
+                            setNewCoin('');
+                          }}
+                          data-testid="button-cancel-coin"
+                        >
+                          취소
+                        </Button>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
