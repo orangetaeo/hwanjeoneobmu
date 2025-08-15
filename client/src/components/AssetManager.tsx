@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, CURRENCY_SYMBOLS } from '@/types';
-import { formatNumberWithCommas } from '@/utils/helpers';
+import { formatNumberWithCommas, formatCurrency } from '@/utils/helpers';
 
 interface AssetManagerProps {
   data: {
@@ -83,18 +83,18 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {cashAssets.map((asset: any) => (
-                <Card key={asset.id} className="p-6 bg-gray-50">
+                <Card key={asset.id} className="p-6 bg-gray-50 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 flex items-center">
-                        <span>{asset.currency}</span>
-                        <span className="ml-2 text-2xl">
+                    <div className="min-w-0 flex-1 mr-4">
+                      <h4 className="font-semibold text-gray-900 flex items-center truncate">
+                        <span className="truncate">{asset.currency}</span>
+                        <span className="ml-2 text-2xl flex-shrink-0">
                           {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}
                         </span>
                       </h4>
-                      <p className="text-sm text-gray-600">{asset.name}</p>
+                      <p className="text-sm text-gray-600 truncate">{asset.name}</p>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 flex-shrink-0">
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -115,8 +115,8 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   </div>
                   
                   <div className="mb-4">
-                    <p className="text-2xl font-bold text-gray-900">
-                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatNumberWithCommas(parseFloat(asset.balance))}
+                    <p className="text-2xl font-bold text-gray-900 break-words">
+                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatCurrency(asset.balance, asset.currency)}
                     </p>
                   </div>
 
@@ -133,9 +133,9 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       .map(([denom, count]) => (
                       <div key={denom} className="flex justify-between text-sm">
                         <span className="text-gray-600">
-                          {asset.currency === 'KRW' ? `${formatNumberWithCommas(denom)}원권` :
+                          {asset.currency === 'KRW' ? `${formatCurrency(denom, 'KRW')}원권` :
                            asset.currency === 'USD' ? `$${denom}` :
-                           asset.currency === 'VND' ? `${formatNumberWithCommas(denom)}₫` : denom}
+                           asset.currency === 'VND' ? `${formatCurrency(denom, 'VND')}₫` : denom}
                         </span>
                         <span className="font-medium">{count}장</span>
                       </div>
@@ -157,12 +157,12 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {koreanAccounts.map((account: any) => (
-                <Card key={account.id} className="p-6">
+                <Card key={account.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{account.metadata?.bank || account.name}</h4>
-                      <p className="text-sm text-gray-600">{account.metadata?.accountHolder}</p>
-                      <p className="text-sm text-gray-500">{account.metadata?.accountNumber}</p>
+                    <div className="min-w-0 flex-1 mr-4">
+                      <h4 className="font-semibold text-gray-900 truncate">{account.metadata?.bank || account.name}</h4>
+                      <p className="text-sm text-gray-600 truncate">{account.metadata?.accountHolder}</p>
+                      <p className="text-sm text-gray-500 truncate">{account.metadata?.accountNumber}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -183,8 +183,8 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xl font-bold text-blue-600">
-                    ₩{formatNumberWithCommas(parseFloat(account.balance))}
+                  <p className="text-xl font-bold text-blue-600 break-words">
+                    ₩{formatCurrency(account.balance, 'KRW')}
                   </p>
                 </Card>
               ))}
@@ -202,12 +202,12 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {vietnameseAccounts.map((account: any) => (
-                <Card key={account.id} className="p-6">
+                <Card key={account.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{account.metadata?.bank || account.name}</h4>
-                      <p className="text-sm text-gray-600">{account.metadata?.accountHolder}</p>
-                      <p className="text-sm text-gray-500">{account.metadata?.accountNumber}</p>
+                    <div className="min-w-0 flex-1 mr-4">
+                      <h4 className="font-semibold text-gray-900 truncate">{account.metadata?.bank || account.name}</h4>
+                      <p className="text-sm text-gray-600 truncate">{account.metadata?.accountHolder}</p>
+                      <p className="text-sm text-gray-500 truncate">{account.metadata?.accountNumber}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -228,8 +228,8 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xl font-bold text-green-600">
-                    ₫{formatNumberWithCommas(parseFloat(account.balance))}
+                  <p className="text-xl font-bold text-green-600 break-words">
+                    ₫{formatCurrency(account.balance, 'VND')}
                   </p>
                 </Card>
               ))}
@@ -247,11 +247,11 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {exchangeAssets.map((asset: any) => (
-                <Card key={asset.id} className="p-6">
+                <Card key={asset.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{asset.metadata?.exchange || 'Exchange'}</h4>
-                      <p className="text-sm text-gray-600">{asset.currency}</p>
+                    <div className="min-w-0 flex-1 mr-4">
+                      <h4 className="font-semibold text-gray-900 truncate">{asset.metadata?.exchange || 'Exchange'}</h4>
+                      <p className="text-sm text-gray-600 truncate">{asset.currency}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -272,8 +272,8 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xl font-bold text-purple-600">
-                    {formatNumberWithCommas(parseFloat(asset.balance))} {asset.currency}
+                  <p className="text-xl font-bold text-purple-600 break-words">
+                    {formatCurrency(asset.balance, asset.currency)} {asset.currency}
                   </p>
                 </Card>
               ))}
@@ -291,11 +291,11 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {binanceAssets.map((asset: any) => (
-                <Card key={asset.id} className="p-6">
+                <Card key={asset.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{asset.metadata?.exchange || 'Binance'}</h4>
-                      <p className="text-sm text-gray-600">{asset.currency}</p>
+                    <div className="min-w-0 flex-1 mr-4">
+                      <h4 className="font-semibold text-gray-900 truncate">{asset.metadata?.exchange || 'Binance'}</h4>
+                      <p className="text-sm text-gray-600 truncate">{asset.currency}</p>
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -316,8 +316,8 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xl font-bold text-yellow-600">
-                    {formatNumberWithCommas(parseFloat(asset.balance))} {asset.currency}
+                  <p className="text-xl font-bold text-yellow-600 break-words">
+                    {formatCurrency(asset.balance, asset.currency)} {asset.currency}
                   </p>
                 </Card>
               ))}

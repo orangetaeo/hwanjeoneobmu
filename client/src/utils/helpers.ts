@@ -52,3 +52,16 @@ export const parseCommaFormattedNumber = (value: string): number => {
   const parsed = parseFloat(numericValue);
   return isNaN(parsed) ? 0 : parsed;
 };
+
+export const formatCurrency = (amount: number | string, currency: string): string => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '0';
+  
+  // 베트남돈, 원화, 달러는 소숫점 표시 안함
+  if (currency === 'VND' || currency === 'KRW' || currency === 'USD') {
+    return Math.floor(num).toLocaleString();
+  }
+  
+  // 코인은 소숫점 2자리까지만
+  return num.toFixed(2);
+};

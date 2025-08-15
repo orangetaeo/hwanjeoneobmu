@@ -13,7 +13,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, Transaction, CURRENCY_SYMBOLS } from '@/types';
-import { formatNumberWithCommas } from '@/utils/helpers';
+import { formatNumberWithCommas, formatCurrency } from '@/utils/helpers';
 
 interface DashboardProps {
   assets: {
@@ -200,13 +200,13 @@ export default function Dashboard({
             <div className="text-center">
               <p className="text-sm text-gray-500 mb-2">원화 환산</p>
               <p className="text-3xl font-bold text-blue-600">
-                {CURRENCY_SYMBOLS.KRW} {formatNumberWithCommas(Math.round(totalAssets.krw))}
+                {CURRENCY_SYMBOLS.KRW} {formatCurrency(totalAssets.krw, 'KRW')}
               </p>
               {assetChange && (
                 <div className={`flex items-center justify-center mt-2 text-sm ${assetChange.krw >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {assetChange.krw >= 0 ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
                   <span>
-                    {assetChange.krw >= 0 ? '+' : ''}{formatNumberWithCommas(Math.round(assetChange.krw))} 
+                    {assetChange.krw >= 0 ? '+' : ''}{formatCurrency(Math.abs(assetChange.krw), 'KRW')} 
                     ({assetChange.krwPercentage >= 0 ? '+' : ''}{assetChange.krwPercentage.toFixed(2)}%)
                   </span>
                 </div>
@@ -215,13 +215,13 @@ export default function Dashboard({
             <div className="text-center">
               <p className="text-sm text-gray-500 mb-2">동화 환산</p>
               <p className="text-3xl font-bold text-green-600">
-                {CURRENCY_SYMBOLS.VND} {formatNumberWithCommas(Math.round(totalAssets.vnd))}
+                {CURRENCY_SYMBOLS.VND} {formatCurrency(totalAssets.vnd, 'VND')}
               </p>
               {assetChange && (
                 <div className={`flex items-center justify-center mt-2 text-sm ${assetChange.vnd >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {assetChange.vnd >= 0 ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
                   <span>
-                    {assetChange.vnd >= 0 ? '+' : ''}{formatNumberWithCommas(Math.round(assetChange.vnd))} 
+                    {assetChange.vnd >= 0 ? '+' : ''}{formatCurrency(Math.abs(assetChange.vnd), 'VND')} 
                     ({assetChange.vndPercentage >= 0 ? '+' : ''}{assetChange.vndPercentage.toFixed(2)}%)
                   </span>
                 </div>
@@ -250,9 +250,9 @@ export default function Dashboard({
             let formattedTotal;
             if (currency === 'USDT') {
               const numberTotal = typeof total === 'number' ? total : parseFloat(total);
-              formattedTotal = formatNumberWithCommas(numberTotal, 2);
+              formattedTotal = formatCurrency(numberTotal, currency);
             } else {
-              formattedTotal = formatNumberWithCommas(total);
+              formattedTotal = formatCurrency(total, currency);
             }
             return (
               <Card key={currency} className="p-6">
@@ -279,7 +279,7 @@ export default function Dashboard({
                   <div className="flex justify-between items-center">
                     <p className="font-semibold">{asset.name}</p>
                     <p className="font-mono text-gray-800">
-                      {formatNumberWithCommas(asset.balance)} {asset.currency}
+                      {formatCurrency(asset.balance, asset.currency)} {asset.currency}
                     </p>
                   </div>
                 </div>
@@ -305,7 +305,7 @@ export default function Dashboard({
                     </p>
                     <p className="text-sm text-gray-500">{acc.accountNumber}</p>
                     <p className="text-right font-mono text-blue-600 mt-2">
-                      {formatNumberWithCommas(acc.balance)} KRW
+                      {formatCurrency(acc.balance, 'KRW')} KRW
                     </p>
                   </div>
                 ))}
@@ -329,7 +329,7 @@ export default function Dashboard({
                     </p>
                     <p className="text-sm text-gray-500">{acc.accountNumber}</p>
                     <p className="text-right font-mono text-green-600 mt-2">
-                      {formatNumberWithCommas(acc.balance)} VND
+                      {formatCurrency(acc.balance, 'VND')} VND
                     </p>
                   </div>
                 ))}
@@ -348,7 +348,7 @@ export default function Dashboard({
                     <p className="font-semibold">{asset.exchangeName}</p>
                     <p className="text-sm text-gray-600">{asset.coinName}</p>
                     <p className="text-right font-mono text-purple-600 mt-2">
-                      {formatNumberWithCommas(asset.quantity)} {asset.coinName}
+                      {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
                     </p>
                   </div>
                 ))}
@@ -366,7 +366,7 @@ export default function Dashboard({
                   <div key={asset.id} className="p-4 bg-gray-50 rounded-lg">
                     <p className="font-semibold">{asset.coinName}</p>
                     <p className="text-right font-mono text-yellow-600 mt-2">
-                      {formatNumberWithCommas(asset.quantity)} {asset.coinName}
+                      {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
                     </p>
                   </div>
                 ))}
@@ -409,10 +409,10 @@ export default function Dashboard({
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-900">
-                      {formatNumberWithCommas(transaction.toAmount)}
+                      {formatCurrency(transaction.toAmount, transaction.toCurrency)}
                     </p>
                     <p className="text-sm text-gray-500">
-                      @{formatNumberWithCommas(transaction.rate)}
+                      @{formatCurrency(transaction.rate, transaction.toCurrency)}
                     </p>
                   </div>
                 </div>
