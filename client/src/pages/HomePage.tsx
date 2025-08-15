@@ -378,6 +378,7 @@ export default function HomePage() {
           if (asset.type === 'cash') {
             cashAssetsData.push({
               id: asset.id,
+              type: 'cash',
               currency: asset.currency,
               balance: parseFloat(asset.balance),
               denominations: asset.metadata?.denomination || {},

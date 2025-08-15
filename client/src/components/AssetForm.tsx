@@ -334,7 +334,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                 <span className="font-semibold text-blue-800">
                                   {form.watch('currency') === 'KRW' ? '₩' : 
                                    form.watch('currency') === 'USD' ? '$' : '₫'}
-                                  {Object.entries(editData.denominations || {}).reduce((total, [denom, count]) => {
+                                  {Object.entries(editData?.metadata?.denomination || editData?.denominations || {}).reduce((total, [denom, count]) => {
                                     return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
                                   }, 0).toLocaleString()}
                                 </span>

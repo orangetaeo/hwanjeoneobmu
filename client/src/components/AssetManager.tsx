@@ -122,7 +122,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
                   <div className="space-y-2">
                     <h5 className="text-sm font-medium text-gray-700">지폐 구성</h5>
-                    {asset.metadata?.denomination && Object.entries(asset.metadata.denomination)
+                    {(asset.denominations || asset.metadata?.denomination) && Object.entries(asset.denominations || asset.metadata?.denomination || {})
                       .sort(([a], [b]) => {
                         // Remove commas and convert to number for sorting
                         const numA = parseFloat(a.replace(/,/g, ''));
