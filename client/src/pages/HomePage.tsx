@@ -72,27 +72,79 @@ export default function HomePage() {
   const [showAdvancedTransactionForm, setShowAdvancedTransactionForm] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
 
-  // Initialize with sample data for development and save to localStorage
+  // Load data from API
   useEffect(() => {
-    if (!user || authLoading) return;
-
-    // Try to load from localStorage first
-    const savedData = localStorage.getItem(`exchangeManagerData_${user.uid}`);
-    if (savedData) {
+    const loadData = async () => {
       try {
-        const parsed = JSON.parse(savedData);
-        setCashAssets(parsed.cashAssets || []);
-        setKoreanAccounts(parsed.koreanAccounts || []);
-        setVietnameseAccounts(parsed.vietnameseAccounts || []);
-        setExchangeAssets(parsed.exchangeAssets || []);
-        setBinanceAssets(parsed.binanceAssets || []);
-        setTransactions(parsed.transactions || []);
+        // Fetch assets from API
+        const assetsResponse = await fetch('/api/assets');
+        if (assetsResponse.ok) {
+          const assets = await assetsResponse.json();
+          
+          // Group assets by type
+          const cashAssetsData = assets.filter((asset: any) => asset.type === 'cash');
+          const accountsData = assets.filter((asset: any) => asset.type === 'account');
+          const exchangeAssetsData = assets.filter((asset: any) => asset.type === 'exchange');
+          const binanceAssetsData = assets.filter((asset: any) => asset.type === 'binance');
+          
+          // Convert to expected format
+          setCashAssets(cashAssetsData.map((asset: any) => ({
+            id: asset.id,
+            name: asset.name,
+            type: 'cash',
+            currency: asset.currency,
+            balance: parseFloat(asset.balance),
+            denominations: asset.metadata?.denomination || {}
+          })));
+          
+          setKoreanAccounts(accountsData.map((asset: any) => ({
+            id: asset.id,
+            name: asset.name,
+            type: 'korean-account',
+            currency: asset.currency,
+            balance: parseFloat(asset.balance),
+            accountNumber: asset.metadata?.accountNumber || '',
+            bank: asset.metadata?.bank || '',
+            accountHolder: asset.metadata?.accountHolder || ''
+          })));
+          
+          setExchangeAssets(exchangeAssetsData.map((asset: any) => ({
+            id: asset.id,
+            name: asset.name,
+            type: 'exchange',
+            currency: asset.currency,
+            balance: parseFloat(asset.balance),
+            exchange: asset.metadata?.exchange || ''
+          })));
+          
+          setBinanceAssets(binanceAssetsData.map((asset: any) => ({
+            id: asset.id,
+            name: asset.name,
+            type: 'binance',
+            currency: asset.currency,
+            balance: parseFloat(asset.balance)
+          })));
+        } else {
+          console.error('Failed to fetch assets');
+        }
+        
+        // Fetch transactions from API
+        const transactionsResponse = await fetch('/api/transactions');
+        if (transactionsResponse.ok) {
+          const transactionsData = await transactionsResponse.json();
+          setTransactions(transactionsData);
+        } else {
+          console.error('Failed to fetch transactions');
+        }
+        
         setLoading(false);
-        return;
-      } catch (e) {
-        console.log('Failed to load saved data, using default');
+      } catch (error) {
+        console.error('Error loading data from API:', error);
+        setLoading(false);
       }
-    }
+    };
+
+    loadData();
 
     // Sample data initialization
     setCashAssets([
