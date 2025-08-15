@@ -4,15 +4,28 @@ This is a full-stack asset management and exchange tracking application built wi
 
 ## Recent Major Updates (August 15, 2025)
 
-### Version: "환전상 시스템 v1.3 - Firebase 보류 & PostgreSQL 주력" (2025-08-15 10:10 AM)
+### Version: "환전상 시스템 v1.4 - 테스트 데이터 초기화 완료" (2025-08-15 10:30 AM)
 
-### Firebase to PostgreSQL Migration & System Optimization
+### 테스트 데이터 초기화 시스템 구축
+- **Clean State Initialization**: 모든 자동 테스트 데이터 생성 로직 제거
+- **Manual Test Data Setup**: 사용자 요청 시 표준 테스트 데이터 세트 생성
+- **Homepage Data Loading**: PostgreSQL 전용 데이터 로딩으로 완전 전환
+- **LocalStorage Cleanup**: 기존 localStorage 의존성 완전 제거
+- **Server-side Auto-init Removal**: 서버 자동 초기화 로직 비활성화
+
+### Firebase to PostgreSQL Migration & System Optimization  
 - **Firebase Isolation**: Limited Firebase usage to real-time exchange rates only
 - **PostgreSQL Primary**: Migrated all data storage (transactions, assets, user settings) to PostgreSQL
 - **Authentication Simplification**: Replaced Firebase Auth with PostgreSQL-based dev authentication
 - **RateManager Rewrite**: Completely rewrote RateManager component to use PostgreSQL API instead of Firestore
 - **Security Enhancement**: Added environment variable support for Firebase config (fallback to hardcoded for dev)
 - **Data Consistency**: Eliminated dual storage system reducing complexity and potential sync issues
+
+### 표준 테스트 데이터 세트
+- **한국 계좌**: 국민은행 (김학태) 3,500,000원
+- **베트남 계좌**: 신한은행 26,684,000동, BIDV 1,200,000동  
+- **현금 자산**: KRW 3,540,000원, VND 30,790,000동, USD 436달러
+- **암호화폐**: Binance USDT 1.14, Bithumb USDT 2,563.07
 
 ### Bug Fixes & System Stabilization  
 - **Plus Icon Import Error**: Fixed missing Plus icon import in HomePage.tsx causing web console errors
