@@ -121,7 +121,8 @@ router.post('/rates', requireAuth, async (req: AuthenticatedRequest, res: Respon
     res.json(rate);
   } catch (error) {
     console.error('Error creating rate:', error);
-    res.status(400).json({ error: 'Invalid rate data' });
+    const errorMessage = error instanceof Error ? error.message : 'Invalid rate data';
+    res.status(400).json({ error: 'Invalid rate data', details: errorMessage });
   }
 });
 
@@ -170,7 +171,8 @@ router.put('/settings', requireAuth, async (req: AuthenticatedRequest, res: Resp
     res.json(settings);
   } catch (error) {
     console.error('Error updating settings:', error);
-    res.status(400).json({ error: 'Invalid settings data' });
+    const errorMessage = error instanceof Error ? error.message : 'Invalid settings data';
+    res.status(400).json({ error: 'Invalid settings data', details: errorMessage });
   }
 });
 

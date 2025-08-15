@@ -89,7 +89,12 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       case 'vietnamese-account': return accountSchema;
       case 'exchange':
       case 'binance': return cryptoAssetSchema;
-      default: return z.object({});
+      default: 
+        console.warn(`Unknown asset type: ${type}, using basic schema`);
+        return z.object({
+          name: z.string().min(1, "이름을 입력해주세요"),
+          balance: z.number().min(0, "잔액은 0 이상이어야 합니다")
+        });
     }
   };
 
@@ -110,41 +115,64 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       case 'binance':
         return { coinName: '', quantity: 0, currency: 'USDT' };
       default:
-        return {};
+        console.warn(`Unknown asset type: ${type}, using basic defaults`);
+        return { name: '', balance: 0 };
     }
   }
 
   const handleFormSubmit = (data: any) => {
-    if (type === 'cash') {
-      // 수정 시에는 새로운 값으로 대체 (기존 + 추가가 아님)
-      const finalDenominations = { ...denominations };
+    try {
+      if (type === 'cash') {
+        // 수정 시에는 새로운 값으로 대체 (기존 + 추가가 아님)
+        const finalDenominations = { ...denominations };
+        
+        // Validate denominations object
+        if (typeof finalDenominations !== 'object' || finalDenominations === null) {
+          throw new Error('Invalid denominations data');
+        }
+        
+        data.denominations = finalDenominations;
+        data.balance = Object.entries(finalDenominations).reduce((total, [denom, count]) => {
+          // Remove commas from denomination string before parsing
+          const denomValue = parseFloat(String(denom).replace(/,/g, ''));
+          const countValue = typeof count === 'number' ? count : 0;
+          
+          if (isNaN(denomValue) || isNaN(countValue)) {
+            console.warn(`Invalid denomination data: ${denom}=${count}`);
+            return total;
+          }
+          
+          return total + (denomValue * countValue);
+        }, 0);
+        
+        // Ensure currency is set
+        if (!data.currency) {
+          data.currency = editData?.currency || 'KRW';
+        }
+        
+        // Generate name based on selected currency
+        data.name = `${data.currency} 현금`;
+        data.type = 'cash';
+        // Generate unique ID if not editing
+        if (!editData) {
+          data.id = Date.now().toString();
+        } else {
+          data.id = editData.id;
+        }
+      } else {
+        // For other asset types, generate ID if not editing
+        if (!editData) {
+          data.id = Date.now().toString();
+        } else {
+          data.id = editData.id;
+        }
+      }
       
-      data.denominations = finalDenominations;
-      data.balance = Object.entries(finalDenominations).reduce((total, [denom, count]) => {
-        // Remove commas from denomination string before parsing
-        const denomValue = parseFloat(denom.replace(/,/g, ''));
-        const countValue = typeof count === 'number' ? count : 0;
-        return total + (denomValue * countValue);
-      }, 0);
-      // Generate name based on selected currency
-      data.name = `${data.currency} 현금`;
-      data.type = 'cash';
-      // Generate unique ID if not editing
-      if (!editData) {
-        data.id = Date.now().toString();
-      } else {
-        data.id = editData.id;
-      }
-    } else {
-      // For other asset types, generate ID if not editing
-      if (!editData) {
-        data.id = Date.now().toString();
-      } else {
-        data.id = editData.id;
-      }
+      onSubmit(data);
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      // Handle error appropriately - could show a toast or alert
     }
-    
-    onSubmit(data);
   };
 
   const updateDenomination = (denom: string, value: number) => {

@@ -41,11 +41,19 @@ app.use((req, res, next) => {
   app.use('/api', apiRoutes);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Ensure err is an object and has the expected properties
+    const status = (typeof err === 'object' && err !== null) ? 
+      (err.status || err.statusCode || 500) : 500;
+    const message = (typeof err === 'object' && err !== null && typeof err.message === 'string') ? 
+      err.message : "Internal Server Error";
 
+    console.error('Express error handler:', err);
     res.status(status).json({ message });
-    throw err;
+    
+    // Don't re-throw in production
+    if (process.env.NODE_ENV === 'development') {
+      throw err;
+    }
   });
 
   // importantly only setup vite in development and after

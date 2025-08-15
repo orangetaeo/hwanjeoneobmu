@@ -57,6 +57,15 @@ export class DatabaseStorage implements IStorage {
     const toAmount = parseFloat(transaction.toAmount);
     const fees = parseFloat(transaction.fees || "0");
 
+    // Validate numeric values
+    if (isNaN(fromAmount) || isNaN(toAmount) || isNaN(fees)) {
+      throw new Error(`Invalid numeric values in transaction: fromAmount=${transaction.fromAmount}, toAmount=${transaction.toAmount}, fees=${transaction.fees}`);
+    }
+
+    if (fromAmount < 0 || toAmount < 0 || fees < 0) {
+      throw new Error(`Negative values not allowed in transaction: fromAmount=${fromAmount}, toAmount=${toAmount}, fees=${fees}`);
+    }
+
     switch (transaction.type) {
       case 'bank_to_exchange':
         // 은행에서 거래소로 송금: 은행 자금 감소, 거래소 자금 증가
@@ -115,6 +124,10 @@ export class DatabaseStorage implements IStorage {
     }
 
     // 거래소 코인 자산 증가 (수수료 제외)
+    // Validate fromAmount to prevent division by zero
+    if (fromAmount === 0) {
+      throw new Error('fromAmount cannot be zero for fee calculation');
+    }
     const actualAmount = toAmount - (toAmount * fees / fromAmount); // 수수료 적용
     let toAsset = await this.getAssetByName(userId, toAssetName, 'exchange_asset');
     
@@ -143,6 +156,10 @@ export class DatabaseStorage implements IStorage {
     }
 
     // 도착 거래소 자산 증가 (네트워크 수수료 제외)
+    // Validate that fees don't exceed the transfer amount
+    if (fees > toAmount) {
+      throw new Error(`Fees (${fees}) cannot exceed transfer amount (${toAmount})`);
+    }
     const actualAmount = toAmount - fees;
     let toAsset = await this.getAssetByName(userId, toAssetName, 'exchange_asset');
     

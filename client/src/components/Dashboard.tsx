@@ -52,38 +52,56 @@ export default function Dashboard({
     let totalKrw = 0;
 
     all.forEach(asset => {
-      const balance = (asset as any).balance ?? (asset as any).quantity ?? 0;
-      const currency = (asset as any).currency;
-      const coinName = (asset as any).coinName;
+      try {
+        const balance = Number((asset as any).balance ?? (asset as any).quantity ?? 0);
+        const currency = (asset as any).currency;
+        const coinName = (asset as any).coinName;
 
-      switch(currency) {
-        case 'KRW': 
-          if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
-            totalKrw += (balance * cryptoRates[coinName].KRW);
-          } else {
-            totalKrw += balance;
-          }
-          break;
-        case 'VND': 
-          totalKrw += balance * (realTimeRates['VND-KRW'] || 0); 
-          break;
-        case 'USD': 
-          totalKrw += balance * (realTimeRates['USD-KRW'] || 0); 
-          break;
-        case 'USDT': 
-          if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) {
-            totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
-          } else {
-            totalKrw += balance * (realTimeRates['USDT-KRW'] || 0);
-          }
-          break;
-        default: 
-          if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
-            totalKrw += balance * cryptoRates[coinName].KRW;
-          } else if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) {
-            totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
-          }
-          break;
+        // Validate numeric balance
+        if (isNaN(balance) || balance < 0) {
+          console.warn(`Invalid balance for asset ${(asset as any).name || 'unknown'}: ${balance}`);
+          return;
+        }
+
+        // Validate currency exists
+        if (!currency) {
+          console.warn(`Missing currency for asset ${(asset as any).name || 'unknown'}`);
+          return;
+        }
+
+        switch(currency) {
+          case 'KRW': 
+            if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
+              totalKrw += (balance * cryptoRates[coinName].KRW);
+            } else {
+              totalKrw += balance;
+            }
+            break;
+          case 'VND': 
+            totalKrw += balance * (realTimeRates['VND-KRW'] || 0); 
+            break;
+          case 'USD': 
+            totalKrw += balance * (realTimeRates['USD-KRW'] || 0); 
+            break;
+          case 'USDT': 
+            if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) {
+              totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
+            } else {
+              totalKrw += balance * (realTimeRates['USDT-KRW'] || 0);
+            }
+            break;
+          default: 
+            if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
+              totalKrw += balance * cryptoRates[coinName].KRW;
+            } else if (coinName && cryptoRates && cryptoRates[coinName]?.USDT) {
+              totalKrw += (balance * cryptoRates[coinName].USDT) * (realTimeRates['USDT-KRW'] || 0);
+            } else {
+              console.warn(`Unknown currency or missing rate data for asset: ${currency}, coinName: ${coinName}`);
+            }
+            break;
+        }
+      } catch (error) {
+        console.error('Error calculating asset value:', error, asset);
       }
     });
 
@@ -111,26 +129,45 @@ export default function Dashboard({
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
       
       // Load yesterday's data
-      const savedYesterday = localStorage.getItem(`assets-${yesterday}`);
-      if (savedYesterday) {
-        try {
-          setYesterdayAssets(JSON.parse(savedYesterday));
-        } catch (e) {
-          console.error('Failed to parse yesterday assets:', e);
+      try {
+        const savedYesterday = localStorage.getItem(`assets-${yesterday}`);
+        if (savedYesterday) {
+          const parsedData = JSON.parse(savedYesterday);
+          // Validate parsed data structure
+          if (parsedData && typeof parsedData.krw === 'number' && typeof parsedData.vnd === 'number') {
+            setYesterdayAssets(parsedData);
+          } else {
+            console.warn('Invalid yesterday assets data structure');
+            setYesterdayAssets({
+              krw: totalAssets.krw * 0.97, // 3% lower than today
+              vnd: totalAssets.vnd * 0.97
+            });
+          }
+        } else {
+          // For demo purposes, set mock yesterday data if none exists
+          setYesterdayAssets({
+            krw: totalAssets.krw * 0.97, // 3% lower than today
+            vnd: totalAssets.vnd * 0.97
+          });
         }
-      } else {
-        // For demo purposes, set mock yesterday data if none exists
+      } catch (e) {
+        console.error('Failed to access localStorage or parse yesterday assets:', e);
+        // Fallback for localStorage access issues
         setYesterdayAssets({
-          krw: totalAssets.krw * 0.97, // 3% lower than today
+          krw: totalAssets.krw * 0.97,
           vnd: totalAssets.vnd * 0.97
         });
       }
       
       // Save today's data
-      localStorage.setItem(`assets-${today}`, JSON.stringify({
-        krw: totalAssets.krw,
-        vnd: totalAssets.vnd
-      }));
+      try {
+        localStorage.setItem(`assets-${today}`, JSON.stringify({
+          krw: totalAssets.krw,
+          vnd: totalAssets.vnd
+        }));
+      } catch (e) {
+        console.warn('Failed to save today assets to localStorage:', e);
+      }
     }
   }, [totalAssets, isFetchingRates]);
 
