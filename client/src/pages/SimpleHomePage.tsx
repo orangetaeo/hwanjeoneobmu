@@ -68,7 +68,6 @@ export default function SimpleHomePage() {
           
           setKoreanAccounts(accountsData.map((asset: any) => ({
             id: asset.id,
-            name: asset.name,
             bankName: asset.metadata?.bank || '',
             accountNumber: asset.metadata?.accountNumber || '',
             accountHolder: asset.metadata?.accountHolder || '',
@@ -127,8 +126,7 @@ export default function SimpleHomePage() {
         displayName: asset.name,
         type: 'cash',
         currency: asset.currency,
-        balance: asset.balance,
-        metadata: { denominations: asset.denominations }
+        balance: asset.balance
       });
     });
     
@@ -137,16 +135,11 @@ export default function SimpleHomePage() {
       allAssets.push({
         id: account.id,
         assetId: account.id,
-        name: account.name || `${account.bankName} (${account.accountHolder})`,
-        displayName: account.name || `${account.bankName} (${account.accountHolder})`,
+        name: `${account.bankName} (${account.accountHolder})`,
+        displayName: `${account.bankName} (${account.accountHolder})`,
         type: 'account',
         currency: 'KRW',
-        balance: account.balance,
-        metadata: {
-          bank: account.bankName,
-          accountNumber: account.accountNumber,
-          accountHolder: account.accountHolder
-        }
+        balance: account.balance
       });
     });
     
@@ -157,10 +150,9 @@ export default function SimpleHomePage() {
         assetId: asset.id,
         name: `${asset.exchangeName} ${asset.coinName}`,
         displayName: `${asset.exchangeName} ${asset.coinName}`,
-        type: 'exchange',
+        type: 'crypto',
         currency: asset.currency,
-        balance: asset.quantity,
-        metadata: { exchange: asset.exchangeName }
+        balance: asset.quantity
       });
     });
     
@@ -171,10 +163,9 @@ export default function SimpleHomePage() {
         assetId: asset.id,
         name: `Binance ${asset.coinName}`,
         displayName: `Binance ${asset.coinName}`,
-        type: 'binance',
+        type: 'crypto',
         currency: asset.currency,
-        balance: asset.quantity,
-        metadata: { exchange: 'Binance' }
+        balance: asset.quantity
       });
     });
     
@@ -278,28 +269,42 @@ export default function SimpleHomePage() {
         <div className="space-y-6">
           {currentView === 'dashboard' && (
             <Dashboard
-              cashAssets={cashAssets}
-              koreanAccounts={koreanAccounts}
-              vietnameseAccounts={vietnameseAccounts}
-              exchangeAssets={exchangeAssets}
-              binanceAssets={binanceAssets}
+              assets={{
+                cashAssets,
+                koreanAccounts,
+                vietnameseAccounts,
+                exchangeAssets,
+                binanceAssets
+              }}
               transactions={transactions}
+              realTimeRates={{}}
+              cryptoRates={{}}
+              isFetchingRates={false}
+              onOpenModal={() => {}}
             />
           )}
 
           {currentView === 'assets' && (
             <AssetManager
-              cashAssets={cashAssets}
-              koreanAccounts={koreanAccounts}
-              vietnameseAccounts={vietnameseAccounts}
-              exchangeAssets={exchangeAssets}
-              binanceAssets={binanceAssets}
-              onRefresh={refreshData}
+              data={{
+                cashAssets,
+                koreanAccounts,
+                vietnameseAccounts,
+                exchangeAssets,
+                binanceAssets
+              }}
+              onOpenModal={() => {}}
+              activeTab={activeAssetTab}
+              onTabChange={setActiveAssetTab}
             />
           )}
 
           {currentView === 'rates' && (
-            <RateManager />
+            <RateManager 
+              realTimeRates={{}}
+              cryptoRates={{}}
+              isFetchingRates={false}
+            />
           )}
 
           {currentView === 'history' && (
@@ -312,7 +317,10 @@ export default function SimpleHomePage() {
 
         {/* Modals */}
         {showAdvancedTransactionForm && (
-          <Modal onClose={() => setShowAdvancedTransactionForm(false)}>
+          <Modal 
+            title="고급 거래"
+            onCancel={() => setShowAdvancedTransactionForm(false)}
+          >
             <AdvancedTransactionForm
               allAssets={getAllAssets()}
               onCancel={() => setShowAdvancedTransactionForm(false)}
@@ -325,7 +333,10 @@ export default function SimpleHomePage() {
         )}
 
         {showUserSettings && (
-          <Modal onClose={() => setShowUserSettings(false)}>
+          <Modal 
+            title="사용자 설정"
+            onCancel={() => setShowUserSettings(false)}
+          >
             <UserSettingsForm
               onCancel={() => setShowUserSettings(false)}
               onSuccess={() => setShowUserSettings(false)}
