@@ -14,9 +14,10 @@ export default function CurrencyIcon({ currency, size = 24, className = "" }: Cu
       return (
         <div className={`inline-flex items-center justify-center ${className}`} style={iconStyle}>
           <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-            <circle cx="12" cy="12" r="10" fill="#CD2E3A" stroke="#ffffff" strokeWidth="1"/>
-            <path d="M12 6v12M8 9h8M8 15h8" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
-            <text x="12" y="16" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="bold">₩</text>
+            <circle cx="12" cy="12" r="10" fill="#0047A0" stroke="#ffffff" strokeWidth="1"/>
+            <rect x="6" y="8" width="12" height="8" rx="2" fill="none" stroke="#ffffff" strokeWidth="1.5"/>
+            <path d="M9 10h6M9 14h6" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round"/>
+            <text x="12" y="19" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="bold">원</text>
           </svg>
         </div>
       );
@@ -25,9 +26,11 @@ export default function CurrencyIcon({ currency, size = 24, className = "" }: Cu
       return (
         <div className={`inline-flex items-center justify-center ${className}`} style={iconStyle}>
           <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-            <circle cx="12" cy="12" r="10" fill="#1f7a1f" stroke="#ffffff" strokeWidth="1"/>
-            <path d="M12 6v12M9 9c0-.6.4-1 1-1h4c.6 0 1 .4 1 1s-.4 1-1 1h-4M9 15c0 .6.4 1 1 1h4c.6 0 1-.4 1-1s-.4-1-1-1h-4" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round"/>
-            <text x="12" y="16.5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">$</text>
+            <circle cx="12" cy="12" r="10" fill="#2E8B57" stroke="#ffffff" strokeWidth="1"/>
+            <path d="M12 5v2M12 17v2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M10 9c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2h-2" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+            <path d="M10 13h2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+            <text x="12" y="20" textAnchor="middle" fill="#ffffff" fontSize="5" fontWeight="bold">USD</text>
           </svg>
         </div>
       );
@@ -36,9 +39,10 @@ export default function CurrencyIcon({ currency, size = 24, className = "" }: Cu
       return (
         <div className={`inline-flex items-center justify-center ${className}`} style={iconStyle}>
           <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-            <circle cx="12" cy="12" r="10" fill="#da251d" stroke="#ffffff" strokeWidth="1"/>
-            <path d="M12 4.5l-1.5 4.5h-4.5l3.75 2.7-1.5 4.5L12 13.5l3.75 2.7-1.5-4.5L18 9h-4.5L12 4.5z" fill="#ffff00"/>
-            <text x="12" y="20" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="bold">₫</text>
+            <circle cx="12" cy="12" r="10" fill="#E4002B" stroke="#ffffff" strokeWidth="1"/>
+            <path d="M12 4.5l-1.2 3.6h-3.8l3 2.2-1.2 3.6L12 11.7l3.2 2.2-1.2-3.6 3-2.2h-3.8L12 4.5z" fill="#FFD700"/>
+            <rect x="7" y="15" width="10" height="2" rx="1" fill="#ffffff"/>
+            <text x="12" y="20" textAnchor="middle" fill="#ffffff" fontSize="5" fontWeight="bold">VND</text>
           </svg>
         </div>
       );
@@ -47,10 +51,11 @@ export default function CurrencyIcon({ currency, size = 24, className = "" }: Cu
       return (
         <div className={`inline-flex items-center justify-center ${className}`} style={iconStyle}>
           <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-            <circle cx="12" cy="12" r="10" fill="#26a17b" stroke="#ffffff" strokeWidth="1"/>
-            <path d="M8 8h8v2h-2.5v6h-3v-6H8V8z" fill="#ffffff"/>
-            <path d="M9.5 11h5c.3 0 .5.2.5.5s-.2.5-.5.5h-5c-.3 0-.5-.2-.5-.5s.2-.5.5-.5z" fill="#26a17b"/>
-            <text x="12" y="20" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="bold">₮</text>
+            <circle cx="12" cy="12" r="10" fill="#26A17B" stroke="#ffffff" strokeWidth="1"/>
+            <path d="M8 7h8v3h-2.5v7h-3v-7H8V7z" fill="#ffffff"/>
+            <ellipse cx="12" cy="13" rx="4" ry="1.5" fill="#26A17B"/>
+            <ellipse cx="12" cy="13" rx="3" ry="1" fill="#ffffff"/>
+            <text x="12" y="20" textAnchor="middle" fill="#ffffff" fontSize="4" fontWeight="bold">USDT</text>
           </svg>
         </div>
       );
