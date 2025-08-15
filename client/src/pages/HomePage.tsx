@@ -122,14 +122,14 @@ export default function HomePage() {
     
     setVietnameseAccounts([
       {
-        id: '1', 
+        id: 'vn1', 
         bankName: 'Vietcombank',
         accountNumber: '0123456789',
         accountHolder: 'Nguyen Van A',
         balance: 50000000
       },
       {
-        id: '2',
+        id: 'vn2',
         bankName: 'BIDV',
         accountNumber: '0987654321', 
         accountHolder: 'Tran Thi B',
@@ -204,8 +204,8 @@ export default function HomePage() {
       ],
       koreanAccounts: [{ id: '1', bankName: '신한은행', accountNumber: '110-123-456789', accountHolder: 'Hong Gil Dong', balance: 5000000 }],
       vietnameseAccounts: [
-        { id: '1', bankName: 'Vietcombank', accountNumber: '0123456789', accountHolder: 'Nguyen Van A', balance: 50000000 },
-        { id: '2', bankName: 'BIDV', accountNumber: '0987654321', accountHolder: 'Tran Thi B', balance: 25000000 }
+        { id: 'vn1', bankName: 'Vietcombank', accountNumber: '0123456789', accountHolder: 'Nguyen Van A', balance: 50000000 },
+        { id: 'vn2', bankName: 'BIDV', accountNumber: '0987654321', accountHolder: 'Tran Thi B', balance: 25000000 }
       ],
       exchangeAssets: [
         { id: '1', exchangeName: 'Bithumb', coinName: 'USDT', quantity: 2563.07, currency: 'USDT' },
@@ -318,7 +318,7 @@ export default function HomePage() {
           } else if (data.bankName) {
             // Check if it's Korean or Vietnamese account based on existing data
             const isKorean = koreanAccounts.find(acc => acc.id === data.id);
-            console.log('Edit account:', data.id, 'isKorean:', !!isKorean, 'koreanAccounts:', koreanAccounts.length, 'vietnameseAccounts:', vietnameseAccounts.length);
+
             if (isKorean) {
               setAssetFormType('korean-account');
               setActiveAssetTab('korean-banks');

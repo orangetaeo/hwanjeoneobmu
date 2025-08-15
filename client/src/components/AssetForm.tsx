@@ -162,7 +162,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       'exchange': editData ? '거래소 자산 수정' : '거래소 자산 추가',
       'binance': editData ? '바이낸스 자산 수정' : '바이낸스 자산 추가'
     };
-    console.log('AssetForm type:', type, 'editData:', editData);
+
     return titles[type];
   };
 
