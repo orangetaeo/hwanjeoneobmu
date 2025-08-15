@@ -295,10 +295,15 @@ export default function HomePage() {
     
     try {
       if (editingAsset) {
-        // Update existing asset
+        // Update existing asset - 수정 모드에서는 완전히 대체
         const assetId = (editingAsset as any).id;
         if (assetFormType === 'cash') {
-          setCashAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
+          setCashAssets(prev => prev.map(a => a.id === assetId ? { 
+            ...a, 
+            ...formData, 
+            denominations: formData.denominations || {},
+            balance: formData.balance 
+          } : a));
         } else if (assetFormType === 'korean-account') {
           setKoreanAccounts(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
         } else if (assetFormType === 'vietnamese-account') {
