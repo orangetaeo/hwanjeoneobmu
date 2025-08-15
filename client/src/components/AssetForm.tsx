@@ -84,8 +84,18 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
 
   const handleFormSubmit = (data: any) => {
     if (type === 'cash') {
-      data.denominations = denominations;
-      data.balance = Object.entries(denominations).reduce((total, [denom, count]) => {
+      // 수정 시에는 기존 수량에 추가
+      const finalDenominations = { ...denominations };
+      if (editData?.denominations) {
+        Object.entries(editData.denominations).forEach(([denom, existingCount]) => {
+          const existingAmount = typeof existingCount === 'number' ? existingCount : 0;
+          const addAmount = finalDenominations[denom] || 0;
+          finalDenominations[denom] = existingAmount + addAmount;
+        });
+      }
+      
+      data.denominations = finalDenominations;
+      data.balance = Object.entries(finalDenominations).reduce((total, [denom, count]) => {
         // Remove commas from denomination string before parsing
         const denomValue = parseFloat(denom.replace(/,/g, ''));
         const countValue = typeof count === 'number' ? count : 0;
@@ -94,7 +104,21 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       // Generate name based on selected currency
       data.name = `${data.currency} 현금`;
       data.type = 'cash';
+      // Generate unique ID if not editing
+      if (!editData) {
+        data.id = Date.now().toString();
+      } else {
+        data.id = editData.id;
+      }
+    } else {
+      // For other asset types, generate ID if not editing
+      if (!editData) {
+        data.id = Date.now().toString();
+      } else {
+        data.id = editData.id;
+      }
     }
+    
     onSubmit(data);
   };
 
@@ -131,16 +155,20 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>통화</FormLabel>
-                    <Select onValueChange={(value) => {
-                      field.onChange(value);
-                      // Update denominations based on selected currency
-                      const defaultDenoms: Record<string, Record<string, number>> = {
-                        'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
-                        'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-                        'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
-                      };
-                      setDenominations(defaultDenoms[value] || {});
-                    }} defaultValue={field.value}>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Update denominations based on selected currency
+                        const defaultDenoms: Record<string, Record<string, number>> = {
+                          'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+                          'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
+                          'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0 }
+                        };
+                        setDenominations(defaultDenoms[value] || {});
+                      }} 
+                      defaultValue={field.value}
+                      disabled={!!editData} // 수정 시 통화 변경 불가
+                    >
                       <FormControl>
                         <SelectTrigger data-testid="select-currency">
                           <SelectValue placeholder="통화를 선택하세요" />
@@ -152,6 +180,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         <SelectItem value="VND">VND (베트남 동)</SelectItem>
                       </SelectContent>
                     </Select>
+                    {editData && <p className="text-xs text-gray-500 mt-1">수정 시 통화는 변경할 수 없습니다.</p>}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -207,13 +236,66 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               <Plus size={18} />
                             </Button>
                           </div>
-                          <div className="text-xs text-gray-500 text-center">
-                            총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                  form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
+                          <div className="text-xs text-gray-500 text-center space-y-1">
+                            {editData && (
+                              <div>
+                                기존: {editData.denominations?.[denom] || 0}장 →
+                                추가: {countValue}장 =
+                                소계: {(editData.denominations?.[denom] || 0) + countValue}장
+                              </div>
+                            )}
+                            <div>
+                              총액: {form.watch('currency') === 'KRW' ? '₩' : 
+                                    form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
+                            </div>
                           </div>
                         </div>
                       );
                     })}
+                  </div>
+                  
+                  {/* 전체 합산 총계 */}
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-900 mb-2">전체 합산</h4>
+                    <div className="space-y-1 text-sm">
+                      {editData && (
+                        <>
+                          <div className="flex justify-between">
+                            <span>기존 총계:</span>
+                            <span className="font-medium">
+                              {form.watch('currency') === 'KRW' ? '₩' : 
+                               form.watch('currency') === 'USD' ? '$' : '₫'}
+                              {Object.entries(editData.denominations || {}).reduce((total, [denom, count]) => {
+                                return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                              }, 0).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>추가 입력:</span>
+                            <span className="font-medium">
+                              {form.watch('currency') === 'KRW' ? '₩' : 
+                               form.watch('currency') === 'USD' ? '$' : '₫'}
+                              {Object.entries(denominations).reduce((total, [denom, count]) => {
+                                return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                              }, 0).toLocaleString()}
+                            </span>
+                          </div>
+                          <hr className="border-blue-300" />
+                        </>
+                      )}
+                      <div className="flex justify-between text-lg font-bold text-blue-900">
+                        <span>총 합계:</span>
+                        <span>
+                          {form.watch('currency') === 'KRW' ? '₩' : 
+                           form.watch('currency') === 'USD' ? '$' : '₫'}
+                          {(Object.entries(denominations).reduce((total, [denom, count]) => {
+                            const addAmount = parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0));
+                            const existingAmount = editData?.denominations ? parseFloat(denom.replace(/,/g, '')) * ((editData.denominations[denom] || 0)) : 0;
+                            return total + addAmount + existingAmount;
+                          }, 0)).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

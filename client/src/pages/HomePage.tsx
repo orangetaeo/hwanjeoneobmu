@@ -67,9 +67,27 @@ export default function HomePage() {
   const [assetFormType, setAssetFormType] = useState<'cash' | 'korean-account' | 'vietnamese-account' | 'exchange' | 'binance'>('cash');
   const [editingAsset, setEditingAsset] = useState(null);
 
-  // Initialize with sample data for development
+  // Initialize with sample data for development and save to localStorage
   useEffect(() => {
     if (!user || authLoading) return;
+
+    // Try to load from localStorage first
+    const savedData = localStorage.getItem(`exchangeManagerData_${user.uid}`);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setCashAssets(parsed.cashAssets || []);
+        setKoreanAccounts(parsed.koreanAccounts || []);
+        setVietnameseAccounts(parsed.vietnameseAccounts || []);
+        setExchangeAssets(parsed.exchangeAssets || []);
+        setBinanceAssets(parsed.binanceAssets || []);
+        setTransactions(parsed.transactions || []);
+        setLoading(false);
+        return;
+      } catch (e) {
+        console.log('Failed to load saved data, using default');
+      }
+    }
 
     // Sample data initialization
     setCashAssets([
@@ -176,7 +194,48 @@ export default function HomePage() {
     ]);
     
     setLoading(false);
+
+    // Save sample data to localStorage
+    const sampleData = {
+      cashAssets: [
+        { id: '1', name: '원화 현금', type: 'cash', currency: 'KRW', balance: 1025000, denominations: { '50000': 10, '10000': 20, '5000': 15, '1000': 25 } },
+        { id: '2', name: '달러 현금', type: 'cash', currency: 'USD', balance: 1025, denominations: { '100': 5, '50': 10, '20': 15, '10': 20, '5': 25, '1': 50 } }
+      ],
+      koreanAccounts: [{ id: '1', bankName: '신한은행', accountNumber: '110-123-456789', accountHolder: 'Hong Gil Dong', balance: 5000000 }],
+      vietnameseAccounts: [
+        { id: '1', bankName: 'Vietcombank', accountNumber: '0123456789', accountHolder: 'Nguyen Van A', balance: 50000000 },
+        { id: '2', bankName: 'BIDV', accountNumber: '0987654321', accountHolder: 'Tran Thi B', balance: 25000000 }
+      ],
+      exchangeAssets: [
+        { id: '1', exchangeName: 'Bithumb', coinName: 'USDT', quantity: 2563.07, currency: 'USDT' },
+        { id: '2', exchangeName: 'Upbit', coinName: 'Bitcoin', quantity: 0.15, currency: 'BTC' }
+      ],
+      binanceAssets: [
+        { id: '1', coinName: 'USDT', quantity: 1000.18, currency: 'USDT' },
+        { id: '2', coinName: 'BTC', quantity: 0.025, currency: 'BTC' }
+      ],
+      transactions: [
+        { id: '1', type: 'exchange', fromAssetName: 'KRW 현금', toAssetName: 'USD 현금', fromAmount: 1350000, toAmount: 1000, rate: 1350, profit: 0, timestamp: new Date('2024-08-15T10:30:00Z') },
+        { id: '2', type: 'transfer', fromAssetName: 'Bithumb USDT', toAssetName: 'Binance USDT', fromAmount: 500, toAmount: 500, rate: 1, profit: 0, timestamp: new Date('2024-08-15T09:15:00Z') }
+      ]
+    };
+    localStorage.setItem(`exchangeManagerData_${user.uid}`, JSON.stringify(sampleData));
   }, [user, authLoading]);
+
+  // Save data to localStorage whenever state changes
+  useEffect(() => {
+    if (!user?.uid || loading) return;
+    
+    const dataToSave = {
+      cashAssets,
+      koreanAccounts, 
+      vietnameseAccounts,
+      exchangeAssets,
+      binanceAssets,
+      transactions
+    };
+    localStorage.setItem(`exchangeManagerData_${user.uid}`, JSON.stringify(dataToSave));
+  }, [user?.uid, cashAssets, koreanAccounts, vietnameseAccounts, exchangeAssets, binanceAssets, transactions, loading]);
 
   // Prepare all assets for transaction form
   const allAssetsForTransaction = useMemo(() => {
@@ -256,10 +315,15 @@ export default function HomePage() {
       case 'deleteAsset':
       case 'deleteAccount':
         setModalInfo({
-          title: '삭제 확인',
-          message: '정말로 이 항목을 삭제하시겠습니까?',
-          type: 'confirm',
-          onConfirm: () => handleDeleteAsset(data)
+          title: '자산 삭제',
+          message: '삭제 사유를 필수로 입력해주세요:',
+          type: 'delete',
+          onConfirm: (memo?: string) => {
+            if (memo?.trim()) {
+              handleDeleteAsset(data, memo);
+            }
+          },
+          asset: data
         });
         break;
       case 'exchange':
@@ -284,33 +348,46 @@ export default function HomePage() {
     }
   };
 
-  const handleDeleteAsset = async (asset: any) => {
+  const handleDeleteAsset = async (asset: any, memo?: string) => {
     if (!user) return;
     
     try {
       const uid = user.uid;
-      const dataPath = `artifacts/exchange-manager/users/${uid}`;
+      const dataPath = `exchangeManagerData_${uid}`;
       
-      // Determine collection based on asset type
-      let collectionName = '';
-      if (asset.denominations) collectionName = 'cash_assets';
-      else if (asset.exchangeName) collectionName = 'exchange_assets';
-      else if (asset.coinName && !asset.exchangeName) collectionName = 'binance_assets';
-      else if (asset.bankName) {
+      // Log deletion with memo to localStorage
+      const deletionLog = {
+        asset,
+        memo,
+        timestamp: new Date().toISOString(),
+        deletedBy: user.uid
+      };
+      
+      const existingLogs = JSON.parse(localStorage.getItem(`${dataPath}_deletions`) || '[]');
+      existingLogs.push(deletionLog);
+      localStorage.setItem(`${dataPath}_deletions`, JSON.stringify(existingLogs));
+      
+      // Delete from localStorage data
+      if (asset.denominations) {
+        setCashAssets(prev => prev.filter(a => a.id !== asset.id));
+      } else if (asset.exchangeName) {
+        setExchangeAssets(prev => prev.filter(a => a.id !== asset.id));
+      } else if (asset.coinName && !asset.exchangeName) {
+        setBinanceAssets(prev => prev.filter(a => a.id !== asset.id));
+      } else if (asset.bankName) {
         const isKorean = koreanAccounts.find(acc => acc.id === asset.id);
-        collectionName = isKorean ? 'korean_accounts' : 'vietnamese_accounts';
+        if (isKorean) {
+          setKoreanAccounts(prev => prev.filter(a => a.id !== asset.id));
+        } else {
+          setVietnameseAccounts(prev => prev.filter(a => a.id !== asset.id));
+        }
       }
-      
-      if (collectionName) {
-        const { deleteDoc, doc } = await import('firebase/firestore');
-        await deleteDoc(doc(db, `${dataPath}/${collectionName}`, asset.id));
         
-        setModalInfo({
-          title: '삭제 완료',
-          message: '항목이 성공적으로 삭제되었습니다.',
-          type: 'success'
-        });
-      }
+      setModalInfo({
+        title: '삭제 완료',
+        message: `항목이 성공적으로 삭제되었습니다.\n삭제 사유: ${memo}`,
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error deleting asset:', error);
       setModalInfo({
@@ -321,32 +398,37 @@ export default function HomePage() {
     }
   };
 
-  const handleAssetFormSubmit = async (formData: any) => {
+  const handleAssetFormSubmit = (formData: any) => {
     if (!user) return;
     
     try {
-      const uid = user.uid;
-      const dataPath = `artifacts/exchange-manager/users/${uid}`;
-      
-      // Determine collection name based on form type
-      const collectionNames = {
-        'cash': 'cash_assets',
-        'korean-account': 'korean_accounts',
-        'vietnamese-account': 'vietnamese_accounts',
-        'exchange': 'exchange_assets',
-        'binance': 'binance_assets'
-      };
-      
-      const collectionName = collectionNames[assetFormType];
-      
       if (editingAsset) {
         // Update existing asset
-        const { updateDoc, doc } = await import('firebase/firestore');
-        await updateDoc(doc(db, `${dataPath}/${collectionName}`, (editingAsset as any).id), formData);
+        const assetId = (editingAsset as any).id;
+        if (assetFormType === 'cash') {
+          setCashAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
+        } else if (assetFormType === 'korean-account') {
+          setKoreanAccounts(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
+        } else if (assetFormType === 'vietnamese-account') {
+          setVietnameseAccounts(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
+        } else if (assetFormType === 'exchange') {
+          setExchangeAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
+        } else if (assetFormType === 'binance') {
+          setBinanceAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...formData } : a));
+        }
       } else {
         // Add new asset
-        const { addDoc, collection } = await import('firebase/firestore');
-        await addDoc(collection(db, `${dataPath}/${collectionName}`), formData);
+        if (assetFormType === 'cash') {
+          setCashAssets(prev => [...prev, formData as CashAsset]);
+        } else if (assetFormType === 'korean-account') {
+          setKoreanAccounts(prev => [...prev, formData as BankAccount]);
+        } else if (assetFormType === 'vietnamese-account') {
+          setVietnameseAccounts(prev => [...prev, formData as BankAccount]);
+        } else if (assetFormType === 'exchange') {
+          setExchangeAssets(prev => [...prev, formData as ExchangeAsset]);
+        } else if (assetFormType === 'binance') {
+          setBinanceAssets(prev => [...prev, formData as BinanceAsset]);
+        }
       }
       
       setShowAssetForm(false);

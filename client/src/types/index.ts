@@ -62,10 +62,11 @@ export interface Asset {
 export interface ModalInfo {
   title: string;
   message?: string;
-  type?: 'info' | 'success' | 'error' | 'confirm';
-  onConfirm?: () => void;
+  type?: 'info' | 'success' | 'error' | 'confirm' | 'delete';
+  onConfirm?: (memo?: string) => void;
   confirmDisabled?: boolean;
   children?: React.ReactNode;
+  asset?: any;
 }
 
 export const CURRENCY_SYMBOLS = {

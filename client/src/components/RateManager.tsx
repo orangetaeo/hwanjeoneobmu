@@ -345,35 +345,51 @@ export default function RateManager({ realTimeRates, cryptoRates, isFetchingRate
   };
 
   const renderTransactionRateInputs = (currency: string) => {
+    const getCurrencySymbol = (curr: string) => {
+      const symbols: Record<string, string> = { 'USD': '$', 'KRW': '₩', 'VND': '₫', 'USDT': '$' };
+      return symbols[curr] || '';
+    };
+
     return (
       <div className="space-y-4">
         {RATE_GROUPS[currency as keyof typeof RATE_GROUPS].map((group) => {
           const groupKey = group.denoms.join('_');
           const buyRate = transactionRates[currency]?.[`${groupKey}_buy`] || '';
           const sellRate = transactionRates[currency]?.[`${groupKey}_sell`] || '';
+          const symbol = getCurrencySymbol(currency);
           
           return (
             <div key={groupKey} className="grid grid-cols-3 gap-4 items-center">
               <div className="text-right font-medium">{group.label}</div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">내가 살때</label>
-                <Input
-                  type="text"
-                  value={formatNumberWithCommas(buyRate)}
-                  onChange={(e) => handleRateChange(setTransactionRates, currency, groupKey, 'buy', e.target.value.replace(/,/g, ''))}
-                  placeholder="매입가"
-                  className="text-center"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                    {symbol}
+                  </span>
+                  <Input
+                    type="text"
+                    value={formatNumberWithCommas(buyRate)}
+                    onChange={(e) => handleRateChange(setTransactionRates, currency, groupKey, 'buy', e.target.value.replace(/,/g, ''))}
+                    placeholder="매입가"
+                    className="text-center pl-8"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">내가 팔때</label>
-                <Input
-                  type="text"
-                  value={formatNumberWithCommas(sellRate)}
-                  onChange={(e) => handleRateChange(setTransactionRates, currency, groupKey, 'sell', e.target.value.replace(/,/g, ''))}
-                  placeholder="매도가"
-                  className="text-center"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                    {symbol}
+                  </span>
+                  <Input
+                    type="text"
+                    value={formatNumberWithCommas(sellRate)}
+                    onChange={(e) => handleRateChange(setTransactionRates, currency, groupKey, 'sell', e.target.value.replace(/,/g, ''))}
+                    placeholder="매도가"
+                    className="text-center pl-8"
+                  />
+                </div>
               </div>
             </div>
           );
@@ -383,23 +399,34 @@ export default function RateManager({ realTimeRates, cryptoRates, isFetchingRate
   };
 
   const renderGoldsmithInputs = (currency: string) => {
+    const getCurrencySymbol = (curr: string) => {
+      const symbols: Record<string, string> = { 'USD': '$', 'KRW': '₩', 'VND': '₫', 'USDT': '$' };
+      return symbols[curr] || '';
+    };
+
     return (
       <div className="space-y-4">
         {RATE_GROUPS[currency as keyof typeof RATE_GROUPS].map((group) => {
           const groupKey = group.denoms.join('_');
           const rate = goldsmithRates[currency]?.[groupKey] || '';
+          const symbol = getCurrencySymbol(currency);
           
           return (
             <div key={groupKey} className="grid grid-cols-2 gap-4 items-center">
               <div className="text-right font-medium">{group.label}</div>
               <div>
-                <Input
-                  type="text"
-                  value={formatNumberWithCommas(rate)}
-                  onChange={(e) => handleRateChange(setGoldsmithRates, currency, groupKey, '', e.target.value.replace(/,/g, ''))}
-                  placeholder="환율"
-                  className="text-center"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                    {symbol}
+                  </span>
+                  <Input
+                    type="text"
+                    value={formatNumberWithCommas(rate)}
+                    onChange={(e) => handleRateChange(setGoldsmithRates, currency, groupKey, '', e.target.value.replace(/,/g, ''))}
+                    placeholder="환율"
+                    className="text-center pl-8"
+                  />
+                </div>
               </div>
             </div>
           );
