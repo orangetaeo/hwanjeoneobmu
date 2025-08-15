@@ -860,6 +860,18 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">KRW/VND</span>
+                  <div className="text-right">
+                    <div className="font-medium text-gray-900">
+                      {realTimeRates['KRW-VND'] ? realTimeRates['KRW-VND'].toFixed(2) : '로딩중...'}
+                    </div>
+                    <div className="text-xs text-blue-600 flex items-center">
+                      <TrendingUp size={12} className="mr-1" />
+                      <span>실시간</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card>
           </aside>
