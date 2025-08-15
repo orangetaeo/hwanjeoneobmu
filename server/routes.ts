@@ -16,18 +16,28 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunctio
   if (!req.user) {
     req.user = { id: 'dev-user-1' };
   }
+  console.log('Auth middleware - User ID:', req.user.id);
   next();
 };
 
 // Transactions Routes
 router.post('/transactions', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    console.log('Transaction request body:', JSON.stringify(req.body, null, 2));
+    console.log('User ID from request:', req.user!.id);
+    
     const validatedData = insertTransactionSchema.parse(req.body);
+    console.log('Validated data:', JSON.stringify(validatedData, null, 2));
+    
     const transaction = await storage.createTransactionWithAssetMovement(req.user!.id, validatedData);
     res.json(transaction);
   } catch (error) {
     console.error('Error creating transaction:', error);
-    res.status(400).json({ error: 'Invalid transaction data' });
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    res.status(400).json({ error: 'Invalid transaction data', details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 

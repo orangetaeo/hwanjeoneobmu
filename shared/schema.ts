@@ -74,6 +74,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
+  userId: true,
   timestamp: true,
 });
 

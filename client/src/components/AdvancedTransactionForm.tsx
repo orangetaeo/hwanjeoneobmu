@@ -127,11 +127,16 @@ export default function AdvancedTransactionForm({
     
     const transactionData = {
       type: activeTab,
+      fromAssetType: activeTab === 'bank_to_exchange' ? 'bank' : 'exchange',
+      fromAssetId: null,
       fromAssetName: formData.fromAsset,
+      toAssetType: activeTab === 'bank_to_exchange' ? 'exchange' : 
+                   activeTab === 'exchange_transfer' ? 'exchange' : 'exchange',
+      toAssetId: null,
       toAssetName: formData.toAsset || `${formData.exchangeName} KRW`,
       fromAmount: parseCommaFormattedNumber(formData.fromAmount).toString(),
-      toAmount: parseCommaFormattedNumber(formData.toAmount).toString(),
-      rate: parseCommaFormattedNumber(formData.rate).toString(),
+      toAmount: parseCommaFormattedNumber(formData.toAmount || formData.fromAmount).toString(),
+      rate: formData.rate ? parseCommaFormattedNumber(formData.rate).toString() : '1',
       customPrice: formData.customPrice ? parseCommaFormattedNumber(formData.customPrice).toString() : null,
       marketPrice: formData.marketPrice ? parseCommaFormattedNumber(formData.marketPrice).toString() : null,
       fees: formData.fees ? parseCommaFormattedNumber(formData.fees).toString() : '0',
