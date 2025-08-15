@@ -100,8 +100,40 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
 
   const form = useForm({
     resolver: zodResolver(getSchema()),
-    defaultValues: editData || getDefaultValues()
+    defaultValues: getFormValues()
   });
+
+  function getFormValues() {
+    if (editData) {
+      // PostgreSQL 데이터 구조에 맞게 변환
+      const formData: any = {};
+      
+      if (type === 'cash') {
+        formData.currency = editData.currency;
+        formData.balance = parseFloat(editData.balance) || 0;
+        formData.denominations = editData.metadata?.denomination || {};
+      } else if (type === 'korean-account' || type === 'vietnamese-account') {
+        formData.bankName = editData.metadata?.bank || editData.name || '';
+        formData.accountNumber = editData.metadata?.accountNumber || '';
+        formData.accountHolder = editData.metadata?.accountHolder || '';
+        formData.balance = parseFloat(editData.balance) || 0;
+      } else if (type === 'exchange') {
+        formData.exchangeName = editData.metadata?.exchange || '';
+        formData.coinName = editData.currency || '';
+        formData.quantity = parseFloat(editData.balance) || 0;
+        formData.currency = editData.currency || 'USDT';
+      } else if (type === 'binance') {
+        formData.coinName = editData.currency || '';
+        formData.quantity = parseFloat(editData.balance) || 0;
+        formData.currency = editData.currency || 'USDT';
+      }
+      
+      console.log('Edit form data:', formData); // 디버깅용
+      return formData;
+    }
+    
+    return getDefaultValues();
+  }
 
   function getDefaultValues() {
     switch (type) {
@@ -463,7 +495,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       <FormLabel>거래소명</FormLabel>
                       <div className="flex space-x-2">
                         <div className="flex-1">
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-exchange">
                                 <SelectValue placeholder="거래소를 선택하세요" />
@@ -523,7 +555,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     <FormLabel>코인명</FormLabel>
                     <div className="flex space-x-2">
                       <div className="flex-1">
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-coin">
                               <SelectValue placeholder="코인을 선택하세요" />
