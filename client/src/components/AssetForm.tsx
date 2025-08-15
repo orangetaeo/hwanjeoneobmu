@@ -134,10 +134,17 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           denominations: denominations
         });
       } else if (type === 'korean-account' || type === 'vietnamese-account') {
-        formData.bankName = editData.metadata?.bank || editData.name || '';
-        formData.accountNumber = editData.metadata?.accountNumber || '';
-        formData.accountHolder = editData.metadata?.accountHolder || '';
+        formData.bankName = editData.bankName || editData.metadata?.bank || editData.name || '';
+        formData.accountNumber = editData.accountNumber || editData.metadata?.accountNumber || '';
+        formData.accountHolder = editData.accountHolder || editData.metadata?.accountHolder || '';
         formData.balance = parseFloat(editData.balance) || 0;
+        
+        console.log('Account edit data processed:', {
+          bankName: formData.bankName,
+          accountNumber: formData.accountNumber,
+          accountHolder: formData.accountHolder,
+          balance: formData.balance
+        });
       } else if (type === 'exchange') {
         formData.exchangeName = editData.metadata?.exchange || '';
         formData.coinName = editData.currency || '';
