@@ -152,6 +152,9 @@ router.get('/rates/:fromCurrency/:toCurrency/latest', requireAuth, async (req: A
 // User Settings Routes
 router.get('/settings', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    // Initialize test data if this is the first request
+    await storage.initializeTestData(req.user!.id);
+    
     const settings = await storage.getUserSettings(req.user!.id);
     res.json(settings);
   } catch (error) {
