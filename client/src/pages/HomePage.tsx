@@ -419,7 +419,41 @@ export default function HomePage() {
       } else {
         // Add new asset
         if (assetFormType === 'cash') {
-          setCashAssets(prev => [...prev, formData as CashAsset]);
+          // 같은 통화의 현금 자산이 이미 있는지 확인
+          const existingCashAsset = cashAssets.find(asset => asset.currency === formData.currency);
+          
+          if (existingCashAsset) {
+            // 기존 자산에 추가 (기존 수량 + 새로운 수량)
+            setCashAssets(prev => prev.map(asset => {
+              if (asset.id === existingCashAsset.id) {
+                const updatedDenominations = { ...asset.denominations };
+                
+                // 각 지폐별로 수량 합산
+                Object.entries(formData.denominations).forEach(([denom, newCount]) => {
+                  const existingCount = updatedDenominations[denom] || 0;
+                  const newAmount = typeof newCount === 'number' ? newCount : 0;
+                  updatedDenominations[denom] = existingCount + newAmount;
+                });
+                
+                // 새로운 총 잔액 계산
+                const newBalance = Object.entries(updatedDenominations).reduce((total, [denom, count]) => {
+                  const denomValue = parseFloat(denom.replace(/,/g, ''));
+                  const countValue = typeof count === 'number' ? count : 0;
+                  return total + (denomValue * countValue);
+                }, 0);
+                
+                return {
+                  ...asset,
+                  denominations: updatedDenominations,
+                  balance: newBalance
+                };
+              }
+              return asset;
+            }));
+          } else {
+            // 새로운 통화이므로 새 카드 생성
+            setCashAssets(prev => [...prev, formData as CashAsset]);
+          }
         } else if (assetFormType === 'korean-account') {
           setKoreanAccounts(prev => [...prev, formData as BankAccount]);
         } else if (assetFormType === 'vietnamese-account') {
@@ -433,9 +467,24 @@ export default function HomePage() {
       
       setShowAssetForm(false);
       setEditingAsset(null);
+      
+      let successMessage = '';
+      if (editingAsset) {
+        successMessage = '수정이 성공적으로 완료되었습니다.';
+      } else if (assetFormType === 'cash') {
+        const existingCashAsset = cashAssets.find(asset => asset.currency === formData.currency);
+        if (existingCashAsset) {
+          successMessage = `기존 ${formData.currency} 현금 자산에 추가되었습니다.`;
+        } else {
+          successMessage = `새로운 ${formData.currency} 현금 자산이 등록되었습니다.`;
+        }
+      } else {
+        successMessage = '추가가 성공적으로 완료되었습니다.';
+      }
+      
       setModalInfo({
         title: editingAsset ? '수정 완료' : '추가 완료',
-        message: `${editingAsset ? '수정' : '추가'}이 성공적으로 완료되었습니다.`,
+        message: successMessage,
         type: 'success'
       });
     } catch (error) {
