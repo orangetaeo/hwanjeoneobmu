@@ -277,7 +277,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               type="number"
                               value={countValue.toString()}
                               onChange={(e) => updateDenomination(denom, parseInt(e.target.value) || 0)}
-                              className="text-center text-sm font-medium h-12 flex-1 min-w-0 w-20 sm:w-24 md:w-36 lg:w-44 xl:w-60"
+                              className="text-center text-sm font-medium h-10 w-20 sm:w-24 md:w-36 lg:w-44 xl:w-60"
                               min="0"
                               data-testid={`input-denom-${denom}`}
                             />
