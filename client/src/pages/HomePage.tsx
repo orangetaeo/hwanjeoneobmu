@@ -559,8 +559,18 @@ export default function HomePage() {
             let existingDenominations = existingCashAsset.denominations || {};
             const newDenominations = formData.denominations || {};
             
+            // 데이터베이스 denomination 형식 정규화 (쉼표 없는 형식을 쉼표 있는 형식으로 변환)
+            const normalizedExistingDenominations: Record<string, number> = {};
+            Object.entries(existingDenominations).forEach(([key, value]) => {
+              // 쉼표가 없는 키를 쉼표 있는 형식으로 변환
+              const normalizedKey = key.includes(',') ? key : parseFloat(key).toLocaleString();
+              normalizedExistingDenominations[normalizedKey] = typeof value === 'number' ? value : 0;
+            });
+            
+            console.log('정규화된 기존 denomination:', normalizedExistingDenominations);
+            
             // 기존 자산에 denomination 정보가 없다면 현재 잔액을 기반으로 생성
-            if (Object.keys(existingDenominations).length === 0 && existingCashAsset.balance > 0) {
+            if (Object.keys(normalizedExistingDenominations).length === 0 && existingCashAsset.balance > 0) {
               console.log('기존 자산에 denomination 정보가 없음. 잔액을 기반으로 생성:', existingCashAsset.balance);
               
               // 통화별 기본 denomination 구조
@@ -579,27 +589,27 @@ export default function HomePage() {
               });
               
               let remainingBalance = existingCashAsset.balance;
-              existingDenominations = { ...denoms };
+              normalizedExistingDenominations = { ...denoms };
               
               // 큰 지폐부터 나누어 떨어지는 만큼 할당
               for (const denomKey of denomKeys) {
                 const denomValue = parseFloat(denomKey.replace(/,/g, ''));
                 const count = Math.floor(remainingBalance / denomValue);
                 if (count > 0) {
-                  existingDenominations[denomKey] = count;
+                  normalizedExistingDenominations[denomKey] = count;
                   remainingBalance -= count * denomValue;
                 }
               }
               
-              console.log('생성된 기존 denomination:', existingDenominations);
+              console.log('생성된 기존 denomination:', normalizedExistingDenominations);
             }
             const mergedDenominations: Record<string, number> = {};
             
-            // 모든 denomination 키를 합침
-            const allDenomKeys = new Set([...Object.keys(existingDenominations), ...Object.keys(newDenominations)]);
+            // 모든 denomination 키를 합침 (정규화된 기존 denomination 사용)
+            const allDenomKeys = new Set([...Object.keys(normalizedExistingDenominations), ...Object.keys(newDenominations)]);
             
             allDenomKeys.forEach(key => {
-              const existingCount = existingDenominations[key] || 0;
+              const existingCount = normalizedExistingDenominations[key] || 0;
               const newCount = newDenominations[key] || 0;
               mergedDenominations[key] = existingCount + newCount;
             });
@@ -631,7 +641,7 @@ export default function HomePage() {
             
             console.log('=== 자산 업데이트 디버깅 ===');
             console.log('Existing asset balance:', existingCashAsset.balance);
-            console.log('Existing denominations (processed):', existingDenominations);
+            console.log('Existing denominations (processed):', normalizedExistingDenominations);
             console.log('New denominations from form:', newDenominations);
             console.log('Merged denominations:', mergedDenominations);
             console.log('Calculated new total balance:', newTotalBalance);

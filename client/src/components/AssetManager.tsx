@@ -133,9 +133,9 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       .map(([denom, count]) => (
                       <div key={denom} className="flex justify-between text-sm">
                         <span className="text-gray-600">
-                          {asset.currency === 'KRW' ? `${formatCurrency(denom, 'KRW')}원권` :
+                          {asset.currency === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
                            asset.currency === 'USD' ? `$${denom}` :
-                           asset.currency === 'VND' ? `${formatCurrency(denom, 'VND')}₫` : denom}
+                           asset.currency === 'VND' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫` : denom}
                         </span>
                         <span className="font-medium">{Number(count)}장</span>
                       </div>
