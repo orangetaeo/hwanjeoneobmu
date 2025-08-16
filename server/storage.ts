@@ -118,10 +118,16 @@ export class DatabaseStorage implements IStorage {
 
   private async moveAssetsBankToExchange(userId: string, fromBankName: string, toExchangeName: string, amount: number) {
     // 은행 계좌 자금 감소
-    const bankAsset = await this.getAssetByName(userId, fromBankName, 'bank_account');
+    console.log('은행 자산 검색:', { userId, fromBankName, type: 'account' });
+    const bankAsset = await this.getAssetByName(userId, fromBankName, 'account');
+    console.log('은행 자산 검색 결과:', bankAsset);
     if (bankAsset) {
-      const newBalance = parseFloat(bankAsset.balance || "0") - amount;
+      const currentBalance = parseFloat(bankAsset.balance || "0");
+      const newBalance = currentBalance - amount;
+      console.log('은행 자산 잔액 업데이트:', { name: fromBankName, currentBalance, amount, newBalance });
       await this.updateAsset(userId, bankAsset.id, { balance: newBalance.toString() });
+    } else {
+      console.error('은행 자산을 찾을 수 없음:', fromBankName);
     }
 
     // 거래소 KRW 자산 증가 (없으면 생성)
@@ -256,11 +262,21 @@ export class DatabaseStorage implements IStorage {
         await this.updateAsset(userId, targetAsset.id, { balance: newBalance.toString() });
       }
     } else {
-      // 자산명으로 검색
-      const vndAsset = await this.getAssetByName(userId, toAssetName, 'cash');
-      if (vndAsset) {
-        const newBalance = parseFloat(vndAsset.balance || "0") + toAmount;
-        await this.updateAsset(userId, vndAsset.id, { balance: newBalance.toString() });
+      // 자산명으로 검색 (은행 계좌와 현금 모두 검색)
+      console.log('P2P 대상 자산 검색:', { userId, toAssetName, type: 'account' });
+      let targetAsset = await this.getAssetByName(userId, toAssetName, 'account');
+      if (!targetAsset) {
+        console.log('account 타입에서 찾지 못함, cash 타입에서 검색:', { userId, toAssetName, type: 'cash' });
+        targetAsset = await this.getAssetByName(userId, toAssetName, 'cash');
+      }
+      console.log('P2P 대상 자산 검색 결과:', targetAsset);
+      if (targetAsset) {
+        const currentBalance = parseFloat(targetAsset.balance || "0");
+        const newBalance = currentBalance + toAmount;
+        console.log('P2P 대상 자산 잔액 업데이트:', { name: toAssetName, currentBalance, toAmount, newBalance });
+        await this.updateAsset(userId, targetAsset.id, { balance: newBalance.toString() });
+      } else {
+        console.error('P2P 대상 자산을 찾을 수 없음:', toAssetName);
       }
     }
   }
