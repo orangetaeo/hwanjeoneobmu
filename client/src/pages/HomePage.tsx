@@ -25,6 +25,7 @@ import AdvancedTransactionForm from '@/components/AdvancedTransactionForm';
 import UserSettingsForm from '@/components/UserSettingsForm';
 import ExchangeRateManager from '@/components/ExchangeRateManager';
 import ExchangeOperations from '@/components/ExchangeOperations';
+import BithumbTrading from '@/components/BithumbTrading';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -785,12 +786,12 @@ export default function HomePage() {
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 ${currentView === 'rates' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('rates')}
-            data-testid="mobile-nav-rates"
+            className={`flex flex-col items-center space-y-1 p-2 ${currentView === 'bithumb-trading' ? 'text-primary' : 'text-gray-400'}`}
+            onClick={() => setCurrentView('bithumb-trading')}
+            data-testid="mobile-nav-bithumb"
           >
-            <TrendingUp size={20} />
-            <span className="text-xs">환율</span>
+            <Coins size={20} />
+            <span className="text-xs">빗썸</span>
           </Button>
           <Button 
             variant="ghost" 
@@ -816,6 +817,7 @@ export default function HomePage() {
                   {[
                     { id: 'dashboard', label: '대시보드', icon: Home },
                     { id: 'assets', label: '자산 관리', icon: Wallet },
+                    { id: 'bithumb-trading', label: '빗썸 거래', icon: Coins },
                     { id: 'exchange-operations', label: '거래소 운영', icon: Coins },
                     { id: 'transactions', label: '거래 내역', icon: List },
                     { id: 'rates', label: '환율 관리', icon: TrendingUp },
@@ -978,6 +980,9 @@ export default function HomePage() {
                     activeTab={activeAssetTab}
                     onTabChange={setActiveAssetTab}
                   />
+                )}
+                {currentView === 'bithumb-trading' && (
+                  <BithumbTrading />
                 )}
                 {currentView === 'exchange-operations' && (
                   <ExchangeOperations />

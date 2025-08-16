@@ -229,13 +229,54 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: AuthenticatedReques
 });
 
 // Bithumb API Routes
+
+// 빗썸 API 연결 테스트 엔드포인트
+router.get('/bithumb/test', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('=== 빗썸 API 연결 테스트 시작 ===');
+    
+    // 간단한 퍼블릭 API 테스트 (인증 불필요)
+    const publicResponse = await fetch('https://api.bithumb.com/public/ticker/USDT_KRW');
+    const publicData = await publicResponse.json();
+    
+    console.log('퍼블릭 API 응답:', publicData);
+    
+    if (publicData.status === '0000') {
+      console.log('퍼블릭 API 연결 성공');
+      
+      // 이제 private API 테스트
+      console.log('프라이빗 API 테스트 시작...');
+      const balance = await bithumbApi.getBalance();
+      
+      res.json({
+        success: true,
+        message: '빗썸 API 연결 성공',
+        publicApi: publicData,
+        privateApi: balance
+      });
+    } else {
+      throw new Error('퍼블릭 API 연결 실패');
+    }
+  } catch (error) {
+    console.error('빗썸 API 테스트 실패:', error);
+    res.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      message: '빗썸 API 연결 실패'
+    });
+  }
+});
+
 router.get('/bithumb/balance', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const balance = await bithumbApi.getBalance();
     res.json(balance);
   } catch (error) {
     console.error('Error fetching Bithumb balance:', error);
-    res.status(500).json({ error: 'Failed to fetch balance from Bithumb API' });
+    res.status(500).json({ 
+      error: 'Failed to fetch balance from Bithumb API',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

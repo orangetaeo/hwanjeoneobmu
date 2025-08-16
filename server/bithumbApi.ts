@@ -41,42 +41,78 @@ class BithumbApiService {
       secretKey: process.env.BITHUMB_SECRET_KEY || 'NDU0Njc1NGE5YjZlYWJmZWE0YzMyZDM4MDk2MjQ4ZTk4NWE1OTY2ODI4ZWJiMDliYjdjZjI5N2M4YmRiNjQ3',
       baseUrl: 'https://api.bithumb.com'
     };
+    
+    console.log('Bithumb API Service initialized with:', {
+      apiKeyLength: this.config.apiKey.length,
+      secretKeyLength: this.config.secretKey.length,
+      baseUrl: this.config.baseUrl
+    });
   }
 
-  private generateJwtToken(queryString: string = ''): string {
-    const payload: any = {
-      access_key: this.config.apiKey,
-      nonce: uuidv4(),
-      timestamp: Date.now()
-    };
-
-    // 매개변수가 있는 경우 query_hash 추가
-    if (queryString) {
-      const hash = crypto.createHash('sha512');
-      hash.update(queryString, 'utf-8');
-      payload.query_hash = hash.digest('hex');
-      payload.query_hash_alg = 'SHA512';
+  private generateApiSign(endpoint: string, parameters: string, nonce: string, method: number = 1): string {
+    // 빗썸 API 문서에 따른 정확한 signature 생성
+    const data = endpoint + parameters + nonce + this.config.secretKey;
+    
+    console.log('API Signature Generation Debug:', {
+      method,
+      endpoint,
+      parameters,
+      nonce,
+      secretKeyLength: this.config.secretKey.length,
+      dataToSign: data.substring(0, 100) + '...',
+      apiKeyLength: this.config.apiKey.length
+    });
+    
+    let signature;
+    if (method === 1) {
+      // 방법 1: 일반적인 방법 (현재 방법) - Secret Key를 그대로 사용
+      signature = crypto.createHmac('sha512', this.config.secretKey).update(data).digest('hex');
+      console.log('Generated signature (method 1 - plain secret):', signature.substring(0, 20) + '...');
+    } else if (method === 2) {
+      // 방법 2: Secret Key를 Base64로 디코딩 후 사용
+      try {
+        const decodedSecretKey = Buffer.from(this.config.secretKey, 'base64').toString();
+        console.log('Decoded secret key length:', decodedSecretKey.length);
+        const dataWithDecodedSecret = endpoint + parameters + nonce + decodedSecretKey;
+        signature = crypto.createHmac('sha512', decodedSecretKey).update(dataWithDecodedSecret).digest('hex');
+        console.log('Generated signature (method 2 - base64 decoded):', signature.substring(0, 20) + '...');
+      } catch (error) {
+        console.error('Base64 decoding failed, falling back to method 1:', error);
+        signature = crypto.createHmac('sha512', this.config.secretKey).update(data).digest('hex');
+      }
+    } else {
+      // 방법 3: Secret Key를 바이너리로 변환하여 사용
+      const binarySecret = Buffer.from(this.config.secretKey, 'hex');
+      signature = crypto.createHmac('sha512', binarySecret).update(data).digest('hex');
+      console.log('Generated signature (method 3 - hex to binary):', signature.substring(0, 20) + '...');
     }
-
-    return jwt.sign(payload, this.config.secretKey);
+    
+    return signature;
   }
 
-  private async makeApiRequest(endpoint: string, parameters: any = {}): Promise<any> {
+  private async makeApiRequest(endpoint: string, parameters: any = {}, authMethod: number = 1): Promise<any> {
+    const nonce = Date.now().toString();
     const paramString = new URLSearchParams(parameters).toString();
-    const jwtToken = this.generateJwtToken(paramString);
+    const apiSign = this.generateApiSign(endpoint, paramString, nonce, authMethod);
 
     const headers = {
-      'Authorization': `Bearer ${jwtToken}`,
+      'Api-Key': this.config.apiKey,
+      'Api-Nonce': nonce,
+      'Api-Sign': apiSign,
       'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json'
     };
 
     try {
-      console.log('Bithumb API Request:', {
+      console.log('Bithumb API Request Details:', {
+        url: `${this.config.baseUrl}${endpoint}`,
         endpoint,
         method: 'POST',
         paramString,
-        headers: { ...headers, Authorization: 'Bearer [HIDDEN]' }
+        nonce,
+        apiKeyFirst10: this.config.apiKey.substring(0, 10) + '...',
+        secretKeyFirst10: this.config.secretKey.substring(0, 10) + '...',
+        headers: { ...headers, 'Api-Key': '[HIDDEN]', 'Api-Sign': '[HIDDEN]' }
       });
 
       const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
@@ -85,6 +121,9 @@ class BithumbApiService {
         body: paramString
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', [...response.headers.entries()]);
+      
       const responseText = await response.text();
       console.log('Bithumb API Raw Response:', responseText);
       
@@ -97,13 +136,32 @@ class BithumbApiService {
       }
       
       if (data.status !== '0000') {
-        console.error('Bithumb API Error Response:', data);
-        throw new Error(`Bithumb API Error: ${data.message || data.status}`);
+        console.error('Bithumb API Error Details:', {
+          authMethod,
+          status: data.status,
+          message: data.message,
+          fullResponse: data
+        });
+        
+        // 인증 방법을 순차적으로 시도
+        if (authMethod < 3 && (data.status === '5300' || data.message?.includes('invalid'))) {
+          console.log(`인증 방법 ${authMethod} 실패, 방법 ${authMethod + 1} 시도 중...`);
+          return this.makeApiRequest(endpoint, parameters, authMethod + 1);
+        }
+        
+        throw new Error(`Bithumb API Error: ${data.message || data.status} (Code: ${data.status})`);
       }
 
       return data;
     } catch (error) {
       console.error('Bithumb API request failed:', error);
+      
+      // 네트워크 오류가 아닌 경우 다른 인증 방법 시도
+      if (authMethod < 3 && error instanceof Error && error.message.includes('API Error')) {
+        console.log(`인증 방법 ${authMethod} 실패, 방법 ${authMethod + 1} 시도 중...`);
+        return this.makeApiRequest(endpoint, parameters, authMethod + 1);
+      }
+      
       throw error;
     }
   }

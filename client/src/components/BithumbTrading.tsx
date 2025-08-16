@@ -186,6 +186,44 @@ export default function BithumbTrading() {
 
   return (
     <div className="space-y-6">
+      {/* API 연결 테스트 */}
+      <Card className="p-4 mb-4 bg-blue-50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-medium text-blue-800">빗썸 API 연결 상태</h3>
+            <p className="text-sm text-blue-600">
+              {bithumbError ? '❌ API 연결 실패' : '✅ API 연결 성공'}
+            </p>
+          </div>
+          <Button
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/bithumb/test');
+                const result = await response.json();
+                console.log('API 테스트 결과:', result);
+                toast({
+                  title: result.success ? "API 연결 성공" : "API 연결 실패",
+                  description: result.message,
+                  variant: result.success ? "default" : "destructive"
+                });
+              } catch (error) {
+                console.error('API 테스트 오류:', error);
+                toast({
+                  title: "테스트 실패",
+                  description: "API 테스트 중 오류가 발생했습니다",
+                  variant: "destructive"
+                });
+              }
+            }}
+            variant="outline"
+            size="sm"
+            className="text-blue-700 border-blue-300"
+          >
+            🔧 API 연결 테스트
+          </Button>
+        </div>
+      </Card>
+
       {/* 상단 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
