@@ -251,8 +251,7 @@ export default function BithumbTrading() {
                   value={usdtAmount}
                   onChange={(e) => setUsdtAmount(e.target.value)}
                   placeholder="빗써에서 체결된 수량 입력"
-                  type="number"
-                  step="0.00000001"
+                  type="text"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   ℹ️ 빗써 거래 내역에서 확인한 수량을 입력해주세요
