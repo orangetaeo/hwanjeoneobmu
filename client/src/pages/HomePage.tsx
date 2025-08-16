@@ -566,15 +566,18 @@ export default function HomePage() {
             // 데이터베이스 denomination 형식 정규화 (쉼표 없는 형식을 쉼표 있는 형식으로 변환)
             let normalizedExistingDenominations: Record<string, number> = {};
             Object.entries(existingDenominations).forEach(([key, value]) => {
-              // 쉼표가 없는 키를 쉼표 있는 형식으로 변환
+              // 통화별 denomination 형식 정규화
               let normalizedKey;
-              if (key.includes(',')) {
-                normalizedKey = key; // 이미 쉼표가 있으면 그대로 사용
+              const numValue = parseFloat(key.replace(/,/g, ''));
+              
+              if (formData.currency === 'USD') {
+                // USD는 작은 숫자들이므로 쉼표 없이 사용
+                normalizedKey = numValue.toString();
               } else {
-                // 숫자를 파싱하고 천 단위 쉼표 추가
-                const numValue = parseFloat(key);
+                // KRW, VND는 큰 숫자들이므로 쉼표 있는 형식 사용
                 normalizedKey = numValue.toLocaleString();
               }
+              
               normalizedExistingDenominations[normalizedKey] = typeof value === 'number' ? value : 0;
             });
             
@@ -588,7 +591,7 @@ export default function HomePage() {
             if (Object.keys(normalizedExistingDenominations).length === 0 && currentBalance > 0) {
               console.log('기존 자산에 denomination 정보가 없음. 잔액을 기반으로 생성:', currentBalance);
               
-              // 통화별 기본 denomination 구조
+              // 통화별 기본 denomination 구조 (AssetForm과 동일)
               const defaultDenominations: Record<string, Record<string, number>> = {
                 'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
                 'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
@@ -596,7 +599,7 @@ export default function HomePage() {
               };
               
               // 기존 잔액을 가장 큰 지폐로 표현 (근사치)
-              const denoms = defaultDenominations[formData.currency] || {};
+              const denoms = defaultDenominations[formData.currency] || defaultDenominations['KRW'];
               const denomKeys = Object.keys(denoms).sort((a, b) => {
                 const numA = parseFloat(a.replace(/,/g, ''));
                 const numB = parseFloat(b.replace(/,/g, ''));
@@ -606,6 +609,12 @@ export default function HomePage() {
               let remainingBalance = currentBalance;
               normalizedExistingDenominations = { ...denoms };
               
+              console.log(`${formData.currency} 자동 denomination 생성:`, {
+                currentBalance,
+                denomKeys,
+                currency: formData.currency
+              });
+              
               // 큰 지폐부터 나누어 떨어지는 만큼 할당
               for (const denomKey of denomKeys) {
                 const denomValue = parseFloat(denomKey.replace(/,/g, ''));
@@ -613,10 +622,14 @@ export default function HomePage() {
                 if (count > 0) {
                   normalizedExistingDenominations[denomKey] = count;
                   remainingBalance -= count * denomValue;
+                  
+                  console.log(`${denomKey}: ${count}장 (값: ${denomValue * count})`);
                 }
               }
               
-              console.log('생성된 기존 denomination:', normalizedExistingDenominations);
+              console.log(`남은 잔액: ${remainingBalance}`);
+              
+              console.log(`생성된 ${formData.currency} denomination:`, normalizedExistingDenominations);
             }
             const mergedDenominations: Record<string, number> = {};
             
