@@ -330,6 +330,15 @@ export default function HomePage() {
 
       latestAssets.forEach((asset: any) => {
         if (asset.type === 'cash') {
+          console.log('Loading cash asset from DB:', {
+            id: asset.id,
+            name: asset.name,
+            currency: asset.currency,
+            balance: asset.balance,
+            metadata: asset.metadata,
+            denominations: asset.metadata?.denominations
+          });
+          
           cashAssetsData.push({
             id: asset.id,
             type: 'cash',
@@ -538,9 +547,52 @@ export default function HomePage() {
             // 기존 자산이 있으면 업데이트 로직으로 전환
             const assetId = existingCashAsset.id;
             
+            console.log('기존 현금 자산 정보:', {
+              id: existingCashAsset.id,
+              currency: existingCashAsset.currency,
+              balance: existingCashAsset.balance,
+              denominations: existingCashAsset.denominations,
+              entireAsset: existingCashAsset
+            });
+            
             // 기존 denomination과 새로운 denomination 합산
-            const existingDenominations = existingCashAsset.denominations || {};
+            let existingDenominations = existingCashAsset.denominations || {};
             const newDenominations = formData.denominations || {};
+            
+            // 기존 자산에 denomination 정보가 없다면 현재 잔액을 기반으로 생성
+            if (Object.keys(existingDenominations).length === 0 && existingCashAsset.balance > 0) {
+              console.log('기존 자산에 denomination 정보가 없음. 잔액을 기반으로 생성:', existingCashAsset.balance);
+              
+              // 통화별 기본 denomination 구조
+              const defaultDenominations: Record<string, Record<string, number>> = {
+                'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+                'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
+                'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
+              };
+              
+              // 기존 잔액을 가장 큰 지폐로 표현 (근사치)
+              const denoms = defaultDenominations[formData.currency] || {};
+              const denomKeys = Object.keys(denoms).sort((a, b) => {
+                const numA = parseFloat(a.replace(/,/g, ''));
+                const numB = parseFloat(b.replace(/,/g, ''));
+                return numB - numA; // 큰 것부터 정렬
+              });
+              
+              let remainingBalance = existingCashAsset.balance;
+              existingDenominations = { ...denoms };
+              
+              // 큰 지폐부터 나누어 떨어지는 만큼 할당
+              for (const denomKey of denomKeys) {
+                const denomValue = parseFloat(denomKey.replace(/,/g, ''));
+                const count = Math.floor(remainingBalance / denomValue);
+                if (count > 0) {
+                  existingDenominations[denomKey] = count;
+                  remainingBalance -= count * denomValue;
+                }
+              }
+              
+              console.log('생성된 기존 denomination:', existingDenominations);
+            }
             const mergedDenominations: Record<string, number> = {};
             
             // 모든 denomination 키를 합침
@@ -579,7 +631,7 @@ export default function HomePage() {
             
             console.log('=== 자산 업데이트 디버깅 ===');
             console.log('Existing asset balance:', existingCashAsset.balance);
-            console.log('Existing denominations:', existingDenominations);
+            console.log('Existing denominations (processed):', existingDenominations);
             console.log('New denominations from form:', newDenominations);
             console.log('Merged denominations:', mergedDenominations);
             console.log('Calculated new total balance:', newTotalBalance);
