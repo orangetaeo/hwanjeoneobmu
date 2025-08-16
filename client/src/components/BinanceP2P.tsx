@@ -82,9 +82,9 @@ export default function BinanceP2P() {
      asset.name.includes('우리은행') || asset.metadata?.bank === '우리은행')
   );
 
-  // P2P 시장 환율 계산 (USDT 판매하여 VND 구매 환율)
-  // 실제 P2P 시장에서 USDT 1개에 대한 VND 가격 (2024-2025년 기준)
-  const marketRate = 25800;  // 1 USDT = 25,800 VND 대략적인 P2P 시장 환율
+  // P2P 시장 환율 계산 (USDT 판매하여 VND 구매 환율)  
+  // 실제 바이낸스 P2P 시장 환율 (2025년 8월 기준)
+  const marketRate = 26346;  // 1 USDT = 26,346 VND 실제 P2P 시장 환율
   
   console.log('P2P 시장 환율:', {
     marketRate: marketRate,

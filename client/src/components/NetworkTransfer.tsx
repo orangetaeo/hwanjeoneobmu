@@ -64,7 +64,7 @@ export default function NetworkTransfer() {
     queryKey: ['/api/assets']
   });
 
-  // 빗썸 USDT 자산 직접 조회
+  // 빗썸 USDT 자산 직접 조회 (타입 통일: exchange만 사용)
   const bithumbUsdtAsset = (assets as any[]).find((asset: any) => 
     asset.type === 'exchange' && asset.currency === 'USDT' && asset.name === 'Bithumb USDT'
   );
@@ -76,11 +76,13 @@ export default function NetworkTransfer() {
   const usedUsdt = transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0);
   const availableUsdt = Math.max(0, bithumbUsdtBalance - usedUsdt);
   
-  console.log('네트워크 이동 USDT 계산:', {
+  console.log('네트워크 이동 USDT 계산 (통일된 자산):', {
     bithumbUsdtBalance,
     usedUsdt,
     availableUsdt,
-    transfersCount: transfers.length
+    transfersCount: transfers.length,
+    assetFound: !!bithumbUsdtAsset,
+    assetType: bithumbUsdtAsset?.type
   });
   
 
