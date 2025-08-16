@@ -45,9 +45,9 @@ const DEFAULT_COINS = ['BTC', 'ETH', 'XRP', 'ADA', 'DOT', 'USDT', 'USDC'];
 
 export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetFormProps) {
   const [denominations, setDenominations] = useState(() => {
-    // editData가 있고 metadata.denomination이 있을 때
-    if (editData?.metadata?.denomination) {
-      return editData.metadata.denomination;
+    // editData가 있고 metadata.denominations이 있을 때
+    if (editData?.metadata?.denominations) {
+      return editData.metadata.denominations;
     }
     
     const defaultDenoms: Record<string, Record<string, number>> = {
@@ -88,13 +88,13 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   // editData 변경 시 denominations 업데이트
   useEffect(() => {
     if (editData && type === 'cash') {
-      const denomData = editData.metadata?.denomination || editData.denominations;
+      const denomData = editData.metadata?.denominations || editData.denominations;
       if (denomData && Object.keys(denomData).length > 0) {
         console.log('Setting denominations from editData:', denomData);
         setDenominations(denomData);
       }
     }
-  }, [editData?.id, type, editData?.metadata?.denomination, editData?.denominations]);
+  }, [editData?.id, type, editData?.metadata?.denominations, editData?.denominations]);
 
   const getSchema = () => {
     switch (type) {
@@ -127,7 +127,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       if (type === 'cash') {
         formData.currency = editData.currency;
         formData.balance = parseFloat(editData.balance) || 0;
-        const denominations = editData.metadata?.denomination || editData.denominations || {};
+        const denominations = editData.metadata?.denominations || editData.denominations || {};
         formData.denominations = denominations;
         
         console.log('Cash edit data processed:', {
@@ -362,7 +362,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                 <span className="font-semibold text-blue-800">
                                   {form.watch('currency') === 'KRW' ? '₩' : 
                                    form.watch('currency') === 'USD' ? '$' : '₫'}
-                                  {Object.entries(editData?.metadata?.denomination || editData?.denominations || {}).reduce((total, [denom, count]) => {
+                                  {Object.entries(editData?.metadata?.denominations || editData?.denominations || {}).reduce((total, [denom, count]) => {
                                     return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
                                   }, 0).toLocaleString()}
                                 </span>
