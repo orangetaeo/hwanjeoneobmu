@@ -296,7 +296,7 @@ export default function BithumbTrading() {
                   </div>
                   <div className="flex justify-between">
                     <span>평균 체결가:</span>
-                    <span>{usdtPrice ? parseFloat(usdtPrice.replace(/,/g, '')).toLocaleString() : '0'}원/USDT</span>
+                    <span>{usdtPrice ? parseFloat(usdtPrice).toFixed(2) : '0'}원/USDT</span>
                   </div>
                   <hr />
                   <div className="flex justify-between text-green-600">
