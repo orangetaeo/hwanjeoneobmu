@@ -299,14 +299,19 @@ export default function BinanceP2P() {
                   <Input
                     value={exchangeRate}
                     onChange={(e) => {
+                      console.log('환율 입력 onChange:', {
+                        inputValue: e.target.value,
+                        inputValueType: typeof e.target.value,
+                        inputValueLength: e.target.value.length
+                      });
                       setExchangeRate(e.target.value);
                       if (usdtAmount) {
                         setTimeout(calculateFromUsdt, 100);
                       }
                     }}
                     placeholder="P2P 거래 환율을 입력하세요"
-                    type="number"
-                    step="1"
+                    type="text"
+                    inputMode="numeric"
                     className="flex-1 text-lg py-3"
                   />
                   <Button
