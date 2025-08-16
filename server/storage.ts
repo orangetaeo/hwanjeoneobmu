@@ -51,17 +51,15 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Transactions with asset movement logic
   async createTransactionWithAssetMovement(userId: string, transaction: InsertTransaction): Promise<Transaction> {
-    // P2P 거래인 경우 기본값을 pending으로 설정
+    // P2P 거래는 생성과 동시에 자산이 이동되므로 confirmed로 설정
     const transactionData = {
       ...transaction,
-      status: (transaction.type === 'binance_p2p' || transaction.type === 'p2p_trade') ? 'pending' : 'confirmed',
+      status: 'confirmed', // 모든 거래를 confirmed 상태로 생성
       userId
     };
     
-    // confirmed 상태인 경우에만 자산 이동 처리
-    if (transactionData.status === 'confirmed') {
-      await this.handleAssetMovement(userId, transaction);
-    }
+    // 자산 이동 처리
+    await this.handleAssetMovement(userId, transaction);
     
     // 거래 기록 생성
     const [result] = await db
