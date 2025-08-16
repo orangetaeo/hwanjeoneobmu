@@ -531,15 +531,68 @@ export default function HomePage() {
         let createData: any = {};
         
         if (assetFormType === 'cash') {
-          createData = {
-            name: `${formData.currency} 현금`,
-            type: 'cash',
-            currency: formData.currency,
-            balance: formData.balance.toString(),
-            metadata: {
-              denomination: formData.denominations
+          // 현금 자산의 경우 같은 통화의 기존 자산이 있는지 확인
+          const existingCashAsset = cashAssets.find(asset => asset.currency === formData.currency);
+          
+          if (existingCashAsset) {
+            // 기존 자산이 있으면 업데이트 로직으로 전환
+            const assetId = existingCashAsset.id;
+            
+            // 기존 denomination과 새로운 denomination 합산
+            const existingDenominations = existingCashAsset.denominations || {};
+            const newDenominations = formData.denominations || {};
+            const mergedDenominations: Record<string, number> = {};
+            
+            // 모든 denomination 키를 합침
+            const allDenomKeys = new Set([...Object.keys(existingDenominations), ...Object.keys(newDenominations)]);
+            
+            allDenomKeys.forEach(key => {
+              const existingCount = existingDenominations[key] || 0;
+              const newCount = newDenominations[key] || 0;
+              mergedDenominations[key] = existingCount + newCount;
+            });
+            
+            // 새로운 총 잔액 계산
+            const newTotalBalance = existingCashAsset.balance + formData.balance;
+            
+            const updateData = {
+              id: assetId,
+              name: `${formData.currency} 현금`,
+              type: 'cash',
+              currency: formData.currency,
+              balance: newTotalBalance.toString(),
+              metadata: {
+                denomination: mergedDenominations
+              }
+            };
+
+            console.log('Updating existing cash asset:', updateData);
+            
+            // 기존 자산 업데이트
+            const response = await fetch(`/api/assets/${assetId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updateData)
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to update existing cash asset');
             }
-          };
+
+            const updatedAsset = await response.json();
+            console.log('Existing cash asset updated successfully:', updatedAsset);
+          } else {
+            // 기존 자산이 없으면 새로 생성
+            createData = {
+              name: `${formData.currency} 현금`,
+              type: 'cash',
+              currency: formData.currency,
+              balance: formData.balance.toString(),
+              metadata: {
+                denomination: formData.denominations
+              }
+            };
+          }
         } else if (assetFormType === 'korean-account') {
           createData = {
             name: formData.bankName,
@@ -585,21 +638,24 @@ export default function HomePage() {
           };
         }
 
-        console.log('Creating new asset:', createData);
-        
-        // API 호출
-        const response = await fetch('/api/assets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(createData)
-        });
+        // 새로운 자산 생성이 필요한 경우에만 실행
+        if (Object.keys(createData).length > 0) {
+          console.log('Creating new asset:', createData);
+          
+          // API 호출
+          const response = await fetch('/api/assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(createData)
+          });
 
-        if (!response.ok) {
-          throw new Error('Failed to create asset');
+          if (!response.ok) {
+            throw new Error('Failed to create asset');
+          }
+
+          const createdAsset = await response.json();
+          console.log('Asset created successfully:', createdAsset);
         }
-
-        const createdAsset = await response.json();
-        console.log('Asset created successfully:', createdAsset);
 
         // 서버에서 최신 데이터를 다시 불러오기
         const assetsResponse = await fetch('/api/assets');
