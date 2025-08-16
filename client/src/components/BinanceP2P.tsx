@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Coins, History, TrendingUp, Calculator } from 'lucide-react';
@@ -30,8 +29,6 @@ export default function BinanceP2P() {
   const [usdtAmount, setUsdtAmount] = useState<string>('');
   const [vndAmount, setVndAmount] = useState<string>('');
   const [exchangeRate, setExchangeRate] = useState<string>('');
-  const [sellerName, setSellerName] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<string>('Bank Transfer');
   const [currentTab, setCurrentTab] = useState<'p2p' | 'history'>('p2p');
 
   // P2P 거래 내역 조회
@@ -44,7 +41,7 @@ export default function BinanceP2P() {
     }
   });
 
-  // VND 현금 자산 조회 (처음에 이동)
+  // 자산 조회
   const { data: assets = [] } = useQuery<any[]>({
     queryKey: ['/api/assets'],
   });
@@ -68,11 +65,11 @@ export default function BinanceP2P() {
     assetFound: !!binanceUsdtAsset
   });
 
-  const vndCashAssets = (assets as any[]).filter((asset: any) => 
-    asset.type === 'cash' && asset.currency === 'VND'
+  // VND 우리은행 계좌 자산 직접 조회 (P2P 거래는 우리은행으로 고정)
+  const vndBankAsset = (assets as any[]).find((asset: any) => 
+    asset.type === 'account' && asset.currency === 'VND' && 
+    (asset.name.includes('우리은행') || asset.metadata?.bank === '우리은행')
   );
-
-  const [selectedVndAsset, setSelectedVndAsset] = useState<string>('');
 
   // 실시간 환율 계산
   const marketRate = realTimeRates['USDT-VND'] || 24500;
@@ -87,15 +84,6 @@ export default function BinanceP2P() {
     }
   };
 
-  const calculateFromVnd = () => {
-    if (vndAmount && exchangeRate) {
-      const vnd = parseFloat(vndAmount.replace(/,/g, ''));
-      const rate = parseFloat(exchangeRate);
-      const usdt = vnd / rate;
-      setUsdtAmount(usdt.toFixed(2));
-    }
-  };
-
   // P2P 거래 처리
   const executeP2P = useMutation({
     mutationFn: async () => {
@@ -107,8 +95,8 @@ export default function BinanceP2P() {
         throw new Error('사용 가능한 USDT가 부족합니다.');
       }
 
-      if (!selectedVndAsset) {
-        throw new Error('VND 현금 자산을 선택해주세요.');
+      if (!vndBankAsset) {
+        throw new Error('VND 우리은행 계좌를 찾을 수 없습니다.');
       }
 
       const p2pData = {
@@ -116,21 +104,21 @@ export default function BinanceP2P() {
         fromAssetType: 'binance',
         fromAssetId: binanceUsdtAsset?.id || null,
         fromAssetName: 'Binance USDT',
-        toAssetType: 'cash',
-        toAssetId: selectedVndAsset,
-        toAssetName: 'VND 현금',
+        toAssetType: 'account',
+        toAssetId: vndBankAsset.id,
+        toAssetName: vndBankAsset.name,
         fromAmount: usdt.toString(),
         toAmount: vnd.toString(),
         rate: (vnd / usdt).toString(),
         fees: '0',
-        memo: `P2P 거래: ${usdt.toFixed(2)} USDT → ${formatCurrency(vnd, 'VND')} VND`,
+        memo: `P2P 거래: ${usdt.toFixed(2)} USDT → ${formatCurrency(vnd, 'VND')} VND (우리은행)`,
         metadata: {
           platform: 'binance_p2p',
-          sellerName: sellerName || null,
-          paymentMethod: paymentMethod,
+          paymentMethod: 'VND 우리은행 계좌',
           marketRate: marketRate,
           rateSpread: rate - marketRate,
-          exchangeRate: rate
+          exchangeRate: rate,
+          bankName: '우리은행'
         }
       };
 
@@ -153,8 +141,6 @@ export default function BinanceP2P() {
       setUsdtAmount('');
       setVndAmount('');
       setExchangeRate('');
-      setSellerName('');
-      setSelectedVndAsset('');
       
       // 데이터 새로고침
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
@@ -177,7 +163,7 @@ export default function BinanceP2P() {
   const totalVndAcquired = p2pTrades.reduce((sum, trade) => sum + trade.vndAmount, 0);
   const totalUsdtUsed = p2pTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
 
-  const canExecuteP2P = usdtAmount && vndAmount && exchangeRate && selectedVndAsset && 
+  const canExecuteP2P = usdtAmount && vndAmount && exchangeRate && vndBankAsset && 
                        parseFloat(usdtAmount) <= availableUsdt;
 
   return (
@@ -245,128 +231,102 @@ export default function BinanceP2P() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">VND 현금 자산</label>
-                <Select value={selectedVndAsset} onValueChange={setSelectedVndAsset}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="VND 현금 자산 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vndCashAssets.map((asset: any) => (
-                      <SelectItem key={asset.id} value={asset.id}>
-                        {asset.name} - {formatCurrency(asset.balance, 'VND')} VND
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* VND 입금 계좌 정보 (고정) */}
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <h4 className="text-sm font-medium text-blue-900 mb-1">VND 입금 계좌</h4>
+                <p className="text-sm text-blue-700">
+                  {vndBankAsset ? `${vndBankAsset.name} (${formatCurrency(vndBankAsset.balance, 'VND')} VND)` : 'VND 우리은행 계좌 없음'}
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">USDT 수량</label>
-                  <div className="flex space-x-2">
-                    <Input
-                      value={usdtAmount}
-                      onChange={(e) => {
-                        setUsdtAmount(e.target.value);
-                        if (exchangeRate) {
-                          setTimeout(calculateFromUsdt, 100);
-                        }
-                      }}
-                      placeholder="USDT"
-                      type="number"
-                      step="0.01"
-                      max={isNaN(availableUsdt) ? '0' : availableUsdt.toString()}
-                      className="flex-1"
-                      data-testid="input-usdt-amount"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const maxAmount = isNaN(availableUsdt) ? 0 : availableUsdt;
-                        setUsdtAmount(maxAmount.toFixed(8));
-                        if (exchangeRate) {
-                          setTimeout(calculateFromUsdt, 100);
-                        }
-                      }}
-                      className="shrink-0 px-3"
-                      data-testid="button-max-usdt"
-                      disabled={isNaN(availableUsdt) || availableUsdt <= 0}
-                    >
-                      MAX
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    최대: {(isNaN(availableUsdt) ? 0 : availableUsdt).toFixed(8)} USDT (바이낸스 잔고: {(isNaN(binanceBalance) ? 0 : binanceBalance).toFixed(8)})
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">VND 금액</label>
-                  <Input
-                    value={vndAmount}
-                    onChange={(e) => {
-                      setVndAmount(e.target.value);
-                      if (exchangeRate) {
-                        setTimeout(calculateFromVnd, 100);
-                      }
-                    }}
-                    placeholder="VND"
-                    type="text"
-                  />
-                </div>
-              </div>
-
+              {/* USDT 수량 입력 (크게 만들고 위로 이동) */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">환율 (VND/USDT)</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">판매할 USDT 수량</label>
                 <div className="flex space-x-2">
                   <Input
-                    value={exchangeRate}
-                    onChange={(e) => setExchangeRate(e.target.value)}
-                    placeholder="환율"
+                    value={usdtAmount}
+                    onChange={(e) => {
+                      setUsdtAmount(e.target.value);
+                      if (exchangeRate) {
+                        setTimeout(calculateFromUsdt, 100);
+                      }
+                    }}
+                    placeholder="판매할 USDT 수량을 입력하세요"
                     type="number"
-                    step="1"
+                    step="0.01"
+                    max={isNaN(availableUsdt) ? '0' : availableUsdt.toString()}
+                    className="flex-1 text-lg py-3"
+                    data-testid="input-usdt-amount"
                   />
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setExchangeRate(marketRate.toString())}
-                    className="shrink-0"
+                    onClick={() => {
+                      const maxAmount = isNaN(availableUsdt) ? 0 : availableUsdt;
+                      setUsdtAmount(maxAmount.toFixed(8));
+                      if (exchangeRate) {
+                        setTimeout(calculateFromUsdt, 100);
+                      }
+                    }}
+                    className="shrink-0 px-4 py-3"
+                    data-testid="button-max-usdt"
+                    disabled={isNaN(availableUsdt) || availableUsdt <= 0}
                   >
-                    시장가
+                    최대
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  시장 환율: {marketRate.toFixed(0)} VND/USDT
+                <p className="text-sm text-gray-600 mt-2">
+                  💡 사용 가능한 USDT: <strong>{(isNaN(availableUsdt) ? 0 : availableUsdt).toFixed(8)} USDT</strong>
                 </p>
               </div>
 
+              {/* VND 시세 입력 필드 */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">결제 방법</label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Bank Transfer">은행 송금</SelectItem>
-                    <SelectItem value="Momo">MoMo</SelectItem>
-                    <SelectItem value="ZaloPay">ZaloPay</SelectItem>
-                    <SelectItem value="ViettelPay">ViettelPay</SelectItem>
-                    <SelectItem value="Cash">현금</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">VND 환율 (VND/USDT)</label>
+                <div className="flex space-x-2">
+                  <Input
+                    value={exchangeRate}
+                    onChange={(e) => {
+                      setExchangeRate(e.target.value);
+                      if (usdtAmount) {
+                        setTimeout(calculateFromUsdt, 100);
+                      }
+                    }}
+                    placeholder="P2P 거래 환율을 입력하세요"
+                    type="number"
+                    step="1"
+                    className="flex-1 text-lg py-3"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setExchangeRate(marketRate.toString());
+                      if (usdtAmount) {
+                        setTimeout(calculateFromUsdt, 100);
+                      }
+                    }}
+                    className="shrink-0 px-4 py-3"
+                  >
+                    시장가 적용
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  📊 현재 시장 환율: <strong>{marketRate.toFixed(0)} VND/USDT</strong>
+                </p>
               </div>
 
+              {/* 계산된 VND 금액 표시 */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">판매자 (선택사항)</label>
-                <Input
-                  value={sellerName}
-                  onChange={(e) => setSellerName(e.target.value)}
-                  placeholder="판매자 닉네임"
-                  type="text"
-                />
+                <label className="text-sm font-medium text-gray-700 mb-2 block">받을 VND 금액</label>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">
+                    {vndAmount ? formatCurrency(parseFloat(vndAmount.replace(/,/g, '')), 'VND') : '0'} VND
+                  </p>
+                  <p className="text-sm text-green-700 mt-1">
+                    💰 우리은행 계좌로 입금됩니다
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -402,8 +362,8 @@ export default function BinanceP2P() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>결제 방법:</span>
-                    <Badge variant="outline">{paymentMethod}</Badge>
+                    <span>입금 계좌:</span>
+                    <Badge variant="outline">VND 우리은행</Badge>
                   </div>
                 </div>
               </div>
@@ -440,8 +400,7 @@ export default function BinanceP2P() {
                   <TableHead>USDT</TableHead>
                   <TableHead>VND</TableHead>
                   <TableHead>환율</TableHead>
-                  <TableHead>결제방법</TableHead>
-                  <TableHead>판매자</TableHead>
+                  <TableHead>입금계좌</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -458,10 +417,7 @@ export default function BinanceP2P() {
                       {trade.exchangeRate.toFixed(0)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{trade.paymentMethod}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {trade.sellerName || '-'}
+                      <Badge variant="outline">우리은행</Badge>
                     </TableCell>
                   </TableRow>
                 ))}
