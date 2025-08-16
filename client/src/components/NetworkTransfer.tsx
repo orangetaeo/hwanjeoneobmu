@@ -270,15 +270,18 @@ export default function NetworkTransfer() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setUsdtAmount(availableUsdt.toString())}
-                    disabled={availableUsdt <= 0}
+                    onClick={() => {
+                      const maxMovable = Math.max(0, availableUsdt - parseFloat(networkFee || '0'));
+                      setUsdtAmount(maxMovable.toString());
+                    }}
+                    disabled={availableUsdt <= parseFloat(networkFee || '0')}
                     className="px-3 py-1 text-xs"
                   >
                     MAX
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  최대 이동 가능: {formatInputWithCommas(bithumbUsdtAsset?.balance || '0')} USDT
+                  최대 이동 가능: {formatInputWithCommas(Math.max(0, availableUsdt - parseFloat(networkFee || '0')).toString())} USDT (수수료 제외)
                 </p>
               </div>
 
