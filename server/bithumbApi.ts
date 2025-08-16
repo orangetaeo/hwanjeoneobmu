@@ -1,9 +1,7 @@
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
 interface BithumbApiConfig {
-  apiKey: string;
+  connectKey: string;
   secretKey: string;
   baseUrl: string;
 }
@@ -37,70 +35,62 @@ class BithumbApiService {
 
   constructor() {
     this.config = {
-      apiKey: process.env.BITHUMB_API_KEY || 'b98ea5c12a3d00694290f5a394682ee9b79ebdc62a7d8fda',
-      secretKey: process.env.BITHUMB_SECRET_KEY || 'NDU0Njc1NGE5YjZlYWJmZWE0YzMyZDM4MDk2MjQ4ZTk4NWE1OTY2ODI4ZWJiMDliYjdjZjI5N2M4YmRiNjQ3',
+      connectKey: process.env.BITHUMB_API_KEY || 'a47849b7c86067d598fe0c3ed8502131',
+      secretKey: process.env.BITHUMB_SECRET_KEY || '64f36ebe17092026677c22705db62b32',
       baseUrl: 'https://api.bithumb.com'
     };
     
-    console.log('Bithumb JWT API Service initialized with:', {
-      apiKeyLength: this.config.apiKey.length,
+    console.log('Bithumb API 1.0 Service initialized with:', {
+      connectKeyLength: this.config.connectKey.length,
       secretKeyLength: this.config.secretKey.length,
       baseUrl: this.config.baseUrl
     });
   }
 
-  private generateJwtToken(queryParams: any = {}): string {
-    const nonce = uuidv4();
-    const timestamp = Date.now();
+  private generateHmacSignature(endpoint: string, parameters: any = {}): { signature: string; nonce: string } {
+    const nonce = Date.now().toString();
     
-    let payload: any = {
-      access_key: this.config.apiKey,
-      nonce,
-      timestamp
-    };
-    
-    // 파라미터가 있는 경우 query_hash 생성
-    if (queryParams && Object.keys(queryParams).length > 0) {
-      // URL 인코딩된 쿼리 스트링 생성
-      const queryString = new URLSearchParams(queryParams).toString();
-      console.log('Query string for hashing:', queryString);
-      
-      // SHA512로 해시 생성
-      const hash = crypto.createHash('sha512');
-      hash.update(queryString, 'utf-8');
-      const queryHash = hash.digest('hex');
-      
-      payload.query_hash = queryHash;
-      payload.query_hash_alg = 'SHA512';
+    // 파라미터를 문자열로 변환
+    let paramString = '';
+    if (parameters && Object.keys(parameters).length > 0) {
+      paramString = new URLSearchParams(parameters).toString();
     }
     
-    console.log('JWT Payload:', {
-      access_key: payload.access_key.substring(0, 10) + '...',
+    // 서명할 메시지 생성: endpoint + parameters + nonce
+    const message = endpoint + paramString + nonce;
+    
+    console.log('HMAC 서명 생성:', {
+      endpoint,
+      paramString,
       nonce,
-      timestamp,
-      query_hash: payload.query_hash ? payload.query_hash.substring(0, 20) + '...' : undefined,
-      query_hash_alg: payload.query_hash_alg
+      message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
     });
     
-    // JWT 토큰 생성 (HS256 서명)
-    const jwtToken = jwt.sign(payload, this.config.secretKey, { algorithm: 'HS256' });
-    console.log('Generated JWT token (first 50 chars):', jwtToken.substring(0, 50) + '...');
+    // HMAC SHA512 서명 생성
+    const signature = crypto
+      .createHmac('sha512', this.config.secretKey)
+      .update(message, 'utf-8')
+      .digest('hex');
     
-    return jwtToken;
+    console.log('Generated HMAC signature (first 20 chars):', signature.substring(0, 20) + '...');
+    
+    return { signature, nonce };
   }
 
   private async makeApiRequest(endpoint: string, parameters: any = {}): Promise<any> {
     try {
       const url = `${this.config.baseUrl}${endpoint}`;
       
-      // JWT 토큰 생성 (parameters 포함)
-      const jwtToken = this.generateJwtToken(parameters);
+      // HMAC SHA512 서명 생성
+      const { signature, nonce } = this.generateHmacSignature(endpoint, parameters);
       
-      // 한국 빗썸은 application/x-www-form-urlencoded 형식 사용
+      // API 1.0 인증 헤더
       const headers = {
-        'Authorization': `Bearer ${jwtToken}`,
+        'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json'
+        'Api-Key': this.config.connectKey,
+        'Api-Sign': signature,
+        'Api-Nonce': nonce
       };
       
       // form data로 변환
@@ -117,17 +107,17 @@ class BithumbApiService {
         body: formData.toString()
       };
 
-      console.log('Bithumb API Request:', {
+      console.log('Bithumb API 1.0 Request:', {
         url,
         method: 'POST',
-        headers: { ...headers, 'Authorization': 'Bearer [HIDDEN]' },
+        headers: { ...headers, 'Api-Key': headers['Api-Key'].substring(0, 10) + '...', 'Api-Sign': '[HIDDEN]' },
         bodyParams: parameters
       });
 
       const response = await fetch(url, requestOptions);
       
       console.log('Response status:', response.status);
-      console.log('Response headers:', [...response.headers.entries()]);
+      console.log('Response headers:', Array.from(response.headers.entries()));
       
       const responseText = await response.text();
       console.log('Bithumb API Raw Response:', responseText);
