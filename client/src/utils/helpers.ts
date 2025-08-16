@@ -69,9 +69,9 @@ export const formatCurrency = (amount: number | string, currency: string): strin
     return '0';
   }
   
-  // 베트남돈, 원화, 달러는 소숫점 표시 안함
+  // 베트남돈, 원화, 달러는 소숫점 표시 안함 - 반올림으로 변경
   if (currency === 'VND' || currency === 'KRW' || currency === 'USD') {
-    return Math.floor(num).toLocaleString();
+    return Math.round(num).toLocaleString();
   }
   
   // 코인은 소숫점 2자리까지만
