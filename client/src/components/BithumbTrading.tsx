@@ -62,25 +62,32 @@ export default function BithumbTrading() {
 
   const [selectedAccount, setSelectedAccount] = useState<string>('');
 
-  // 실시간 USDT 가격 계산
+  // 구매 수량 자동 계산 (구매 금액과 단가가 입력되면 수량 계산)
   useEffect(() => {
-    if (krwAmount && usdtAmount) {
+    if (krwAmount && usdtPrice) {
       const krw = parseFloat(krwAmount.replace(/,/g, ''));
-      const usdt = parseFloat(usdtAmount);
-      if (!isNaN(krw) && !isNaN(usdt) && usdt > 0) {
-        const price = krw / usdt;
-        setUsdtPrice(price.toFixed(2));
+      const price = parseFloat(usdtPrice.replace(/,/g, ''));
+      if (!isNaN(krw) && !isNaN(price) && price > 0) {
+        const quantity = krw / price;
+        setUsdtAmount(quantity.toFixed(6));
       }
     }
-  }, [krwAmount, usdtAmount]);
+  }, [krwAmount, usdtPrice]);
+
+  // 숫자에 콤마 추가 함수
+  const formatNumberWithCommas = (value: string) => {
+    const number = value.replace(/,/g, '');
+    if (isNaN(parseFloat(number))) return value;
+    return parseFloat(number).toLocaleString('ko-KR');
+  };
 
   // USDT 구매 처리
   const buyUsdt = useMutation({
     mutationFn: async () => {
       const krw = parseFloat(krwAmount.replace(/,/g, ''));
       const usdt = parseFloat(usdtAmount);
-      const price = parseFloat(usdtPrice);
-      const feeRate = userSettings?.bithumbFeeRate || 0.25; // 기본 수수료율 0.25%
+      const price = parseFloat(usdtPrice.replace(/,/g, ''));
+      const feeRate = userSettings?.bithumbFeeRate || 4; // 기본 수수료율 4% (쿠폰 적용)
       
       const tradeFee = krw * (feeRate / 100);
       const totalCost = krw + tradeFee;
@@ -220,8 +227,28 @@ export default function BithumbTrading() {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">구매 금액 (KRW)</label>
                 <Input
                   value={krwAmount}
-                  onChange={(e) => setKrwAmount(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/,/g, '');
+                    if (value === '' || !isNaN(parseFloat(value))) {
+                      setKrwAmount(value === '' ? '' : formatNumberWithCommas(value));
+                    }
+                  }}
                   placeholder="구매할 원화 금액"
+                  type="text"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">구매 단가 (KRW/USDT)</label>
+                <Input
+                  value={usdtPrice}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/,/g, '');
+                    if (value === '' || !isNaN(parseFloat(value))) {
+                      setUsdtPrice(value === '' ? '' : formatNumberWithCommas(value));
+                    }
+                  }}
+                  placeholder="USDT 당 가격"
                   type="text"
                 />
               </div>
@@ -231,20 +258,10 @@ export default function BithumbTrading() {
                 <Input
                   value={usdtAmount}
                   onChange={(e) => setUsdtAmount(e.target.value)}
-                  placeholder="구매할 USDT 수량"
-                  type="number"
-                  step="0.01"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">구매 단가 (KRW/USDT)</label>
-                <Input
-                  value={usdtPrice}
-                  onChange={(e) => setUsdtPrice(e.target.value)}
-                  placeholder="USDT 당 가격"
-                  type="number"
-                  step="0.01"
+                  placeholder="자동 계산됨"
+                  type="text"
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
             </div>
@@ -262,9 +279,9 @@ export default function BithumbTrading() {
                     <span>{krwAmount ? formatCurrency(parseFloat(krwAmount.replace(/,/g, '')), 'KRW') : '0'}원</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>거래 수수료 ({userSettings?.bithumbFeeRate || 0.25}%):</span>
+                    <span>거래 수수료 ({userSettings?.bithumbFeeRate || 4}%):</span>
                     <span className="text-red-600">
-                      -{krwAmount ? formatCurrency(parseFloat(krwAmount.replace(/,/g, '')) * ((userSettings?.bithumbFeeRate || 0.25) / 100), 'KRW') : '0'}원
+                      -{krwAmount ? formatCurrency(parseFloat(krwAmount.replace(/,/g, '')) * ((userSettings?.bithumbFeeRate || 4) / 100), 'KRW') : '0'}원
                     </span>
                   </div>
                   <hr />
@@ -272,7 +289,7 @@ export default function BithumbTrading() {
                     <span>총 비용:</span>
                     <span>
                       {krwAmount ? formatCurrency(
-                        parseFloat(krwAmount.replace(/,/g, '')) * (1 + (userSettings?.bithumbFeeRate || 0.25) / 100), 
+                        parseFloat(krwAmount.replace(/,/g, '')) * (1 + (userSettings?.bithumbFeeRate || 4) / 100), 
                         'KRW'
                       ) : '0'}원
                     </span>
