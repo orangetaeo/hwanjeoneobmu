@@ -42,85 +42,97 @@ class BithumbApiService {
       baseUrl: 'https://api.bithumb.com'
     };
     
-    console.log('Bithumb API Service initialized with:', {
+    console.log('Bithumb JWT API Service initialized with:', {
       apiKeyLength: this.config.apiKey.length,
       secretKeyLength: this.config.secretKey.length,
       baseUrl: this.config.baseUrl
     });
   }
 
-  private generateApiSign(endpoint: string, parameters: string, nonce: string, method: number = 1): string {
-    // 빗썸 API 문서에 따른 정확한 signature 생성
-    const data = endpoint + parameters + nonce + this.config.secretKey;
+  private generateJwtToken(queryParams: any = {}): string {
+    const nonce = uuidv4();
+    const timestamp = Date.now();
     
-    console.log('API Signature Generation Debug:', {
-      method,
-      endpoint,
-      parameters,
+    let payload: any = {
+      access_key: this.config.apiKey,
       nonce,
-      secretKeyLength: this.config.secretKey.length,
-      dataToSign: data.substring(0, 100) + '...',
-      apiKeyLength: this.config.apiKey.length
-    });
+      timestamp
+    };
     
-    let signature;
-    if (method === 1) {
-      // 방법 1: 일반적인 방법 (현재 방법) - Secret Key를 그대로 사용
-      signature = crypto.createHmac('sha512', this.config.secretKey).update(data).digest('hex');
-      console.log('Generated signature (method 1 - plain secret):', signature.substring(0, 20) + '...');
-    } else if (method === 2) {
-      // 방법 2: Secret Key를 Base64로 디코딩 후 사용
-      try {
-        const decodedSecretKey = Buffer.from(this.config.secretKey, 'base64').toString();
-        console.log('Decoded secret key length:', decodedSecretKey.length);
-        const dataWithDecodedSecret = endpoint + parameters + nonce + decodedSecretKey;
-        signature = crypto.createHmac('sha512', decodedSecretKey).update(dataWithDecodedSecret).digest('hex');
-        console.log('Generated signature (method 2 - base64 decoded):', signature.substring(0, 20) + '...');
-      } catch (error) {
-        console.error('Base64 decoding failed, falling back to method 1:', error);
-        signature = crypto.createHmac('sha512', this.config.secretKey).update(data).digest('hex');
-      }
-    } else {
-      // 방법 3: Secret Key를 바이너리로 변환하여 사용
-      const binarySecret = Buffer.from(this.config.secretKey, 'hex');
-      signature = crypto.createHmac('sha512', binarySecret).update(data).digest('hex');
-      console.log('Generated signature (method 3 - hex to binary):', signature.substring(0, 20) + '...');
+    // 파라미터가 있는 경우 query_hash 생성
+    if (queryParams && Object.keys(queryParams).length > 0) {
+      // URL 인코딩된 쿼리 스트링 생성
+      const queryString = new URLSearchParams(queryParams).toString();
+      console.log('Query string for hashing:', queryString);
+      
+      // SHA512로 해시 생성
+      const hash = crypto.createHash('sha512');
+      hash.update(queryString, 'utf-8');
+      const queryHash = hash.digest('hex');
+      
+      payload.query_hash = queryHash;
+      payload.query_hash_alg = 'SHA512';
     }
     
-    return signature;
+    console.log('JWT Payload:', {
+      access_key: payload.access_key.substring(0, 10) + '...',
+      nonce,
+      timestamp,
+      query_hash: payload.query_hash ? payload.query_hash.substring(0, 20) + '...' : undefined,
+      query_hash_alg: payload.query_hash_alg
+    });
+    
+    // JWT 토큰 생성 (HS256 서명)
+    const jwtToken = jwt.sign(payload, this.config.secretKey, { algorithm: 'HS256' });
+    console.log('Generated JWT token (first 50 chars):', jwtToken.substring(0, 50) + '...');
+    
+    return jwtToken;
   }
 
-  private async makeApiRequest(endpoint: string, parameters: any = {}, authMethod: number = 1): Promise<any> {
-    const nonce = Date.now().toString();
-    const paramString = new URLSearchParams(parameters).toString();
-    const apiSign = this.generateApiSign(endpoint, paramString, nonce, authMethod);
-
-    const headers = {
-      'Api-Key': this.config.apiKey,
-      'Api-Nonce': nonce,
-      'Api-Sign': apiSign,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json'
-    };
-
+  private async makeApiRequest(endpoint: string, parameters: any = {}, isGetRequest: boolean = false): Promise<any> {
     try {
-      console.log('Bithumb API Request Details:', {
-        url: `${this.config.baseUrl}${endpoint}`,
-        endpoint,
-        method: 'POST',
-        paramString,
-        nonce,
-        apiKeyFirst10: this.config.apiKey.substring(0, 10) + '...',
-        secretKeyFirst10: this.config.secretKey.substring(0, 10) + '...',
-        headers: { ...headers, 'Api-Key': '[HIDDEN]', 'Api-Sign': '[HIDDEN]' }
+      let url = `${this.config.baseUrl}${endpoint}`;
+      let requestOptions: RequestInit;
+      
+      // JWT 토큰 생성
+      const jwtToken = this.generateJwtToken(parameters);
+      
+      const headers = {
+        'Authorization': `Bearer ${jwtToken}`,
+        'Accept': 'application/json'
+      };
+      
+      if (isGetRequest) {
+        // GET 요청의 경우 쿼리 파라미터로 추가
+        if (parameters && Object.keys(parameters).length > 0) {
+          const queryString = new URLSearchParams(parameters).toString();
+          url += `?${queryString}`;
+        }
+        
+        requestOptions = {
+          method: 'GET',
+          headers
+        };
+      } else {
+        // POST 요청의 경우 JSON body 사용
+        headers['Content-Type'] = 'application/json';
+        
+        requestOptions = {
+          method: 'POST',
+          headers,
+          body: Object.keys(parameters).length > 0 ? JSON.stringify(parameters) : undefined
+        };
+      }
+
+      console.log('Bithumb JWT API Request:', {
+        url,
+        method: isGetRequest ? 'GET' : 'POST',
+        headers: { ...headers, 'Authorization': 'Bearer [HIDDEN]' },
+        hasBody: !isGetRequest && Object.keys(parameters).length > 0
       });
 
-      const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
-        method: 'POST',
-        headers,
-        body: paramString
-      });
-
+      const response = await fetch(url, requestOptions);
+      
       console.log('Response status:', response.status);
       console.log('Response headers:', [...response.headers.entries()]);
       
@@ -137,48 +149,54 @@ class BithumbApiService {
       
       if (data.status !== '0000') {
         console.error('Bithumb API Error Details:', {
-          authMethod,
           status: data.status,
           message: data.message,
           fullResponse: data
         });
-        
-        // 인증 방법을 순차적으로 시도
-        if (authMethod < 3 && (data.status === '5300' || data.message?.includes('invalid'))) {
-          console.log(`인증 방법 ${authMethod} 실패, 방법 ${authMethod + 1} 시도 중...`);
-          return this.makeApiRequest(endpoint, parameters, authMethod + 1);
-        }
         
         throw new Error(`Bithumb API Error: ${data.message || data.status} (Code: ${data.status})`);
       }
 
       return data;
     } catch (error) {
-      console.error('Bithumb API request failed:', error);
-      
-      // 네트워크 오류가 아닌 경우 다른 인증 방법 시도
-      if (authMethod < 3 && error instanceof Error && error.message.includes('API Error')) {
-        console.log(`인증 방법 ${authMethod} 실패, 방법 ${authMethod + 1} 시도 중...`);
-        return this.makeApiRequest(endpoint, parameters, authMethod + 1);
-      }
-      
+      console.error('Bithumb JWT API request failed:', error);
       throw error;
     }
   }
 
   async getBalance(): Promise<BithumbBalance> {
-    const response = await this.makeApiRequest('/info/balance', { currency: 'ALL' });
-    return response.data;
+    // v2.0 API는 GET 방식일 수도 있으므로 둘 다 시도
+    try {
+      // 먼저 POST 방식으로 시도
+      const response = await this.makeApiRequest('/info/balance', { currency: 'ALL' }, false);
+      return response.data;
+    } catch (error) {
+      console.log('POST 방식 실패, GET 방식으로 재시도...');
+      // GET 방식으로 재시도
+      const response = await this.makeApiRequest('/info/balance', { currency: 'ALL' }, true);
+      return response.data;
+    }
   }
 
   async getTransactionHistory(currency: string = 'USDT', count: number = 50): Promise<BithumbTransaction[]> {
-    const response = await this.makeApiRequest('/info/user_transactions', {
-      order_currency: currency,
-      payment_currency: 'KRW',
-      count,
-      searchGb: 1 // 1: 매수 완료만 조회
-    });
-    return response.data;
+    try {
+      const response = await this.makeApiRequest('/info/user_transactions', {
+        order_currency: currency,
+        payment_currency: 'KRW',
+        count,
+        searchGb: 1 // 1: 매수 완료만 조회
+      }, false);
+      return response.data;
+    } catch (error) {
+      console.log('거래내역 POST 방식 실패, GET 방식으로 재시도...');
+      const response = await this.makeApiRequest('/info/user_transactions', {
+        order_currency: currency,
+        payment_currency: 'KRW',
+        count,
+        searchGb: 1
+      }, true);
+      return response.data;
+    }
   }
 
   async getUsdtTransactions(): Promise<{
