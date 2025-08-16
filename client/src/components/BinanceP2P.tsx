@@ -82,14 +82,6 @@ export default function BinanceP2P() {
       const rate = parseFloat(exchangeRate);
       const vnd = usdt * rate;
       
-      console.log('P2P 계산 디버그:', {
-        usdtAmount,
-        exchangeRate,
-        usdt,
-        rate,
-        vnd,
-        vndFixed: vnd.toFixed(2)
-      });
       
       // 큰 숫자도 안전하게 처리하기 위해 toFixed 사용
       setVndAmount(vnd.toFixed(2));
@@ -263,6 +255,14 @@ export default function BinanceP2P() {
                         setTimeout(calculateFromUsdt, 100);
                       }
                     }}
+                    onPaste={(e) => {
+                      // 붙여넣기 후 계산이 실행되도록 지연 처리
+                      setTimeout(() => {
+                        if (exchangeRate) {
+                          calculateFromUsdt();
+                        }
+                      }, 150);
+                    }}
                     placeholder="판매할 USDT 수량을 입력하세요"
                     type="number"
                     step="0.01"
@@ -299,17 +299,18 @@ export default function BinanceP2P() {
                   <Input
                     value={exchangeRate}
                     onChange={(e) => {
-                      console.log('환율 입력 onChange:', {
-                        inputValue: e.target.value,
-                        inputValueType: typeof e.target.value,
-                        inputValueLength: e.target.value.length,
-                        currentUsdtAmount: usdtAmount,
-                        willCalculate: !!usdtAmount
-                      });
                       setExchangeRate(e.target.value);
                       if (usdtAmount) {
                         setTimeout(calculateFromUsdt, 100);
                       }
+                    }}
+                    onPaste={(e) => {
+                      // 붙여넣기 후 계산이 실행되도록 지연 처리
+                      setTimeout(() => {
+                        if (usdtAmount) {
+                          calculateFromUsdt();
+                        }
+                      }, 150);
                     }}
                     placeholder="P2P 거래 환율을 입력하세요"
                     type="text"
