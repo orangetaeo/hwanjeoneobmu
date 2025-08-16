@@ -98,11 +98,15 @@ export default function BithumbTrading() {
 
       const tradeData = {
         type: 'bithumb_usdt_buy',
+        fromAssetType: 'bank',
         fromAssetId: selectedAccount,
+        fromAssetName: 'KRW Account',
+        toAssetType: 'exchange',
         toAssetId: null, // USDT는 별도 자산으로 관리
-        fromAmount: totalCost,
-        toAmount: usdt, // 실제 받은 수량 기록
-        exchangeRate: price,
+        toAssetName: 'Bithumb USDT',
+        fromAmount: totalCost.toString(),
+        toAmount: usdt.toString(),
+        rate: price.toString(),
         metadata: {
           platform: 'bithumb',
           tradeFeeUsdt: tradeFeeUsdt,
