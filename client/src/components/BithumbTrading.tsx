@@ -38,6 +38,18 @@ export default function BithumbTrading() {
     retryDelay: 5000
   });
 
+  // 실제 자산 데이터베이스에서 빗썸 USDT 조회 (테스트 데이터 기준)
+  const { data: assets = [] } = useQuery({
+    queryKey: ['/api/assets'],
+  });
+  
+  // 빗썸 USDT 자산 직접 조회
+  const bithumbUsdtAsset = (assets as any[]).find((asset: any) => 
+    asset.type === 'exchange' && asset.currency === 'USDT' && asset.name === 'Bithumb USDT'
+  );
+  
+  const databaseUsdtBalance = bithumbUsdtAsset ? parseFloat(bithumbUsdtAsset.balance || '0') : 0;
+
   // 기존 데이터베이스 거래 내역도 유지 (수동 입력용)
   const { data: manualTrades = [] } = useQuery<BithumbTrade[]>({
     queryKey: ['/api/transactions', 'bithumb'],
@@ -66,7 +78,8 @@ export default function BithumbTrading() {
   
   const averageUsdtPrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
 
-  const totalUsdtOwned = realTimeBalance > 0 ? realTimeBalance : (totalQuantity || 0);
+  // 테스트 데이터 기준: 데이터베이스 잔액 우선 사용
+  const totalUsdtOwned = databaseUsdtBalance > 0 ? databaseUsdtBalance : (realTimeBalance > 0 ? realTimeBalance : (totalQuantity || 0));
 
   // 테스트 데이터 생성 (API 연결 실패 시 표시용)
   const testTransactions = [
@@ -165,9 +178,11 @@ export default function BithumbTrading() {
             {bithumbError && <span className="ml-2 text-xs text-orange-500">📊</span>}
           </h3>
           <p className="text-2xl font-bold text-blue-600">
-            {(totalUsdtOwned || 0).toFixed(8)} USDT
+            {(totalUsdtOwned || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
-          {bithumbError ? (
+          {databaseUsdtBalance > 0 ? (
+            <p className="text-xs text-blue-500 mt-1">자산 관리 데이터</p>
+          ) : bithumbError ? (
             <p className="text-xs text-orange-500 mt-1">테스트 데이터</p>
           ) : realTimeBalance > 0 ? (
             <p className="text-xs text-green-500 mt-1">실시간 빗썸 잔고</p>
@@ -244,7 +259,7 @@ export default function BithumbTrading() {
                   <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                   <TableCell>{formatCurrency(trade.amount, 'KRW')}원</TableCell>
                   <TableCell className="text-blue-600 font-medium">
-                    {(trade.quantity || 0).toFixed(8)} USDT
+                    {(trade.quantity || 0).toFixed(2)} USDT
                   </TableCell>
                   <TableCell>
                     ₩{((trade.amount || 0) / (trade.quantity || 1)).toFixed(2)}
@@ -264,7 +279,7 @@ export default function BithumbTrading() {
                   <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                   <TableCell>{formatCurrency(trade.krwAmount, 'KRW')}원</TableCell>
                   <TableCell className="text-blue-600 font-medium">
-                    {(trade.usdtAmount || 0).toFixed(8)} USDT
+                    {(trade.usdtAmount || 0).toFixed(2)} USDT
                   </TableCell>
                   <TableCell>
                     ₩{(trade.pricePerUsdt || 0).toFixed(2)}
@@ -284,7 +299,7 @@ export default function BithumbTrading() {
                   <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                   <TableCell>{formatCurrency(trade.amount, 'KRW')}원</TableCell>
                   <TableCell className="text-blue-600 font-medium">
-                    {(trade.quantity || 0).toFixed(8)} USDT
+                    {(trade.quantity || 0).toFixed(2)} USDT
                   </TableCell>
                   <TableCell>
                     ₩{((trade.amount || 0) / (trade.quantity || 1)).toFixed(2)}

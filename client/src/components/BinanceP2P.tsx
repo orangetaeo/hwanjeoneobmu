@@ -192,10 +192,10 @@ export default function BinanceP2P() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">바이낸스 보유 USDT</h3>
           <p className="text-2xl font-bold text-blue-600">
-            {(isNaN(availableUsdt) ? 0 : availableUsdt).toFixed(8)} USDT
+            {(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            전체: {(isNaN(binanceBalance) ? 0 : binanceBalance).toFixed(8)} USDT
+            전체: {(isNaN(binanceBalance) ? 0 : binanceBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
         </Card>
         
@@ -287,7 +287,7 @@ export default function BinanceP2P() {
                     variant="outline"
                     onClick={() => {
                       const maxAmount = isNaN(availableUsdt) ? 0 : availableUsdt;
-                      const maxAmountStr = maxAmount.toFixed(8);
+                      const maxAmountStr = maxAmount.toFixed(2);
                       setUsdtAmount(maxAmountStr);
                       calculateFromUsdt(maxAmountStr, exchangeRate);
                     }}
@@ -299,7 +299,7 @@ export default function BinanceP2P() {
                   </Button>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  💡 사용 가능한 USDT: <strong>{(isNaN(availableUsdt) ? 0 : availableUsdt).toFixed(8)} USDT</strong>
+                  💡 사용 가능한 USDT: <strong>{(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</strong>
                 </p>
               </div>
 

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRightLeft, History, Send, Calculator } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/utils/helpers';
+import { formatCurrency, formatInputWithCommas, parseCommaFormattedNumber } from '@/utils/helpers';
 
 interface NetworkTransfer {
   id: string;
@@ -166,10 +166,10 @@ export default function NetworkTransfer() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">빗썸 보유 USDT</h3>
           <p className="text-2xl font-bold text-blue-600">
-            {availableUsdt.toFixed(8)} USDT
+            {availableUsdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            전체: {bithumbUsdtBalance.toFixed(8)} USDT
+            전체: {bithumbUsdtBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
         </Card>
         
@@ -253,12 +253,17 @@ export default function NetworkTransfer() {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">이동 수량 (USDT)</label>
                 <div className="flex space-x-2">
                   <Input
-                    value={usdtAmount}
-                    onChange={(e) => setUsdtAmount(e.target.value)}
-                    placeholder="이동할 USDT 수량"
-                    type="number"
-                    step="0.01"
-                    max={availableUsdt > 0 ? availableUsdt : undefined}
+                    value={formatInputWithCommas(usdtAmount)}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      const rawValue = inputValue.replace(/,/g, '');
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setUsdtAmount(rawValue);
+                      }
+                    }}
+                    placeholder="이동할 USDT 수량 (예: 1,000.50)"
+                    type="text"
+                    inputMode="numeric"
                     className="flex-1"
                   />
                   <Button
@@ -273,18 +278,24 @@ export default function NetworkTransfer() {
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  최대 이동 가능: {availableUsdt} USDT
+                  최대 이동 가능: {availableUsdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                 </p>
               </div>
 
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">네트워크 수수료 (USDT)</label>
                 <Input
-                  value={networkFee}
-                  onChange={(e) => setNetworkFee(e.target.value)}
-                  placeholder="네트워크 수수료 자동 입력됨"
-                  type="number"
-                  step="0.01"
+                  value={formatInputWithCommas(networkFee)}
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    const rawValue = inputValue.replace(/,/g, '');
+                    if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                      setNetworkFee(rawValue);
+                    }
+                  }}
+                  placeholder="네트워크 수수료 자동 입력됨 (예: 1.50)"
+                  type="text"
+                  inputMode="numeric"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   💡 네트워크 선택 시 자동으로 입력됩니다
@@ -315,11 +326,11 @@ export default function NetworkTransfer() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>이동 수량:</span>
-                    <span>{usdtAmount || '0'} USDT</span>
+                    <span>{usdtAmount ? parseFloat(usdtAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
                   </div>
                   <div className="flex justify-between">
                     <span>네트워크 수수료:</span>
-                    <span className="text-red-600">-{networkFee || '0'} USDT</span>
+                    <span className="text-red-600">-{networkFee ? parseFloat(networkFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
                   </div>
                   <div className="flex justify-between">
                     <span>네트워크:</span>
@@ -330,13 +341,13 @@ export default function NetworkTransfer() {
                     <span>총 차감 수량:</span>
                     <span className="text-red-600">
                       {usdtAmount && networkFee 
-                        ? (parseFloat(usdtAmount) + parseFloat(networkFee)).toFixed(2) 
-                        : '0'} USDT
+                        ? (parseFloat(usdtAmount) + parseFloat(networkFee)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '0.00'} USDT
                     </span>
                   </div>
                   <div className="flex justify-between font-medium text-green-600">
                     <span>바이낸스 도착 예정:</span>
-                    <span>{usdtAmount || '0'} USDT</span>
+                    <span>{usdtAmount ? parseFloat(usdtAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
                   </div>
                 </div>
               </div>
@@ -388,13 +399,13 @@ export default function NetworkTransfer() {
                         <Badge variant="outline">{transfer.network || 'TRC20'}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {usdtAmount} USDT
+                        {(usdtAmount ? parseFloat(usdtAmount) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </TableCell>
                       <TableCell className="text-red-600">
-                        -{networkFee} USDT
+                        -{(networkFee ? parseFloat(networkFee) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </TableCell>
                       <TableCell className="text-green-600 font-medium">
-                        {(usdtAmount - networkFee)} USDT
+                        {(usdtAmount && networkFee ? (parseFloat(usdtAmount) - parseFloat(networkFee)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00')} USDT
                       </TableCell>
                       <TableCell>
                         {transfer.txHash ? (
