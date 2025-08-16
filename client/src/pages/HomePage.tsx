@@ -540,23 +540,27 @@ export default function HomePage() {
         let createData: any = {};
         
         if (assetFormType === 'cash') {
-          // 현금 자산의 경우 같은 통화의 기존 자산이 있는지 확인
-          const existingCashAsset = cashAssets.find(asset => asset.currency === formData.currency);
+          // API에서 가져온 최신 자산 데이터에서 직접 찾기 (state가 아닌 원본 데이터 사용)
+          const assetsResponse = await fetch('/api/assets');
+          const latestAssets = await assetsResponse.json();
+          const existingCashAssetFromDB = latestAssets.find((asset: any) => 
+            asset.type === 'cash' && asset.currency === formData.currency
+          );
           
-          if (existingCashAsset) {
+          if (existingCashAssetFromDB) {
             // 기존 자산이 있으면 업데이트 로직으로 전환
-            const assetId = existingCashAsset.id;
+            const assetId = existingCashAssetFromDB.id;
             
-            console.log('기존 현금 자산 정보:', {
-              id: existingCashAsset.id,
-              currency: existingCashAsset.currency,
-              balance: existingCashAsset.balance,
-              denominations: existingCashAsset.denominations,
-              entireAsset: existingCashAsset
+            console.log('기존 현금 자산 정보 (API에서 직접 조회):', {
+              id: existingCashAssetFromDB.id,
+              currency: existingCashAssetFromDB.currency,
+              balance: existingCashAssetFromDB.balance,
+              metadata: existingCashAssetFromDB.metadata,
+              denominations: existingCashAssetFromDB.metadata?.denominations
             });
             
-            // 기존 denomination과 새로운 denomination 합산
-            let existingDenominations = existingCashAsset.denominations || {};
+            // 기존 denomination과 새로운 denomination 합산 (API 데이터에서 직접 가져오기)
+            let existingDenominations = existingCashAssetFromDB.metadata?.denominations || {};
             const newDenominations = formData.denominations || {};
             
             // 데이터베이스 denomination 형식 정규화 (쉼표 없는 형식을 쉼표 있는 형식으로 변환)
@@ -580,8 +584,9 @@ export default function HomePage() {
             console.log('정규화된 기존 denomination:', normalizedExistingDenominations);
             
             // 기존 자산에 denomination 정보가 없다면 현재 잔액을 기반으로 생성
-            if (Object.keys(normalizedExistingDenominations).length === 0 && existingCashAsset.balance > 0) {
-              console.log('기존 자산에 denomination 정보가 없음. 잔액을 기반으로 생성:', existingCashAsset.balance);
+            const currentBalance = parseFloat(existingCashAssetFromDB.balance);
+            if (Object.keys(normalizedExistingDenominations).length === 0 && currentBalance > 0) {
+              console.log('기존 자산에 denomination 정보가 없음. 잔액을 기반으로 생성:', currentBalance);
               
               // 통화별 기본 denomination 구조
               const defaultDenominations: Record<string, Record<string, number>> = {
@@ -598,7 +603,7 @@ export default function HomePage() {
                 return numB - numA; // 큰 것부터 정렬
               });
               
-              let remainingBalance = existingCashAsset.balance;
+              let remainingBalance = currentBalance;
               normalizedExistingDenominations = { ...denoms };
               
               // 큰 지폐부터 나누어 떨어지는 만큼 할당
@@ -650,7 +655,7 @@ export default function HomePage() {
             };
             
             console.log('=== 자산 업데이트 디버깅 ===');
-            console.log('Existing asset balance:', existingCashAsset.balance);
+            console.log('Existing asset balance:', currentBalance);
             console.log('Existing denominations (processed):', normalizedExistingDenominations);
             console.log('New denominations from form:', newDenominations);
             console.log('Merged denominations:', mergedDenominations);
