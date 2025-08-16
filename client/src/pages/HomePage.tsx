@@ -10,6 +10,7 @@ import {
   Plus,
   Coins
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 // Firebase는 실시간 환율 전용으로 제한 - 데이터 저장은 PostgreSQL 사용
 // import { collection, onSnapshot, doc, addDoc, query, orderBy, limit, setDoc, getDocs } from 'firebase/firestore';
 // import { db } from '@/lib/firebase';
@@ -57,41 +58,43 @@ export default function HomePage() {
   const [showAdvancedTransactionForm, setShowAdvancedTransactionForm] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
 
-  // PostgreSQL 데이터베이스에서 실제 데이터 로드
+  // React Query로 실시간 데이터 로딩
+  const { data: assetsData = [], isLoading: assetsLoading } = useQuery({
+    queryKey: ['/api/assets'],
+    enabled: !authLoading && !!user
+  });
+  
+  const { data: transactionsData = [], isLoading: transactionsLoading } = useQuery({
+    queryKey: ['/api/transactions'], 
+    enabled: !authLoading && !!user
+  });
+  
+  const { data: exchangeRatesData = [], isLoading: exchangeRatesLoading } = useQuery({
+    queryKey: ['/api/exchange-rates'],
+    enabled: !authLoading && !!user
+  });
+
+  // 자산 분류 및 상태 업데이트 - React Query 데이터 기반
   useEffect(() => {
-    if (!user || authLoading) return;
+    if (!user || authLoading || assetsLoading || !assetsData.length) return;
 
-    // PostgreSQL에서 실제 데이터 로드 - localStorage 제거
-    const loadDatabaseData = async () => {
-      try {
-        const [assetsRes, transactionsRes, exchangeRatesRes] = await Promise.all([
-          fetch('/api/assets'),
-          fetch('/api/transactions'),
-          fetch('/api/exchange-rates')
-        ]);
+    // 자산을 타입별로 분류 - 디버깅 로그 추가
+    console.log('All assets from API:', assetsData);
+    
+    const cashAssets = assetsData.filter((asset: any) => asset.type === 'cash');
+    const allAccounts = assetsData.filter((asset: any) => asset.type === 'account');
+    const exchanges = assetsData.filter((asset: any) => asset.type === 'exchange');
+    const binanceAssets = assetsData.filter((asset: any) => asset.type === 'binance');
 
-        if (assetsRes.ok && transactionsRes.ok && exchangeRatesRes.ok) {
-          const assetsData = await assetsRes.json();
-          const transactionsData = await transactionsRes.json();
-          const exchangeRatesData = await exchangeRatesRes.json();
-
-          // 자산을 타입별로 분류 - 디버깅 로그 추가
-          console.log('All assets from API:', assetsData);
-          
-          const cashAssets = assetsData.filter((asset: any) => asset.type === 'cash');
-          const allAccounts = assetsData.filter((asset: any) => asset.type === 'account');
-          const exchanges = assetsData.filter((asset: any) => asset.type === 'exchange');
-          const binanceAssets = assetsData.filter((asset: any) => asset.type === 'binance');
-
-          console.log('Filtered assets:', {
-            cashAssets: cashAssets.length,
-            allAccounts: allAccounts.length, 
-            exchanges: exchanges.length,
-            binanceAssets: binanceAssets.length
-          });
-          
-          console.log('Exchange assets details:', exchanges);
-          console.log('Binance assets details:', binanceAssets);
+    console.log('Filtered assets:', {
+      cashAssets: cashAssets.length,
+      allAccounts: allAccounts.length, 
+      exchanges: exchanges.length,
+      binanceAssets: binanceAssets.length
+    });
+    
+    console.log('Exchange assets details:', exchanges);
+    console.log('Binance assets details:', binanceAssets);
 
           // 계좌를 한국/베트남으로 분리
           const koreanAccounts = allAccounts.filter((account: any) => 

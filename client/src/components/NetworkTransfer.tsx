@@ -144,8 +144,9 @@ export default function NetworkTransfer() {
       setNetworkFee('');
       setTxHash('');
       
-      // 데이터 새로고침
+      // 데이터 새로고침 - 거래내역과 자산잔액 모두 업데이트
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
     },
     onError: (error) => {
       toast({

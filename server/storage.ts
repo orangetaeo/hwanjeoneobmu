@@ -61,6 +61,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async handleAssetMovement(userId: string, transaction: InsertTransaction) {
+    console.log('=== handleAssetMovement 시작 ===', {
+      userId,
+      transactionType: transaction.type,
+      fromAssetName: transaction.fromAssetName,
+      toAssetName: transaction.toAssetName
+    });
+    
     const fromAmount = parseFloat(transaction.fromAmount);
     const toAmount = parseFloat(transaction.toAmount);
     const fees = parseFloat(transaction.fees || "0");
@@ -76,27 +83,37 @@ export class DatabaseStorage implements IStorage {
 
     switch (transaction.type) {
       case 'bank_to_exchange':
+        console.log('은행 → 거래소 자산 이동 처리');
         // 은행에서 거래소로 송금: 은행 자금 감소, 거래소 자금 증가
         await this.moveAssetsBankToExchange(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount);
         break;
         
       case 'exchange_purchase':
+        console.log('거래소 코인 구매 자산 이동 처리');
         // 거래소에서 코인 구매: KRW 감소, 코인 증가 (수수료 적용)
         await this.moveAssetsExchangePurchase(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount, fees);
         break;
         
       case 'exchange_transfer':
       case 'network_transfer':
+        console.log('네트워크 이동/거래소간 이체 자산 이동 처리');
         // 거래소간 이체/네트워크 이동: 출발 거래소 자산 감소, 도착 거래소 자산 증가 (수수료 적용)
         await this.moveAssetsExchangeTransfer(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount, fees);
         break;
         
       case 'p2p_trade':
       case 'binance_p2p':
+        console.log('P2P 거래 자산 이동 처리');
         // P2P 거래: USDT 감소, VND 현금 증가
         await this.moveAssetsP2PTrade(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount, fees);
         break;
+        
+      default:
+        console.log('알 수 없는 거래 타입:', transaction.type);
+        break;
     }
+    
+    console.log('=== handleAssetMovement 완료 ===');
   }
 
   private async moveAssetsBankToExchange(userId: string, fromBankName: string, toExchangeName: string, amount: number) {
@@ -159,14 +176,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async moveAssetsExchangeTransfer(userId: string, fromAssetName: string, toAssetName: string, fromAmount: number, toAmount: number, fees: number) {
+    console.log('=== 자산 이동 시작 ===', {
+      userId, fromAssetName, toAssetName, fromAmount, toAmount, fees
+    });
+    
     // 출발 거래소 자산 감소 (exchange 또는 binance 타입 검색)
     let fromAsset = await this.getAssetByName(userId, fromAssetName, 'exchange');
     if (!fromAsset) {
       fromAsset = await this.getAssetByName(userId, fromAssetName, 'binance');
     }
+    
+    console.log('출발 자산 찾기 결과:', fromAsset);
+    
     if (fromAsset) {
-      const newBalance = parseFloat(fromAsset.balance || "0") - fromAmount;
+      const currentBalance = parseFloat(fromAsset.balance || "0");
+      const newBalance = currentBalance - fromAmount;
+      console.log('출발 자산 잔액 업데이트:', {
+        name: fromAssetName,
+        currentBalance,
+        fromAmount,
+        newBalance
+      });
       await this.updateAsset(userId, fromAsset.id, { balance: newBalance.toString() });
+    } else {
+      console.error('출발 자산을 찾을 수 없음:', fromAssetName);
     }
 
     // 도착 거래소 자산 증가 (네트워크 수수료 제외)
@@ -176,10 +209,20 @@ export class DatabaseStorage implements IStorage {
       toAsset = await this.getAssetByName(userId, toAssetName, 'exchange');
     }
     
+    console.log('도착 자산 찾기 결과:', toAsset);
+    
     if (toAsset) {
-      const newBalance = parseFloat(toAsset.balance || "0") + actualAmount;
+      const currentBalance = parseFloat(toAsset.balance || "0");
+      const newBalance = currentBalance + actualAmount;
+      console.log('도착 자산 잔액 업데이트:', {
+        name: toAssetName,
+        currentBalance,
+        actualAmount,
+        newBalance
+      });
       await this.updateAsset(userId, toAsset.id, { balance: newBalance.toString() });
     } else {
+      console.log('도착 자산이 없어서 새로 생성:', toAssetName);
       const currency = toAssetName.split(' ')[1] || 'USDT';
       const assetType = toAssetName.toLowerCase().includes('binance') ? 'binance' : 'exchange';
       await this.createAsset(userId, {
@@ -191,6 +234,8 @@ export class DatabaseStorage implements IStorage {
         metadata: { exchange: toAssetName.split(' ')[0], assetType: 'crypto' }
       });
     }
+    
+    console.log('=== 자산 이동 완료 ===');
   }
 
   private async moveAssetsP2PTrade(userId: string, fromAssetName: string, toAssetName: string, fromAmount: number, toAmount: number, fees: number) {
