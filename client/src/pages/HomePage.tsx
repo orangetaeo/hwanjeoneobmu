@@ -335,7 +335,7 @@ export default function HomePage() {
             type: 'cash',
             currency: asset.currency,
             balance: parseFloat(asset.balance),
-            denominations: asset.metadata?.denomination || {},
+            denominations: asset.metadata?.denominations || {},
             name: asset.name
           });
         } else if (asset.type === 'account') {
@@ -412,7 +412,7 @@ export default function HomePage() {
             currency: formData.currency,
             balance: formData.balance.toString(),
             metadata: {
-              denomination: formData.denominations || {}
+              denominations: formData.denominations || {}
             }
           };
         } else if (assetFormType === 'korean-account' || assetFormType === 'vietnamese-account') {
@@ -484,7 +484,7 @@ export default function HomePage() {
               type: 'cash',
               currency: asset.currency,
               balance: parseFloat(asset.balance),
-              denominations: asset.metadata?.denomination || {},
+              denominations: asset.metadata?.denominations || {},
               name: asset.name
             });
           } else if (asset.type === 'account') {
@@ -573,7 +573,7 @@ export default function HomePage() {
               currency: formData.currency,
               balance: newTotalBalance.toString(),
               metadata: {
-                denomination: mergedDenominations
+                denominations: mergedDenominations
               }
             };
             
@@ -694,7 +694,7 @@ export default function HomePage() {
               type: 'cash',
               currency: asset.currency,
               balance: parseFloat(asset.balance),
-              denominations: asset.metadata?.denomination || {},
+              denominations: asset.metadata?.denominations || {},
               name: asset.name
             });
           } else if (asset.type === 'account') {
