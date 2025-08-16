@@ -68,8 +68,9 @@ export default function BithumbTrading() {
       const krw = parseFloat(krwAmount.replace(/,/g, ''));
       const price = parseFloat(usdtPrice.replace(/,/g, ''));
       if (!isNaN(krw) && !isNaN(price) && price > 0) {
+        // 더 정확한 계산을 위해 toFixed(8) 사용
         const quantity = krw / price;
-        setUsdtAmount(quantity.toFixed(6));
+        setUsdtAmount(quantity.toFixed(8));
       }
     }
   }, [krwAmount, usdtPrice]);
@@ -263,6 +264,18 @@ export default function BithumbTrading() {
                   readOnly
                   className="bg-gray-50"
                 />
+                {krwAmount && usdtPrice && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    수수료 공제 후: {(() => {
+                      const krw = parseFloat(krwAmount.replace(/,/g, ''));
+                      const price = parseFloat(usdtPrice.replace(/,/g, ''));
+                      const feeRate = userSettings?.bithumbFeeRate || 4;
+                      const netAmount = krw - (krw * (feeRate / 100));
+                      const netQuantity = netAmount / price;
+                      return netQuantity.toFixed(8);
+                    })()} USDT
+                  </p>
+                )}
               </div>
             </div>
 
@@ -297,6 +310,19 @@ export default function BithumbTrading() {
                   <div className="flex justify-between font-medium text-blue-600">
                     <span>받을 USDT:</span>
                     <span>{usdtAmount || '0'} USDT</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-blue-500">
+                    <span>수수료 공제 후 실제 수량:</span>
+                    <span>
+                      {krwAmount && usdtPrice ? (() => {
+                        const krw = parseFloat(krwAmount.replace(/,/g, ''));
+                        const price = parseFloat(usdtPrice.replace(/,/g, ''));
+                        const feeRate = userSettings?.bithumbFeeRate || 4;
+                        const netAmount = krw - (krw * (feeRate / 100));
+                        const netQuantity = netAmount / price;
+                        return netQuantity.toFixed(8);
+                      })() : '0'} USDT
+                    </span>
                   </div>
                 </div>
               </div>
