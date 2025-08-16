@@ -82,14 +82,6 @@ export default function BinanceP2P() {
      asset.name.includes('우리은행') || asset.metadata?.bank === '우리은행')
   );
 
-  // P2P 시장 환율 계산 (USDT 판매하여 VND 구매 환율)  
-  // 실제 바이낸스 P2P 시장 환율 (2025년 8월 기준)
-  const marketRate = 26346;  // 1 USDT = 26,346 VND 실제 P2P 시장 환율
-  
-  console.log('P2P 시장 환율:', {
-    marketRate: marketRate,
-    description: 'USDT 1개를 판매하여 받는 VND 금액'
-  });
 
   // 환율 자동 계산 - 간단하고 확실한 방법
   const calculateFromUsdt = (usdtValue?: string, rateValue?: string) => {
@@ -225,12 +217,9 @@ export default function BinanceP2P() {
         </Card>
 
         <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">P2P 시장 환율</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-2">사용한 USDT</h3>
           <p className="text-2xl font-bold text-orange-600">
-            {marketRate.toLocaleString()} VND/USDT
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            USDT→VND 구매 환율
+            {totalUsdtUsed.toFixed(2)} USDT
           </p>
         </Card>
       </div>
@@ -350,7 +339,7 @@ export default function BinanceP2P() {
                   />
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  📊 현재 P2P 시장 환율: <strong>{marketRate.toLocaleString()} VND/USDT</strong>
+                  💡 환율을 입력하면 자동으로 VND 금액이 계산됩니다
                 </p>
               </div>
 
@@ -388,17 +377,7 @@ export default function BinanceP2P() {
                     <span>적용 환율:</span>
                     <span>{exchangeRate ? formatInputWithCommas(exchangeRate) : '0'} VND/USDT</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>P2P 시장가:</span>
-                    <span>{marketRate.toLocaleString()} VND/USDT</span>
-                  </div>
                   <hr />
-                  <div className="flex justify-between font-medium">
-                    <span>환율 차이:</span>
-                    <span className={exchangeRate && parseFloat(exchangeRate.replace(/,/g, '')) > marketRate ? 'text-green-600' : 'text-red-600'}>
-                      {exchangeRate ? (parseFloat(exchangeRate.replace(/,/g, '')) - marketRate).toLocaleString() : '0'} VND/USDT
-                    </span>
-                  </div>
                   <div className="flex justify-between">
                     <span>입금 계좌:</span>
                     <Badge variant="outline">VND 우리은행</Badge>
