@@ -208,13 +208,16 @@ export default function BinanceP2P() {
     }
   });
 
-  // 평균 환율 및 통계 계산
-  const avgExchangeRate = p2pTrades.length > 0
-    ? p2pTrades.reduce((sum, trade) => sum + trade.exchangeRate, 0) / p2pTrades.length
+  // 확인된 거래만 필터링 (취소된 거래 제외)
+  const confirmedTrades = p2pTrades.filter(trade => trade.status === 'confirmed');
+  
+  // 평균 환율 및 통계 계산 (확인된 거래만 포함)
+  const avgExchangeRate = confirmedTrades.length > 0
+    ? confirmedTrades.reduce((sum, trade) => sum + trade.exchangeRate, 0) / confirmedTrades.length
     : 0;
 
-  const totalVndAcquired = p2pTrades.reduce((sum, trade) => sum + trade.vndAmount, 0);
-  const totalUsdtUsed = p2pTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
+  const totalVndAcquired = confirmedTrades.reduce((sum, trade) => sum + trade.vndAmount, 0);
+  const totalUsdtUsed = confirmedTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
 
   const canExecuteP2P = usdtAmount && vndAmount && exchangeRate && vndBankAsset && 
                        parseFloat(usdtAmount) <= availableUsdt;
