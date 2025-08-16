@@ -70,7 +70,7 @@ export default function BithumbTrading() {
       if (!isNaN(krw) && !isNaN(usdt) && usdt > 0) {
         // 평균 체결가 역산: 구매금액 ÷ 수량
         const avgPrice = krw / usdt;
-        setUsdtPrice(avgPrice.toFixed(2));
+        setUsdtPrice(avgPrice.toFixed(4)); // 더 정확한 계산을 위해 4자리로 변경
       }
     }
   }, [krwAmount, usdtAmount]);
@@ -264,10 +264,8 @@ export default function BithumbTrading() {
                 <Input
                   value={usdtPrice}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/,/g, '');
-                    if (value === '' || !isNaN(parseFloat(value))) {
-                      setUsdtPrice(value === '' ? '' : formatNumberWithCommas(value));
-                    }
+                    const value = e.target.value;
+                    setUsdtPrice(value);
                   }}
                   placeholder="자동 계산됨"
                   type="text"
