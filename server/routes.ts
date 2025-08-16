@@ -426,10 +426,22 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'account',
         name: '신한은행 (김학태)',
         currency: 'VND',
-        balance: '100000000',
+        balance: '26684000',
         metadata: {
           bankName: '신한은행',
           accountNumber: '110-123-456789',
+          accountHolder: '김학태'
+        }
+      },
+      {
+        userId,
+        type: 'account',
+        name: 'BIDV',
+        currency: 'VND',
+        balance: '1200000',
+        metadata: {
+          bankName: 'BIDV',
+          accountNumber: '110-456-789123',
           accountHolder: '김학태'
         }
       },
