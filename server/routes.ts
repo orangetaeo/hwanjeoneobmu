@@ -428,6 +428,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         currency: 'VND',
         balance: '26684000',
         metadata: {
+          country: '베트남',
           bankName: '신한은행',
           accountNumber: '110-123-456789',
           accountHolder: '김학태'
@@ -440,6 +441,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         currency: 'VND',
         balance: '1200000',
         metadata: {
+          country: '베트남',
           bankName: 'BIDV',
           accountNumber: '110-456-789123',
           accountHolder: '김학태'
@@ -452,6 +454,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         currency: 'VND',
         balance: '75000000',
         metadata: {
+          country: '베트남',
           bankName: '우리은행',
           accountNumber: '1002-123-456789',
           accountHolder: '김학태'
