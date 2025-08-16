@@ -71,14 +71,12 @@ export default function NetworkTransfer() {
 
   console.log('빗썸 USDT 자산 검색 결과:', bithumbUsdtAsset);
 
-  // 사용 가능한 USDT 계산 (안전한 계산)
+  // 사용 가능한 USDT 계산 - 실제 자산 잔액 기준 (테스트 데이터 기준)
   const bithumbUsdtBalance = parseFloat(bithumbUsdtAsset?.balance || '0');
-  const usedUsdt = transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0);
-  const availableUsdt = Math.max(0, bithumbUsdtBalance - usedUsdt);
+  const availableUsdt = bithumbUsdtBalance;
   
   console.log('네트워크 이동 USDT 계산 (통일된 자산):', {
     bithumbUsdtBalance,
-    usedUsdt,
     availableUsdt,
     transfersCount: transfers.length,
     assetFound: !!bithumbUsdtAsset,

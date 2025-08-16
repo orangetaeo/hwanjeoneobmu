@@ -64,12 +64,11 @@ export default function BinanceP2P() {
   console.log('Binance USDT 자산 검색 결과:', binanceUsdtAsset);
   
   const binanceBalance = binanceUsdtAsset ? parseFloat(binanceUsdtAsset.balance || '0') : 0;
-  const usedInP2P = p2pTrades.reduce((sum, trade) => sum + (trade.usdtAmount || 0), 0);
-  const availableUsdt = Math.max(0, binanceBalance - usedInP2P);
+  // 실제 자산 잔액을 기준으로 사용 가능한 USDT 계산 (테스트 데이터 기준)
+  const availableUsdt = binanceBalance;
   
   console.log('Binance P2P USDT 계산:', {
     binanceBalance,
-    usedInP2P,
     availableUsdt,
     p2pTradesCount: p2pTrades.length,
     assetFound: !!binanceUsdtAsset
@@ -137,8 +136,6 @@ export default function BinanceP2P() {
         metadata: {
           platform: 'binance_p2p',
           paymentMethod: 'VND 우리은행 계좌',
-          marketRate: marketRate,
-          rateSpread: rate - marketRate,
           exchangeRate: rate,
           bankName: '우리은행'
         }
