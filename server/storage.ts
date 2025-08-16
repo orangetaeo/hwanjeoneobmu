@@ -351,6 +351,18 @@ export class DatabaseStorage implements IStorage {
     if (fromAsset) {
       const currentBalance = parseFloat(fromAsset.balance || "0");
       const newBalance = currentBalance - fromAmount;
+      
+      // 잔액 부족 검증 추가
+      if (newBalance < 0) {
+        console.error('잔액 부족 오류:', {
+          name: fromAssetName,
+          currentBalance,
+          fromAmount,
+          newBalance
+        });
+        throw new Error(`잔액이 부족합니다. 현재 잔액: ${currentBalance}, 필요 금액: ${fromAmount}`);
+      }
+      
       console.log('출발 자산 잔액 업데이트:', {
         name: fromAssetName,
         currentBalance,
@@ -360,6 +372,7 @@ export class DatabaseStorage implements IStorage {
       await this.updateAsset(userId, fromAsset.id, { balance: newBalance.toString() });
     } else {
       console.error('출발 자산을 찾을 수 없음:', fromAssetName);
+      throw new Error(`출발 자산을 찾을 수 없습니다: ${fromAssetName}`);
     }
 
     // 도착 거래소 자산 증가 (네트워크 수수료 제외)
