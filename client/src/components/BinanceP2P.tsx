@@ -496,17 +496,32 @@ export default function BinanceP2P() {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
+                        {trade.status === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600 border-green-300 hover:bg-green-50"
+                              onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'confirmed' })}
+                              disabled={updateTransactionStatus.isPending}
+                            >
+                              <CheckCircle size={14} />
+                              입금 확인
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-300 hover:bg-red-50"
+                              onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'cancelled' })}
+                              disabled={updateTransactionStatus.isPending}
+                            >
+                              <XCircle size={14} />
+                              취소
+                            </Button>
+                          </>
+                        )}
                         {trade.status === 'confirmed' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 border-red-300 hover:bg-red-50"
-                            onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'cancelled' })}
-                            disabled={updateTransactionStatus.isPending}
-                          >
-                            <XCircle size={14} />
-                            취소
-                          </Button>
+                          <span className="text-xs text-green-600">완료됨</span>
                         )}
                         {trade.status === 'cancelled' && (
                           <span className="text-xs text-gray-500">취소됨</span>
