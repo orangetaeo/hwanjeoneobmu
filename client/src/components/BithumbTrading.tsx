@@ -54,12 +54,11 @@ export default function BithumbTrading() {
   const allTransactions = [...realTimeTransactions, ...manualTrades];
 
   // 평균 단가 계산 (실시간 + 수동 입력)
-  const averageUsdtPrice = allTransactions.length > 0
-    ? allTransactions.reduce((sum, trade) => sum + (trade.totalCost || trade.amount || 0), 0) / 
-      allTransactions.reduce((sum, trade) => sum + (trade.usdtAmount || trade.quantity || 0), 0)
-    : 0;
+  const totalCost = allTransactions.reduce((sum, trade) => sum + (trade.totalCost || trade.amount || 0), 0);
+  const totalQuantity = allTransactions.reduce((sum, trade) => sum + (trade.usdtAmount || trade.quantity || 0), 0);
+  const averageUsdtPrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
 
-  const totalUsdtOwned = realTimeBalance > 0 ? realTimeBalance : allTransactions.reduce((sum, trade) => sum + (trade.usdtAmount || trade.quantity || 0), 0);
+  const totalUsdtOwned = realTimeBalance > 0 ? realTimeBalance : totalQuantity;
 
   // 테스트 데이터 생성 (API 연결 실패 시 표시용)
   const testTransactions = [
