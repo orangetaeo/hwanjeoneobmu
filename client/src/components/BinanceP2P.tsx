@@ -195,7 +195,7 @@ export default function BinanceP2P() {
             {(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            전체: {(isNaN(binanceBalance) ? 0 : binanceBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+            전체: {binanceUsdtAsset?.balance || '0'} USDT
           </p>
         </Card>
         

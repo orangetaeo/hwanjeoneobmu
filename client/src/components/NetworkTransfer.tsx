@@ -176,14 +176,14 @@ export default function NetworkTransfer() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">총 이동 수량</h3>
           <p className="text-2xl font-bold text-green-600">
-            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0)} USDT
+            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
         </Card>
         
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">총 네트워크 수수료</h3>
           <p className="text-2xl font-bold text-red-600">
-            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.networkFee || 0), 0)} USDT
+            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.networkFee || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
         </Card>
       </div>
@@ -399,13 +399,13 @@ export default function NetworkTransfer() {
                         <Badge variant="outline">{transfer.network || 'TRC20'}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {(usdtAmount ? parseFloat(usdtAmount) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                        {usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </TableCell>
                       <TableCell className="text-red-600">
-                        -{(networkFee ? parseFloat(networkFee) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                        -{networkFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </TableCell>
                       <TableCell className="text-green-600 font-medium">
-                        {(usdtAmount && networkFee ? (parseFloat(usdtAmount) - parseFloat(networkFee)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00')} USDT
+                        {(usdtAmount - networkFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </TableCell>
                       <TableCell>
                         {transfer.txHash ? (
