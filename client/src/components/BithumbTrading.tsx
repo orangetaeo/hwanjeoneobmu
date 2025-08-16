@@ -244,10 +244,10 @@ export default function BithumbTrading() {
                   <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                   <TableCell>{formatCurrency(trade.amount, 'KRW')}원</TableCell>
                   <TableCell className="text-blue-600 font-medium">
-                    {trade.quantity.toFixed(8)} USDT
+                    {(trade.quantity || 0).toFixed(8)} USDT
                   </TableCell>
                   <TableCell>
-                    ₩{(trade.amount / trade.quantity).toFixed(2)}
+                    ₩{((trade.amount || 0) / (trade.quantity || 1)).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-red-600">
                     ₩{formatCurrency(trade.fee, 'KRW')}
@@ -264,10 +264,10 @@ export default function BithumbTrading() {
                   <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                   <TableCell>{formatCurrency(trade.krwAmount, 'KRW')}원</TableCell>
                   <TableCell className="text-blue-600 font-medium">
-                    {trade.usdtAmount.toFixed(8)} USDT
+                    {(trade.usdtAmount || 0).toFixed(8)} USDT
                   </TableCell>
                   <TableCell>
-                    ₩{trade.pricePerUsdt.toFixed(2)}
+                    ₩{(trade.pricePerUsdt || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-red-600">
                     {formatCurrency(trade.tradeFee, 'KRW')}원
@@ -284,10 +284,10 @@ export default function BithumbTrading() {
                   <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                   <TableCell>{formatCurrency(trade.amount, 'KRW')}원</TableCell>
                   <TableCell className="text-blue-600 font-medium">
-                    {trade.quantity.toFixed(8)} USDT
+                    {(trade.quantity || 0).toFixed(8)} USDT
                   </TableCell>
                   <TableCell>
-                    ₩{(trade.amount / trade.quantity).toFixed(2)}
+                    ₩{((trade.amount || 0) / (trade.quantity || 1)).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-red-600">
                     ₩{formatCurrency(trade.fee, 'KRW')}
