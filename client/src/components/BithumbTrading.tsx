@@ -64,18 +64,13 @@ export default function BithumbTrading() {
 
   // 평균 단가 자동 계산 (구매 금액과 수량이 입력되면 평균 단가 계산)
   useEffect(() => {
-    console.log('DEBUG - useEffect 실행:', { krwAmount, usdtAmount });
     if (krwAmount && usdtAmount) {
       const krw = parseFloat(krwAmount.replace(/,/g, ''));
       const usdt = parseFloat(usdtAmount);
-      console.log('DEBUG - 파싱된 값들:', { krw, usdt });
       if (!isNaN(krw) && !isNaN(usdt) && usdt > 0) {
         // 평균 체결가 역산: 구매금액 ÷ 수량
         const avgPrice = krw / usdt;
-        console.log('DEBUG - 계산된 평균가:', avgPrice);
-        const finalPrice = avgPrice.toFixed(2);
-        console.log('DEBUG - 최종 설정값:', finalPrice);
-        setUsdtPrice(finalPrice);
+        setUsdtPrice(avgPrice.toFixed(2));
       }
     }
   }, [krwAmount, usdtAmount]);
