@@ -113,10 +113,17 @@ export default function NetworkTransfer() {
 
       const transferData = {
         type: 'network_transfer',
-        fromAssetId: null, // 빗썸 USDT
-        toAssetId: null, // 바이낸스 USDT
-        fromAmount: amount + fee,
-        toAmount: amount,
+        fromAssetType: 'exchange',
+        fromAssetId: null,
+        fromAssetName: 'Bithumb USDT',
+        toAssetType: 'binance',
+        toAssetId: null,
+        toAssetName: 'Binance USDT',
+        fromAmount: (amount + fee).toString(), // 문자열로 변환
+        toAmount: amount.toString(), // 문자열로 변환
+        rate: '1', // USDT to USDT이므로 1:1 환율
+        fees: fee.toString(), // 수수료 문자열로
+        memo: `${selectedNetwork} 네트워크 이동`,
         metadata: {
           platform: 'bithumb_to_binance',
           network: selectedNetwork,
