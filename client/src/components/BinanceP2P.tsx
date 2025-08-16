@@ -81,7 +81,8 @@ export default function BinanceP2P() {
       const usdt = parseFloat(usdtAmount);
       const rate = parseFloat(exchangeRate);
       const vnd = usdt * rate;
-      setVndAmount(vnd.toString());
+      // 큰 숫자도 안전하게 처리하기 위해 toFixed 사용
+      setVndAmount(vnd.toFixed(2));
     }
   };
 
@@ -322,7 +323,7 @@ export default function BinanceP2P() {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">받을 VND 금액</label>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <p className="text-2xl font-bold text-green-600">
-                    {vndAmount ? formatCurrency(parseFloat(vndAmount.replace(/,/g, '')), 'VND') : '0'} VND
+                    {vndAmount ? formatCurrency(parseFloat(vndAmount), 'VND') : '0'} VND
                   </p>
                   <p className="text-sm text-green-700 mt-1">
                     💰 우리은행 계좌로 입금됩니다
@@ -345,7 +346,7 @@ export default function BinanceP2P() {
                   </div>
                   <div className="flex justify-between">
                     <span>받을 VND:</span>
-                    <span className="text-green-600">{vndAmount ? formatCurrency(parseFloat(vndAmount.replace(/,/g, '')), 'VND') : '0'} VND</span>
+                    <span className="text-green-600">{vndAmount ? formatCurrency(parseFloat(vndAmount), 'VND') : '0'} VND</span>
                   </div>
                   <div className="flex justify-between">
                     <span>적용 환율:</span>
