@@ -32,7 +32,7 @@ export default function BinanceP2P() {
   const [currentTab, setCurrentTab] = useState<'p2p' | 'history'>('p2p');
 
   // 모든 거래 내역 조회 후 P2P만 필터링
-  const { data: allTransactions = [] } = useQuery({
+  const { data: allTransactions = [] } = useQuery<any[]>({
     queryKey: ['/api/transactions'],
   });
   
@@ -82,15 +82,13 @@ export default function BinanceP2P() {
      asset.name.includes('우리은행') || asset.metadata?.bank === '우리은행')
   );
 
-  // P2P 시장 환율 계산 (USDT → VND 구매 환율)
-  const usdtToKrwRate = realTimeRates['USDT'] || 1387.69;  // USDT의 KRW 환율
-  const vndToKrwRate = 0.055;  // 1 VND = 0.055 KRW (대략적인 고정 환율)
-  const marketRate = Math.round(usdtToKrwRate / vndToKrwRate);  // USDT → VND 시장 환율
+  // P2P 시장 환율 계산 (USDT 판매하여 VND 구매 환율)
+  // 실제 P2P 시장에서 USDT 1개에 대한 VND 가격 (2024-2025년 기준)
+  const marketRate = 25800;  // 1 USDT = 25,800 VND 대략적인 P2P 시장 환율
   
-  console.log('P2P 시장 환율 계산:', {
-    usdtToKrwRate,
-    vndToKrwRate,
-    marketRate: marketRate
+  console.log('P2P 시장 환율:', {
+    marketRate: marketRate,
+    description: 'USDT 1개를 판매하여 받는 VND 금액'
   });
 
   // 환율 자동 계산 - 간단하고 확실한 방법
