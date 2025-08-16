@@ -278,7 +278,7 @@ export default function NetworkTransfer() {
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  최대 이동 가능: {bithumbUsdtAsset?.balance || '0'} USDT
+                  최대 이동 가능: {formatInputWithCommas(bithumbUsdtAsset?.balance || '0')} USDT
                 </p>
               </div>
 
@@ -326,7 +326,7 @@ export default function NetworkTransfer() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>이동 수량:</span>
-                    <span>{usdtAmount || '0'} USDT</span>
+                    <span>{formatInputWithCommas(usdtAmount || '0')} USDT</span>
                   </div>
                   <div className="flex justify-between">
                     <span>네트워크 수수료:</span>
@@ -341,13 +341,13 @@ export default function NetworkTransfer() {
                     <span>총 차감 수량:</span>
                     <span className="text-red-600">
                       {usdtAmount && networkFee 
-                        ? (parseFloat(usdtAmount) + parseFloat(networkFee)).toString()
+                        ? formatInputWithCommas((parseFloat(usdtAmount) + parseFloat(networkFee)).toString())
                         : '0'} USDT
                     </span>
                   </div>
                   <div className="flex justify-between font-medium text-green-600">
                     <span>바이낸스 도착 예정:</span>
-                    <span>{usdtAmount || '0'} USDT</span>
+                    <span>{formatInputWithCommas(usdtAmount || '0')} USDT</span>
                   </div>
                 </div>
               </div>
