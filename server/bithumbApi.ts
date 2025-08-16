@@ -89,46 +89,39 @@ class BithumbApiService {
     return jwtToken;
   }
 
-  private async makeApiRequest(endpoint: string, parameters: any = {}, isGetRequest: boolean = false): Promise<any> {
+  private async makeApiRequest(endpoint: string, parameters: any = {}): Promise<any> {
     try {
-      let url = `${this.config.baseUrl}${endpoint}`;
-      let requestOptions: RequestInit;
+      const url = `${this.config.baseUrl}${endpoint}`;
       
-      // JWT 토큰 생성
+      // JWT 토큰 생성 (parameters 포함)
       const jwtToken = this.generateJwtToken(parameters);
       
+      // 한국 빗썸은 application/x-www-form-urlencoded 형식 사용
       const headers = {
         'Authorization': `Bearer ${jwtToken}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json'
       };
       
-      if (isGetRequest) {
-        // GET 요청의 경우 쿼리 파라미터로 추가
-        if (parameters && Object.keys(parameters).length > 0) {
-          const queryString = new URLSearchParams(parameters).toString();
-          url += `?${queryString}`;
-        }
-        
-        requestOptions = {
-          method: 'GET',
-          headers
-        };
-      } else {
-        // POST 요청의 경우 JSON body 사용
-        headers['Content-Type'] = 'application/json';
-        
-        requestOptions = {
-          method: 'POST',
-          headers,
-          body: Object.keys(parameters).length > 0 ? JSON.stringify(parameters) : undefined
-        };
+      // form data로 변환
+      const formData = new URLSearchParams();
+      if (parameters && Object.keys(parameters).length > 0) {
+        Object.entries(parameters).forEach(([key, value]) => {
+          formData.append(key, String(value));
+        });
       }
+      
+      const requestOptions: RequestInit = {
+        method: 'POST',
+        headers,
+        body: formData.toString()
+      };
 
-      console.log('Bithumb JWT API Request:', {
+      console.log('Bithumb API Request:', {
         url,
-        method: isGetRequest ? 'GET' : 'POST',
+        method: 'POST',
         headers: { ...headers, 'Authorization': 'Bearer [HIDDEN]' },
-        hasBody: !isGetRequest && Object.keys(parameters).length > 0
+        bodyParams: parameters
       });
 
       const response = await fetch(url, requestOptions);
@@ -147,7 +140,8 @@ class BithumbApiService {
         throw new Error(`Invalid JSON response: ${responseText}`);
       }
       
-      if (data.status !== '0000') {
+      // 빗썸 API 응답 형식 확인
+      if (data.status && data.status !== '0000') {
         console.error('Bithumb API Error Details:', {
           status: data.status,
           message: data.message,
@@ -156,47 +150,35 @@ class BithumbApiService {
         
         throw new Error(`Bithumb API Error: ${data.message || data.status} (Code: ${data.status})`);
       }
+      
+      // error 필드가 있는 경우도 처리
+      if (data.error) {
+        console.error('Bithumb API Error:', data.error);
+        throw new Error(`Bithumb API Error: ${data.error.name || data.error.message || 'Unknown error'}`);
+      }
 
       return data;
     } catch (error) {
-      console.error('Bithumb JWT API request failed:', error);
+      console.error('Bithumb API request failed:', error);
       throw error;
     }
   }
 
   async getBalance(): Promise<BithumbBalance> {
-    // v2.0 API는 GET 방식일 수도 있으므로 둘 다 시도
-    try {
-      // 먼저 POST 방식으로 시도
-      const response = await this.makeApiRequest('/info/balance', { currency: 'ALL' }, false);
-      return response.data;
-    } catch (error) {
-      console.log('POST 방식 실패, GET 방식으로 재시도...');
-      // GET 방식으로 재시도
-      const response = await this.makeApiRequest('/info/balance', { currency: 'ALL' }, true);
-      return response.data;
-    }
+    // 한국 빗썸은 POST 방식과 form data만 지원
+    const response = await this.makeApiRequest('/info/balance', { currency: 'ALL' });
+    return response.data || response;
   }
 
   async getTransactionHistory(currency: string = 'USDT', count: number = 50): Promise<BithumbTransaction[]> {
-    try {
-      const response = await this.makeApiRequest('/info/user_transactions', {
-        order_currency: currency,
-        payment_currency: 'KRW',
-        count,
-        searchGb: 1 // 1: 매수 완료만 조회
-      }, false);
-      return response.data;
-    } catch (error) {
-      console.log('거래내역 POST 방식 실패, GET 방식으로 재시도...');
-      const response = await this.makeApiRequest('/info/user_transactions', {
-        order_currency: currency,
-        payment_currency: 'KRW',
-        count,
-        searchGb: 1
-      }, true);
-      return response.data;
-    }
+    // 한국 빗썸은 POST 방식과 form data만 지원
+    const response = await this.makeApiRequest('/info/user_transactions', {
+      order_currency: currency,
+      payment_currency: 'KRW',
+      count,
+      searchGb: 1 // 1: 매수 완료만 조회
+    });
+    return response.data || response;
   }
 
   async getUsdtTransactions(): Promise<{
