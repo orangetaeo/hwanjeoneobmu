@@ -3,7 +3,9 @@ import crypto from 'crypto';
 interface BithumbApiConfig {
   connectKey: string;
   secretKey: string;
+  api2Key?: string; // API 2.0 키 추가
   baseUrl: string;
+  apiVersion: '1.0' | '2.0';
 }
 
 interface BithumbBalance {
@@ -37,87 +39,115 @@ class BithumbApiService {
     this.config = {
       connectKey: process.env.BITHUMB_API_KEY || 'a47849b7c86067d598fe0c3ed8502131',
       secretKey: process.env.BITHUMB_SECRET_KEY || '64f36ebe17092026677c22705db62b32',
-      baseUrl: 'https://api.bithumb.com'
+      api2Key: process.env.BITHUMB_API2_KEY || 'b98ea5c12a3d00694290f5a394682ee9b79ebdc62a7d8fda',
+      baseUrl: 'https://api.bithumb.com',
+      apiVersion: '2.0' // API 2.0으로 변경해서 테스트
     };
     
-    console.log('Bithumb API 1.0 Service initialized with:', {
+    console.log(`Bithumb API ${this.config.apiVersion} Service initialized with:`, {
+      apiVersion: this.config.apiVersion,
       connectKeyLength: this.config.connectKey.length,
       secretKeyLength: this.config.secretKey.length,
+      api2KeyLength: this.config.api2Key?.length,
       baseUrl: this.config.baseUrl,
       connectKeyPreview: this.config.connectKey.substring(0, 8) + '...',
-      secretKeyPreview: this.config.secretKey.substring(0, 8) + '...'
+      secretKeyPreview: this.config.secretKey.substring(0, 8) + '...',
+      api2KeyPreview: this.config.api2Key?.substring(0, 8) + '...'
     });
   }
 
-  private generateHmacSignature(endpoint: string, parameters: any = {}): { signature: string; nonce: string } {
-    // 빗썸 공식: 마이크로초 정밀도 nonce 생성
+  private generateHmacSignature(endpoint: string, parameters: any = {}): { signature: string; nonce: string; timestamp?: string } {
+    if (this.config.apiVersion === '2.0') {
+      return this.generateApi2Signature(endpoint, parameters);
+    }
+    
+    // API 1.0: 마이크로초 정밀도 nonce 생성
     const now = Date.now();
     const nonce = (now * 1000 + Math.floor(Math.random() * 1000)).toString();
     
-    // 빗썸 API 1.0: endpoint를 파라미터에 추가
+    // API 1.0: endpoint를 파라미터에 추가
     const allParams = {
       endpoint: endpoint,
       ...parameters
     };
     
-    // URL-encoded 파라미터 문자열 생성
     const paramString = new URLSearchParams();
     Object.keys(allParams).forEach(key => {
       paramString.append(key, allParams[key]);
     });
     const encodedParams = paramString.toString();
     
-    // 빗썸 공식 서명 데이터: endpoint + chr(0) + params + chr(0) + nonce
     const message = endpoint + '\0' + encodedParams + '\0' + nonce;
     
-    console.log('빗썸 공식 HMAC SHA512 서명 생성:', {
-      endpoint,
-      parameters,
-      nonce,
+    console.log('빗썸 API 1.0 HMAC SHA512 서명 생성:', {
+      endpoint, parameters, nonce,
       encodedParams: encodedParams.substring(0, 100) + (encodedParams.length > 100 ? '...' : ''),
-      messageLength: message.length,
       messagePreview: message.replace(/\0/g, '[NULL]').substring(0, 150) + '...'
     });
     
-    // HMAC SHA512 생성 후 hex로 변환, 그 다음 Base64 인코딩
     const hmacHex = crypto
       .createHmac('sha512', this.config.secretKey)
       .update(message, 'utf-8')
       .digest('hex');
     
-    // hex 결과를 Base64로 인코딩 (빗썸 공식 방식)
     const signature = Buffer.from(hmacHex, 'utf8').toString('base64');
     
-    console.log('Generated signature:', {
-      hmacHexPreview: hmacHex.substring(0, 40) + '...',
-      base64SignaturePreview: signature.substring(0, 40) + '...'
+    return { signature, nonce };
+  }
+  
+  private generateApi2Signature(endpoint: string, parameters: any = {}): { signature: string; nonce: string; timestamp: string } {
+    const timestamp = Date.now().toString();
+    const nonce = timestamp;
+    
+    // API 2.0: JWT-style 서명 생성
+    let queryString = '';
+    if (parameters && Object.keys(parameters).length > 0) {
+      const sortedParams = Object.keys(parameters)
+        .sort()
+        .map(key => `${key}=${parameters[key]}`)
+        .join('&');
+      queryString = sortedParams;
+    }
+    
+    // API 2.0 서명 메시지: queryString + nonce
+    const message = queryString + nonce;
+    
+    console.log('빗썸 API 2.0 HMAC SHA512 서명 생성:', {
+      endpoint, parameters, timestamp, nonce,
+      queryString: queryString.substring(0, 100) + (queryString.length > 100 ? '...' : ''),
+      message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
     });
     
-    return { signature, nonce };
+    const signature = crypto
+      .createHmac('sha512', this.config.secretKey)
+      .update(message, 'utf-8')
+      .digest('hex');
+    
+    return { signature, nonce, timestamp };
   }
 
   private async makeApiRequest(endpoint: string, parameters: any = {}): Promise<any> {
     try {
       const url = `${this.config.baseUrl}${endpoint}`;
       
-      // HMAC SHA512 서명 생성 (API 1.0 방식)
+      if (this.config.apiVersion === '2.0') {
+        return await this.makeApi2Request(url, endpoint, parameters);
+      }
+      
+      // API 1.0 요청
       const { signature, nonce } = this.generateHmacSignature(endpoint, parameters);
       
-      // API 1.0 인증 헤더 (올바른 형식)
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Api-Key': this.config.connectKey,
         'Api-Sign': signature,
         'Api-Nonce': nonce,
-        'api-client-type': '1'  // 필수 헤더 추가
+        'api-client-type': '1'
       };
       
-      // endpoint를 포함한 모든 파라미터를 form data로 전송 (API 1.0 방식)
       const formParams = new URLSearchParams();
       formParams.append('endpoint', endpoint);
-      
-      // 기존 파라미터도 추가
       Object.keys(parameters).forEach(key => {
         formParams.append(key, parameters[key]);
       });
@@ -128,51 +158,79 @@ class BithumbApiService {
         body: formParams
       };
 
-      console.log('Bithumb API 1.0 Request:', {
-        url,
-        method: 'POST',
-        headers: { ...headers, 'Api-Key': headers['Api-Key'].substring(0, 10) + '...', 'Api-Sign': '[HIDDEN]', 'api-client-type': headers['api-client-type'] },
+      console.log(`Bithumb API ${this.config.apiVersion} Request:`, {
+        url, method: 'POST',
+        headers: { ...headers, 'Api-Key': headers['Api-Key'].substring(0, 10) + '...', 'Api-Sign': '[HIDDEN]' },
         bodyParams: { endpoint, ...parameters }
       });
-
-      const response = await fetch(url, requestOptions);
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Array.from(response.headers.entries()));
-      
-      const responseText = await response.text();
-      console.log('Bithumb API Raw Response:', responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Failed to parse response as JSON:', parseError);
-        throw new Error(`Invalid JSON response: ${responseText}`);
-      }
-      
-      // 빗썸 API 응답 형식 확인
-      if (data.status && data.status !== '0000') {
-        console.error('Bithumb API Error Details:', {
-          status: data.status,
-          message: data.message,
-          fullResponse: data
-        });
-        
-        throw new Error(`Bithumb API Error: ${data.message || data.status} (Code: ${data.status})`);
-      }
-      
-      // error 필드가 있는 경우도 처리
-      if (data.error) {
-        console.error('Bithumb API Error:', data.error);
-        throw new Error(`Bithumb API Error: ${data.error.name || data.error.message || 'Unknown error'}`);
-      }
-
-      return data;
+      return await this.processApiResponse(url, requestOptions);
     } catch (error) {
       console.error('Bithumb API request failed:', error);
       throw error;
     }
+  }
+  
+  private async makeApi2Request(url: string, endpoint: string, parameters: any = {}): Promise<any> {
+    const { signature, nonce } = this.generateHmacSignature(endpoint, parameters);
+    
+    const headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Api-Key': this.config.api2Key!,
+      'Api-Sign': signature,
+      'Api-Nonce': nonce
+    };
+    
+    const requestOptions: RequestInit = {
+      method: 'POST',
+      headers,
+      body: Object.keys(parameters).length > 0 ? JSON.stringify(parameters) : undefined
+    };
+
+    console.log(`Bithumb API ${this.config.apiVersion} Request:`, {
+      url, method: 'POST',
+      headers: { ...headers, 'Api-Key': headers['Api-Key'].substring(0, 10) + '...', 'Api-Sign': '[HIDDEN]' },
+      bodyParams: parameters
+    });
+    
+    return await this.processApiResponse(url, requestOptions);
+  }
+  
+  private async processApiResponse(url: string, requestOptions: RequestInit): Promise<any> {
+
+    const response = await fetch(url, requestOptions);
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Array.from(response.headers.entries()));
+    
+    const responseText = await response.text();
+    console.log('Bithumb API Raw Response:', responseText);
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse response as JSON:', parseError);
+      throw new Error(`Invalid JSON response: ${responseText}`);
+    }
+    
+    if (data.status && data.status !== '0000') {
+      console.error('Bithumb API Error Details:', {
+        status: data.status,
+        message: data.message,
+        fullResponse: data
+      });
+      
+      throw new Error(`Bithumb API Error: ${data.message || data.status} (Code: ${data.status})`);
+    }
+    
+    if (data.error) {
+      console.error('Bithumb API Error:', data.error);
+      throw new Error(`Bithumb API Error: ${data.error.name || data.error.message || 'Unknown error'}`);
+    }
+
+    return data;
   }
 
   async getBalance(): Promise<BithumbBalance> {
