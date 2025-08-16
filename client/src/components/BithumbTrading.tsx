@@ -62,15 +62,15 @@ export default function BithumbTrading() {
 
   const [selectedAccount, setSelectedAccount] = useState<string>('');
 
-  // 구매 수량 자동 계산 (구매 금액과 단가가 입력되면 수량 계산)
+  // 구매 수량 자동 계산 (수수료 공제 전 수량 계산)
   useEffect(() => {
     if (krwAmount && usdtPrice) {
       const krw = parseFloat(krwAmount.replace(/,/g, ''));
       const price = parseFloat(usdtPrice.replace(/,/g, ''));
       if (!isNaN(krw) && !isNaN(price) && price > 0) {
-        // 더 정확한 계산을 위해 toFixed(8) 사용
-        const quantity = krw / price;
-        setUsdtAmount(quantity.toFixed(8));
+        // 빗써 방식: 전체 금액으로 USDT 구매 후 수수료 차감
+        const grossQuantity = krw / price; // 수수료 공제 전 수량
+        setUsdtAmount(grossQuantity.toFixed(8));
       }
     }
   }, [krwAmount, usdtPrice]);
@@ -88,24 +88,28 @@ export default function BithumbTrading() {
       const krw = parseFloat(krwAmount.replace(/,/g, ''));
       const usdt = parseFloat(usdtAmount);
       const price = parseFloat(usdtPrice.replace(/,/g, ''));
-      const feeRate = userSettings?.bithumbFeeRate || 4; // 기본 수수료율 4% (쿠폰 적용)
+      const feeRate = (userSettings?.bithumbFeeRate || 4) / 100; // 기본 수수료율 0.04 (쿠폰 적용)
       
-      const tradeFee = krw * (feeRate / 100);
-      const totalCost = krw + tradeFee;
+      // 빗써 방식: USDT에서 수수료 차감
+      const grossQuantity = usdt; // 수수룼 공제 전 수량
+      const tradeFeeUsdt = grossQuantity * feeRate; // USDT로 차감되는 수수료
+      const netQuantity = grossQuantity - tradeFeeUsdt; // 실제 수량
+      const totalCost = krw; // 전체 금액 사용
 
       const tradeData = {
         type: 'bithumb_usdt_buy',
         fromAssetId: selectedAccount,
         toAssetId: null, // USDT는 별도 자산으로 관리
         fromAmount: totalCost,
-        toAmount: usdt,
+        toAmount: netQuantity, // 실제 수량 기록
         exchangeRate: price,
         metadata: {
           platform: 'bithumb',
-          tradeFee: tradeFee,
+          tradeFeeUsdt: tradeFeeUsdt,
           feeRate: feeRate,
           pricePerUsdt: price,
-          grossAmount: krw
+          grossQuantity: grossQuantity,
+          netQuantity: netQuantity
         }
       };
 
@@ -151,7 +155,8 @@ export default function BithumbTrading() {
 
   const totalUsdtOwned = bithumbTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
 
-  const canBuyUsdt = selectedAccount && krwAmount && usdtAmount && usdtPrice;
+  const canBuyUsdt = selectedAccount && krwAmount && usdtAmount && usdtPrice && 
+                     parseFloat(usdtAmount) > 0 && parseFloat(usdtPrice.replace(/,/g, '')) > 0;
 
   return (
     <div className="space-y-6">
@@ -255,7 +260,7 @@ export default function BithumbTrading() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">구매 수량 (USDT)</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">구매 수량 (수수료 공제 전)</label>
                 <Input
                   value={usdtAmount}
                   onChange={(e) => setUsdtAmount(e.target.value)}
@@ -265,16 +270,19 @@ export default function BithumbTrading() {
                   className="bg-gray-50"
                 />
                 {krwAmount && usdtPrice && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    수수료 공제 후: {(() => {
-                      const krw = parseFloat(krwAmount.replace(/,/g, ''));
-                      const price = parseFloat(usdtPrice.replace(/,/g, ''));
-                      const feeRate = userSettings?.bithumbFeeRate || 4;
-                      const netAmount = krw - (krw * (feeRate / 100));
-                      const netQuantity = netAmount / price;
-                      return netQuantity.toFixed(8);
-                    })()} USDT
-                  </p>
+                  <div className="text-xs mt-1 space-y-1">
+                    <p className="text-blue-600">
+                      실제 수량 (공제 후): {(() => {
+                        const grossQuantity = parseFloat(usdtAmount);
+                        const feeRate = (userSettings?.bithumbFeeRate || 4) / 100;
+                        const netQuantity = grossQuantity * (1 - feeRate);
+                        return netQuantity.toFixed(8);
+                      })()} USDT
+                    </p>
+                    <p className="text-gray-500">
+                      ℹ️ 실제 거래 시 평균 체결가에 따라 달라질 수 있습니다
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
@@ -292,34 +300,28 @@ export default function BithumbTrading() {
                     <span>{krwAmount ? formatCurrency(parseFloat(krwAmount.replace(/,/g, '')), 'KRW') : '0'}원</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>거래 수수료 ({userSettings?.bithumbFeeRate || 4}%):</span>
+                    <span>구매 단가:</span>
+                    <span>{usdtPrice ? parseFloat(usdtPrice.replace(/,/g, '')).toLocaleString() : '0'}원/USDT</span>
+                  </div>
+                  <hr />
+                  <div className="flex justify-between font-medium text-green-600">
+                    <span>초기 구매 수량:</span>
+                    <span>{usdtAmount || '0'} USDT</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>거래 수수료 ({(userSettings?.bithumbFeeRate || 4) / 100}%):</span>
                     <span className="text-red-600">
-                      -{krwAmount ? formatCurrency(parseFloat(krwAmount.replace(/,/g, '')) * ((userSettings?.bithumbFeeRate || 4) / 100), 'KRW') : '0'}원
+                      -{usdtAmount ? (parseFloat(usdtAmount) * ((userSettings?.bithumbFeeRate || 4) / 100)).toFixed(8) : '0'} USDT
                     </span>
                   </div>
                   <hr />
-                  <div className="flex justify-between font-medium">
-                    <span>총 비용:</span>
+                  <div className="flex justify-between font-medium text-blue-600 text-base">
+                    <span>최종 수량:</span>
                     <span>
-                      {krwAmount ? formatCurrency(
-                        parseFloat(krwAmount.replace(/,/g, '')) * (1 + (userSettings?.bithumbFeeRate || 4) / 100), 
-                        'KRW'
-                      ) : '0'}원
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-medium text-blue-600">
-                    <span>받을 USDT:</span>
-                    <span>{usdtAmount || '0'} USDT</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-blue-500">
-                    <span>수수료 공제 후 실제 수량:</span>
-                    <span>
-                      {krwAmount && usdtPrice ? (() => {
-                        const krw = parseFloat(krwAmount.replace(/,/g, ''));
-                        const price = parseFloat(usdtPrice.replace(/,/g, ''));
-                        const feeRate = userSettings?.bithumbFeeRate || 4;
-                        const netAmount = krw - (krw * (feeRate / 100));
-                        const netQuantity = netAmount / price;
+                      {usdtAmount ? (() => {
+                        const grossQuantity = parseFloat(usdtAmount);
+                        const feeRate = (userSettings?.bithumbFeeRate || 4) / 100;
+                        const netQuantity = grossQuantity * (1 - feeRate);
                         return netQuantity.toFixed(8);
                       })() : '0'} USDT
                     </span>
