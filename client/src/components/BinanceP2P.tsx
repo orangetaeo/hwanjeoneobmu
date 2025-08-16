@@ -195,7 +195,7 @@ export default function BinanceP2P() {
             {(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            전체: {binanceUsdtAsset?.balance || '0'} USDT
+            전체: {binanceUsdtAsset ? parseFloat(binanceUsdtAsset.balance || '0').toLocaleString('en-US', { minimumFractionDigits: 8, maximumFractionDigits: 8 }) : '0.00000000'} USDT
           </p>
         </Card>
         
@@ -209,14 +209,14 @@ export default function BinanceP2P() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">평균 환율</h3>
           <p className="text-2xl font-bold text-purple-600">
-            {avgExchangeRate.toFixed(0)} VND/USDT
+            {avgExchangeRate.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} VND/USDT
           </p>
         </Card>
 
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">사용한 USDT</h3>
           <p className="text-2xl font-bold text-orange-600">
-            {totalUsdtUsed.toFixed(2)} USDT
+            {totalUsdtUsed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
         </Card>
       </div>
@@ -299,7 +299,7 @@ export default function BinanceP2P() {
                   </Button>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  💡 사용 가능한 USDT: <strong>{(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</strong>
+                  💡 사용 가능한 USDT: <strong>{(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 8, maximumFractionDigits: 8 })} USDT</strong>
                 </p>
               </div>
 
@@ -364,7 +364,7 @@ export default function BinanceP2P() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>지불 USDT:</span>
-                    <span className="text-red-600">{usdtAmount || '0'} USDT</span>
+                    <span className="text-red-600">{usdtAmount ? parseFloat(usdtAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
                   </div>
                   <div className="flex justify-between">
                     <span>받을 VND:</span>
@@ -372,7 +372,7 @@ export default function BinanceP2P() {
                   </div>
                   <div className="flex justify-between">
                     <span>적용 환율:</span>
-                    <span>{exchangeRate ? formatInputWithCommas(exchangeRate) : '0'} VND/USDT</span>
+                    <span>{exchangeRate ? parseFloat(exchangeRate.replace(/,/g, '')).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '0'} VND/USDT</span>
                   </div>
                   <hr />
                   <div className="flex justify-between">
@@ -422,13 +422,13 @@ export default function BinanceP2P() {
                   <TableRow key={trade.id}>
                     <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                     <TableCell className="text-red-600 font-medium">
-                      -{trade.usdtAmount.toFixed(2)} USDT
+                      -{trade.usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                     </TableCell>
                     <TableCell className="text-green-600 font-medium">
                       +{formatCurrency(trade.vndAmount, 'VND')} VND
                     </TableCell>
                     <TableCell>
-                      {trade.exchangeRate.toFixed(0)}
+                      {trade.exchangeRate.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">우리은행</Badge>
