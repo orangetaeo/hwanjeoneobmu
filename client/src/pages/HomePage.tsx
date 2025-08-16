@@ -560,12 +560,22 @@ export default function HomePage() {
             const newDenominations = formData.denominations || {};
             
             // 데이터베이스 denomination 형식 정규화 (쉼표 없는 형식을 쉼표 있는 형식으로 변환)
-            const normalizedExistingDenominations: Record<string, number> = {};
+            let normalizedExistingDenominations: Record<string, number> = {};
             Object.entries(existingDenominations).forEach(([key, value]) => {
               // 쉼표가 없는 키를 쉼표 있는 형식으로 변환
-              const normalizedKey = key.includes(',') ? key : parseFloat(key).toLocaleString();
+              let normalizedKey;
+              if (key.includes(',')) {
+                normalizedKey = key; // 이미 쉼표가 있으면 그대로 사용
+              } else {
+                // 숫자를 파싱하고 천 단위 쉼표 추가
+                const numValue = parseFloat(key);
+                normalizedKey = numValue.toLocaleString();
+              }
               normalizedExistingDenominations[normalizedKey] = typeof value === 'number' ? value : 0;
             });
+            
+            console.log('Original existingDenominations:', existingDenominations);
+            console.log('Normalized to:', normalizedExistingDenominations);
             
             console.log('정규화된 기존 denomination:', normalizedExistingDenominations);
             
