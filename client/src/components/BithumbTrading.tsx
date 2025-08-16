@@ -54,11 +54,19 @@ export default function BithumbTrading() {
   const allTransactions = [...realTimeTransactions, ...manualTrades];
 
   // 평균 단가 계산 (실시간 + 수동 입력)
-  const totalCost = allTransactions.reduce((sum, trade) => sum + (trade.totalCost || trade.amount || 0), 0);
-  const totalQuantity = allTransactions.reduce((sum, trade) => sum + (trade.usdtAmount || trade.quantity || 0), 0);
+  const totalCost = allTransactions.reduce((sum, trade) => {
+    const cost = trade.totalCost || trade.amount || 0;
+    return sum + (typeof cost === 'number' && !isNaN(cost) ? cost : 0);
+  }, 0);
+  
+  const totalQuantity = allTransactions.reduce((sum, trade) => {
+    const quantity = trade.usdtAmount || trade.quantity || 0;
+    return sum + (typeof quantity === 'number' && !isNaN(quantity) ? quantity : 0);
+  }, 0);
+  
   const averageUsdtPrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
 
-  const totalUsdtOwned = realTimeBalance > 0 ? realTimeBalance : totalQuantity;
+  const totalUsdtOwned = realTimeBalance > 0 ? realTimeBalance : (totalQuantity || 0);
 
   // 테스트 데이터 생성 (API 연결 실패 시 표시용)
   const testTransactions = [
@@ -157,7 +165,7 @@ export default function BithumbTrading() {
             {bithumbError && <span className="ml-2 text-xs text-orange-500">📊</span>}
           </h3>
           <p className="text-2xl font-bold text-blue-600">
-            {totalUsdtOwned.toFixed(8)} USDT
+            {(totalUsdtOwned || 0).toFixed(8)} USDT
           </p>
           {bithumbError ? (
             <p className="text-xs text-orange-500 mt-1">테스트 데이터</p>
@@ -171,7 +179,7 @@ export default function BithumbTrading() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">평균 취득가</h3>
           <p className="text-2xl font-bold text-green-600">
-            ₩{averageUsdtPrice.toFixed(2)}
+            ₩{(averageUsdtPrice || 0).toFixed(2)}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             총 {displayTransactions.length}회 거래
@@ -181,7 +189,10 @@ export default function BithumbTrading() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">총 투자금액</h3>
           <p className="text-2xl font-bold text-purple-600">
-            {formatCurrency(displayTransactions.reduce((sum, trade) => sum + (trade.totalCost || trade.amount || 0), 0), 'KRW')}원
+            {formatCurrency(displayTransactions.reduce((sum, trade) => {
+              const cost = trade.totalCost || trade.amount || 0;
+              return sum + (typeof cost === 'number' && !isNaN(cost) ? cost : 0);
+            }, 0), 'KRW')}원
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {bithumbError ? '테스트 데이터' : '실제 투자'}
