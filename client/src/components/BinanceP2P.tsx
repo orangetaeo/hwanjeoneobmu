@@ -302,7 +302,9 @@ export default function BinanceP2P() {
                       console.log('환율 입력 onChange:', {
                         inputValue: e.target.value,
                         inputValueType: typeof e.target.value,
-                        inputValueLength: e.target.value.length
+                        inputValueLength: e.target.value.length,
+                        currentUsdtAmount: usdtAmount,
+                        willCalculate: !!usdtAmount
                       });
                       setExchangeRate(e.target.value);
                       if (usdtAmount) {
