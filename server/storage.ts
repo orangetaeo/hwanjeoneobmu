@@ -148,6 +148,128 @@ export class DatabaseStorage implements IStorage {
     await this.handleAssetMovement(userId, transaction);
   }
 
+  // 거래 취소 처리 - 이미 이동된 자산을 원래대로 되돌림
+  async processTransactionCancellation(userId: string, transactionId: string): Promise<void> {
+    const transaction = await this.getTransactionById(userId, transactionId);
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    }
+    
+    console.log('=== 거래 취소 자산 복원 시작 ===', {
+      userId,
+      transactionId,
+      transactionType: transaction.type,
+      fromAmount: transaction.fromAmount,
+      toAmount: transaction.toAmount
+    });
+    
+    // 자산 이동을 역순으로 되돌림
+    await this.reverseAssetMovement(userId, transaction);
+  }
+
+  // 자산 이동을 역순으로 되돌리는 함수
+  public async reverseAssetMovement(userId: string, transaction: InsertTransaction | Transaction) {
+    const fromAmount = parseFloat(transaction.fromAmount);
+    const toAmount = parseFloat(transaction.toAmount);
+    const fees = parseFloat(transaction.fees || "0");
+
+    console.log('=== 자산 복원 처리 시작 ===', {
+      transactionType: transaction.type,
+      fromAmount,
+      toAmount,
+      fees
+    });
+
+    switch (transaction.type) {
+      case 'p2p_trade':
+      case 'binance_p2p':
+        console.log('P2P 거래 자산 복원 처리');
+        // P2P 거래 복원: Binance USDT 다시 증가, VND 계좌 감소
+        await this.reverseP2PTradeMovement(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount);
+        break;
+        
+      case 'exchange_transfer':
+      case 'network_transfer':
+        console.log('네트워크 이동 자산 복원 처리');
+        // 네트워크 이동 복원: 출발 거래소 증가, 도착 거래소 감소
+        await this.reverseExchangeTransferMovement(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount, fees);
+        break;
+        
+      default:
+        console.log('지원되지 않는 거래 타입 복원:', transaction.type);
+        break;
+    }
+    
+    console.log('=== 자산 복원 처리 완료 ===');
+  }
+
+  // P2P 거래 자산 복원
+  private async reverseP2PTradeMovement(userId: string, fromAssetName: string, toAssetName: string, fromAmount: number, toAmount: number) {
+    // Binance USDT 자산 다시 증가
+    const binanceUsdtAsset = await this.getAssetByName(userId, 'Binance USDT', 'binance');
+    if (binanceUsdtAsset) {
+      const newBalance = parseFloat(binanceUsdtAsset.balance || "0") + fromAmount;
+      console.log('Binance USDT 자산 복원:', {
+        currentBalance: parseFloat(binanceUsdtAsset.balance || "0"),
+        restoreAmount: fromAmount,
+        newBalance
+      });
+      await this.updateAsset(userId, binanceUsdtAsset.id, { balance: newBalance.toString() });
+    }
+
+    // VND 계좌 자산 감소
+    let targetAsset = await this.getAssetByName(userId, toAssetName, 'account');
+    if (targetAsset) {
+      const currentBalance = parseFloat(targetAsset.balance || "0");
+      const newBalance = currentBalance - toAmount;
+      console.log('VND 계좌 자산 복원 (차감):', {
+        assetName: toAssetName,
+        currentBalance,
+        deductAmount: toAmount,
+        newBalance
+      });
+      await this.updateAsset(userId, targetAsset.id, { balance: newBalance.toString() });
+    }
+  }
+
+  // 네트워크 이동 자산 복원
+  private async reverseExchangeTransferMovement(userId: string, fromAssetName: string, toAssetName: string, fromAmount: number, toAmount: number, fees: number) {
+    // 출발 거래소 자산 다시 증가 (원래 차감된 금액)
+    let fromAsset = await this.getAssetByName(userId, fromAssetName, 'exchange');
+    if (!fromAsset) {
+      fromAsset = await this.getAssetByName(userId, fromAssetName, 'binance');
+    }
+    
+    if (fromAsset) {
+      const newBalance = parseFloat(fromAsset.balance || "0") + fromAmount;
+      console.log('출발 자산 복원:', {
+        name: fromAssetName,
+        currentBalance: parseFloat(fromAsset.balance || "0"),
+        restoreAmount: fromAmount,
+        newBalance
+      });
+      await this.updateAsset(userId, fromAsset.id, { balance: newBalance.toString() });
+    }
+
+    // 도착 거래소 자산 감소 (받았던 금액 차감)
+    let toAsset = await this.getAssetByName(userId, toAssetName, 'binance');
+    if (!toAsset) {
+      toAsset = await this.getAssetByName(userId, toAssetName, 'exchange');
+    }
+    
+    if (toAsset) {
+      const currentBalance = parseFloat(toAsset.balance || "0");
+      const newBalance = currentBalance - toAmount;
+      console.log('도착 자산 복원 (차감):', {
+        name: toAssetName,
+        currentBalance,
+        deductAmount: toAmount,
+        newBalance
+      });
+      await this.updateAsset(userId, toAsset.id, { balance: newBalance.toString() });
+    }
+  }
+
   private async moveAssetsBankToExchange(userId: string, fromBankName: string, toExchangeName: string, amount: number) {
     // 은행 계좌 자금 감소
     console.log('은행 자산 검색:', { userId, fromBankName, type: 'account' });

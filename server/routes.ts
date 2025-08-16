@@ -89,6 +89,12 @@ router.put('/transactions/:id/status', requireAuth, async (req: AuthenticatedReq
       await storage.processTransactionConfirmation(req.user!.id, req.params.id);
     }
     
+    // 상태가 cancelled로 변경되었고, 기존 상태가 confirmed였다면 자산 복원 처리
+    if (status === 'cancelled' && transaction.status === 'confirmed') {
+      console.log('거래 상태가 cancelled로 변경됨. 자산 복원 처리 시작');
+      await storage.processTransactionCancellation(req.user!.id, req.params.id);
+    }
+    
     res.json(updatedTransaction);
   } catch (error) {
     console.error('Error updating transaction status:', error);
