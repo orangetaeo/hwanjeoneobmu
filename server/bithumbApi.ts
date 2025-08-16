@@ -37,11 +37,11 @@ class BithumbApiService {
 
   constructor() {
     this.config = {
-      connectKey: process.env.BITHUMB_API_KEY || 'a47849b7c86067d598fe0c3ed8502131',
-      secretKey: process.env.BITHUMB_SECRET_KEY || '64f36ebe17092026677c22705db62b32',
+      connectKey: process.env.BITHUMB_API_KEY || 'f873caae13b8b6fa428fcccad3bacb14',
+      secretKey: process.env.BITHUMB_SECRET_KEY || '50b0d7ae4868e9755783f6be5ab22a91',
       api2Key: process.env.BITHUMB_API2_KEY || 'b98ea5c12a3d00694290f5a394682ee9b79ebdc62a7d8fda',
       baseUrl: 'https://api.bithumb.com',
-      apiVersion: '1.0' // 다시 API 1.0으로 변경해서 테스트
+      apiVersion: '1.0' // 새로운 API 1.0 키로 테스트
     };
     
     console.log(`Bithumb API ${this.config.apiVersion} Service initialized with:`, {
