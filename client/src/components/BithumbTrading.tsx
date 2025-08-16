@@ -70,7 +70,7 @@ export default function BithumbTrading() {
       if (!isNaN(krw) && !isNaN(usdt) && usdt > 0) {
         // 평균 체결가 역산: 구매금액 ÷ 수량
         const avgPrice = krw / usdt;
-        setUsdtPrice(avgPrice.toFixed(4)); // 더 정확한 계산을 위해 4자리로 변경
+        setUsdtPrice(avgPrice.toFixed(2)); // 소수점 2자리로 표시
       }
     }
   }, [krwAmount, usdtAmount]);
