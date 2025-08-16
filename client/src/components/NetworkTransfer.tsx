@@ -25,7 +25,7 @@ export default function NetworkTransfer() {
 
   // 폼 상태
   const [usdtAmount, setUsdtAmount] = useState<string>('');
-  const [networkFee, setNetworkFee] = useState<string>('');
+  const [networkFee, setNetworkFee] = useState<string>('1.0'); // TRC20 기본값
   const [selectedNetwork, setSelectedNetwork] = useState<string>('TRC20');
   const [txHash, setTxHash] = useState<string>('');
   const [currentTab, setCurrentTab] = useState<'transfer' | 'history'>('transfer');
@@ -93,13 +93,6 @@ export default function NetworkTransfer() {
   const usedUsdt = transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0);
   const availableUsdt = Math.max(0, bithumbUsdtBalance - usedUsdt);
   
-  // USDT 계산 디버깅 (배포 전에 제거 예정)
-  console.log('💰 USDT 계산:', {
-    빗썸보유량: bithumbUsdtBalance,
-    사용된수량: usedUsdt,
-    사용가능: availableUsdt,
-    이동내역수: transfers.length
-  });
 
   // 네트워크 수수료 프리셋
   const networkFeePresets = {
@@ -175,21 +168,21 @@ export default function NetworkTransfer() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">빗썸 보유 USDT</h3>
           <p className="text-2xl font-bold text-blue-600">
-            {availableUsdt.toFixed(2)} USDT
+            {availableUsdt} USDT
           </p>
         </Card>
         
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">총 이동 수량</h3>
           <p className="text-2xl font-bold text-green-600">
-            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0).toFixed(2)} USDT
+            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0)} USDT
           </p>
         </Card>
         
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">총 네트워크 수수료</h3>
           <p className="text-2xl font-bold text-red-600">
-            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.networkFee || 0), 0).toFixed(2)} USDT
+            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.networkFee || 0), 0)} USDT
           </p>
         </Card>
       </div>
@@ -257,16 +250,29 @@ export default function NetworkTransfer() {
 
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">이동 수량 (USDT)</label>
-                <Input
-                  value={usdtAmount}
-                  onChange={(e) => setUsdtAmount(e.target.value)}
-                  placeholder="이동할 USDT 수량"
-                  type="number"
-                  step="0.01"
-                  max={availableUsdt || 0}
-                />
+                <div className="flex space-x-2">
+                  <Input
+                    value={usdtAmount}
+                    onChange={(e) => setUsdtAmount(e.target.value)}
+                    placeholder="이동할 USDT 수량"
+                    type="number"
+                    step="0.01"
+                    max={availableUsdt > 0 ? availableUsdt : undefined}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUsdtAmount(availableUsdt.toString())}
+                    disabled={availableUsdt <= 0}
+                    className="px-3 py-1 text-xs"
+                  >
+                    MAX
+                  </Button>
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  최대 이동 가능: {availableUsdt.toFixed(2)} USDT
+                  최대 이동 가능: {availableUsdt} USDT
                 </p>
               </div>
 
@@ -275,10 +281,13 @@ export default function NetworkTransfer() {
                 <Input
                   value={networkFee}
                   onChange={(e) => setNetworkFee(e.target.value)}
-                  placeholder="네트워크 수수료"
+                  placeholder="네트워크 수수료 자동 입력됨"
                   type="number"
                   step="0.01"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 네트워크 선택 시 자동으로 입력됩니다
+                </p>
               </div>
 
               <div>
@@ -378,13 +387,13 @@ export default function NetworkTransfer() {
                         <Badge variant="outline">{transfer.network || 'TRC20'}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {usdtAmount.toFixed(2)} USDT
+                        {usdtAmount} USDT
                       </TableCell>
                       <TableCell className="text-red-600">
-                        -{networkFee.toFixed(2)} USDT
+                        -{networkFee} USDT
                       </TableCell>
                       <TableCell className="text-green-600 font-medium">
-                        {(usdtAmount - networkFee).toFixed(2)} USDT
+                        {(usdtAmount - networkFee)} USDT
                       </TableCell>
                       <TableCell>
                         {transfer.txHash ? (
