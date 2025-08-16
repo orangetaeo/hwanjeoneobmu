@@ -132,26 +132,19 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db
       .update(transactions)
       .set({ status })
-      .where(eq(transactions.id, id) && eq(transactions.userId, userId))
+      .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
       .returning();
     return result;
   }
 
-  // 거래 확인 처리 (pending -> confirmed)
+  // 거래 확인 처리 - 자산 이동만 처리 (상태는 이미 업데이트됨)
   async processTransactionConfirmation(userId: string, transactionId: string): Promise<void> {
     const transaction = await this.getTransactionById(userId, transactionId);
     if (!transaction) {
       throw new Error('Transaction not found');
     }
     
-    if (transaction.status !== 'pending') {
-      throw new Error('Transaction is not in pending status');
-    }
-    
-    // 상태를 confirmed로 변경
-    await this.updateTransactionStatus(userId, transactionId, 'confirmed');
-    
-    // 자산 이동 처리
+    // 자산 이동 처리 (상태 업데이트는 호출하는 측에서 이미 완료됨)
     await this.handleAssetMovement(userId, transaction);
   }
 
