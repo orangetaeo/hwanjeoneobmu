@@ -65,6 +65,37 @@ router.get('/transactions/:id', requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
+// 거래 상태 변경 API
+router.put('/transactions/:id/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['pending', 'confirmed', 'cancelled'];
+    
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: '유효하지 않은 상태입니다.' });
+    }
+    
+    const transaction = await storage.getTransactionById(req.user!.id, req.params.id);
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+    
+    // 상태 업데이트
+    const updatedTransaction = await storage.updateTransactionStatus(req.user!.id, req.params.id, status);
+    
+    // 상태가 confirmed로 변경되었고, 기존 상태가 pending이었다면 자산 이동 처리
+    if (status === 'confirmed' && transaction.status === 'pending') {
+      console.log('거래 상태가 confirmed로 변경됨. 자산 이동 처리 시작');
+      await storage.processTransactionConfirmation(req.user!.id, req.params.id);
+    }
+    
+    res.json(updatedTransaction);
+  } catch (error) {
+    console.error('Error updating transaction status:', error);
+    res.status(500).json({ error: 'Failed to update transaction status' });
+  }
+});
+
 // Assets Routes
 router.post('/assets', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

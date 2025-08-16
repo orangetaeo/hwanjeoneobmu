@@ -23,6 +23,8 @@ export interface IStorage {
   createTransactionWithAssetMovement(userId: string, transaction: InsertTransaction): Promise<Transaction>;
   getTransactions(userId: string): Promise<Transaction[]>;
   getTransactionById(userId: string, id: string): Promise<Transaction | undefined>;
+  updateTransactionStatus(userId: string, id: string, status: string): Promise<Transaction | undefined>;
+  processTransactionConfirmation(userId: string, transactionId: string): Promise<void>;
   
   // Assets
   createAsset(userId: string, asset: InsertAsset): Promise<Asset>;
@@ -49,18 +51,27 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Transactions with asset movement logic
   async createTransactionWithAssetMovement(userId: string, transaction: InsertTransaction): Promise<Transaction> {
-    // 거래 타입별 자산 이동 로직
-    await this.handleAssetMovement(userId, transaction);
+    // P2P 거래인 경우 기본값을 pending으로 설정
+    const transactionData = {
+      ...transaction,
+      status: (transaction.type === 'binance_p2p' || transaction.type === 'p2p_trade') ? 'pending' : 'confirmed',
+      userId
+    };
+    
+    // confirmed 상태인 경우에만 자산 이동 처리
+    if (transactionData.status === 'confirmed') {
+      await this.handleAssetMovement(userId, transaction);
+    }
     
     // 거래 기록 생성
     const [result] = await db
       .insert(transactions)
-      .values({ ...transaction, userId })
+      .values(transactionData)
       .returning();
     return result;
   }
 
-  private async handleAssetMovement(userId: string, transaction: InsertTransaction) {
+  public async handleAssetMovement(userId: string, transaction: InsertTransaction | Transaction) {
     console.log('=== handleAssetMovement 시작 ===', {
       userId,
       transactionType: transaction.type,
@@ -114,6 +125,34 @@ export class DatabaseStorage implements IStorage {
     }
     
     console.log('=== handleAssetMovement 완료 ===');
+  }
+
+  // 거래 상태 업데이트
+  async updateTransactionStatus(userId: string, id: string, status: string): Promise<Transaction | undefined> {
+    const [result] = await db
+      .update(transactions)
+      .set({ status })
+      .where(eq(transactions.id, id) && eq(transactions.userId, userId))
+      .returning();
+    return result;
+  }
+
+  // 거래 확인 처리 (pending -> confirmed)
+  async processTransactionConfirmation(userId: string, transactionId: string): Promise<void> {
+    const transaction = await this.getTransactionById(userId, transactionId);
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    }
+    
+    if (transaction.status !== 'pending') {
+      throw new Error('Transaction is not in pending status');
+    }
+    
+    // 상태를 confirmed로 변경
+    await this.updateTransactionStatus(userId, transactionId, 'confirmed');
+    
+    // 자산 이동 처리
+    await this.handleAssetMovement(userId, transaction);
   }
 
   private async moveAssetsBankToExchange(userId: string, fromBankName: string, toExchangeName: string, amount: number) {

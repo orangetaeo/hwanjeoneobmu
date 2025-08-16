@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatInputWithCommas, parseCommaFormattedNumber } from '@/utils/helpers';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface BinanceP2P {
   id: string;
@@ -18,6 +19,7 @@ interface BinanceP2P {
   exchangeRate: number;
   sellerName?: string;
   paymentMethod: string;
+  status?: string;
 }
 
 export default function BinanceP2P() {
@@ -46,7 +48,8 @@ export default function BinanceP2P() {
       vndAmount: parseFloat(tx.toAmount),
       exchangeRate: tx.metadata?.exchangeRate || (parseFloat(tx.toAmount) / parseFloat(tx.fromAmount)),
       paymentMethod: tx.metadata?.paymentMethod || 'VND 은행계좌',
-      sellerName: tx.metadata?.sellerName
+      sellerName: tx.metadata?.sellerName,
+      status: tx.status || 'confirmed'
     }));
     
   console.log('P2P 거래 내역:', { allTransactions, p2pTrades });
@@ -104,6 +107,37 @@ export default function BinanceP2P() {
       setVndAmount('');
     }
   };
+
+  // 거래 상태 변경 처리
+  const updateTransactionStatus = useMutation({
+    mutationFn: async ({ transactionId, status }: { transactionId: string; status: string }) => {
+      const response = await fetch(`/api/transactions/${transactionId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      
+      if (!response.ok) throw new Error('거래 상태 변경 실패');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "상태 변경 완료",
+        description: "거래 상태가 성공적으로 변경되었습니다.",
+      });
+      
+      // 데이터 새로고침
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "상태 변경 실패",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   // P2P 거래 처리
   const executeP2P = useMutation({
@@ -416,16 +450,38 @@ export default function BinanceP2P() {
               <TableHeader>
                 <TableRow>
                   <TableHead>거래일시</TableHead>
+                  <TableHead>상태</TableHead>
                   <TableHead>USDT</TableHead>
                   <TableHead>VND</TableHead>
                   <TableHead>환율</TableHead>
                   <TableHead>입금계좌</TableHead>
+                  <TableHead>관리</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {p2pTrades.map((trade) => (
                   <TableRow key={trade.id}>
                     <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {trade.status === 'pending' && (
+                        <Badge variant="outline" className="text-yellow-600 border-yellow-300">
+                          <Clock className="mr-1" size={12} />
+                          대기중
+                        </Badge>
+                      )}
+                      {trade.status === 'confirmed' && (
+                        <Badge variant="outline" className="text-green-600 border-green-300">
+                          <CheckCircle className="mr-1" size={12} />
+                          확인됨
+                        </Badge>
+                      )}
+                      {trade.status === 'cancelled' && (
+                        <Badge variant="outline" className="text-red-600 border-red-300">
+                          <XCircle className="mr-1" size={12} />
+                          취소됨
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-red-600 font-medium">
                       -{trade.usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                     </TableCell>
@@ -437,6 +493,38 @@ export default function BinanceP2P() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">우리은행</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        {trade.status === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600 border-green-300 hover:bg-green-50"
+                              onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'confirmed' })}
+                              disabled={updateTransactionStatus.isPending}
+                            >
+                              <CheckCircle size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-300 hover:bg-red-50"
+                              onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'cancelled' })}
+                              disabled={updateTransactionStatus.isPending}
+                            >
+                              <XCircle size={14} />
+                            </Button>
+                          </>
+                        )}
+                        {trade.status === 'confirmed' && (
+                          <span className="text-xs text-gray-500">완료됨</span>
+                        )}
+                        {trade.status === 'cancelled' && (
+                          <span className="text-xs text-gray-500">취소됨</span>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

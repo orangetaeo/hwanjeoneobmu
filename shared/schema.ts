@@ -27,6 +27,7 @@ export const transactions = pgTable("transactions", {
   profit: decimal("profit", { precision: 18, scale: 8 }).default("0"),
   marketPrice: decimal("market_price", { precision: 18, scale: 8 }), // 시장 가격
   customPrice: decimal("custom_price", { precision: 18, scale: 8 }), // 사용자 입력 가격
+  status: text("status").default("confirmed"), // 'pending', 'confirmed', 'cancelled' - 기존 거래는 confirmed로
   memo: text("memo"),
   metadata: jsonb("metadata"), // 추가 정보 (거래소명, P2P 플랫폼 등)
   timestamp: timestamp("timestamp").defaultNow().notNull(),
