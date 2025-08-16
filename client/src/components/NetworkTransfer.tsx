@@ -59,39 +59,29 @@ export default function NetworkTransfer() {
     txHash: tx.metadata?.txHash
   }));
 
-  // 빗썸 USDT 보유량 조회 (API 실패 시 테스트 데이터 사용)
-  const { data: bithumbData } = useQuery({
-    queryKey: ['/api/bithumb/usdt-data'],
-    queryFn: async () => {
-      try {
-        const response = await fetch('/api/bithumb/usdt-data');
-        if (!response.ok) throw new Error('빗썸 API 실패');
-        return response.json();
-      } catch (error) {
-        console.log('✅ 빗썸 API 실패 - 테스트 데이터 사용 중');
-        // 테스트 데이터: 빗썸에서 보유한 USDT (2563.07 USDT)
-        return {
-          balance: 2563.07363534,
-          availableBalance: 2563.07363534,
-          transactions: [
-            {
-              date: new Date().toISOString(),
-              amount: 3500000,
-              quantity: 2563.07363534,
-              price: 1365.5,
-              fee: 14.0,
-              totalCost: 3500000
-            }
-          ]
-        };
-      }
-    }
+  // 빗썸 USDT 보유량 조회 (직접 자산에서 조회)
+  const { data: assets = [] } = useQuery<any[]>({
+    queryKey: ['/api/assets']
   });
 
+  // 빗썸 USDT 자산 직접 조회
+  const bithumbUsdtAsset = (assets as any[]).find((asset: any) => 
+    asset.type === 'exchange' && asset.currency === 'USDT' && asset.name === 'Bithumb USDT'
+  );
+
+  console.log('빗썸 USDT 자산 검색 결과:', bithumbUsdtAsset);
+
   // 사용 가능한 USDT 계산 (안전한 계산)
-  const bithumbUsdtBalance = bithumbData?.balance || 0;
+  const bithumbUsdtBalance = parseFloat(bithumbUsdtAsset?.balance || '0');
   const usedUsdt = transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0);
   const availableUsdt = Math.max(0, bithumbUsdtBalance - usedUsdt);
+  
+  console.log('네트워크 이동 USDT 계산:', {
+    bithumbUsdtBalance,
+    usedUsdt,
+    availableUsdt,
+    transfersCount: transfers.length
+  });
   
 
   // 네트워크 수수료 프리셋
@@ -175,7 +165,10 @@ export default function NetworkTransfer() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">빗썸 보유 USDT</h3>
           <p className="text-2xl font-bold text-blue-600">
-            {availableUsdt} USDT
+            {availableUsdt.toFixed(8)} USDT
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            전체: {bithumbUsdtBalance.toFixed(8)} USDT
           </p>
         </Card>
         

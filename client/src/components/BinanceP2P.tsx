@@ -54,9 +54,19 @@ export default function BinanceP2P() {
     asset.type === 'binance' && asset.currency === 'USDT'
   );
   
-  const binanceBalance = parseFloat(binanceUsdtAsset?.balance || '0');
-  const usedInP2P = p2pTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
+  console.log('Binance USDT 자산 검색 결과:', binanceUsdtAsset);
+  
+  const binanceBalance = binanceUsdtAsset ? parseFloat(binanceUsdtAsset.balance || '0') : 0;
+  const usedInP2P = p2pTrades.reduce((sum, trade) => sum + (trade.usdtAmount || 0), 0);
   const availableUsdt = Math.max(0, binanceBalance - usedInP2P);
+  
+  console.log('Binance P2P USDT 계산:', {
+    binanceBalance,
+    usedInP2P,
+    availableUsdt,
+    p2pTradesCount: p2pTrades.length,
+    assetFound: !!binanceUsdtAsset
+  });
 
   const vndCashAssets = (assets as any[]).filter((asset: any) => 
     asset.type === 'cash' && asset.currency === 'VND'
@@ -177,7 +187,10 @@ export default function BinanceP2P() {
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">바이낸스 보유 USDT</h3>
           <p className="text-2xl font-bold text-blue-600">
-            {availableUsdt.toFixed(2)} USDT
+            {(isNaN(availableUsdt) ? 0 : availableUsdt).toFixed(8)} USDT
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            전체: {(isNaN(binanceBalance) ? 0 : binanceBalance).toFixed(8)} USDT
           </p>
         </Card>
         
@@ -263,7 +276,7 @@ export default function BinanceP2P() {
                       placeholder="USDT"
                       type="number"
                       step="0.01"
-                      max={availableUsdt.toString()}
+                      max={isNaN(availableUsdt) ? '0' : availableUsdt.toString()}
                       className="flex-1"
                       data-testid="input-usdt-amount"
                     />
@@ -272,19 +285,21 @@ export default function BinanceP2P() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setUsdtAmount(availableUsdt.toFixed(8));
+                        const maxAmount = isNaN(availableUsdt) ? 0 : availableUsdt;
+                        setUsdtAmount(maxAmount.toFixed(8));
                         if (exchangeRate) {
                           setTimeout(calculateFromUsdt, 100);
                         }
                       }}
                       className="shrink-0 px-3"
                       data-testid="button-max-usdt"
+                      disabled={isNaN(availableUsdt) || availableUsdt <= 0}
                     >
                       MAX
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    최대: {availableUsdt.toFixed(8)} USDT (바이낸스 잔고: {binanceBalance.toFixed(8)})
+                    최대: {(isNaN(availableUsdt) ? 0 : availableUsdt).toFixed(8)} USDT (바이낸스 잔고: {(isNaN(binanceBalance) ? 0 : binanceBalance).toFixed(8)})
                   </p>
                 </div>
 
