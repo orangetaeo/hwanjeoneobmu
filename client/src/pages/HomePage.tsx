@@ -972,7 +972,7 @@ export default function HomePage() {
               <>
                 {/* User Settings Modal Backdrop */}
                 <div 
-                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-8 overflow-y-auto"
                   onClick={(e) => {
                     // Close modal if clicking on backdrop
                     if (e.target === e.currentTarget) {
@@ -980,7 +980,7 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-full max-w-md">
+                  <div className="w-full max-w-md min-h-full sm:min-h-0 my-auto">
                     <UserSettingsForm
                       onClose={() => setShowUserSettings(false)}
                     />
