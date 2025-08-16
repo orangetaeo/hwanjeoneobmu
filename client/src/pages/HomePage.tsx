@@ -62,21 +62,21 @@ export default function HomePage() {
   const { data: assetsData = [], isLoading: assetsLoading } = useQuery({
     queryKey: ['/api/assets'],
     enabled: !authLoading && !!user
-  });
+  }) as { data: any[], isLoading: boolean };
   
   const { data: transactionsData = [], isLoading: transactionsLoading } = useQuery({
     queryKey: ['/api/transactions'], 
     enabled: !authLoading && !!user
-  });
+  }) as { data: any[], isLoading: boolean };
   
   const { data: exchangeRatesData = [], isLoading: exchangeRatesLoading } = useQuery({
     queryKey: ['/api/exchange-rates'],
     enabled: !authLoading && !!user
-  });
+  }) as { data: any[], isLoading: boolean };
 
   // 자산 분류 및 상태 업데이트 - React Query 데이터 기반
   useEffect(() => {
-    if (!user || authLoading || assetsLoading || !assetsData.length) return;
+    if (!user || authLoading || assetsLoading || !(assetsData as any[]).length) return;
 
     // 자산을 타입별로 분류 - 디버깅 로그 추가
     console.log('All assets from API:', assetsData);
@@ -96,7 +96,8 @@ export default function HomePage() {
     console.log('Exchange assets details:', exchanges);
     console.log('Binance assets details:', binanceAssets);
 
-          // 계좌를 한국/베트남으로 분리
+    try {
+      // 계좌를 한국/베트남으로 분리
           const koreanAccounts = allAccounts.filter((account: any) => 
             account.currency === 'KRW' || !account.metadata?.country
           );
@@ -130,15 +131,11 @@ export default function HomePage() {
           setBinanceAssets(processedBinanceAssets || []);
           setTransactions(transactionsData || []);
           setExchangeRates(exchangeRatesData || []);
-        }
-      } catch (error) {
-        console.error('Failed to load data from database:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDatabaseData();
+    } catch (error) {
+      console.error('Failed to load data from database:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user, authLoading]);
 
   // PostgreSQL 중심 운영 - localStorage 사용 중단
