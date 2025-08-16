@@ -375,13 +375,13 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'cash',
         name: 'KRW 현금',
         currency: 'KRW',
-        balance: '5000000',
+        balance: '3540000',
         metadata: {
           denominations: {
-            '50000': 80,
-            '10000': 50,
-            '5000': 20,
-            '1000': 50
+            '50000': 59,
+            '10000': 59,
+            '5000': 0,
+            '1000': 0
           }
         }
       },
@@ -390,16 +390,16 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'cash',
         name: 'USD 현금',
         currency: 'USD',
-        balance: '3000',
+        balance: '436',
         metadata: {
           denominations: {
-            '100': 20,
-            '50': 10,
-            '20': 5,
-            '10': 5,
-            '5': 10,
+            '100': 2,
+            '50': 1,
+            '20': 3,
+            '10': 8,
+            '5': 3,
             '2': 0,
-            '1': 10
+            '1': 31
           }
         }
       },
@@ -408,19 +408,32 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'cash',
         name: 'VND 현금',
         currency: 'VND',
-        balance: '50000000',
+        balance: '30790000',
         metadata: {
           denominations: {
-            '500000': 50,
-            '200000': 100,
-            '100000': 100,
-            '50000': 50,
-            '20000': 25,
-            '10000': 50
+            '500000': 56,
+            '200000': 10,
+            '100000': 5,
+            '50000': 4,
+            '20000': 1,
+            '10000': 7
           }
         }
       },
-      // 은행 계좌
+      // 한국 은행 계좌
+      {
+        userId,
+        type: 'account',
+        name: '국민은행 (김학태)',
+        currency: 'KRW',
+        balance: '0',
+        metadata: {
+          bankName: '국민은행',
+          accountNumber: '123-456-789123',
+          accountHolder: '김학태'
+        }
+      },
+      // 베트남 은행 계좌들
       {
         userId,
         type: 'account',
@@ -452,7 +465,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'account',
         name: '우리은행 (김학태)',
         currency: 'VND',
-        balance: '75000000',
+        balance: '0',
         metadata: {
           country: '베트남',
           bankName: '우리은행',
@@ -466,7 +479,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'exchange',
         name: 'Bithumb USDT',
         currency: 'USDT',
-        balance: '1000',
+        balance: '2563.07363534',
         metadata: {
           exchange: 'Bithumb'
         }
@@ -487,7 +500,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'binance',
         name: 'Binance USDT',
         currency: 'USDT',
-        balance: '5000',
+        balance: '1.14',
         metadata: {
           exchange: 'Binance',
           assetType: 'crypto'
