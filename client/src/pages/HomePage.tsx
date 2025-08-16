@@ -59,24 +59,43 @@ export default function HomePage() {
   const [showUserSettings, setShowUserSettings] = useState(false);
 
   // React Query로 실시간 데이터 로딩
-  const { data: assetsData = [], isLoading: assetsLoading } = useQuery({
+  const { data: assetsData = [], isLoading: assetsLoading, error: assetsError } = useQuery({
     queryKey: ['/api/assets'],
-    enabled: !authLoading && !!user
-  }) as { data: any[], isLoading: boolean };
+    enabled: !authLoading && !!user,
+    retry: 3,
+    retryDelay: 1000
+  });
   
-  const { data: transactionsData = [], isLoading: transactionsLoading } = useQuery({
+  const { data: transactionsData = [], isLoading: transactionsLoading, error: transactionsError } = useQuery({
     queryKey: ['/api/transactions'], 
-    enabled: !authLoading && !!user
-  }) as { data: any[], isLoading: boolean };
+    enabled: !authLoading && !!user,
+    retry: 3,
+    retryDelay: 1000
+  });
   
-  const { data: exchangeRatesData = [], isLoading: exchangeRatesLoading } = useQuery({
+  const { data: exchangeRatesData = [], isLoading: exchangeRatesLoading, error: exchangeRatesError } = useQuery({
     queryKey: ['/api/exchange-rates'],
-    enabled: !authLoading && !!user
-  }) as { data: any[], isLoading: boolean };
+    enabled: !authLoading && !!user,
+    retry: 3,
+    retryDelay: 1000
+  });
+
+  // 에러 처리
+  useEffect(() => {
+    if (assetsError) {
+      console.error('Assets API error:', assetsError);
+    }
+    if (transactionsError) {
+      console.error('Transactions API error:', transactionsError);
+    }
+    if (exchangeRatesError) {
+      console.error('Exchange rates API error:', exchangeRatesError);
+    }
+  }, [assetsError, transactionsError, exchangeRatesError]);
 
   // 자산 분류 및 상태 업데이트 - React Query 데이터 기반
   useEffect(() => {
-    if (!user || authLoading || assetsLoading || !(assetsData as any[]).length) return;
+    if (!user || authLoading || assetsLoading || !Array.isArray(assetsData) || assetsData.length === 0) return;
 
     // 자산을 타입별로 분류 - 디버깅 로그 추가
     console.log('All assets from API:', assetsData);
@@ -129,14 +148,14 @@ export default function HomePage() {
           setVietnameseAccounts(vietnameseAccounts || []);
           setExchangeAssets(processedExchanges || []);
           setBinanceAssets(processedBinanceAssets || []);
-          setTransactions(transactionsData || []);
-          setExchangeRates(exchangeRatesData || []);
+          setTransactions(Array.isArray(transactionsData) ? transactionsData : []);
+          setExchangeRates(Array.isArray(exchangeRatesData) ? exchangeRatesData : []);
     } catch (error) {
       console.error('Failed to load data from database:', error);
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, assetsData, transactionsData, exchangeRatesData]);
 
   // PostgreSQL 중심 운영 - localStorage 사용 중단
 
@@ -726,7 +745,10 @@ export default function HomePage() {
     });
   };
 
-  if (authLoading || loading) {
+  // 로딩 상태 확인 - 인증 로딩 또는 데이터 로딩 중
+  const isDataLoading = authLoading || assetsLoading || transactionsLoading || exchangeRatesLoading;
+  
+  if (isDataLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
         <div className="text-lg text-gray-600">로딩 중...</div>
