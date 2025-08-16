@@ -75,15 +75,26 @@ export default function BinanceP2P() {
   // 실시간 환율 계산
   const marketRate = realTimeRates['USDT-VND'] || 24500;
 
-  // 환율 자동 계산
-  const calculateFromUsdt = () => {
-    if (usdtAmount && exchangeRate) {
-      const usdt = parseFloat(usdtAmount);
-      const rate = parseCommaFormattedNumber(exchangeRate);
-      if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
+  // 환율 자동 계산 - 간단하고 확실한 방법
+  const calculateFromUsdt = (usdtValue?: string, rateValue?: string) => {
+    const usdtToUse = usdtValue || usdtAmount;
+    const rateToUse = rateValue || exchangeRate;
+    
+    if (usdtToUse && rateToUse) {
+      const usdt = parseFloat(usdtToUse);
+      const rate = parseFloat(rateToUse.replace(/,/g, ''));
+      console.log('계산 입력값:', { usdt, rate, usdtToUse, rateToUse });
+      
+      if (!isNaN(usdt) && !isNaN(rate) && rate > 0 && usdt > 0) {
         const vnd = usdt * rate;
+        console.log('계산 결과:', { usdt, rate, vnd });
         setVndAmount(vnd.toFixed(2));
+      } else {
+        console.log('계산 실패 - 잘못된 값:', { usdt, rate });
+        setVndAmount('');
       }
+    } else {
+      setVndAmount('');
     }
   };
 
@@ -198,9 +209,9 @@ export default function BinanceP2P() {
         </Card>
 
         <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">시장 환율</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-2">사용한 USDT</h3>
           <p className="text-2xl font-bold text-orange-600">
-            {marketRate.toFixed(0)} VND/USDT
+            {totalUsdtUsed.toFixed(2)} USDT
           </p>
         </Card>
       </div>
@@ -249,24 +260,15 @@ export default function BinanceP2P() {
                   <Input
                     value={usdtAmount}
                     onChange={(e) => {
-                      setUsdtAmount(e.target.value);
-                      if (exchangeRate) {
-                        setTimeout(calculateFromUsdt, 100);
-                      }
+                      const value = e.target.value;
+                      setUsdtAmount(value);
+                      calculateFromUsdt(value, exchangeRate);
                     }}
-                    onPaste={(e) => {
-                      // 붙여넣기 후 직접 값을 가져와서 계산
-                      setTimeout(() => {
-                        const pastedValue = (e.target as HTMLInputElement).value;
-                        if (pastedValue && exchangeRate) {
-                          const usdt = parseFloat(pastedValue);
-                          const rate = parseCommaFormattedNumber(exchangeRate);
-                          if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
-                            const vnd = usdt * rate;
-                            setVndAmount(vnd.toFixed(2));
-                          }
-                        }
-                      }, 150);
+                    onInput={(e) => {
+                      // 입력 이벤트에서도 계산 (복사-붙여넣기 포함)
+                      const value = (e.target as HTMLInputElement).value;
+                      setUsdtAmount(value);
+                      calculateFromUsdt(value, exchangeRate);
                     }}
                     placeholder="판매할 USDT 수량을 입력하세요"
                     type="number"
@@ -280,10 +282,9 @@ export default function BinanceP2P() {
                     variant="outline"
                     onClick={() => {
                       const maxAmount = isNaN(availableUsdt) ? 0 : availableUsdt;
-                      setUsdtAmount(maxAmount.toFixed(8));
-                      if (exchangeRate) {
-                        setTimeout(calculateFromUsdt, 100);
-                      }
+                      const maxAmountStr = maxAmount.toFixed(8);
+                      setUsdtAmount(maxAmountStr);
+                      calculateFromUsdt(maxAmountStr, exchangeRate);
                     }}
                     className="shrink-0 px-4 py-3"
                     data-testid="button-max-usdt"
@@ -304,55 +305,33 @@ export default function BinanceP2P() {
                   <Input
                     value={formatInputWithCommas(exchangeRate)}
                     onChange={(e) => {
-                      const rawValue = e.target.value.replace(/,/g, '');
-                      setExchangeRate(rawValue);
-                      if (usdtAmount) {
-                        setTimeout(() => {
-                          const usdt = parseFloat(usdtAmount);
-                          const rate = parseFloat(rawValue);
-                          if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
-                            const vnd = usdt * rate;
-                            setVndAmount(vnd.toFixed(2));
-                          }
-                        }, 100);
+                      const inputValue = e.target.value;
+                      const rawValue = inputValue.replace(/,/g, '');
+                      
+                      // 숫자와 소수점만 허용
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setExchangeRate(rawValue);
+                        calculateFromUsdt(usdtAmount, rawValue);
                       }
                     }}
-                    onPaste={(e) => {
-                      // 붙여넣기 후 직접 값을 가져와서 계산
-                      setTimeout(() => {
-                        const pastedValue = (e.target as HTMLInputElement).value.replace(/,/g, '');
-                        setExchangeRate(pastedValue);
-                        if (pastedValue && usdtAmount) {
-                          const usdt = parseFloat(usdtAmount);
-                          const rate = parseFloat(pastedValue);
-                          if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
-                            const vnd = usdt * rate;
-                            setVndAmount(vnd.toFixed(2));
-                          }
-                        }
-                      }, 150);
+                    onInput={(e) => {
+                      // 입력 이벤트에서도 처리 (복사-붙여넣기 포함)
+                      const inputValue = (e.target as HTMLInputElement).value;
+                      const rawValue = inputValue.replace(/,/g, '');
+                      
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setExchangeRate(rawValue);
+                        calculateFromUsdt(usdtAmount, rawValue);
+                      }
                     }}
-                    placeholder="P2P 거래 환율을 입력하세요"
+                    placeholder="P2P 거래 환율을 입력하세요 (예: 26,346)"
                     type="text"
                     inputMode="numeric"
                     className="flex-1 text-lg py-3"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setExchangeRate(marketRate.toString());
-                      if (usdtAmount) {
-                        setTimeout(calculateFromUsdt, 100);
-                      }
-                    }}
-                    className="shrink-0 px-4 py-3"
-                  >
-                    시장가 적용
-                  </Button>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  📊 현재 시장 환율: <strong>{marketRate.toFixed(0)} VND/USDT</strong>
+                  💡 환율을 입력하면 자동으로 VND 금액이 계산됩니다
                 </p>
               </div>
 
@@ -390,17 +369,7 @@ export default function BinanceP2P() {
                     <span>적용 환율:</span>
                     <span>{exchangeRate ? formatInputWithCommas(exchangeRate) : '0'} VND/USDT</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>시장 환율:</span>
-                    <span>{marketRate.toFixed(0)} VND/USDT</span>
-                  </div>
                   <hr />
-                  <div className="flex justify-between font-medium">
-                    <span>환율 차이:</span>
-                    <span className={exchangeRate && parseCommaFormattedNumber(exchangeRate) > marketRate ? 'text-green-600' : 'text-red-600'}>
-                      {exchangeRate ? (parseCommaFormattedNumber(exchangeRate) - marketRate).toFixed(0) : '0'} VND/USDT
-                    </span>
-                  </div>
                   <div className="flex justify-between">
                     <span>입금 계좌:</span>
                     <Badge variant="outline">VND 우리은행</Badge>
