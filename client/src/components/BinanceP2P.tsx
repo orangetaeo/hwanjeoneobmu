@@ -263,22 +263,27 @@ export default function BinanceP2P() {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">판매할 USDT 수량</label>
                 <div className="flex space-x-2">
                   <Input
-                    value={usdtAmount}
+                    value={formatInputWithCommas(usdtAmount)}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      setUsdtAmount(value);
-                      calculateFromUsdt(value, exchangeRate);
+                      const inputValue = e.target.value;
+                      const rawValue = inputValue.replace(/,/g, '');
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setUsdtAmount(rawValue);
+                        calculateFromUsdt(rawValue, exchangeRate);
+                      }
                     }}
                     onInput={(e) => {
-                      // 입력 이벤트에서도 계산 (복사-붙여넣기 포함)
-                      const value = (e.target as HTMLInputElement).value;
-                      setUsdtAmount(value);
-                      calculateFromUsdt(value, exchangeRate);
+                      // 입력 이벤트에서도 처리 (복사-붙여넣기 포함)
+                      const inputValue = (e.target as HTMLInputElement).value;
+                      const rawValue = inputValue.replace(/,/g, '');
+                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                        setUsdtAmount(rawValue);
+                        calculateFromUsdt(rawValue, exchangeRate);
+                      }
                     }}
                     placeholder="판매할 USDT 수량을 입력하세요"
-                    type="number"
-                    step="0.01"
-                    max={isNaN(availableUsdt) ? '0' : availableUsdt.toString()}
+                    type="text"
+                    inputMode="numeric"
                     className="flex-1 text-lg py-3"
                     data-testid="input-usdt-amount"
                   />
