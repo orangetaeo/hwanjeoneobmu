@@ -81,6 +81,16 @@ export default function BinanceP2P() {
       const usdt = parseFloat(usdtAmount);
       const rate = parseFloat(exchangeRate);
       const vnd = usdt * rate;
+      
+      console.log('P2P 계산 디버그:', {
+        usdtAmount,
+        exchangeRate,
+        usdt,
+        rate,
+        vnd,
+        vndFixed: vnd.toFixed(2)
+      });
+      
       // 큰 숫자도 안전하게 처리하기 위해 toFixed 사용
       setVndAmount(vnd.toFixed(2));
     }
