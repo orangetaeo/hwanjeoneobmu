@@ -11,6 +11,8 @@ import BinanceP2P from './BinanceP2P';
 export default function ExchangeOperations() {
   const [activeTab, setActiveTab] = useState('bithumb');
 
+  console.log('🔍 ExchangeOperations 컴포넌트가 렌더링되고 있습니다!');
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">

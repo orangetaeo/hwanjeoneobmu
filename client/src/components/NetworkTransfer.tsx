@@ -246,6 +246,9 @@ export default function NetworkTransfer() {
                   placeholder="0x... 또는 트랜잭션 ID"
                   type="text"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 블록체인 거래 완료 후 받는 고유 번호입니다. 나중에 거래 상태를 추적하는 데 사용됩니다.
+                </p>
               </div>
             </div>
 
