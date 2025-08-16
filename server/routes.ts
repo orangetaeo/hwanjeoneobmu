@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
 import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema } from '@shared/schema';
+import { bithumbApi } from './bithumbApi';
 
 const router = Router();
 
@@ -224,6 +225,40 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: AuthenticatedReques
   } catch (error) {
     console.error('Error updating exchange rate:', error);
     res.status(500).json({ error: 'Failed to update exchange rate' });
+  }
+});
+
+// Bithumb API Routes
+router.get('/bithumb/balance', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const balance = await bithumbApi.getBalance();
+    res.json(balance);
+  } catch (error) {
+    console.error('Error fetching Bithumb balance:', error);
+    res.status(500).json({ error: 'Failed to fetch balance from Bithumb API' });
+  }
+});
+
+router.get('/bithumb/transactions', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const transactions = await bithumbApi.getTransactionHistory('USDT');
+    res.json(transactions);
+  } catch (error) {
+    console.error('Error fetching Bithumb transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch transactions from Bithumb API' });
+  }
+});
+
+router.get('/bithumb/usdt-data', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = await bithumbApi.getUsdtTransactions();
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching Bithumb USDT data:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch USDT data from Bithumb API',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

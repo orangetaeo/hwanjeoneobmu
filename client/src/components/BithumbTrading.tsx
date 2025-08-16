@@ -41,12 +41,28 @@ export default function BithumbTrading() {
     queryKey: ['/api/settings'],
   });
 
-  // 빗썸 거래 내역 조회
-  const { data: bithumbTrades = [] } = useQuery<BithumbTrade[]>({
+  // 빗썸 실시간 USDT 데이터 조회 (잔고 + 거래내역)
+  const { data: bithumbData, isLoading: isBithumbLoading, error: bithumbError } = useQuery({
+    queryKey: ['/api/bithumb/usdt-data'],
+    queryFn: async () => {
+      const response = await fetch('/api/bithumb/usdt-data');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || '빗썸 API 연결 실패');
+      }
+      return response.json();
+    },
+    refetchInterval: 30000, // 30초마다 자동 새로고침
+    retry: 3,
+    retryDelay: 5000
+  });
+
+  // 기존 데이터베이스 거래 내역도 유지 (수동 입력용)
+  const { data: manualTrades = [] } = useQuery<BithumbTrade[]>({
     queryKey: ['/api/transactions', 'bithumb'],
     queryFn: async () => {
       const response = await fetch('/api/transactions?type=bithumb_usdt_buy');
-      if (!response.ok) throw new Error('거래 내역 조회 실패');
+      if (!response.ok) throw new Error('수동 거래 내역 조회 실패');
       return response.json();
     }
   });
@@ -152,13 +168,18 @@ export default function BithumbTrading() {
     }
   });
 
-  // 평균 단가 계산
-  const averageUsdtPrice = bithumbTrades.length > 0
-    ? bithumbTrades.reduce((sum, trade) => sum + trade.totalCost, 0) / 
-      bithumbTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0)
+  // 빗썸 실시간 데이터와 수동 입력 데이터를 결합
+  const realTimeBalance = bithumbData?.balance || 0;
+  const realTimeTransactions = bithumbData?.transactions || [];
+  const allTransactions = [...realTimeTransactions, ...manualTrades];
+
+  // 평균 단가 계산 (실시간 + 수동 입력)
+  const averageUsdtPrice = allTransactions.length > 0
+    ? allTransactions.reduce((sum, trade) => sum + (trade.totalCost || trade.amount || 0), 0) / 
+      allTransactions.reduce((sum, trade) => sum + (trade.usdtAmount || trade.quantity || 0), 0)
     : 0;
 
-  const totalUsdtOwned = bithumbTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
+  const totalUsdtOwned = realTimeBalance > 0 ? realTimeBalance : allTransactions.reduce((sum, trade) => sum + (trade.usdtAmount || trade.quantity || 0), 0);
 
   const canBuyUsdt = selectedAccount && krwAmount && usdtAmount && usdtPrice && 
                      parseFloat(usdtAmount) > 0 && parseFloat(usdtPrice.replace(/,/g, '')) > 0;
@@ -168,10 +189,17 @@ export default function BithumbTrading() {
       {/* 상단 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">보유 USDT</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-2 flex items-center">
+            보유 USDT 
+            {isBithumbLoading && <span className="ml-2 text-xs text-blue-500">🔄</span>}
+            {bithumbError && <span className="ml-2 text-xs text-red-500">⚠️</span>}
+          </h3>
           <p className="text-2xl font-bold text-blue-600">
-            {totalUsdtOwned.toFixed(2)} USDT
+            {totalUsdtOwned.toFixed(8)} USDT
           </p>
+          {realTimeBalance > 0 && (
+            <p className="text-xs text-green-500 mt-1">실시간 빗썸 잔고</p>
+          )}
         </Card>
         
         <Card className="p-4">
@@ -179,12 +207,15 @@ export default function BithumbTrading() {
           <p className="text-2xl font-bold text-green-600">
             ₩{averageUsdtPrice.toFixed(2)}
           </p>
+          <p className="text-xs text-gray-500 mt-1">
+            총 {allTransactions.length}회 거래
+          </p>
         </Card>
         
         <Card className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">총 투자금액</h3>
           <p className="text-2xl font-bold text-purple-600">
-            {formatCurrency(bithumbTrades.reduce((sum, trade) => sum + trade.totalCost, 0), 'KRW')}원
+            {formatCurrency(allTransactions.reduce((sum, trade) => sum + (trade.totalCost || trade.amount || 0), 0), 'KRW')}원
           </p>
         </Card>
       </div>
@@ -348,9 +379,17 @@ export default function BithumbTrading() {
             빗썸 거래 내역
           </h3>
 
-          {bithumbTrades.length === 0 ? (
+          {bithumbError && (
+            <div className="text-center py-8 text-red-500 bg-red-50 rounded-lg mb-4">
+              <p className="font-medium">⚠️ 빗썸 API 연결 오류</p>
+              <p className="text-sm mt-1">{bithumbError.message}</p>
+              <p className="text-xs mt-2 text-gray-500">수동 입력된 데이터만 표시됩니다</p>
+            </div>
+          )}
+          
+          {allTransactions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              아직 거래 내역이 없습니다.
+              {isBithumbLoading ? '빗썸에서 데이터를 불러오는 중...' : '거래 내역이 없습니다.'}
             </div>
           ) : (
             <Table>
@@ -358,28 +397,46 @@ export default function BithumbTrading() {
                 <TableRow>
                   <TableHead>거래일시</TableHead>
                   <TableHead>구매금액</TableHead>
-                  <TableHead>수수료</TableHead>
-                  <TableHead>총비용</TableHead>
                   <TableHead>USDT수량</TableHead>
-                  <TableHead>단가</TableHead>
+                  <TableHead>평균단가</TableHead>
+                  <TableHead>수수료</TableHead>
+                  <TableHead>출처</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bithumbTrades.map((trade) => (
+                {realTimeTransactions.map((trade: any, index: number) => (
+                  <TableRow key={`real-${index}`}>
+                    <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatCurrency(trade.amount, 'KRW')}원</TableCell>
+                    <TableCell className="text-blue-600 font-medium">
+                      {trade.quantity.toFixed(8)} USDT
+                    </TableCell>
+                    <TableCell>
+                      ₩{(trade.amount / trade.quantity).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-red-600">
+                      ₩{formatCurrency(trade.fee, 'KRW')}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">🔄 실시간</span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {manualTrades.map((trade) => (
                   <TableRow key={trade.id}>
                     <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
                     <TableCell>{formatCurrency(trade.krwAmount, 'KRW')}원</TableCell>
-                    <TableCell className="text-red-600">
-                      {formatCurrency(trade.tradeFee, 'KRW')}원
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(trade.totalCost, 'KRW')}원
-                    </TableCell>
                     <TableCell className="text-blue-600 font-medium">
-                      {trade.usdtAmount.toFixed(2)} USDT
+                      {trade.usdtAmount.toFixed(8)} USDT
                     </TableCell>
                     <TableCell>
                       ₩{trade.pricePerUsdt.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-red-600">
+                      {formatCurrency(trade.tradeFee, 'KRW')}원
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">✍️ 수동</span>
                     </TableCell>
                   </TableRow>
                 ))}
