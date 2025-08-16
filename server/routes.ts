@@ -484,16 +484,6 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
           exchange: 'Bithumb'
         }
       },
-      {
-        userId,
-        type: 'exchange',
-        name: 'Bithumb KRW',
-        currency: 'KRW',
-        balance: '2000000',
-        metadata: {
-          exchange: 'Bithumb'
-        }
-      },
       // 바이낸스 자산
       {
         userId,
