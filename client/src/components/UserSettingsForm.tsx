@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, Save } from 'lucide-react';
+import { Settings, Save, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useUserSettings, useUpdateUserSettings } from '@/hooks/useUserSettings';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserSettingsFormProps {
@@ -16,6 +18,27 @@ export default function UserSettingsForm({ onClose }: UserSettingsFormProps) {
   const { data: userSettings, isLoading } = useUserSettings();
   const updateSettingsMutation = useUpdateUserSettings();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // 테스트 데이터 초기화 mutation
+  const initializeTestDataMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/test-data/initialize'),
+    onSuccess: () => {
+      // 모든 쿼리 캐시 무효화
+      queryClient.invalidateQueries();
+      toast({
+        title: "테스트 데이터 초기화 완료",
+        description: "모든 데이터가 초기 상태로 리셋되었습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "초기화 실패",
+        description: "테스트 데이터 초기화 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const [formData, setFormData] = useState({
     bithumbFeeRate: '0.0004',
@@ -136,6 +159,42 @@ export default function UserSettingsForm({ onClose }: UserSettingsFormProps) {
           </Button>
         </div>
       </form>
+
+      {/* 테스트 데이터 초기화 섹션 */}
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="space-y-4">
+          <h3 className="font-semibold text-gray-900 flex items-center">
+            <RotateCcw className="mr-2 text-orange-500" size={20} />
+            개발 도구
+          </h3>
+          
+          <div className="p-4 bg-orange-50 border border-orange-200 rounded-md">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="text-orange-500 mt-0.5" size={20} />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-orange-800 mb-2">
+                  테스트 데이터 초기화
+                </p>
+                <p className="text-sm text-orange-700 mb-3">
+                  모든 자산, 거래 내역, 환율 데이터를 삭제하고 초기 테스트 데이터로 리셋합니다.
+                  이 작업은 되돌릴 수 없습니다.
+                </p>
+                <Button
+                  onClick={() => initializeTestDataMutation.mutate()}
+                  disabled={initializeTestDataMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                  data-testid="button-initialize-test-data"
+                >
+                  <RotateCcw className="mr-2" size={16} />
+                  {initializeTestDataMutation.isPending ? '초기화 중...' : '테스트 데이터 초기화'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }

@@ -1,8 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
-import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema } from '@shared/schema';
+import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema, transactions, assets, rates, exchangeRates, userSettings } from '@shared/schema';
 import { bithumbApi } from './bithumbApi';
+import { db } from './db';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -336,6 +338,225 @@ router.get('/bithumb/usdt-data', requireAuth, async (req: AuthenticatedRequest, 
     res.status(500).json({ 
       error: 'Failed to fetch USDT data from Bithumb API',
       details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Test data initialization endpoint
+router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    console.log(`테스트 데이터 초기화 시작 - 사용자: ${userId}`);
+
+    // 1. 기존 데이터 모두 삭제
+    await db.delete(transactions).where(eq(transactions.userId, userId));
+    await db.delete(assets).where(eq(assets.userId, userId));
+    await db.delete(rates).where(eq(rates.userId, userId));
+    await db.delete(exchangeRates).where(eq(exchangeRates.userId, userId));
+    await db.delete(userSettings).where(eq(userSettings.userId, userId));
+    
+    console.log('기존 데이터 삭제 완료');
+
+    // 2. 사용자 설정 생성
+    await storage.updateUserSettings(userId, {
+      bithumbFeeRate: "0.0004",
+      bithumbGrade: "white",
+      defaultFeeRates: {
+        bithumb: 0.0004,
+        binance: 0.001
+      }
+    });
+
+    // 3. 초기 자산 생성
+    const initialAssets = [
+      // 현금 자산
+      {
+        userId,
+        type: 'cash',
+        name: 'KRW 현금',
+        currency: 'KRW',
+        balance: '5000000',
+        metadata: {
+          denominations: {
+            '50000': 80,
+            '10000': 50,
+            '5000': 20,
+            '1000': 50
+          }
+        }
+      },
+      {
+        userId,
+        type: 'cash',
+        name: 'USD 현금',
+        currency: 'USD',
+        balance: '3000',
+        metadata: {
+          denominations: {
+            '100': 20,
+            '50': 10,
+            '20': 5,
+            '10': 5,
+            '5': 10,
+            '2': 0,
+            '1': 10
+          }
+        }
+      },
+      {
+        userId,
+        type: 'cash',
+        name: 'VND 현금',
+        currency: 'VND',
+        balance: '50000000',
+        metadata: {
+          denominations: {
+            '500000': 50,
+            '200000': 100,
+            '100000': 100,
+            '50000': 50,
+            '20000': 25,
+            '10000': 50
+          }
+        }
+      },
+      // 은행 계좌
+      {
+        userId,
+        type: 'account',
+        name: '신한은행 (김학태)',
+        currency: 'VND',
+        balance: '100000000',
+        metadata: {
+          bankName: '신한은행',
+          accountNumber: '110-123-456789',
+          accountHolder: '김학태'
+        }
+      },
+      {
+        userId,
+        type: 'account',
+        name: '우리은행 (김학태)',
+        currency: 'VND',
+        balance: '75000000',
+        metadata: {
+          bankName: '우리은행',
+          accountNumber: '1002-123-456789',
+          accountHolder: '김학태'
+        }
+      },
+      // 거래소 자산
+      {
+        userId,
+        type: 'exchange',
+        name: 'Bithumb USDT',
+        currency: 'USDT',
+        balance: '1000',
+        metadata: {
+          exchange: 'Bithumb'
+        }
+      },
+      {
+        userId,
+        type: 'exchange',
+        name: 'Bithumb KRW',
+        currency: 'KRW',
+        balance: '2000000',
+        metadata: {
+          exchange: 'Bithumb'
+        }
+      },
+      // 바이낸스 자산
+      {
+        userId,
+        type: 'binance',
+        name: 'Binance USDT',
+        currency: 'USDT',
+        balance: '5000',
+        metadata: {
+          exchange: 'Binance',
+          assetType: 'crypto'
+        }
+      }
+    ];
+
+    console.log('초기 자산 생성 시작');
+    for (const asset of initialAssets) {
+      await storage.createAsset(userId, asset);
+    }
+    console.log('초기 자산 생성 완료');
+
+    // 4. 환율 정보 생성
+    const initialExchangeRates = [
+      // USD -> VND 환율
+      {
+        userId,
+        fromCurrency: 'USD',
+        toCurrency: 'VND',
+        denomination: '100',
+        goldShopRate: '25200',
+        myBuyRate: '25000',
+        mySellRate: '25300',
+        isActive: 'true',
+        memo: '100달러 지폐'
+      },
+      {
+        userId,
+        fromCurrency: 'USD',
+        toCurrency: 'VND',
+        denomination: '50',
+        goldShopRate: '25180',
+        myBuyRate: '24980',
+        mySellRate: '25280',
+        isActive: 'true',
+        memo: '50달러 지폐'
+      },
+      // KRW -> VND 환율  
+      {
+        userId,
+        fromCurrency: 'KRW',
+        toCurrency: 'VND',
+        denomination: '50000',
+        goldShopRate: '19.2',
+        myBuyRate: '19.0',
+        mySellRate: '19.4',
+        isActive: 'true',
+        memo: '5만원권'
+      },
+      {
+        userId,
+        fromCurrency: 'KRW',
+        toCurrency: 'VND',
+        denomination: '10000',
+        goldShopRate: '19.1',
+        myBuyRate: '18.9',
+        mySellRate: '19.3',
+        isActive: 'true',
+        memo: '1만원권'
+      }
+    ];
+
+    console.log('환율 정보 생성 시작');
+    for (const rate of initialExchangeRates) {
+      await storage.createExchangeRate(rate);
+    }
+    console.log('환율 정보 생성 완료');
+
+    console.log('테스트 데이터 초기화 완료');
+    res.json({ 
+      success: true, 
+      message: '테스트 데이터가 성공적으로 초기화되었습니다.',
+      data: {
+        assets: initialAssets.length,
+        exchangeRates: initialExchangeRates.length
+      }
+    });
+
+  } catch (error) {
+    console.error('테스트 데이터 초기화 중 오류:', error);
+    res.status(500).json({ 
+      error: '테스트 데이터 초기화에 실패했습니다.', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
     });
   }
 });
