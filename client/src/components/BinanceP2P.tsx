@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Coins, History, TrendingUp, Calculator } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/utils/helpers';
+import { formatCurrency, formatInputWithCommas, parseCommaFormattedNumber } from '@/utils/helpers';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 
 interface BinanceP2P {
@@ -79,12 +79,11 @@ export default function BinanceP2P() {
   const calculateFromUsdt = () => {
     if (usdtAmount && exchangeRate) {
       const usdt = parseFloat(usdtAmount);
-      const rate = parseFloat(exchangeRate);
-      const vnd = usdt * rate;
-      
-      
-      // 큰 숫자도 안전하게 처리하기 위해 toFixed 사용
-      setVndAmount(vnd.toFixed(2));
+      const rate = parseCommaFormattedNumber(exchangeRate);
+      if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
+        const vnd = usdt * rate;
+        setVndAmount(vnd.toFixed(2));
+      }
     }
   };
 
@@ -93,7 +92,7 @@ export default function BinanceP2P() {
     mutationFn: async () => {
       const usdt = parseFloat(usdtAmount);
       const vnd = parseFloat(vndAmount.replace(/,/g, ''));
-      const rate = parseFloat(exchangeRate);
+      const rate = parseCommaFormattedNumber(exchangeRate);
 
       if (usdt > availableUsdt) {
         throw new Error('사용 가능한 USDT가 부족합니다.');
@@ -256,10 +255,16 @@ export default function BinanceP2P() {
                       }
                     }}
                     onPaste={(e) => {
-                      // 붙여넣기 후 계산이 실행되도록 지연 처리
+                      // 붙여넣기 후 직접 값을 가져와서 계산
                       setTimeout(() => {
-                        if (exchangeRate) {
-                          calculateFromUsdt();
+                        const pastedValue = (e.target as HTMLInputElement).value;
+                        if (pastedValue && exchangeRate) {
+                          const usdt = parseFloat(pastedValue);
+                          const rate = parseCommaFormattedNumber(exchangeRate);
+                          if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
+                            const vnd = usdt * rate;
+                            setVndAmount(vnd.toFixed(2));
+                          }
                         }
                       }, 150);
                     }}
@@ -297,18 +302,33 @@ export default function BinanceP2P() {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">VND 환율 (VND/USDT)</label>
                 <div className="flex space-x-2">
                   <Input
-                    value={exchangeRate}
+                    value={formatInputWithCommas(exchangeRate)}
                     onChange={(e) => {
-                      setExchangeRate(e.target.value);
+                      const rawValue = e.target.value.replace(/,/g, '');
+                      setExchangeRate(rawValue);
                       if (usdtAmount) {
-                        setTimeout(calculateFromUsdt, 100);
+                        setTimeout(() => {
+                          const usdt = parseFloat(usdtAmount);
+                          const rate = parseFloat(rawValue);
+                          if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
+                            const vnd = usdt * rate;
+                            setVndAmount(vnd.toFixed(2));
+                          }
+                        }, 100);
                       }
                     }}
                     onPaste={(e) => {
-                      // 붙여넣기 후 계산이 실행되도록 지연 처리
+                      // 붙여넣기 후 직접 값을 가져와서 계산
                       setTimeout(() => {
-                        if (usdtAmount) {
-                          calculateFromUsdt();
+                        const pastedValue = (e.target as HTMLInputElement).value.replace(/,/g, '');
+                        setExchangeRate(pastedValue);
+                        if (pastedValue && usdtAmount) {
+                          const usdt = parseFloat(usdtAmount);
+                          const rate = parseFloat(pastedValue);
+                          if (!isNaN(usdt) && !isNaN(rate) && rate > 0) {
+                            const vnd = usdt * rate;
+                            setVndAmount(vnd.toFixed(2));
+                          }
                         }
                       }, 150);
                     }}
@@ -368,7 +388,7 @@ export default function BinanceP2P() {
                   </div>
                   <div className="flex justify-between">
                     <span>적용 환율:</span>
-                    <span>{exchangeRate || '0'} VND/USDT</span>
+                    <span>{exchangeRate ? formatInputWithCommas(exchangeRate) : '0'} VND/USDT</span>
                   </div>
                   <div className="flex justify-between">
                     <span>시장 환율:</span>
@@ -377,8 +397,8 @@ export default function BinanceP2P() {
                   <hr />
                   <div className="flex justify-between font-medium">
                     <span>환율 차이:</span>
-                    <span className={exchangeRate && parseFloat(exchangeRate) > marketRate ? 'text-green-600' : 'text-red-600'}>
-                      {exchangeRate ? (parseFloat(exchangeRate) - marketRate).toFixed(0) : '0'} VND/USDT
+                    <span className={exchangeRate && parseCommaFormattedNumber(exchangeRate) > marketRate ? 'text-green-600' : 'text-red-600'}>
+                      {exchangeRate ? (parseCommaFormattedNumber(exchangeRate) - marketRate).toFixed(0) : '0'} VND/USDT
                     </span>
                   </div>
                   <div className="flex justify-between">
