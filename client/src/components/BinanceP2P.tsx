@@ -31,15 +31,25 @@ export default function BinanceP2P() {
   const [exchangeRate, setExchangeRate] = useState<string>('');
   const [currentTab, setCurrentTab] = useState<'p2p' | 'history'>('p2p');
 
-  // P2P 거래 내역 조회
-  const { data: p2pTrades = [] } = useQuery<BinanceP2P[]>({
-    queryKey: ['/api/transactions', 'binance_p2p'],
-    queryFn: async () => {
-      const response = await fetch('/api/transactions?type=binance_p2p');
-      if (!response.ok) throw new Error('P2P 거래 내역 조회 실패');
-      return response.json();
-    }
+  // 모든 거래 내역 조회 후 P2P만 필터링
+  const { data: allTransactions = [] } = useQuery({
+    queryKey: ['/api/transactions'],
   });
+  
+  // P2P 거래만 필터링하고 BinanceP2P 형식으로 변환
+  const p2pTrades: BinanceP2P[] = allTransactions
+    .filter((tx: any) => tx.type === 'binance_p2p' || tx.type === 'p2p_trade')
+    .map((tx: any) => ({
+      id: tx.id,
+      date: tx.timestamp,
+      usdtAmount: parseFloat(tx.fromAmount),
+      vndAmount: parseFloat(tx.toAmount),
+      exchangeRate: tx.metadata?.exchangeRate || (parseFloat(tx.toAmount) / parseFloat(tx.fromAmount)),
+      paymentMethod: tx.metadata?.paymentMethod || 'VND 은행계좌',
+      sellerName: tx.metadata?.sellerName
+    }));
+    
+  console.log('P2P 거래 내역:', { allTransactions, p2pTrades });
 
   // 자산 조회
   const { data: assets = [] } = useQuery<any[]>({
@@ -72,8 +82,16 @@ export default function BinanceP2P() {
      asset.name.includes('우리은행') || asset.metadata?.bank === '우리은행')
   );
 
-  // 실시간 환율 계산
-  const marketRate = realTimeRates['USDT-VND'] || 24500;
+  // P2P 시장 환율 계산 (USDT → VND 구매 환율)
+  const usdtToKrwRate = realTimeRates['USDT'] || 1387.69;  // USDT의 KRW 환율
+  const vndToKrwRate = 0.055;  // 1 VND = 0.055 KRW (대략적인 고정 환율)
+  const marketRate = Math.round(usdtToKrwRate / vndToKrwRate);  // USDT → VND 시장 환율
+  
+  console.log('P2P 시장 환율 계산:', {
+    usdtToKrwRate,
+    vndToKrwRate,
+    marketRate: marketRate
+  });
 
   // 환율 자동 계산 - 간단하고 확실한 방법
   const calculateFromUsdt = (usdtValue?: string, rateValue?: string) => {
@@ -209,9 +227,12 @@ export default function BinanceP2P() {
         </Card>
 
         <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">사용한 USDT</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-2">P2P 시장 환율</h3>
           <p className="text-2xl font-bold text-orange-600">
-            {totalUsdtUsed.toFixed(2)} USDT
+            {marketRate.toLocaleString()} VND/USDT
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            USDT→VND 구매 환율
           </p>
         </Card>
       </div>
@@ -331,7 +352,7 @@ export default function BinanceP2P() {
                   />
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  💡 환율을 입력하면 자동으로 VND 금액이 계산됩니다
+                  📊 현재 P2P 시장 환율: <strong>{marketRate.toLocaleString()} VND/USDT</strong>
                 </p>
               </div>
 
@@ -369,7 +390,17 @@ export default function BinanceP2P() {
                     <span>적용 환율:</span>
                     <span>{exchangeRate ? formatInputWithCommas(exchangeRate) : '0'} VND/USDT</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span>P2P 시장가:</span>
+                    <span>{marketRate.toLocaleString()} VND/USDT</span>
+                  </div>
                   <hr />
+                  <div className="flex justify-between font-medium">
+                    <span>환율 차이:</span>
+                    <span className={exchangeRate && parseFloat(exchangeRate.replace(/,/g, '')) > marketRate ? 'text-green-600' : 'text-red-600'}>
+                      {exchangeRate ? (parseFloat(exchangeRate.replace(/,/g, '')) - marketRate).toLocaleString() : '0'} VND/USDT
+                    </span>
+                  </div>
                   <div className="flex justify-between">
                     <span>입금 계좌:</span>
                     <Badge variant="outline">VND 우리은행</Badge>
