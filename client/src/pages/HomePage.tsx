@@ -552,8 +552,18 @@ export default function HomePage() {
               mergedDenominations[key] = existingCount + newCount;
             });
             
-            // 새로운 총 잔액 계산
-            const newTotalBalance = existingCashAsset.balance + formData.balance;
+            // 합산된 denomination을 기반으로 총 잔액 재계산
+            const newTotalBalance = Object.entries(mergedDenominations).reduce((total, [denom, count]) => {
+              const denomValue = parseFloat(String(denom).replace(/,/g, ''));
+              const countValue = typeof count === 'number' ? count : 0;
+              
+              if (isNaN(denomValue) || isNaN(countValue)) {
+                console.warn(`Invalid denomination data: ${denom}=${count}`);
+                return total;
+              }
+              
+              return total + (denomValue * countValue);
+            }, 0);
             
             const updateData = {
               id: assetId,
@@ -565,6 +575,9 @@ export default function HomePage() {
                 denomination: mergedDenominations
               }
             };
+            
+            console.log('Merged denominations:', mergedDenominations);
+            console.log('Calculated new total balance:', newTotalBalance);
 
             console.log('Updating existing cash asset:', updateData);
             
