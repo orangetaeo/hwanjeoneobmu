@@ -44,24 +44,19 @@ export default function BinanceP2P() {
     }
   });
 
-  // 네트워크 이동 내역에서 사용 가능한 USDT 계산
-  const { data: networkTransfers = [] } = useQuery({
-    queryKey: ['/api/transactions', 'network_transfer'],
-    queryFn: async () => {
-      const response = await fetch('/api/transactions?type=network_transfer');
-      if (!response.ok) throw new Error('네트워크 이동 내역 조회 실패');
-      return response.json();
-    }
-  });
-
-  const availableUsdt = networkTransfers.reduce((sum: number, transfer: any) => 
-    sum + (transfer.toAmount || 0), 0) - 
-    p2pTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
-
-  // VND 현금 자산 조회
+  // VND 현금 자산 조회 (처음에 이동)
   const { data: assets = [] } = useQuery<any[]>({
     queryKey: ['/api/assets'],
   });
+
+  // Binance USDT 자산 직접 조회
+  const binanceUsdtAsset = (assets as any[]).find((asset: any) => 
+    asset.type === 'binance' && asset.currency === 'USDT'
+  );
+  
+  const binanceBalance = parseFloat(binanceUsdtAsset?.balance || '0');
+  const usedInP2P = p2pTrades.reduce((sum, trade) => sum + trade.usdtAmount, 0);
+  const availableUsdt = Math.max(0, binanceBalance - usedInP2P);
 
   const vndCashAssets = (assets as any[]).filter((asset: any) => 
     asset.type === 'cash' && asset.currency === 'VND'
@@ -108,17 +103,24 @@ export default function BinanceP2P() {
 
       const p2pData = {
         type: 'binance_p2p',
-        fromAssetId: null, // 바이낸스 USDT
-        toAssetId: selectedVndAsset, // VND 현금 자산
-        fromAmount: usdt,
-        toAmount: vnd,
-        exchangeRate: rate,
+        fromAssetType: 'binance',
+        fromAssetId: binanceUsdtAsset?.id || null,
+        fromAssetName: 'Binance USDT',
+        toAssetType: 'cash',
+        toAssetId: selectedVndAsset,
+        toAssetName: 'VND 현금',
+        fromAmount: usdt.toString(),
+        toAmount: vnd.toString(),
+        rate: (vnd / usdt).toString(),
+        fees: '0',
+        memo: `P2P 거래: ${usdt.toFixed(2)} USDT → ${formatCurrency(vnd, 'VND')} VND`,
         metadata: {
           platform: 'binance_p2p',
           sellerName: sellerName || null,
           paymentMethod: paymentMethod,
           marketRate: marketRate,
-          rateSpread: rate - marketRate
+          rateSpread: rate - marketRate,
+          exchangeRate: rate
         }
       };
 
@@ -249,21 +251,40 @@ export default function BinanceP2P() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">USDT 수량</label>
-                  <Input
-                    value={usdtAmount}
-                    onChange={(e) => {
-                      setUsdtAmount(e.target.value);
-                      if (exchangeRate) {
-                        setTimeout(calculateFromUsdt, 100);
-                      }
-                    }}
-                    placeholder="USDT"
-                    type="number"
-                    step="0.01"
-                    max={availableUsdt}
-                  />
+                  <div className="flex space-x-2">
+                    <Input
+                      value={usdtAmount}
+                      onChange={(e) => {
+                        setUsdtAmount(e.target.value);
+                        if (exchangeRate) {
+                          setTimeout(calculateFromUsdt, 100);
+                        }
+                      }}
+                      placeholder="USDT"
+                      type="number"
+                      step="0.01"
+                      max={availableUsdt.toString()}
+                      className="flex-1"
+                      data-testid="input-usdt-amount"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setUsdtAmount(availableUsdt.toFixed(8));
+                        if (exchangeRate) {
+                          setTimeout(calculateFromUsdt, 100);
+                        }
+                      }}
+                      className="shrink-0 px-3"
+                      data-testid="button-max-usdt"
+                    >
+                      MAX
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    최대: {availableUsdt.toFixed(2)} USDT
+                    최대: {availableUsdt.toFixed(8)} USDT (바이낸스 잔고: {binanceBalance.toFixed(8)})
                   </p>
                 </div>
 

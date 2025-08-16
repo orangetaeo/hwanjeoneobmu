@@ -86,12 +86,15 @@ export class DatabaseStorage implements IStorage {
         break;
         
       case 'exchange_transfer':
-        // 거래소간 이체: 출발 거래소 자산 감소, 도착 거래소 자산 증가 (수수료 적용)
+      case 'network_transfer':
+        // 거래소간 이체/네트워크 이동: 출발 거래소 자산 감소, 도착 거래소 자산 증가 (수수료 적용)
         await this.moveAssetsExchangeTransfer(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount, fees);
         break;
         
       case 'p2p_trade':
-        // P2P 거래: 기존 자산 변화 없음 (외부 거래)
+      case 'binance_p2p':
+        // P2P 거래: USDT 감소, VND 현금 증가
+        await this.moveAssetsP2PTrade(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount, fees);
         break;
     }
   }
@@ -156,34 +159,64 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async moveAssetsExchangeTransfer(userId: string, fromAssetName: string, toAssetName: string, fromAmount: number, toAmount: number, fees: number) {
-    // 출발 거래소 자산 감소
-    const fromAsset = await this.getAssetByName(userId, fromAssetName, 'exchange_asset');
+    // 출발 거래소 자산 감소 (exchange 또는 binance 타입 검색)
+    let fromAsset = await this.getAssetByName(userId, fromAssetName, 'exchange');
+    if (!fromAsset) {
+      fromAsset = await this.getAssetByName(userId, fromAssetName, 'binance');
+    }
     if (fromAsset) {
       const newBalance = parseFloat(fromAsset.balance || "0") - fromAmount;
       await this.updateAsset(userId, fromAsset.id, { balance: newBalance.toString() });
     }
 
     // 도착 거래소 자산 증가 (네트워크 수수료 제외)
-    // Validate that fees don't exceed the transfer amount
-    if (fees > toAmount) {
-      throw new Error(`Fees (${fees}) cannot exceed transfer amount (${toAmount})`);
+    const actualAmount = toAmount; // 실제로는 수수료가 이미 차감된 상태
+    let toAsset = await this.getAssetByName(userId, toAssetName, 'binance');
+    if (!toAsset) {
+      toAsset = await this.getAssetByName(userId, toAssetName, 'exchange');
     }
-    const actualAmount = toAmount - fees;
-    let toAsset = await this.getAssetByName(userId, toAssetName, 'exchange_asset');
     
     if (toAsset) {
       const newBalance = parseFloat(toAsset.balance || "0") + actualAmount;
       await this.updateAsset(userId, toAsset.id, { balance: newBalance.toString() });
     } else {
       const currency = toAssetName.split(' ')[1] || 'USDT';
+      const assetType = toAssetName.toLowerCase().includes('binance') ? 'binance' : 'exchange';
       await this.createAsset(userId, {
         userId,
-        type: 'exchange_asset',
+        type: assetType,
         name: toAssetName,
         currency: currency,
         balance: actualAmount.toString(),
-        metadata: { exchange: toAssetName.split(' ')[0] }
+        metadata: { exchange: toAssetName.split(' ')[0], assetType: 'crypto' }
       });
+    }
+  }
+
+  private async moveAssetsP2PTrade(userId: string, fromAssetName: string, toAssetName: string, fromAmount: number, toAmount: number, fees: number) {
+    // Binance USDT 자산 감소 (fromAssetName이 실제 자산명이 아닐 수 있으므로 Binance USDT를 찾음)
+    const binanceUsdtAsset = await this.getAssetByName(userId, 'Binance USDT', 'binance');
+    if (binanceUsdtAsset) {
+      const newBalance = parseFloat(binanceUsdtAsset.balance || "0") - fromAmount;
+      await this.updateAsset(userId, binanceUsdtAsset.id, { balance: newBalance.toString() });
+    }
+
+    // VND 현금 자산 증가 (toAssetName이 asset ID인 경우 직접 업데이트)
+    if (toAssetName && toAssetName.includes('-')) {
+      // Asset ID로 직접 업데이트
+      const toAssets = await this.getAssets(userId);
+      const targetAsset = toAssets.find(asset => asset.id === toAssetName);
+      if (targetAsset) {
+        const newBalance = parseFloat(targetAsset.balance || "0") + toAmount;
+        await this.updateAsset(userId, targetAsset.id, { balance: newBalance.toString() });
+      }
+    } else {
+      // 자산명으로 검색
+      const vndAsset = await this.getAssetByName(userId, toAssetName, 'cash');
+      if (vndAsset) {
+        const newBalance = parseFloat(vndAsset.balance || "0") + toAmount;
+        await this.updateAsset(userId, vndAsset.id, { balance: newBalance.toString() });
+      }
     }
   }
 
