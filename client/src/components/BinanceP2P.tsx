@@ -80,8 +80,15 @@ export default function BinanceP2P() {
   // VND 은행 계좌 자산 직접 조회 (P2P 거래용) - 우리은행 김학태 계좌만 사용
   const vndBankAsset = (assets as any[]).find((asset: any) => 
     asset.type === 'account' && asset.currency === 'VND' && 
-    (asset.name.includes('우리은행') && asset.name.includes('김학태'))
+    asset.name.includes('우리은행') && 
+    asset.metadata?.accountHolder === '김학태'
   );
+
+  console.log('VND 우리은행 계좌 검색:', {
+    allVndAssets: (assets as any[]).filter((asset: any) => asset.type === 'account' && asset.currency === 'VND'),
+    foundAsset: vndBankAsset,
+    searchCriteria: '우리은행 + 김학태'
+  });
 
 
   // 환율 자동 계산 - 간단하고 확실한 방법
