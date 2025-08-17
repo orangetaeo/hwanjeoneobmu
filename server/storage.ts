@@ -498,7 +498,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAssetByName(userId: string, name: string, type: string): Promise<Asset | undefined> {
-    const [result] = await db
+    // 먼저 정확한 이름으로 검색
+    let [result] = await db
       .select()
       .from(assets)
       .where(and(
@@ -506,6 +507,25 @@ export class DatabaseStorage implements IStorage {
         eq(assets.name, name),
         eq(assets.type, type)
       ));
+    
+    // 정확한 이름으로 찾지 못한 경우, 빗썸 관련 자산은 유연한 매칭 시도
+    if (!result && (name.includes('Bithumb') || name === 'Bithumb USDT')) {
+      const allAssets = await db
+        .select()
+        .from(assets)
+        .where(and(
+          eq(assets.userId, userId),
+          eq(assets.type, type)
+        ));
+      
+      // Bithumb 관련 자산 찾기
+      result = allAssets.find(asset => 
+        asset.name === 'Bithumb' || 
+        asset.name === 'Bithumb USDT' || 
+        asset.name.includes('Bithumb')
+      );
+    }
+    
     return result || undefined;
   }
 
