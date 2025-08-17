@@ -994,24 +994,25 @@ export default function HomePage() {
     <div className="bg-gray-50 min-h-screen font-sans">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <ChartLine className="text-primary text-2xl" />
-              <h1 className="text-xl font-bold text-gray-900">자산 관리</h1>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-12 lg:h-16">
+            <div className="flex items-center space-x-2 lg:space-x-4">
+              <ChartLine className="text-primary w-5 h-5 lg:w-6 lg:h-6" />
+              <h1 className="text-base lg:text-xl font-bold text-gray-900">자산 관리</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">실시간 연동</span>
+            <div className="flex items-center space-x-2 lg:space-x-4">
+              <div className="flex items-center space-x-1 lg:space-x-2">
+                <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs lg:text-sm text-gray-600 hidden sm:inline">실시간 연동</span>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm"
+                className="p-1.5 lg:p-2"
                 onClick={() => setShowUserSettings(true)}
                 data-testid="header-settings"
               >
-                <Settings size={18} />
+                <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
               </Button>
             </div>
           </div>
@@ -1020,70 +1021,70 @@ export default function HomePage() {
 
       {/* Mobile Navigation */}
       <nav className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
-        <div className="flex justify-around items-center h-16 px-2">
+        <div className="flex justify-around items-center h-12 px-1">
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-1 min-w-0 ${currentView === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('dashboard')}
             data-testid="mobile-nav-dashboard"
           >
-            <Home size={18} />
+            <Home className="w-4 h-4" />
             <span className="text-xs font-medium truncate">대시보드</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-1 min-w-0 ${currentView === 'assets' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'assets' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('assets')}
             data-testid="mobile-nav-assets"
           >
-            <Wallet size={18} />
+            <Wallet className="w-4 h-4" />
             <span className="text-xs truncate">자산</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-1 min-w-0 ${currentView === 'exchange-operations' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'exchange-operations' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('exchange-operations')}
             data-testid="mobile-nav-exchange-operations"
           >
-            <Coins size={18} />
+            <Coins className="w-4 h-4" />
             <span className="text-xs truncate">거래소</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-1 min-w-0 ${currentView === 'transactions' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'transactions' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('transactions')}
             data-testid="mobile-nav-transactions"
           >
-            <List size={18} />
+            <List className="w-4 h-4" />
             <span className="text-xs truncate">내역</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-1 min-w-0 ${currentView === 'rates' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'rates' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('rates')}
             data-testid="mobile-nav-rates"
           >
-            <TrendingUp size={18} />
+            <TrendingUp className="w-4 h-4" />
             <span className="text-xs truncate">환율</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-1 min-w-0 text-gray-400`}
+            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 text-gray-400`}
             onClick={() => setShowUserSettings(true)}
             data-testid="mobile-nav-settings"
           >
-            <Settings size={18} />
+            <Settings className="w-4 h-4" />
             <span className="text-xs truncate">설정</span>
           </Button>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 lg:py-6 pb-16 md:pb-6">
+        <div className="flex flex-col lg:flex-row gap-3 lg:gap-6">
           
           {/* Desktop Sidebar */}
-          <aside className="hidden md:block w-64 flex-shrink-0">
-            <Card className="p-4">
+          <aside className="hidden md:block w-60 lg:w-64 flex-shrink-0">
+            <Card className="p-3 lg:p-4">
               <nav>
                 <ul className="space-y-2">
                   {/* 네비게이션 메뉴 항목들 */}
@@ -1119,32 +1120,32 @@ export default function HomePage() {
             </Card>
 
             {/* Real-time Rates Widget */}
-            <Card className="mt-6 p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                <ChartLine className="mr-2 text-primary" size={16} />
+            <Card className="mt-4 lg:mt-6 p-3 lg:p-4">
+              <h3 className="text-xs lg:text-sm font-semibold text-gray-900 mb-2 lg:mb-3 flex items-center">
+                <ChartLine className="mr-1.5 lg:mr-2 text-primary w-3 h-3 lg:w-4 lg:h-4" />
                 실시간 환율
               </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
+              <div className="space-y-1.5 lg:space-y-2">
+                <div className="flex justify-between items-center text-xs lg:text-sm">
                   <span className="text-gray-600">USD/KRW</span>
                   <div className="text-right">
                     <div className="font-medium text-gray-900">
                       {realTimeRates['USD-KRW'] ? realTimeRates['USD-KRW'].toFixed(2) : '로딩중...'}
                     </div>
                     <div className="text-xs text-green-600 flex items-center">
-                      <TrendingUp size={12} className="mr-1" />
+                      <TrendingUp className="mr-0.5 lg:mr-1 w-2.5 h-2.5 lg:w-3 lg:h-3" />
                       <span>+0.15%</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-between items-center text-sm">
+                <div className="flex justify-between items-center text-xs lg:text-sm">
                   <span className="text-gray-600">KRW/VND</span>
                   <div className="text-right">
                     <div className="font-medium text-gray-900">
                       {realTimeRates['KRW-VND'] ? realTimeRates['KRW-VND'].toFixed(2) : '로딩중...'}
                     </div>
                     <div className="text-xs text-blue-600 flex items-center">
-                      <TrendingUp size={12} className="mr-1" />
+                      <TrendingUp className="mr-0.5 lg:mr-1 w-2.5 h-2.5 lg:w-3 lg:h-3" />
                       <span>실시간</span>
                     </div>
                   </div>
