@@ -66,8 +66,10 @@ Preferred communication style: Simple, everyday language.
   - Bank accounts (Korean/Vietnamese): Alert users when identical accounts exist (same bank name, account holder, and account number - excluding balance comparison)
   - Exchange assets: Automatically update existing entries when same exchange+coin combination is found, merging quantities with user notification
   - Binance assets: Automatically merge quantities when same coin is added multiple times with user notification
+  - Network transfers: Automatically merge received coins with existing assets of same type and currency
   - Form validation uses proper asset name matching patterns: "BankName (AccountHolder)" for banks, "ExchangeName" for exchanges, "Binance CoinName" for Binance
   - Smart duplicate handling reduces data redundancy while maintaining data integrity with clear user feedback
+  - Fixed critical balance calculation bug: now correctly adds new quantity to existing balance instead of overwriting
 - **Button Loading States**: Added loading functionality to prevent duplicate clicks and improve user experience
   - All asset add buttons in AssetManager show "처리중..." loading state during operations
   - Form submit buttons disabled and show loading text during submission process

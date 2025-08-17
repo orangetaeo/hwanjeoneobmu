@@ -815,7 +815,7 @@ export default function HomePage() {
             
             // formData.balance가 이미 계산된 합계값이므로 그대로 사용
             const updateBalance = formData.balance || formData.quantity.toString();
-            console.log('업데이트할 잔액:', updateBalance);
+
             
             const response = await fetch(`/api/assets/${formData.id}`, {
               method: 'PUT',
@@ -848,8 +848,7 @@ export default function HomePage() {
             
             // formData.balance가 이미 계산된 합계값이므로 그대로 사용
             const updateBalance = formData.balance;
-            console.log('업데이트할 잔액:', updateBalance);
-            console.log('FormData 전체:', formData);
+
             
             const response = await fetch(`/api/assets/${formData.id}`, {
               method: 'PUT',

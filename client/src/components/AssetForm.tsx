@@ -381,12 +381,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           data.balance = newBalance.toString();
           data.originalAsset = duplicateExchange; // 원본 자산 정보 보존
           
-          console.log('거래소 계산:', {
-            existing: existingBalance,
-            adding: addingQuantity,
-            result: newBalance,
-            stringResult: data.balance
-          });
+
           
           alert(`동일한 거래소/코인 조합이 발견되어 기존 자산에 추가합니다.\n${duplicateExchange.name} ${duplicateExchange.currency}: ${duplicateExchange.balance} + ${data.quantity} = ${data.balance}`);
         }
@@ -401,12 +396,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           data.balance = newBalance.toString();
           data.originalAsset = duplicateBinance; // 원본 자산 정보 보존
           
-          console.log('바이낸스 계산:', {
-            existing: existingBalance,
-            adding: addingQuantity,
-            result: newBalance,
-            stringResult: data.balance
-          });
+
           
           alert(`동일한 코인이 발견되어 기존 자산에 추가합니다.\n${duplicateBinance.name}: ${duplicateBinance.balance} + ${data.quantity} = ${data.balance}`);
         }
@@ -527,7 +517,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         }
       }
       
-      console.log('AssetForm onSubmit 전달 데이터:', data);
+
       onSubmit(data);
     } catch (error) {
       console.error('Error in duplicate checking or form submission:', error);
