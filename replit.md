@@ -3,6 +3,12 @@
 This is a full-stack asset management and exchange tracking application designed to help users manage various financial assets including cash, bank accounts, and cryptocurrency holdings, while also tracking exchange transactions. The application provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
 ## Recent Updates (2025-08-17)
+- **Cash Memo Field Integration Completed**: Unified memo functionality across all cash transactions
+  - Added memo field to cash increase/decrease forms for all currencies (KRW, USD, VND)
+  - Removed duplicate memo field implementations and consolidated into single common field
+  - Memo field displays below denomination composition for clean UI organization
+  - Enhanced transaction tracking with memo information in transaction history
+  - Fixed USD/VND duplicate denomination input boxes issue
 - **Cash Transaction Detail View Completed**: Integrated transaction detail modal in all components
   - CashTransactionHistory: Added click handlers for transaction items to open detail modal
   - CashChangeDetailModal: Fully integrated across all cash management interfaces
