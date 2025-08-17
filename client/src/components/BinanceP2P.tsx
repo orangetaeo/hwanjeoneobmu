@@ -304,23 +304,25 @@ export default function BinanceP2P() {
                     onChange={(e) => {
                       const inputValue = e.target.value;
                       const rawValue = inputValue.replace(/,/g, '');
-                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                      // 더 정확한 소숫점 허용: 최대 8자리까지
+                      if (rawValue === '' || /^\d*\.?\d{0,8}$/.test(rawValue)) {
                         setUsdtAmount(rawValue);
                         calculateFromUsdt(rawValue, exchangeRate);
                       }
                     }}
-                    onInput={(e) => {
-                      // 입력 이벤트에서도 처리 (복사-붙여넣기 포함)
-                      const inputValue = (e.target as HTMLInputElement).value;
-                      const rawValue = inputValue.replace(/,/g, '');
-                      if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
+                    onPaste={(e) => {
+                      // 붙여넣기 이벤트 처리
+                      e.preventDefault();
+                      const pastedText = e.clipboardData.getData('text');
+                      const rawValue = pastedText.replace(/[^0-9.]/g, '');
+                      if (rawValue === '' || /^\d*\.?\d{0,8}$/.test(rawValue)) {
                         setUsdtAmount(rawValue);
                         calculateFromUsdt(rawValue, exchangeRate);
                       }
                     }}
                     placeholder="판매할 USDT 수량을 입력하세요"
                     type="text"
-                    inputMode="numeric"
+                    inputMode="decimal"
                     className="flex-1 text-lg py-3"
                     data-testid="input-usdt-amount"
                   />
@@ -329,7 +331,7 @@ export default function BinanceP2P() {
                     variant="outline"
                     onClick={() => {
                       const maxAmount = isNaN(availableUsdt) ? 0 : availableUsdt;
-                      const maxAmountStr = maxAmount.toFixed(2);
+                      const maxAmountStr = maxAmount.toString();
                       setUsdtAmount(maxAmountStr);
                       calculateFromUsdt(maxAmountStr, exchangeRate);
                     }}
@@ -337,7 +339,7 @@ export default function BinanceP2P() {
                     data-testid="button-max-usdt"
                     disabled={isNaN(availableUsdt) || availableUsdt <= 0}
                   >
-                    최대
+                    max
                   </Button>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">

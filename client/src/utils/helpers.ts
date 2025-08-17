@@ -37,16 +37,26 @@ export const handleDecimalInput = (value: string, setter: (value: string) => voi
 
 export const formatInputWithCommas = (value: string): string => {
   if (!value) return '';
+  
   // Remove all non-numeric characters except decimal point
   const numericValue = value.replace(/[^0-9.]/g, '');
+  
+  // Handle multiple decimal points by keeping only the first one
   const parts = numericValue.split('.');
+  let cleanedValue = parts[0];
+  if (parts.length > 1) {
+    cleanedValue = parts[0] + '.' + parts.slice(1).join('');
+  }
+  
+  // Split again for formatting
+  const finalParts = cleanedValue.split('.');
   
   // Format the integer part with commas
-  const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const integerPart = finalParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   
-  // Return formatted value
-  if (parts[1] !== undefined) {
-    return `${integerPart}.${parts[1]}`;
+  // Return formatted value, preserve all decimal places
+  if (finalParts[1] !== undefined) {
+    return `${integerPart}.${finalParts[1]}`;
   }
   return integerPart;
 };
