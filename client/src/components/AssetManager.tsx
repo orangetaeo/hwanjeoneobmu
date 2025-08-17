@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit, Trash2, Plus, Clock } from 'lucide-react';
+import { Edit, Trash2, Plus, Clock, Building, Coins, Banknote, CreditCard } from 'lucide-react';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, CURRENCY_SYMBOLS } from '@/types';
 import { formatNumberWithCommas, formatCurrency } from '@/utils/helpers';
 
@@ -98,9 +98,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
                       <h4 className="font-semibold text-gray-900 flex items-center truncate">
-                        <span className="text-xl mr-2 flex-shrink-0">
-                          {asset.currency === 'KRW' ? '🇰🇷' : asset.currency === 'USD' ? '🇺🇸' : '🇻🇳'}
-                        </span>
+                        <Banknote className="mr-2 flex-shrink-0" size={20} />
                         <span className="truncate">{asset.currency}</span>
                         <span className="ml-2 text-2xl flex-shrink-0">
                           {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}
@@ -191,16 +189,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
                       <h4 className="font-semibold text-gray-900 flex items-center truncate">
-                        <span className="text-lg mr-2 flex-shrink-0">
-                          {(() => {
-                            const bankName = account.bankName || account.metadata?.bank || account.name;
-                            if (bankName?.includes('하나')) return '🟢';
-                            if (bankName?.includes('국민')) return '🟤';
-                            if (bankName?.includes('신한')) return '🔵';
-                            if (bankName?.includes('우리')) return '🔷';
-                            return '🏦';
-                          })()}
-                        </span>
+                        <Building className="mr-2 flex-shrink-0" size={20} />
                         <span className="truncate">{account.bankName || account.metadata?.bank || account.name}</span>
                       </h4>
                       <p className="text-sm text-gray-600 truncate">{account.accountHolder || account.metadata?.accountHolder}</p>
@@ -310,16 +299,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
                       <h4 className="font-semibold text-gray-900 flex items-center truncate">
-                        <span className="text-lg mr-2 flex-shrink-0">
-                          {(() => {
-                            const exchangeName = asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange';
-                            if (exchangeName?.includes('Bithumb')) return '🔵';
-                            if (exchangeName?.includes('Upbit')) return '🟢';
-                            if (exchangeName?.includes('Coinone')) return '🟡';
-                            if (exchangeName?.includes('Korbit')) return '🔴';
-                            return '🟣';
-                          })()}
-                        </span>
+                        <Coins className="mr-2 flex-shrink-0" size={20} />
                         <span className="truncate">
                           {(() => {
                             const exchangeName = asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange';
@@ -381,7 +361,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
                       <h4 className="font-semibold text-gray-900 flex items-center truncate">
-                        <span className="text-lg mr-2 flex-shrink-0">🟡</span>
+                        <Coins className="mr-2 flex-shrink-0" size={20} />
                         <span className="truncate">{asset.metadata?.exchange || 'Binance'}</span>
                       </h4>
                       <p className="text-sm text-gray-600 truncate">{asset.currency}</p>

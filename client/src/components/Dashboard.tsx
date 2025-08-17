@@ -355,7 +355,7 @@ export default function Dashboard({
           {/* 코인 자산 (Right) */}
           <Card className="p-4 lg:p-6 sm:col-span-2 lg:col-span-1">
             <h3 className="text-base lg:text-lg font-bold text-orange-600 mb-4 flex items-center">
-              <span className="text-xl mr-2">₿</span>
+              <Bitcoin className="mr-2" size={20} />
               코인 자산
             </h3>
             <div className="space-y-3">
@@ -366,8 +366,8 @@ export default function Dashboard({
                   const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
                   
                   // 거래소별로 분리해서 표시
-                  const bithumbUsdt = exchangeAssets.find(asset => asset.name === 'Bithumb USDT')?.quantity || 0;
-                  const binanceUsdt = binanceAssets.find(asset => asset.name === 'Binance USDT')?.quantity || 0;
+                  const bithumbUsdt = exchangeAssets.find(asset => (asset as any).name === 'Bithumb USDT')?.quantity || 0;
+                  const binanceUsdt = binanceAssets.find(asset => (asset as any).name === 'Binance USDT')?.quantity || 0;
                   
                   return (
                     <div key={currency} className="space-y-2">
@@ -375,7 +375,7 @@ export default function Dashboard({
                         <div className="bg-orange-50 p-3 rounded-lg">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                              <span className="text-2xl mr-3">🔵</span>
+                              <Coins className="mr-3" size={24} />
                               <div>
                                 <h4 className="text-sm font-semibold text-gray-700">빗썸 USDT</h4>
                               </div>
@@ -397,7 +397,7 @@ export default function Dashboard({
                         <div className="bg-orange-50 p-3 rounded-lg">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                              <span className="text-2xl mr-3">🟡</span>
+                              <Coins className="mr-3" size={24} />
                               <div>
                                 <h4 className="text-sm font-semibold text-gray-700">바이낸스 USDT</h4>
                               </div>
@@ -462,41 +462,34 @@ export default function Dashboard({
             {/* Korean Accounts */}
             <Card className="p-4 lg:p-6">
               <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
-                <span className="text-xl mr-2">🇰🇷</span>
+                <Building className="mr-2" size={20} />
                 한국 계좌
               </h2>
               <div className="space-y-2 lg:space-y-3">
                 {koreanAccounts.map(acc => {
-                  const getBankIcon = (bankName: string) => {
-                    if (bankName.includes('하나')) return '🟢'; // 하나은행 - 초록
-                    if (bankName.includes('국민')) return '🟤'; // 국민은행 - 갈색
-                    if (bankName.includes('신한')) return '🔵'; // 신한은행 - 파랑
-                    if (bankName.includes('우리')) return '🔷'; // 우리은행 - 파란 다이아몬드
-                    if (bankName.includes('농협')) return '🟢'; // 농협 - 초록
-                    return '🏦'; // 기본 은행 아이콘
-                  };
+
                   
                   return (
                     <div key={acc.id} className="p-3 lg:p-4 bg-blue-50 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <span className="text-2xl mr-3">{getBankIcon(acc.name)}</span>
+                          <Building className="mr-3" size={24} />
                           <div>
                             <p className="font-semibold text-sm lg:text-base">
-                              {acc.name}
-                              {acc.metadata?.accountHolder && (
+                              {(acc as any).name}
+                              {(acc as any).metadata?.accountHolder && (
                                 <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                  - {acc.metadata.accountHolder}
+                                  - {(acc as any).metadata.accountHolder}
                                 </span>
                               )}
                             </p>
-                            {acc.metadata?.accountNumber && (
-                              <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
+                            {(acc as any).metadata?.accountNumber && (
+                              <p className="text-xs lg:text-sm text-gray-500">{(acc as any).metadata.accountNumber}</p>
                             )}
                           </div>
                         </div>
                         <p className="font-mono text-blue-600 text-base lg:text-lg font-bold">
-                          {formatCurrency(acc.balance, 'KRW')} KRW
+                          {formatCurrency((acc as any).balance, 'KRW')} KRW
                         </p>
                       </div>
                     </div>
@@ -508,41 +501,34 @@ export default function Dashboard({
             {/* Vietnamese Accounts */}
             <Card className="p-4 lg:p-6">
               <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
-                <span className="text-xl mr-2">🇻🇳</span>
+                <Building className="mr-2" size={20} />
                 베트남 계좌
               </h2>
               <div className="space-y-2 lg:space-y-3">
                 {vietnameseAccounts.map(acc => {
-                  const getVietnameseBankIcon = (bankName: string) => {
-                    if (bankName.includes('신한')) return '🔵'; // 신한은행 - 파랑
-                    if (bankName.includes('BIDV')) return '🟢'; // BIDV - 초록
-                    if (bankName.includes('우리')) return '🔷'; // 우리은행 - 파란 다이아몬드
-                    if (bankName.includes('Vietcombank')) return '🔴'; // Vietcombank - 빨강
-                    if (bankName.includes('ACB')) return '🟡'; // ACB - 노랑
-                    return '🏦'; // 기본 은행 아이콘
-                  };
+
                   
                   return (
                     <div key={acc.id} className="p-3 lg:p-4 bg-green-50 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <span className="text-2xl mr-3">{getVietnameseBankIcon(acc.name)}</span>
+                          <Building className="mr-3" size={24} />
                           <div>
                             <p className="font-semibold text-sm lg:text-base">
-                              {acc.name}
-                              {acc.metadata?.accountHolder && (
+                              {(acc as any).name}
+                              {(acc as any).metadata?.accountHolder && (
                                 <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                  - {acc.metadata.accountHolder}
+                                  - {(acc as any).metadata.accountHolder}
                                 </span>
                               )}
                             </p>
-                            {acc.metadata?.accountNumber && (
-                              <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
+                            {(acc as any).metadata?.accountNumber && (
+                              <p className="text-xs lg:text-sm text-gray-500">{(acc as any).metadata.accountNumber}</p>
                             )}
                           </div>
                         </div>
                         <p className="font-mono text-green-600 text-base lg:text-lg font-bold">
-                          {formatCurrency(acc.balance, 'VND')} VND
+                          {formatCurrency((acc as any).balance, 'VND')} VND
                         </p>
                       </div>
                     </div>
@@ -556,7 +542,7 @@ export default function Dashboard({
           {/* Exchange Assets Section */}
           <Card className="p-4 lg:p-6">
             <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
-              <span className="text-xl mr-2">₿</span>
+              <Coins className="mr-2" size={20} />
               코인 거래소
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
