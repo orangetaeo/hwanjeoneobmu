@@ -54,11 +54,19 @@ Preferred communication style: Simple, everyday language.
 
 ## UI/UX Decisions
 - **Dashboard Layout**: 3-column responsive design with distinct sections for KRW, foreign currency, and crypto assets.
-- **Iconography**: Consistent use of icons (emojis, Lucide icons) for navigation, asset categories, banks, and exchanges.
+- **Iconography**: Consistent use of Lucide icons throughout the application for professional and clean visual design.
+- **Exchange Operations**: Unified icon system using ArrowRightLeft (transfers), TrendingUp (P2P trading), History (transaction history), and Coins (API status).
 - **Readability**: Enhanced font sizes for asset amounts.
 - **Mobile Optimization**: Reduced header height, compact navigation, optimized text/icon sizes, and responsive padding for mobile landscape mode.
 - **Dynamic Elements**: Dynamic page titles and visual indicators.
 - **Currency Ordering**: KRW assets prioritized in display.
+
+# Recent Changes (2025-08-17)
+- **Exchange Operations Icon Refinement**: Replaced colorful emojis with monochrome Lucide icons for cleaner, more professional appearance
+  - BithumbTrading: Coins icon for API status, History icon for transaction list
+  - NetworkTransfer: ArrowRightLeft for transfers, Send/History for tabs
+  - BinanceP2P: TrendingUp for P2P trading, History for transaction history
+  - Achieved visual consistency with navigation bar design language
 
 # External Dependencies
 

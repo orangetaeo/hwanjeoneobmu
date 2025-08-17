@@ -201,7 +201,7 @@ export default function NetworkTransfer() {
           onClick={() => setCurrentTab('transfer')}
           className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <span className="text-lg mr-1 sm:mr-2">🔄</span>
+          <Send className="mr-1 sm:mr-2" size={16} />
           USDT 이동
         </Button>
         <Button
@@ -209,7 +209,7 @@ export default function NetworkTransfer() {
           onClick={() => setCurrentTab('history')}
           className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <span className="text-lg mr-1 sm:mr-2">📊</span>
+          <History className="mr-1 sm:mr-2" size={16} />
           이동 내역
         </Button>
       </div>
@@ -217,7 +217,7 @@ export default function NetworkTransfer() {
       {currentTab === 'transfer' && (
         <Card className="p-3 sm:p-6">
           <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center">
-            <span className="text-xl mr-2">🔄</span>
+            <ArrowRightLeft className="mr-2" size={18} />
             빗썸 → 바이낸스 USDT 이동
           </h3>
 

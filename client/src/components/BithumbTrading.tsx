@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { History, RefreshCw } from 'lucide-react';
+import { History, RefreshCw, Coins } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/helpers';
@@ -129,7 +129,7 @@ export default function BithumbTrading() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div className="flex-1">
             <h3 className="font-medium text-blue-800 dark:text-blue-200 text-sm sm:text-base flex items-center">
-              <span className="text-lg mr-2">🔵</span>
+              <Coins className="mr-2" size={16} />
               빗썸 API 연결 상태
             </h3>
             <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-300">
@@ -227,7 +227,7 @@ export default function BithumbTrading() {
       {/* 거래 내역 헤더 - 디자인 통일화 */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
         <h2 className="text-lg sm:text-xl font-semibold flex items-center">
-          <span className="text-xl mr-2">📊</span>
+          <History className="mr-2" size={18} />
           빗썸 거래 내역
         </h2>
         <Badge variant="outline" className="text-xs sm:text-sm self-start sm:self-center">
