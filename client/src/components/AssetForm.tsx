@@ -13,7 +13,8 @@ import { formatInputWithCommas, parseCommaFormattedNumber } from '@/utils/helper
 const cashAssetSchema = z.object({
   currency: z.enum(['KRW', 'USD', 'VND'], { required_error: "통화를 선택해주세요" }),
   balance: z.number().min(0, "잔액은 0 이상이어야 합니다"),
-  denominations: z.record(z.string(), z.number().min(0))
+  denominations: z.record(z.string(), z.number().min(0)),
+  operation: z.enum(['increase', 'decrease']).optional()
 });
 
 const accountSchema = z.object({
@@ -58,6 +59,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     
     return type === 'cash' ? (defaultDenoms[editData?.currency] || defaultDenoms['KRW']) : {};
   });
+  
+  // 현금 자산의 증가/감소 모드
+  const [operation, setOperation] = useState<'increase' | 'decrease'>('increase');
 
   // 거래소 및 코인 관리 state
   const [exchanges, setExchanges] = useState(DEFAULT_EXCHANGES);
@@ -187,7 +191,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   function getDefaultValues() {
     switch (type) {
       case 'cash':
-        return { currency: 'KRW', balance: 0, denominations: {} };
+        return { currency: 'KRW', balance: 0, denominations: {}, operation: 'increase' };
       case 'korean-account':
       case 'vietnamese-account':
         return { bankName: '', accountNumber: '', accountHolder: '', balance: 0 };
@@ -235,6 +239,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         // Generate name based on selected currency
         data.name = `${data.currency} 현금`;
         data.type = 'cash';
+        data.operation = operation; // 증가/감소 정보 추가
         // Generate unique ID if not editing
         if (!editData) {
           data.id = Date.now().toString();
@@ -265,15 +270,22 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   };
 
   const getTitle = () => {
+    if (type === 'cash') {
+      if (editData) {
+        return '현금 자산 수정';
+      } else {
+        return operation === 'increase' ? '현금 자산 추가' : '현금 자산 차감';
+      }
+    }
+    
     const titles = {
-      'cash': editData ? '현금 자산 수정' : '현금 자산 추가',
       'korean-account': editData ? '한국 계좌 수정' : '한국 계좌 추가',
       'vietnamese-account': editData ? '베트남 계좌 수정' : '베트남 계좌 추가',
       'exchange': editData ? '거래소 자산 수정' : '거래소 자산 추가',
       'binance': editData ? '바이낸스 자산 수정' : '바이낸스 자산 추가'
     };
 
-    return titles[type];
+    return titles[type as keyof typeof titles];
   };
 
   return (
@@ -330,21 +342,69 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 )}
               />
 
+              {/* 증가/감소 선택 (기존 자산이 있을 때만 표시) */}
+              {!editData && form.watch('currency') && (
+                <FormField
+                  control={form.control}
+                  name="operation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>작업 유형</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setOperation(value as 'increase' | 'decrease');
+                        }} 
+                        value={field.value || operation}
+                        defaultValue="increase"
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-operation">
+                            <SelectValue placeholder="작업을 선택하세요" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="increase">현금 증가 (추가)</SelectItem>
+                          <SelectItem value="decrease">현금 감소 (차감)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {form.watch('currency') && (
                 <div className="space-y-6">
                   {/* 전체 합산 총계 - 셀렉터 위에 배치 */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
+                  <div className={`rounded-xl border shadow-sm ${
+                    operation === 'increase' 
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' 
+                      : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200'
+                  }`}>
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-4">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <h4 className="font-bold text-blue-900 text-lg">전체 합산</h4>
+                        <div className={`w-3 h-3 rounded-full ${
+                          operation === 'increase' ? 'bg-green-500' : 'bg-red-500'
+                        }`}></div>
+                        <h4 className={`font-bold text-lg ${
+                          operation === 'increase' ? 'text-green-900' : 'text-red-900'
+                        }`}>
+                          {operation === 'increase' ? '현금 증가' : '현금 감소'}
+                        </h4>
                       </div>
                       <div className="space-y-3">
                         {!editData && (
-                          <div className="bg-white/70 rounded-lg p-4 border border-blue-100">
+                          <div className="bg-white/70 rounded-lg p-4 border border-opacity-100">
                             <div className="flex justify-between items-center">
-                              <span className="text-blue-800 font-medium">총 합계:</span>
-                              <span className="text-2xl font-bold text-blue-900">
+                              <span className={`font-medium ${
+                                operation === 'increase' ? 'text-green-800' : 'text-red-800'
+                              }`}>
+                                {operation === 'increase' ? '추가할 금액:' : '차감할 금액:'}
+                              </span>
+                              <span className={`text-2xl font-bold ${
+                                operation === 'increase' ? 'text-green-900' : 'text-red-900'
+                              }`}>
                                 {form.watch('currency') === 'KRW' ? '₩' : 
                                  form.watch('currency') === 'USD' ? '$' : '₫'}
                                 {Object.entries(denominations).reduce((total, [denom, count]) => {

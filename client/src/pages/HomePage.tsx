@@ -636,10 +636,21 @@ export default function HomePage() {
             // 모든 denomination 키를 합침 (정규화된 기존 denomination 사용)
             const allDenomKeys = new Set([...Object.keys(normalizedExistingDenominations), ...Object.keys(newDenominations)]);
             
+            // 증가/감소 로직 분기
+            const operation = formData.operation || 'increase';
+            console.log('현금 자산 작업 모드:', operation);
+            
             allDenomKeys.forEach(key => {
               const existingCount = normalizedExistingDenominations[key] || 0;
               const newCount = newDenominations[key] || 0;
-              mergedDenominations[key] = existingCount + newCount;
+              
+              if (operation === 'decrease') {
+                // 감소: 기존에서 차감
+                mergedDenominations[key] = Math.max(0, existingCount - newCount);
+              } else {
+                // 증가: 기존에 추가
+                mergedDenominations[key] = existingCount + newCount;
+              }
             });
             
             // 합산된 denomination을 기반으로 총 잔액 재계산 (AssetForm과 동일한 로직)
