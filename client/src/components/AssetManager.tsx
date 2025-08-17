@@ -82,7 +82,15 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {cashAssets.map((asset: any) => (
+              {cashAssets
+                .sort((a, b) => {
+                  // KRW > VND > USD 순서로 정렬
+                  const order = { 'KRW': 0, 'VND': 1, 'USD': 2 };
+                  const aOrder = order[a.currency as keyof typeof order] ?? 999;
+                  const bOrder = order[b.currency as keyof typeof order] ?? 999;
+                  return aOrder - bOrder;
+                })
+                .map((asset: any) => (
                 <Card key={asset.id} className="p-6 bg-gray-50 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
@@ -92,7 +100,6 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                           {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}
                         </span>
                       </h4>
-                      <p className="text-sm text-gray-600 truncate">{asset.name}</p>
                     </div>
                     <div className="flex space-x-2 flex-shrink-0">
                       <Button 
@@ -116,7 +123,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   
                   <div className="mb-4">
                     <p className="text-2xl font-bold text-gray-900 break-words">
-                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatCurrency(asset.balance, asset.currency)}
+                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatCurrency(asset.balance, asset.currency)} 현금
                     </p>
                   </div>
 
