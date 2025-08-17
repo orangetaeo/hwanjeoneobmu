@@ -570,10 +570,127 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
     ];
 
     console.log('환율 정보 생성 시작');
-    for (const rate of initialExchangeRates) {
-      await storage.createExchangeRate(rate);
+    try {
+      for (const rate of initialExchangeRates) {
+        console.log('환율 생성 중:', rate);
+        await storage.createExchangeRate(rate);
+        console.log('환율 생성 완료');
+      }
+      console.log('환율 정보 생성 완료');
+    } catch (rateError) {
+      console.error('환율 정보 생성 오류:', rateError);
+      throw rateError;
     }
-    console.log('환율 정보 생성 완료');
+
+    // 5. 거래 내역 생성
+    console.log('거래 내역 초기화 시작...');
+    const initialTransactions = [
+      {
+        userId,
+        type: 'cash_change',
+        fromAssetType: '',
+        fromAssetId: '',
+        fromAssetName: '현금 증가',
+        toAssetType: '',
+        toAssetId: '',
+        toAssetName: 'USD 현금',
+        fromAmount: '319',
+        toAmount: '319',
+        rate: '1',
+        fees: '0',
+        profit: '0',
+        memo: '',
+        metadata: {
+          assetId: 'usd-cash-placeholder',
+          denominationChanges: {
+            '1': 14,
+            '2': 0,
+            '5': 1,
+            '10': -4,
+            '20': -3,
+            '50': 0,
+            '100': 4
+          }
+        },
+        status: 'confirmed'
+      },
+      {
+        userId,
+        type: 'cash_change',
+        fromAssetType: '',
+        fromAssetId: '',
+        fromAssetName: '현금 증가',
+        toAssetType: '',
+        toAssetId: '',
+        toAssetName: 'KRW 현금',
+        fromAmount: '480000',
+        toAmount: '480000',
+        rate: '1',
+        fees: '0',
+        profit: '0',
+        memo: '',
+        metadata: {
+          assetId: 'krw-cash-placeholder',
+          denominationChanges: {
+            '1000': 0,
+            '5000': 0,
+            '10000': 3,
+            '50000': 9
+          }
+        },
+        status: 'confirmed'
+      },
+      {
+        userId,
+        type: 'cash_change',
+        fromAssetType: '',
+        fromAssetId: '',
+        fromAssetName: '현금 증가',
+        toAssetType: '',
+        toAssetId: '',
+        toAssetName: 'VND 현금',
+        fromAmount: '18510000',
+        toAmount: '18510000',
+        rate: '1',
+        fees: '0',
+        profit: '0',
+        memo: '',
+        metadata: {
+          assetId: 'vnd-cash-placeholder',
+          denominationChanges: {
+            '1000': 0,
+            '2000': 0,
+            '5000': 0,
+            '10000': -7,
+            '20000': -1,
+            '50000': 0,
+            '100000': 7,
+            '200000': -3,
+            '500000': 37
+          }
+        },
+        status: 'confirmed'
+      }
+    ];
+
+    console.log('거래 내역 생성 시작');
+    for (const transaction of initialTransactions) {
+      console.log('거래 내역 생성 중:', { type: transaction.type, toAssetName: transaction.toAssetName });
+      try {
+        // 거래 내역만 생성 (자산 이동 없이)
+        const [result] = await db
+          .insert(transactions)
+          .values({
+            ...transaction,
+            timestamp: new Date()
+          })
+          .returning();
+        console.log('거래 내역 생성 완료:', { id: result.id, type: result.type });
+      } catch (error) {
+        console.error('거래 내역 생성 오류:', error);
+      }
+    }
+    console.log('거래 내역 생성 완료');
 
     console.log('테스트 데이터 초기화 완료');
     res.json({ 
@@ -581,7 +698,8 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
       message: '테스트 데이터가 성공적으로 초기화되었습니다.',
       data: {
         assets: initialAssets.length,
-        exchangeRates: initialExchangeRates.length
+        exchangeRates: initialExchangeRates.length,
+        transactions: initialTransactions.length
       }
     });
 
