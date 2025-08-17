@@ -189,16 +189,37 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       const response = await fetch('/api/assets');
       const assets = await response.json();
       
+      console.log('=== 바이낸스 중복 검사 시작 ===');
+      console.log('Form data:', formData);
+      console.log('모든 자산:', assets.filter(a => a.type === 'binance'));
+      
       const expectedName = `Binance ${formData.coinName}`;
+      console.log('예상 이름:', expectedName);
       
       const existingAsset = assets.find((asset: any) => {
+        console.log('자산 검사:', {
+          assetType: asset.type,
+          assetName: asset.name,
+          assetCurrency: asset.currency,
+          expectedType: 'binance',
+          expectedName: expectedName,
+          expectedCurrency: formData.coinName
+        });
+        
         const typeMatch = asset.type === 'binance';
-        const nameMatch = asset.name === expectedName;
         const currencyMatch = asset.currency === formData.coinName;
+        // 기존 이름 패턴도 고려 ("Binance" 또는 "Binance USDT")
+        const nameMatch = asset.name === expectedName || 
+                         (asset.name === 'Binance' && formData.coinName === 'USDT');
         const notEditing = asset.id !== editData?.id;
+        
+        console.log('매치 결과:', { typeMatch, nameMatch, currencyMatch, notEditing });
         
         return typeMatch && nameMatch && currencyMatch && notEditing;
       });
+      
+      console.log('중복 자산 찾기 결과:', existingAsset);
+      console.log('=== 바이낸스 중복 검사 완료 ===');
       
       return existingAsset;
     } catch (error) {
@@ -377,12 +398,16 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           alert(`동일한 거래소/코인 조합이 발견되어 기존 자산에 추가합니다.\n${duplicateExchange.name} ${duplicateExchange.currency}: ${duplicateExchange.balance} + ${data.quantity} = ${data.balance}`);
         }
       } else if (type === 'binance') {
+        console.log('=== 바이낸스 중복 검사 ===');
+        console.log('Form data:', data);
         const duplicateBinance = await checkBinanceAssetDuplicate(data);
+        console.log('중복 바이낸스 결과:', duplicateBinance);
         if (duplicateBinance) {
           // For binance, update existing asset instead of showing error
           data.id = duplicateBinance.id;
           data.balance = (parseFloat(duplicateBinance.balance) + parseFloat(data.quantity)).toString();
           alert(`동일한 코인이 발견되어 기존 자산에 추가합니다.\n${duplicateBinance.name}: ${duplicateBinance.balance} + ${data.quantity} = ${data.balance}`);
+          console.log('바이낸스 자산 업데이트:', data);
         }
       }
     
