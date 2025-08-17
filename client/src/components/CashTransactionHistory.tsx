@@ -27,6 +27,7 @@ export default function CashTransactionHistory({
   const [typeFilter, setTypeFilter] = useState<'all' | 'increase' | 'decrease'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [displayCount, setDisplayCount] = useState<number>(5);
 
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
@@ -88,7 +89,7 @@ export default function CashTransactionHistory({
       
       return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
     })
-    .slice(0, 5); // 최근 5개만 표시
+    .slice(0, displayCount); // 선택한 개수만 표시
 
   const getTransactionAmount = (transaction: Transaction) => {
     // 현금 자산이 from인지 to인지에 따라 증가/감소 판단
@@ -151,7 +152,7 @@ export default function CashTransactionHistory({
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <Input
-                    placeholder="거래내역 검색..."
+                    placeholder="거래내역 검색 (메모, 거래명 검색)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -193,6 +194,18 @@ export default function CashTransactionHistory({
                     <SelectItem value="all">전체</SelectItem>
                     <SelectItem value="increase">증가</SelectItem>
                     <SelectItem value="decrease">감소</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* 표시 개수 선택 */}
+                <Select value={displayCount.toString()} onValueChange={(value) => setDisplayCount(parseInt(value))}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5개 보기</SelectItem>
+                    <SelectItem value="10">10개 보기</SelectItem>
+                    <SelectItem value="15">15개 보기</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -245,7 +258,7 @@ export default function CashTransactionHistory({
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">최근 거래 내역</h3>
             <div className="text-sm text-gray-500">
-              최근 5개 거래 (전체 {cashTransactions.length}개 중 {filteredTransactions.length}개 표시)
+              최근 {displayCount}개 거래 (전체 {cashTransactions.length}개 중 {filteredTransactions.length}개 표시)
             </div>
           </div>
 
