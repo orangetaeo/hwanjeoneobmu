@@ -61,9 +61,9 @@ export default function HomePage() {
   const [showCashTransactionHistory, setShowCashTransactionHistory] = useState(false);
   const [selectedCashAsset, setSelectedCashAsset] = useState<CashAsset | null>(null);
 
-  // React Query로 실시간 데이터 로딩 - 완전 캐시 비활성화
+  // React Query로 실시간 데이터 로딩
   const { data: assetsData = [], isLoading: assetsLoading, error: assetsError, refetch: refetchAssets } = useQuery({
-    queryKey: ['/api/assets', Date.now()], // 타임스탬프로 강제 새로고침
+    queryKey: ['/api/assets'],
     enabled: !authLoading && !!user,
     retry: 3,
     retryDelay: 1000,
@@ -121,7 +121,7 @@ export default function HomePage() {
     const binanceAssets = assetsData.filter((asset: any) => asset.type === 'binance');
 
     console.log('Filtered assets:', {
-      cashAssets: cashAssets.length,
+      cashAssets: filteredCashAssets.length,
       allAccounts: allAccounts.length, 
       exchanges: exchanges.length,
       binanceAssets: binanceAssets.length
