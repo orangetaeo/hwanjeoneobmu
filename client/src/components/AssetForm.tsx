@@ -297,10 +297,21 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   };
 
   const updateDenomination = (denom: string, value: number) => {
-    setDenominations((prev: Record<string, number>) => ({
-      ...prev,
-      [denom]: value // 음수도 허용
-    }));
+    setDenominations((prev: Record<string, number>) => {
+      const newDenominations = {
+        ...prev,
+        [denom]: value // 음수도 허용
+      };
+      
+      // 총계 실시간 업데이트를 위해 form balance 업데이트
+      const newTotal = Object.entries(newDenominations).reduce((total, [d, count]) => {
+        return total + (parseFloat(d.replace(/,/g, '')) * (typeof count === 'number' ? count : 0));
+      }, 0);
+      
+      form.setValue('balance', newTotal);
+      
+      return newDenominations;
+    });
   };
 
   const getTitle = () => {
@@ -534,7 +545,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                              form.watch('currency') === 'USD' ? `$${denom}` :
                              `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}
                           </label>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1">
                             <Button
                               type="button"
                               variant="outline"
@@ -545,14 +556,37 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             >
                               <Minus size={14} />
                             </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const currentVal = countValue || 0;
+                                updateDenomination(denom, -Math.abs(currentVal === 0 ? 1 : currentVal));
+                              }}
+                              className="h-8 w-7 p-0 flex-shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="음수로 변경"
+                              data-testid={`button-negative-${denom}`}
+                            >
+                              -
+                            </Button>
                             <Input
                               type="text"
-                              value={formatInputWithCommas(countValue.toString())}
+                              value={countValue < 0 ? `-${formatInputWithCommas(Math.abs(countValue).toString())}` : formatInputWithCommas(countValue.toString())}
                               onChange={(e) => {
-                                const numericValue = parseCommaFormattedNumber(e.target.value);
-                                updateDenomination(denom, Math.floor(numericValue));
+                                let inputValue = e.target.value.trim();
+                                let isNegative = inputValue.startsWith('-');
+                                
+                                // Remove the negative sign for processing
+                                if (isNegative) {
+                                  inputValue = inputValue.substring(1);
+                                }
+                                
+                                const numericValue = parseCommaFormattedNumber(inputValue);
+                                const finalValue = isNegative ? -Math.abs(Math.floor(numericValue)) : Math.floor(numericValue);
+                                updateDenomination(denom, finalValue);
                               }}
-                              className="text-center text-sm font-medium h-10 w-full max-w-full"
+                              className={`text-center text-sm font-medium h-10 w-full max-w-full ${countValue < 0 ? 'text-red-600 bg-red-50 border-red-300' : ''}`}
                               data-testid={`input-denom-${denom}`}
                             />
                             <Button
@@ -566,19 +600,19 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               <Plus size={14} />
                             </Button>
                           </div>
-                          <div className="text-xs text-gray-500 text-center space-y-1">
+                          <div className={`text-xs text-center space-y-1 ${countValue < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                             {!editData && (
                               <div>
-                                총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                      form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
+                                {countValue < 0 ? '차감액:' : '총액:'} {countValue < 0 ? '-' : ''}{form.watch('currency') === 'KRW' ? '₩' : 
+                                      form.watch('currency') === 'USD' ? '$' : '₫'}{Math.abs(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
                               </div>
                             )}
                             {editData && (
                               <div>
-                                수정 후: {countValue}장
+                                수정 후: {countValue < 0 ? `-${Math.abs(countValue)}` : countValue}장
                                 <br />
-                                총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                      form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
+                                {countValue < 0 ? '차감액:' : '총액:'} {countValue < 0 ? '-' : ''}{form.watch('currency') === 'KRW' ? '₩' : 
+                                      form.watch('currency') === 'USD' ? '$' : '₫'}{Math.abs(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
                               </div>
                             )}
                           </div>
