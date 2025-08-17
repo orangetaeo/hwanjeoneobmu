@@ -377,61 +377,115 @@ export default function NetworkTransfer() {
       )}
 
       {currentTab === 'history' && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <History className="mr-2" size={20} />
+        <Card className="p-3 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center">
+            <History className="mr-2" size={18} />
             네트워크 이동 내역
           </h3>
 
           {transfers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400 text-sm sm:text-base">
               아직 이동 내역이 없습니다.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>이동일시</TableHead>
-                  <TableHead>네트워크</TableHead>
-                  <TableHead>이동수량</TableHead>
-                  <TableHead>네트워크수수료</TableHead>
-                  <TableHead>실제도착</TableHead>
-                  <TableHead>트랜잭션</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* 데스크톱 테이블 */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>이동일시</TableHead>
+                      <TableHead>네트워크</TableHead>
+                      <TableHead>이동수량</TableHead>
+                      <TableHead>네트워크수수료</TableHead>
+                      <TableHead>실제도착</TableHead>
+                      <TableHead>트랜잭션</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transfers.map((transfer: NetworkTransfer) => {
+                      const usdtAmount = transfer.usdtAmount || 0;
+                      const networkFee = transfer.networkFee || 0;
+                      return (
+                        <TableRow key={transfer.id}>
+                          <TableCell>{new Date(transfer.date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{transfer.network || 'TRC20'}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                          </TableCell>
+                          <TableCell className="text-red-600">
+                            -{networkFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                          </TableCell>
+                          <TableCell className="text-green-600 font-medium">
+                            {usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                          </TableCell>
+                          <TableCell>
+                            {transfer.txHash ? (
+                              <span className="text-xs font-mono">
+                                {transfer.txHash.substring(0, 8)}...
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* 모바일 카드 리스트 */}
+              <div className="block sm:hidden space-y-3">
                 {transfers.map((transfer: NetworkTransfer) => {
                   const usdtAmount = transfer.usdtAmount || 0;
                   const networkFee = transfer.networkFee || 0;
                   return (
-                    <TableRow key={transfer.id}>
-                      <TableCell>{new Date(transfer.date).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{transfer.network || 'TRC20'}</Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
-                      </TableCell>
-                      <TableCell className="text-red-600">
-                        -{networkFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
-                      </TableCell>
-                      <TableCell className="text-green-600 font-medium">
-                        {usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
-                      </TableCell>
-                      <TableCell>
-                        {transfer.txHash ? (
-                          <span className="text-xs font-mono">
-                            {transfer.txHash.substring(0, 8)}...
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                    <div key={transfer.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                      {/* 상단: 날짜와 네트워크 */}
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="text-sm font-medium">
+                          {new Date(transfer.date).toLocaleDateString('ko-KR', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            weekday: 'short'
+                          })}
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {transfer.network || 'TRC20'}
+                        </Badge>
+                      </div>
+
+                      {/* 중간: 이동 수량 (가장 중요한 정보) */}
+                      <div className="mb-2">
+                        <div className="text-base font-bold text-blue-600 dark:text-blue-400">
+                          {usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">바이낸스로 이동</div>
+                      </div>
+
+                      {/* 하단: 수수료와 트랜잭션 정보 */}
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="text-red-600 dark:text-red-400">
+                          수수료: -{networkFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                        </div>
+                        <div>
+                          {transfer.txHash ? (
+                            <span className="font-mono text-gray-500 dark:text-gray-400">
+                              {transfer.txHash.substring(0, 6)}...
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">TX 없음</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </Card>
       )}

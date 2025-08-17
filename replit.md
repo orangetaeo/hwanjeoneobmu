@@ -93,6 +93,20 @@ Preferred communication style: Simple, everyday language.
   - Corrected existing P2P transaction records to point to correct 우리은행 account ID
   - Added comprehensive logging for VND account detection debugging
   - Confirmed proper VND amount calculation and display functionality
+- **Network Transfer Fee Logic Fix**: Resolved USDT network transfer double fee deduction issue
+  - Fixed fromAmount calculation to properly deduct (transfer amount + network fee) from source
+  - Corrected toAmount to only add transfer amount to destination (without fee deduction)
+  - Updated transaction history display to show accurate arrival amounts
+  - Improved transaction metadata for better tracking of gross/net amounts
+- **Toast Notification Auto-Dismiss**: Implemented 1-second auto-dismiss for all toast notifications
+  - Changed TOAST_REMOVE_DELAY from 1,000,000ms to 1,000ms for better UX
+  - All success and error messages now automatically disappear after 1 second
+  - Applies to network transfers, P2P trades, asset management, and all other operations
+- **Mobile-Optimized Transaction History**: Enhanced network transfer history for mobile devices
+  - Desktop: Maintains original table layout for detailed information
+  - Mobile: Card-based layout with hierarchical information display
+  - Improved readability with emphasized transfer amounts and organized metadata
+  - Touch-friendly design with proper spacing and visual hierarchy
 
 # External Dependencies
 
