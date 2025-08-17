@@ -155,7 +155,7 @@ export default function CashTransactionHistory({
                     placeholder="거래내역 검색 (메모, 거래명)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 text-sm"
+                    className="pl-9 text-sm h-10 sm:h-9"
                     data-testid="input-search-transactions"
                   />
                 </div>
@@ -175,7 +175,7 @@ export default function CashTransactionHistory({
                       placeholder="시작일"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="flex-1 min-w-0 text-sm"
+                      className="flex-1 min-w-0 text-sm h-10 sm:h-9"
                       data-testid="input-start-date"
                     />
                     <span className="text-gray-500 text-sm">~</span>
@@ -184,7 +184,7 @@ export default function CashTransactionHistory({
                       placeholder="종료일"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="flex-1 min-w-0 text-sm"
+                      className="flex-1 min-w-0 text-sm h-10 sm:h-9"
                       data-testid="input-end-date"
                     />
                   </div>
@@ -193,7 +193,7 @@ export default function CashTransactionHistory({
                 {/* 타입 필터 및 정렬 */}
                 <div className="flex gap-2">
                   <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease') => setTypeFilter(value)}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 h-10 sm:h-9 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -204,7 +204,7 @@ export default function CashTransactionHistory({
                   </Select>
 
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 h-10 sm:h-9 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -218,7 +218,7 @@ export default function CashTransactionHistory({
                     size="sm"
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     data-testid="button-sort-order"
-                    className="px-3"
+                    className="px-3 h-10 sm:h-9"
                   >
                     <ArrowUpDown size={14} />
                   </Button>
@@ -253,7 +253,7 @@ export default function CashTransactionHistory({
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm text-gray-600">표시 개수:</span>
               <Select value={displayCount.toString()} onValueChange={(value) => setDisplayCount(parseInt(value))}>
-                <SelectTrigger className="w-20 sm:w-24 text-sm">
+                <SelectTrigger className="w-20 sm:w-24 text-sm h-10 sm:h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
