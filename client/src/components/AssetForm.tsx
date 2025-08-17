@@ -741,7 +741,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const newValue = Math.max(0, (denominations['50,000'] || 0) - 1);
+                            const newValue = (denominations['50,000'] || 0) - 1;
                             const newDenoms = { 
                               '50,000': newValue, 
                               '10,000': denominations['10,000'] || 0, 
@@ -761,7 +761,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0;
                             const newDenoms = { 
-                              '50,000': Math.max(0, value), 
+                              '50,000': value, 
                               '10,000': denominations['10,000'] || 0, 
                               '5,000': denominations['5,000'] || 0, 
                               '1,000': denominations['1,000'] || 0 
@@ -808,7 +808,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const newValue = Math.max(0, (denominations['10,000'] || 0) - 1);
+                            const newValue = (denominations['10,000'] || 0) - 1;
                             const newDenoms = { 
                               '50,000': denominations['50,000'] || 0, 
                               '10,000': newValue, 
@@ -829,7 +829,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             const value = parseInt(e.target.value) || 0;
                             const newDenoms = { 
                               '50,000': denominations['50,000'] || 0, 
-                              '10,000': Math.max(0, value), 
+                              '10,000': value, 
                               '5,000': denominations['5,000'] || 0, 
                               '1,000': denominations['1,000'] || 0 
                             };
@@ -875,7 +875,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const newValue = Math.max(0, (denominations['5,000'] || 0) - 1);
+                            const newValue = (denominations['5,000'] || 0) - 1;
                             const newDenoms = { 
                               '50,000': denominations['50,000'] || 0, 
                               '10,000': denominations['10,000'] || 0, 
@@ -897,7 +897,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             const newDenoms = { 
                               '50,000': denominations['50,000'] || 0, 
                               '10,000': denominations['10,000'] || 0, 
-                              '5,000': Math.max(0, value), 
+                              '5,000': value, 
                               '1,000': denominations['1,000'] || 0 
                             };
                             setDenominations(newDenoms);
@@ -942,7 +942,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const newValue = Math.max(0, (denominations['1,000'] || 0) - 1);
+                            const newValue = (denominations['1,000'] || 0) - 1;
                             const newDenoms = { 
                               '50,000': denominations['50,000'] || 0, 
                               '10,000': denominations['10,000'] || 0, 
@@ -965,7 +965,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               '50,000': denominations['50,000'] || 0, 
                               '10,000': denominations['10,000'] || 0, 
                               '5,000': denominations['5,000'] || 0, 
-                              '1,000': Math.max(0, value) 
+                              '1,000': value 
                             };
                             setDenominations(newDenoms);
                           }}
@@ -1026,7 +1026,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               size="sm"
                               onClick={() => {
                                 const currentCount = typeof count === 'number' ? count : 0;
-                                const newValue = Math.max(0, currentCount - 1);
+                                const newValue = currentCount - 1;
                                 setDenominations((prev: Record<string, number>) => ({
                                   ...prev,
                                   [denom]: newValue
@@ -1044,7 +1044,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                 const value = parseInt(e.target.value) || 0;
                                 setDenominations((prev: Record<string, number>) => ({
                                   ...prev,
-                                  [denom]: Math.max(0, value)
+                                  [denom]: value
                                 }));
                               }}
                               className="h-10 sm:h-9 text-center flex-1 min-w-0"
