@@ -567,7 +567,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         })()}
                       </span>
                     </div>
-                    {/* 실시간 지폐 구성 계산 */}
+                    {/* 지폐 구성 표시 */}
                     {Object.keys(currentAssetInfo.denominations).length > 0 && (
                       <div className="space-y-2">
                         <span className="text-sm text-gray-600">지폐 구성:</span>
@@ -578,29 +578,19 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               const numB = parseFloat(b.replace(/,/g, ''));
                               return numB - numA;
                             })
-                            .map(([denom, currentCount]) => {
-                              const changeCount = denominations[denom] || 0;
-                              const newCount = (currentCount as number) + changeCount;
-                              return (
-                                <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
-                                  changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
-                                }`}>
-                                  <span className="text-gray-600">
-                                    {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
-                                     form.watch('currency') === 'USD' ? `$${denom}` :
-                                     `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
-                                  </span>
-                                  <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
-                                    {newCount}장
-                                    {changeCount !== 0 && (
-                                      <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        ({changeCount > 0 ? '+' : ''}{changeCount})
-                                      </span>
-                                    )}
-                                  </span>
-                                </div>
-                              );
-                            })
+                            .filter(([, currentCount]) => (currentCount as number) > 0)
+                            .map(([denom, currentCount]) => (
+                              <div key={denom} className="flex justify-between rounded px-2 py-1 border bg-white border-gray-100">
+                                <span className="text-gray-600">
+                                  {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
+                                   form.watch('currency') === 'USD' ? `$${denom}` :
+                                   `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
+                                </span>
+                                <span className="font-medium text-gray-800">
+                                  {currentCount as number}장
+                                </span>
+                              </div>
+                            ))
                           }
                         </div>
                       </div>
@@ -749,34 +739,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             </Button>
                           </div>
                           <div className="text-xs text-gray-500 text-center space-y-1">
-                            {!editData && currentAssetInfo?.denominations && (
-                              <div className="space-y-1">
-                                {/* 현재 보유량과 증감 표시 */}
-                                <div className="text-sm font-medium text-gray-700">
-                                  {(() => {
-                                    const currentCount = currentAssetInfo.denominations[denom] || 0;
-                                    const changeCount = countValue;
-                                    if (changeCount === 0) {
-                                      return `${currentCount}장`;
-                                    } else {
-                                      return (
-                                        <>
-                                          {currentCount}장
-                                          <span className={`ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            ({changeCount > 0 ? '+' : ''}{changeCount})
-                                          </span>
-                                        </>
-                                      );
-                                    }
-                                  })()}
-                                </div>
-                                <div>
-                                  총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                        form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
-                                </div>
-                              </div>
-                            )}
-                            {!editData && !currentAssetInfo?.denominations && (
+                            {!editData && (
                               <div>
                                 총액: {form.watch('currency') === 'KRW' ? '₩' : 
                                       form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
