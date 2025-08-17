@@ -611,28 +611,21 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               ...Object.keys(denominations)
                             ]);
                             
-                            return Array.from(allDenoms)
-                              .sort((a, b) => {
-                                const numA = parseFloat(a.replace(/,/g, ''));
-                                const numB = parseFloat(b.replace(/,/g, ''));
-                                return numB - numA;
-                              })
-                              .map((denom) => {
+                            // KRW 통화인 경우 4개 지폐 강제 표시
+                            if (form.watch('currency') === 'KRW') {
+                              return ['50,000', '10,000', '5,000', '1,000'].map((denom) => {
                                 const currentCount = (currentAssetInfo.denominations?.[denom] as number) || 0;
                                 const changeCount = denominations[denom] || 0;
                                 const newCount = currentCount + changeCount;
                                 
-                                // 현재 보유량이 있거나 변경량이 있는 경우만 표시
-                                if (currentCount === 0 && changeCount === 0) return null;
+                                // KRW는 0이어도 모든 지폐 표시
                                 
                                 return (
                                   <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
                                     changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
                                   }`}>
                                     <span className="text-gray-600">
-                                      {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
-                                       form.watch('currency') === 'USD' ? `$${denom}` :
-                                       `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
+                                      {parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권:
                                     </span>
                                     <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
                                       {newCount}장
@@ -644,8 +637,44 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                     </span>
                                   </div>
                                 );
-                              })
-                              .filter(Boolean); // null 값 제거
+                              });
+                            } else {
+                              // 다른 통화는 기존 로직 사용
+                              return Array.from(allDenoms)
+                                .sort((a, b) => {
+                                  const numA = parseFloat(a.replace(/,/g, ''));
+                                  const numB = parseFloat(b.replace(/,/g, ''));
+                                  return numB - numA;
+                                })
+                                .map((denom) => {
+                                  const currentCount = (currentAssetInfo.denominations?.[denom] as number) || 0;
+                                  const changeCount = denominations[denom] || 0;
+                                  const newCount = currentCount + changeCount;
+                                  
+                                  // 다른 통화는 0이면 표시하지 않음
+                                  if (currentCount === 0 && changeCount === 0) return null;
+                                  
+                                  return (
+                                    <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
+                                      changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
+                                    }`}>
+                                      <span className="text-gray-600">
+                                        {form.watch('currency') === 'USD' ? `$${denom}` :
+                                         `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
+                                      </span>
+                                      <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
+                                        {newCount}장
+                                        {changeCount !== 0 && (
+                                          <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            ({changeCount > 0 ? '+' : ''}{changeCount})
+                                          </span>
+                                        )}
+                                      </span>
+                                    </div>
+                                  );
+                                })
+                                .filter(Boolean); // null 값 제거
+                            }
                           })()}
                         </div>
                       </div>
@@ -690,24 +719,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
 
               <h3 className="font-medium text-gray-900">지폐 구성</h3>
               
-              {/* 강력한 디버깅 정보 - 항상 표시 */}
-              <div className="bg-yellow-100 border border-yellow-300 rounded p-2 text-xs">
-                <strong>디버깅:</strong><br />
-                type: {type}<br />
-                editData: {editData ? '존재함' : '없음'}<br />
-                currency: {form.watch('currency')}<br />
-                조건 결과: {type === 'cash' && form.watch('currency') === 'KRW' && !editData ? 'TRUE - 새로 추가 모드 렌더링' : 'FALSE - 다른 모드 렌더링'}
-              </div>
-
-              {/* 새로 추가 모드에서도 KRW이면 모든 지폐 강제 표시 */}
+              {/* KRW 현금 새로 추가 모드 - 4개 지폐 강제 표시 */}
               {type === 'cash' && form.watch('currency') === 'KRW' && !editData && (
                 <div className="space-y-6">
-                  {/* 디버깅 정보 */}
-                  <div className="text-xs text-red-500 mb-2 bg-red-50 p-2 border border-red-200 rounded">
-                    ✅ 새로 추가 모드 - KRW 4개 지폐 강제 표시 활성화됨!
-                    <br />
-                    현재 denominations: {JSON.stringify(denominations)} (키 개수: {Object.keys(denominations).length})
-                  </div>
                   
                   {/* 50,000원권 */}
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
