@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, AlertTriangle, TrendingUp, DollarSign, Globe, Banknote } from 'lucide-react';
 import { ExchangeRate, InsertExchangeRate } from '@shared/schema';
 import { formatCurrency } from '@/utils/helpers';
@@ -170,53 +171,50 @@ export default function ExchangeRateManager({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="fromCurrency">환전 통화</Label>
-              <select
-                id="fromCurrency"
-                value={formData.fromCurrency}
-                onChange={(e) => handleInputChange('fromCurrency', e.target.value)}
-                className="w-full p-2 border rounded-md"
-                data-testid="select-from-currency"
-              >
-                <option value="USD">USD (달러)</option>
-                <option value="KRW">KRW (원화)</option>
-              </select>
+              <Select value={formData.fromCurrency} onValueChange={(value) => handleInputChange('fromCurrency', value)}>
+                <SelectTrigger data-testid="select-from-currency">
+                  <SelectValue placeholder="환전할 통화를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD (달러)</SelectItem>
+                  <SelectItem value="KRW">KRW (원화)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="toCurrency">목표 통화</Label>
-              <select
-                id="toCurrency"
-                value={formData.toCurrency}
-                onChange={(e) => handleInputChange('toCurrency', e.target.value)}
-                className="w-full p-2 border rounded-md"
-                data-testid="select-to-currency"
-              >
-                <option value="VND">VND (베트남돈)</option>
-              </select>
+              <Select value={formData.toCurrency} onValueChange={(value) => handleInputChange('toCurrency', value)}>
+                <SelectTrigger data-testid="select-to-currency">
+                  <SelectValue placeholder="목표 통화를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="VND">VND (베트남돈)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="denomination">권종/금액</Label>
-              <select
-                id="denomination"
-                value={formData.denomination}
-                onChange={(e) => handleInputChange('denomination', e.target.value)}
-                className="w-full p-2 border rounded-md"
-                data-testid="select-denomination"
-              >
-                {formData.fromCurrency === 'USD' ? (
-                  <>
-                    <option value="100">100달러</option>
-                    <option value="50">50달러</option>
-                    <option value="20_10">20, 10달러</option>
-                    <option value="5_2_1">5, 2, 1달러</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="50000">50,000원</option>
-                    <option value="10000">10,000원</option>
-                    <option value="5000_1000">5,000, 1,000원</option>
-                  </>
-                )}
-              </select>
+              <Select value={formData.denomination} onValueChange={(value) => handleInputChange('denomination', value)}>
+                <SelectTrigger data-testid="select-denomination">
+                  <SelectValue placeholder="권종을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formData.fromCurrency === 'USD' ? (
+                    <>
+                      <SelectItem value="100">100달러</SelectItem>
+                      <SelectItem value="50">50달러</SelectItem>
+                      <SelectItem value="20_10">20, 10달러</SelectItem>
+                      <SelectItem value="5_2_1">5, 2, 1달러</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="50000">50,000원</SelectItem>
+                      <SelectItem value="10000">10,000원</SelectItem>
+                      <SelectItem value="5000_1000">5,000, 1,000원</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
