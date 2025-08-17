@@ -189,23 +189,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       const response = await fetch('/api/assets');
       const assets = await response.json();
       
-      console.log('=== 바이낸스 중복 검사 시작 ===');
-      console.log('Form data:', formData);
-      console.log('모든 자산:', assets.filter((a: any) => a.type === 'binance'));
-      
       const expectedName = `Binance ${formData.coinName}`;
-      console.log('예상 이름:', expectedName);
       
       const existingAsset = assets.find((asset: any) => {
-        console.log('자산 검사:', {
-          assetType: asset.type,
-          assetName: asset.name,
-          assetCurrency: asset.currency,
-          expectedType: 'binance',
-          expectedName: expectedName,
-          expectedCurrency: formData.coinName
-        });
-        
         const typeMatch = asset.type === 'binance';
         const currencyMatch = asset.currency === formData.coinName;
         // 기존 이름 패턴도 고려 ("Binance" 또는 "Binance USDT")
@@ -213,13 +199,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                          (asset.name === 'Binance' && formData.coinName === 'USDT');
         const notEditing = asset.id !== editData?.id;
         
-        console.log('매치 결과:', { typeMatch, nameMatch, currencyMatch, notEditing });
-        
         return typeMatch && nameMatch && currencyMatch && notEditing;
       });
-      
-      console.log('중복 자산 찾기 결과:', existingAsset);
-      console.log('=== 바이낸스 중복 검사 완료 ===');
       
       return existingAsset;
     } catch (error) {
@@ -393,21 +374,19 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         const duplicateExchange = await checkExchangeAssetDuplicate(data);
         if (duplicateExchange) {
           // For exchanges, update existing asset instead of showing error
-          data.id = duplicateExchange.id;
+          data.id = duplicateExchange.id; // 실제 데이터베이스 ID 사용
           data.balance = (parseFloat(duplicateExchange.balance) + parseFloat(data.quantity)).toString();
+          data.originalAsset = duplicateExchange; // 원본 자산 정보 보존
           alert(`동일한 거래소/코인 조합이 발견되어 기존 자산에 추가합니다.\n${duplicateExchange.name} ${duplicateExchange.currency}: ${duplicateExchange.balance} + ${data.quantity} = ${data.balance}`);
         }
       } else if (type === 'binance') {
-        console.log('=== 바이낸스 중복 검사 ===');
-        console.log('Form data:', data);
         const duplicateBinance = await checkBinanceAssetDuplicate(data);
-        console.log('중복 바이낸스 결과:', duplicateBinance);
         if (duplicateBinance) {
           // For binance, update existing asset instead of showing error
-          data.id = duplicateBinance.id;
+          data.id = duplicateBinance.id; // 실제 데이터베이스 ID 사용
           data.balance = (parseFloat(duplicateBinance.balance) + parseFloat(data.quantity)).toString();
+          data.originalAsset = duplicateBinance; // 원본 자산 정보 보존
           alert(`동일한 코인이 발견되어 기존 자산에 추가합니다.\n${duplicateBinance.name}: ${duplicateBinance.balance} + ${data.quantity} = ${data.balance}`);
-          console.log('바이낸스 자산 업데이트:', data);
         }
       }
     
@@ -467,10 +446,10 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           assetType: 'crypto'
         };
         
-        // Generate unique ID if not editing
-        if (!editData) {
+        // Generate unique ID if not editing and not a duplicate update
+        if (!editData && !data.id) {
           data.id = Date.now().toString();
-        } else {
+        } else if (editData) {
           data.id = editData.id;
         }
       } else if (type === 'binance') {
@@ -484,10 +463,10 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           assetType: 'crypto'
         };
         
-        // Generate unique ID if not editing
-        if (!editData) {
+        // Generate unique ID if not editing and not a duplicate update
+        if (!editData && !data.id) {
           data.id = Date.now().toString();
-        } else {
+        } else if (editData) {
           data.id = editData.id;
         }
       } else if (type === 'korean-account' || type === 'vietnamese-account') {
