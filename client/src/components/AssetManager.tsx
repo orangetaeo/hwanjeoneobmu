@@ -123,7 +123,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   
                   <div className="mb-4">
                     <p className="text-2xl font-bold text-gray-900 break-words">
-                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatCurrency(asset.balance, asset.currency)} 현금
+                      {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}{formatCurrency(asset.balance, asset.currency)}
                     </p>
                   </div>
 
