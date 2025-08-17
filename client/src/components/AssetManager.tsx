@@ -36,35 +36,35 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
             <TabsList className="grid w-full grid-cols-5 bg-transparent p-0 h-auto">
               <TabsTrigger 
                 value="cash" 
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4 text-sm sm:text-base font-medium"
                 data-testid="tab-cash-assets"
               >
                 현금 자산
               </TabsTrigger>
               <TabsTrigger 
                 value="korean-banks"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4 text-sm sm:text-base font-medium"
                 data-testid="tab-korean-banks"
               >
                 한국 은행
               </TabsTrigger>
               <TabsTrigger 
                 value="vietnamese-banks"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4 text-sm sm:text-base font-medium"
                 data-testid="tab-vietnamese-banks"
               >
                 베트남 은행
               </TabsTrigger>
               <TabsTrigger 
                 value="exchanges"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4 text-sm sm:text-base font-medium"
                 data-testid="tab-exchanges"
               >
                 거래소
               </TabsTrigger>
               <TabsTrigger 
                 value="binance"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4"
+                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none py-4 text-sm sm:text-base font-medium"
                 data-testid="tab-binance"
               >
                 바이낸스

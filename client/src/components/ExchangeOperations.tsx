@@ -59,18 +59,18 @@ export default function ExchangeOperations() {
       {/* 모바일 최적화 탭 메뉴 */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 h-auto p-1">
-          <TabsTrigger value="bithumb" className="flex flex-col sm:flex-row items-center justify-center py-2 px-1 text-xs sm:text-sm">
-            <TrendingUp className="mb-1 sm:mb-0 sm:mr-2" size={14} />
+          <TabsTrigger value="bithumb" className="flex flex-col sm:flex-row items-center justify-center py-3 px-2 text-sm sm:text-base">
+            <TrendingUp className="mb-1 sm:mb-0 sm:mr-2" size={16} />
             <span className="hidden xs:inline sm:inline">빗썸 거래</span>
             <span className="xs:hidden sm:hidden">빗썸</span>
           </TabsTrigger>
-          <TabsTrigger value="transfer" className="flex flex-col sm:flex-row items-center justify-center py-2 px-1 text-xs sm:text-sm">
-            <ArrowRightLeft className="mb-1 sm:mb-0 sm:mr-2" size={14} />
+          <TabsTrigger value="transfer" className="flex flex-col sm:flex-row items-center justify-center py-3 px-2 text-sm sm:text-base">
+            <ArrowRightLeft className="mb-1 sm:mb-0 sm:mr-2" size={16} />
             <span className="hidden xs:inline sm:inline">네트워크 이동</span>
             <span className="xs:hidden sm:hidden">이동</span>
           </TabsTrigger>
-          <TabsTrigger value="binance" className="flex flex-col sm:flex-row items-center justify-center py-2 px-1 text-xs sm:text-sm">
-            <Coins className="mb-1 sm:mb-0 sm:mr-2" size={14} />
+          <TabsTrigger value="binance" className="flex flex-col sm:flex-row items-center justify-center py-3 px-2 text-sm sm:text-base">
+            <Coins className="mb-1 sm:mb-0 sm:mr-2" size={16} />
             <span className="hidden xs:inline sm:inline">바이낸스 P2P</span>
             <span className="xs:hidden sm:hidden">P2P</span>
           </TabsTrigger>

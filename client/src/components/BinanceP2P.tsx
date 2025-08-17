@@ -267,17 +267,17 @@ export default function BinanceP2P() {
         <Button
           variant={currentTab === 'p2p' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('p2p')}
-          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
+          className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <Coins className="mr-1 sm:mr-2" size={14} />
+          <Coins className="mr-1 sm:mr-2" size={16} />
           P2P 거래
         </Button>
         <Button
           variant={currentTab === 'history' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('history')}
-          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
+          className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <History className="mr-1 sm:mr-2" size={14} />
+          <History className="mr-1 sm:mr-2" size={16} />
           거래 내역
         </Button>
       </div>
@@ -301,7 +301,7 @@ export default function BinanceP2P() {
 
               {/* USDT 수량 입력 (크게 만들고 위로 이동) */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">판매할 USDT 수량</label>
+                <label className="text-base font-medium text-gray-700 mb-2 block">판매할 USDT 수량</label>
                 <div className="flex space-x-2">
                   <Input
                     value={formatInputWithCommas(usdtAmount)}
@@ -339,7 +339,7 @@ export default function BinanceP2P() {
                       setUsdtAmount(maxAmountStr);
                       calculateFromUsdt(maxAmountStr, exchangeRate);
                     }}
-                    className="shrink-0 px-4 py-3"
+                    className="shrink-0 px-4 py-3 text-sm font-medium"
                     data-testid="button-max-usdt"
                     disabled={isNaN(availableUsdt) || availableUsdt <= 0}
                   >
@@ -353,7 +353,7 @@ export default function BinanceP2P() {
 
               {/* VND 시세 입력 필드 */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">VND 환율 (VND/USDT)</label>
+                <label className="text-base font-medium text-gray-700 mb-2 block">VND 환율 (VND/USDT)</label>
                 <div className="flex space-x-2">
                   <Input
                     value={formatInputWithCommas(exchangeRate)}
@@ -390,7 +390,7 @@ export default function BinanceP2P() {
 
               {/* 계산된 VND 금액 표시 */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">받을 VND 금액</label>
+                <label className="text-base font-medium text-gray-700 mb-2 block">받을 VND 금액</label>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <p className="text-2xl font-bold text-green-600">
                     {vndAmount ? formatCurrency(parseFloat(vndAmount), 'VND') : '0'} VND

@@ -199,17 +199,17 @@ export default function NetworkTransfer() {
         <Button
           variant={currentTab === 'transfer' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('transfer')}
-          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
+          className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <Send className="mr-1 sm:mr-2" size={14} />
+          <Send className="mr-1 sm:mr-2" size={16} />
           USDT 이동
         </Button>
         <Button
           variant={currentTab === 'history' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('history')}
-          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
+          className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <History className="mr-1 sm:mr-2" size={14} />
+          <History className="mr-1 sm:mr-2" size={16} />
           이동 내역
         </Button>
       </div>
@@ -224,7 +224,7 @@ export default function NetworkTransfer() {
           <div className="space-y-4 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6 sm:space-y-0">
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">네트워크 선택</label>
+                <label className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-2 block">네트워크 선택</label>
                 <Select value={selectedNetwork} onValueChange={(value) => {
                   setSelectedNetwork(value);
                   setNetworkFee(networkFeePresets[value as keyof typeof networkFeePresets].toString());
@@ -256,7 +256,7 @@ export default function NetworkTransfer() {
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">이동 수량 (USDT)</label>
+                <label className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-2 block">이동 수량 (USDT)</label>
                 <div className="flex space-x-2">
                   <Input
                     value={formatInputWithCommas(usdtAmount)}
@@ -292,7 +292,7 @@ export default function NetworkTransfer() {
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">네트워크 수수료 (USDT)</label>
+                <label className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-2 block">네트워크 수수료 (USDT)</label>
                 <Input
                   value={formatInputWithCommas(networkFee)}
                   onChange={(e) => {
@@ -313,7 +313,7 @@ export default function NetworkTransfer() {
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">트랜잭션 해시 (선택사항)</label>
+                <label className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-2 block">트랜잭션 해시 (선택사항)</label>
                 <Input
                   value={txHash}
                   onChange={(e) => setTxHash(e.target.value)}
