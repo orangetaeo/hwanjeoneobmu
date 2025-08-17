@@ -812,11 +812,16 @@ export default function HomePage() {
           // 중복 검증에서 ID가 설정되었으면 업데이트, 없으면 생성
           if (formData.id) {
             console.log('Exchange 중복 자산 업데이트:', formData);
+            
+            // formData.balance가 이미 계산된 합계값이므로 그대로 사용
+            const updateBalance = formData.balance || formData.quantity.toString();
+            console.log('업데이트할 잔액:', updateBalance);
+            
             const response = await fetch(`/api/assets/${formData.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                balance: formData.balance.toString()
+                balance: updateBalance.toString()
               })
             });
             
@@ -840,11 +845,16 @@ export default function HomePage() {
           // 중복 검증에서 ID가 설정되었으면 업데이트, 없으면 생성
           if (formData.id) {
             console.log('Binance 중복 자산 업데이트:', formData);
+            
+            // formData.balance가 이미 계산된 합계값이므로 그대로 사용
+            const updateBalance = formData.balance || formData.quantity.toString();
+            console.log('업데이트할 잔액:', updateBalance);
+            
             const response = await fetch(`/api/assets/${formData.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                balance: formData.balance.toString()
+                balance: updateBalance.toString()
               })
             });
             
