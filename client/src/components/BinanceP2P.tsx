@@ -262,14 +262,14 @@ export default function BinanceP2P() {
         </Card>
       </div>
 
-      {/* 모바일 최적화 탭 선택 */}
+      {/* 탭 선택 - 디자인 통일화 */}
       <div className="flex space-x-2 sm:space-x-4">
         <Button
           variant={currentTab === 'p2p' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('p2p')}
           className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <Coins className="mr-1 sm:mr-2" size={16} />
+          <span className="text-lg mr-1 sm:mr-2">🟡</span>
           P2P 거래
         </Button>
         <Button
@@ -277,7 +277,7 @@ export default function BinanceP2P() {
           onClick={() => setCurrentTab('history')}
           className="flex items-center flex-1 sm:flex-none text-sm sm:text-base py-2 sm:py-2"
         >
-          <History className="mr-1 sm:mr-2" size={16} />
+          <span className="text-lg mr-1 sm:mr-2">📊</span>
           거래 내역
         </Button>
       </div>
@@ -285,7 +285,7 @@ export default function BinanceP2P() {
       {currentTab === 'p2p' && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <TrendingUp className="mr-2" size={20} />
+            <span className="text-xl mr-2">🟡</span>
             바이낸스 P2P: USDT → VND
           </h3>
 

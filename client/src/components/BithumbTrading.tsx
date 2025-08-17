@@ -124,11 +124,14 @@ export default function BithumbTrading() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* 모바일 최적화 API 연결 테스트 */}
+      {/* API 연결 테스트 - 디자인 통일화 */}
       <Card className="p-3 sm:p-4 mb-3 sm:mb-4 bg-blue-50 dark:bg-blue-900/20">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div className="flex-1">
-            <h3 className="font-medium text-blue-800 dark:text-blue-200 text-sm sm:text-base">빗썸 API 연결 상태</h3>
+            <h3 className="font-medium text-blue-800 dark:text-blue-200 text-sm sm:text-base flex items-center">
+              <span className="text-lg mr-2">🔵</span>
+              빗썸 API 연결 상태
+            </h3>
             <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-300">
               {bithumbError ? 'API 연결 실패 (테스트 데이터 표시 중)' : 'API 연결 성공'}
             </p>
@@ -221,10 +224,10 @@ export default function BithumbTrading() {
         </Card>
       </div>
 
-      {/* 모바일 최적화 헤더 */}
+      {/* 거래 내역 헤더 - 디자인 통일화 */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
         <h2 className="text-lg sm:text-xl font-semibold flex items-center">
-          <History className="mr-2" size={18} />
+          <span className="text-xl mr-2">📊</span>
           빗썸 거래 내역
         </h2>
         <Badge variant="outline" className="text-xs sm:text-sm self-start sm:self-center">
