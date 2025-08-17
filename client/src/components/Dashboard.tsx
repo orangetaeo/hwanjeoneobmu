@@ -93,14 +93,16 @@ export default function Dashboard({
             }
             break;
           case 'VND': 
-            // 환전상 시세 기준: KRW → VND 평균 19.0 이므로 VND → KRW는 1/19.0
-            const vndToKrwRate = 1 / 19.0;
-            totalKrw += balanceValue * vndToKrwRate; 
+            // API 환율 사용: VND → KRW
+            const vndKrwRate = realTimeRates['VND-KRW'] || 0.053; // 기본값: 0.053
+            totalKrw += balanceValue * vndKrwRate; 
+            console.log('VND calculation:', { balanceValue, vndKrwRate, result: balanceValue * vndKrwRate });
             break;
           case 'USD': 
-            // 환전상 시세 기준: USD → VND 평균 25,000, KRW → VND 평균 19.0 이므로 USD → KRW는 25,000/19.0
-            const usdToKrwRate = 25000 / 19.0;
-            totalKrw += balanceValue * usdToKrwRate; 
+            // API 환율 사용: USD → KRW
+            const usdKrwRate = realTimeRates['USD-KRW'] || 1350; // 기본값: 1350
+            totalKrw += balanceValue * usdKrwRate; 
+            console.log('USD calculation:', { balanceValue, usdKrwRate, result: balanceValue * usdKrwRate });
             break;
           case 'USDT': 
             const usdtRate = realTimeRates['USDT-KRW'] || 0;
