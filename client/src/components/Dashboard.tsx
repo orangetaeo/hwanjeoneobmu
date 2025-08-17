@@ -207,7 +207,7 @@ export default function Dashboard({
     <div className="space-y-6">
       {/* Total Asset Summary */}
       <Card className="p-6">
-        <h2 className="text-lg font-bold mb-4">총 자산 요약</h2>
+        <h2 className="text-lg font-bold mb-4">총 자산 요약 <span className="text-sm font-normal text-gray-500">(실시간 환율적용한 예상금액)</span></h2>
         {isFetchingRates ? (
           <p className="text-gray-500">환율 정보 로딩 중...</p>
         ) : (
@@ -340,12 +340,16 @@ export default function Dashboard({
                         <CurrencyIcon currency="KRW" size={24} className="mr-3" />
                         <div>
                           <p className="font-semibold">
-                            {acc.bankName} 
-                            <span className="text-sm font-normal text-gray-600 ml-2">
-                              ({acc.accountHolder})
-                            </span>
+                            {acc.bankName || acc.name}
+                            {acc.accountHolder && (
+                              <span className="text-sm font-normal text-gray-600 ml-2">
+                                ({acc.accountHolder})
+                              </span>
+                            )}
                           </p>
-                          <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                          {acc.accountNumber && (
+                            <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                          )}
                         </div>
                       </div>
                       <p className="font-mono text-blue-600">
@@ -371,12 +375,16 @@ export default function Dashboard({
                         <CurrencyIcon currency="VND" size={24} className="mr-3" />
                         <div>
                           <p className="font-semibold">
-                            {acc.bankName}
-                            <span className="text-sm font-normal text-gray-600 ml-2">
-                              ({acc.accountHolder})
-                            </span>
+                            {acc.bankName || acc.name}
+                            {acc.accountHolder && (
+                              <span className="text-sm font-normal text-gray-600 ml-2">
+                                ({acc.accountHolder})
+                              </span>
+                            )}
                           </p>
-                          <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                          {acc.accountNumber && (
+                            <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                          )}
                         </div>
                       </div>
                       <p className="font-mono text-green-600">
