@@ -116,24 +116,6 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     }
   };
 
-  // editData 변경 시 denominations 업데이트
-  useEffect(() => {
-    if (editData && type === 'cash') {
-      const denomData = editData.metadata?.denominations || editData.denominations;
-      if (denomData && Object.keys(denomData).length > 0) {
-        console.log('Setting denominations from editData:', denomData);
-        setDenominations(denomData);
-      }
-    }
-  }, [editData?.id, type, editData?.metadata?.denominations, editData?.denominations]);
-
-  // 새로 추가할 때 통화 변경 시 현재 자산 정보 조회
-  useEffect(() => {
-    if (!editData && type === 'cash' && form.watch('currency')) {
-      fetchCurrentAssetInfo(form.watch('currency'));
-    }
-  }, [form.watch('currency'), editData, type]);
-
   const getSchema = () => {
     switch (type) {
       case 'cash': return cashAssetSchema;
@@ -154,6 +136,24 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     resolver: zodResolver(getSchema()),
     defaultValues: getFormValues()
   });
+
+  // editData 변경 시 denominations 업데이트
+  useEffect(() => {
+    if (editData && type === 'cash') {
+      const denomData = editData.metadata?.denominations || editData.denominations;
+      if (denomData && Object.keys(denomData).length > 0) {
+        console.log('Setting denominations from editData:', denomData);
+        setDenominations(denomData);
+      }
+    }
+  }, [editData?.id, type, editData?.metadata?.denominations, editData?.denominations]);
+
+  // 새로 추가할 때 통화 변경 시 현재 자산 정보 조회
+  useEffect(() => {
+    if (!editData && type === 'cash' && form.watch('currency')) {
+      fetchCurrentAssetInfo(form.watch('currency'));
+    }
+  }, [form.watch('currency'), editData, type]);
 
   function getFormValues() {
     if (editData) {
