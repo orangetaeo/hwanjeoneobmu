@@ -219,8 +219,8 @@ export default function Dashboard({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
             <div className="text-center">
-              <p className="text-xs lg:text-sm text-gray-500 mb-2">원화 환산</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
+              <p className="text-sm lg:text-base text-gray-500 mb-3">원화 환산</p>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-600">
                 {CURRENCY_SYMBOLS.KRW} {formatCurrency(totalAssets.krw, 'KRW')}
               </p>
               
@@ -237,8 +237,8 @@ export default function Dashboard({
               )}
             </div>
             <div className="text-center">
-              <p className="text-xs lg:text-sm text-gray-500 mb-2">동화 환산</p>
-              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
+              <p className="text-sm lg:text-base text-gray-500 mb-3">동화 환산</p>
+              <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-600">
                 {CURRENCY_SYMBOLS.VND} {formatCurrency(totalAssets.vnd, 'VND')}
               </p>
               {assetChange && (
@@ -268,48 +268,96 @@ export default function Dashboard({
       </div>
 
       {simpleView ? (
-        /* Simple View - Asset Summary Cards */
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
-          {Object.entries(assetSummary)
-            .filter(([currency, total]) => currency && total > 0) // 유효한 데이터만 표시
-            .sort(([currencyA], [currencyB]) => {
-              // KRW를 맨 앞으로, 나머지는 원래 순서 유지
-              if (currencyA === 'KRW') return -1;
-              if (currencyB === 'KRW') return 1;
-              return 0;
-            })
-            .map(([currency, total]) => {
-              const formattedTotal = formatCurrency(total, currency);
-              const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
-              
-              return (
-                <Card key={currency} className="p-3 lg:p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-center mb-2 lg:mb-3">
-                    <CurrencyIcon currency={currency} size={32} className="w-8 h-8 lg:w-10 lg:h-10" />
-                  </div>
-                  <h3 className="text-base lg:text-lg font-bold text-gray-600 mb-2">{currency}</h3>
-                  <p className="text-xl font-semibold text-gray-800">
-                    {currencySymbol} {formattedTotal}
-                  </p>
-                  {/* 환율 정보 표시 */}
-                  {currency === 'USDT' && realTimeRates['USDT-KRW'] && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      ≈ ₩{formatCurrency(total * realTimeRates['USDT-KRW'], 'KRW')}
-                    </p>
-                  )}
-                  {currency === 'USD' && realTimeRates['USD-KRW'] && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      ≈ ₩{formatCurrency(total * realTimeRates['USD-KRW'], 'KRW')}
-                    </p>
-                  )}
-                  {currency === 'VND' && realTimeRates['VND-KRW'] && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      ≈ ₩{formatCurrency(total * realTimeRates['VND-KRW'], 'KRW')}
-                    </p>
-                  )}
-                </Card>
-              );
-            })}
+        /* Simple View - Left/Right Split for KRW and Foreign Assets */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 원화 자산 (Left Side) */}
+          <Card className="p-4 lg:p-6">
+            <h3 className="text-lg lg:text-xl font-bold text-blue-600 mb-4 flex items-center">
+              <span className="text-2xl mr-2">🇰🇷</span>
+              원화 자산
+            </h3>
+            <div className="space-y-4">
+              {Object.entries(assetSummary)
+                .filter(([currency, total]) => (currency === 'KRW' || currency === 'USDT') && total > 0)
+                .map(([currency, total]) => {
+                  const formattedTotal = formatCurrency(total, currency);
+                  const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
+                  
+                  return (
+                    <div key={currency} className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <CurrencyIcon currency={currency} size={40} className="w-10 h-10 mr-3" />
+                          <div>
+                            <h4 className="text-base font-semibold text-gray-700">{currency}</h4>
+                            {currency === 'USDT' && (
+                              <p className="text-sm text-gray-500">암호화폐</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl lg:text-2xl font-bold text-gray-800">
+                            {currencySymbol} {formattedTotal}
+                          </p>
+                          {currency === 'USDT' && realTimeRates['USDT-KRW'] && (
+                            <p className="text-sm text-gray-600">
+                              ≈ ₩{formatCurrency(total * realTimeRates['USDT-KRW'], 'KRW')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </Card>
+
+          {/* 외화 자산 (Right Side) */}
+          <Card className="p-4 lg:p-6">
+            <h3 className="text-lg lg:text-xl font-bold text-green-600 mb-4 flex items-center">
+              <span className="text-2xl mr-2">🌏</span>
+              외화 자산
+            </h3>
+            <div className="space-y-4">
+              {Object.entries(assetSummary)
+                .filter(([currency, total]) => (currency === 'VND' || currency === 'USD') && total > 0)
+                .map(([currency, total]) => {
+                  const formattedTotal = formatCurrency(total, currency);
+                  const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
+                  
+                  return (
+                    <div key={currency} className="bg-green-50 p-4 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <CurrencyIcon currency={currency} size={40} className="w-10 h-10 mr-3" />
+                          <div>
+                            <h4 className="text-base font-semibold text-gray-700">{currency}</h4>
+                            <p className="text-sm text-gray-500">
+                              {currency === 'VND' ? '베트남 동' : '미국 달러'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl lg:text-2xl font-bold text-gray-800">
+                            {currencySymbol} {formattedTotal}
+                          </p>
+                          {currency === 'USD' && realTimeRates['USD-KRW'] && (
+                            <p className="text-sm text-gray-600">
+                              ≈ ₩{formatCurrency(total * realTimeRates['USD-KRW'], 'KRW')}
+                            </p>
+                          )}
+                          {currency === 'VND' && realTimeRates['VND-KRW'] && (
+                            <p className="text-sm text-gray-600">
+                              ≈ ₩{formatCurrency(total * realTimeRates['VND-KRW'], 'KRW')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </Card>
         </div>
       ) : (
         /* Detailed View - Asset Breakdown */
