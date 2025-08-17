@@ -46,19 +46,27 @@ const DEFAULT_EXCHANGES = ['Bithumb', 'Upbit', 'Coinone', 'Korbit', 'Binance', '
 const DEFAULT_COINS = ['BTC', 'ETH', 'XRP', 'ADA', 'DOT', 'USDT', 'USDC'];
 
 export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetFormProps) {
+  // 기본 지폐 구성 정의
+  const getDefaultDenominations = (currency: string) => {
+    const defaultDenoms: Record<string, Record<string, number>> = {
+      'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+      'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
+      'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
+    };
+    return defaultDenoms[currency] || defaultDenoms['KRW'];
+  };
+
   const [denominations, setDenominations] = useState(() => {
     // editData가 있고 metadata.denominations이 있을 때
     if (editData?.metadata?.denominations) {
       return editData.metadata.denominations;
     }
     
-    const defaultDenoms: Record<string, Record<string, number>> = {
-      'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
-      'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-      'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
-    };
-    
-    return type === 'cash' ? (defaultDenoms[editData?.currency] || defaultDenoms['KRW']) : {};
+    // 새로 추가하는 경우 KRW를 기본으로 설정
+    if (type === 'cash') {
+      return { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 };
+    }
+    return {};
   });
   
   // 현금 자산의 증가/감소 모드 (음수 허용)
@@ -165,16 +173,15 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         
         // 통화가 실제로 변경된 경우에만 지폐 구성 초기화
         if (lastCurrency && lastCurrency !== currentCurrency) {
-          const defaultDenoms: Record<string, Record<string, number>> = {
-            'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
-            'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-            'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
-          };
-          
-          if (defaultDenoms[currentCurrency]) {
-            setDenominations(defaultDenoms[currentCurrency]);
-            setInputDisplayValues({});
-          }
+          const newDenoms = getDefaultDenominations(currentCurrency);
+          console.log('Currency changed from', lastCurrency, 'to', currentCurrency, 'setting denominations:', newDenoms);
+          setDenominations(newDenoms);
+          setInputDisplayValues({});
+        } else if (!lastCurrency) {
+          // 처음 로드될 때도 지폐 구성 설정
+          const newDenoms = getDefaultDenominations(currentCurrency);
+          console.log('Initial load for currency:', currentCurrency, 'setting denominations:', newDenoms);
+          setDenominations(newDenoms);
         }
         
         // 현재 통화를 lastCurrency로 설정
