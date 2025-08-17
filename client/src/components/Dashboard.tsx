@@ -314,7 +314,14 @@ export default function Dashboard({
               현금 자산
             </h2>
             <div className="space-y-2 lg:space-y-3">
-              {cashAssets.map(asset => (
+              {[...cashAssets]
+                .sort((a, b) => {
+                  // KRW를 맨 위로, 나머지는 원래 순서 유지
+                  if (a.currency === 'KRW') return -1;
+                  if (b.currency === 'KRW') return 1;
+                  return 0;
+                })
+                .map(asset => (
                 <div key={asset.id} className="p-3 lg:p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
