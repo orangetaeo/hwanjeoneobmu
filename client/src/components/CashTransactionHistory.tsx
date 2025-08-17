@@ -33,12 +33,17 @@ export default function CashTransactionHistory({
   const [isCashDetailModalOpen, setIsCashDetailModalOpen] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
-  // 모달이 열릴 때 제목에 포커스를 주어 입력 필드 자동 포커스 방지
+  // 모달이 열릴 때 포커스 관리
   useEffect(() => {
-    if (isOpen && titleRef.current) {
+    if (isOpen) {
+      // 모든 input 요소에서 포커스 제거
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => input.blur());
+      
+      // 제목에 포커스 주기
       setTimeout(() => {
         titleRef.current?.focus();
-      }, 100);
+      }, 150);
     }
   }, [isOpen]);
 
@@ -134,7 +139,10 @@ export default function CashTransactionHistory({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:max-w-4xl overflow-y-auto p-3 sm:p-6">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] w-[95vw] sm:max-w-4xl overflow-y-auto p-3 sm:p-6"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle 
             ref={titleRef}
