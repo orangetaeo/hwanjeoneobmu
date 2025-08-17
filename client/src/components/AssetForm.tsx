@@ -591,9 +591,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                      `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
                                   </span>
                                   <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
-                                    {currentCount}장
+                                    {newCount}장
                                     {changeCount !== 0 && (
-                                      <span className={`text-sm ml-1 font-semibold ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         ({changeCount > 0 ? '+' : ''}{changeCount})
                                       </span>
                                     )}
