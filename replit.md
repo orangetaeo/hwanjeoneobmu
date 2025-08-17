@@ -96,6 +96,14 @@ This is a full-stack asset management and exchange tracking application designed
   - KRW currency assets now appear first in both simple and detailed view modes
   - Maintains original order for other currencies (USD, VND, USDT)
   - Applied to both cash assets section and asset summary cards
+- **Dashboard Layout Overhaul (2025-08-17)**: Complete 3-column responsive layout redesign
+  - Total Asset Summary: Fixed to left-right layout on all screen sizes (mobile included)
+  - Asset Cards: Reorganized into 3 categories - 원화 자산 (🇰🇷), 외화 자산 (🌏), 코인 자산 (₿)
+  - Cryptocurrency Separation: USDT moved to dedicated "코인 자산" section with exchange-specific breakdown
+  - Exchange Icons: Implemented 🔵 for Bithumb, 🟡 for Binance, replacing generic currency icons
+  - National Flags: Added 🇰🇷 (KRW), 🇻🇳 (VND), 🇺🇸 (USD) for better visual identification
+  - Font Size Enhancement: Increased asset amounts to text-lg/text-xl for better readability
+  - Mobile Responsiveness: Ensured proper 2-column layout on mobile, 3-column on desktop
 
 # User Preferences
 

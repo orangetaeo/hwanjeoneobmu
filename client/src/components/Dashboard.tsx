@@ -217,7 +217,7 @@ export default function Dashboard({
         {isFetchingRates ? (
           <p className="text-gray-500">환율 정보 로딩 중...</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 gap-4 lg:gap-6">
             <div className="text-center">
               <p className="text-sm lg:text-base text-gray-500 mb-3">원화 환산</p>
               <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-600">
@@ -268,40 +268,80 @@ export default function Dashboard({
       </div>
 
       {simpleView ? (
-        /* Simple View - Left/Right Split for KRW and Foreign Assets */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 원화 자산 (Left Side) */}
+        /* Simple View - 3-Column Split: KRW, Foreign, Crypto */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          {/* 원화 자산 (Left) */}
           <Card className="p-4 lg:p-6">
-            <h3 className="text-lg lg:text-xl font-bold text-blue-600 mb-4 flex items-center">
-              <span className="text-2xl mr-2">🇰🇷</span>
+            <h3 className="text-base lg:text-lg font-bold text-blue-600 mb-4 flex items-center">
+              <span className="text-xl mr-2">🇰🇷</span>
               원화 자산
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {Object.entries(assetSummary)
-                .filter(([currency, total]) => (currency === 'KRW' || currency === 'USDT') && total > 0)
+                .filter(([currency, total]) => currency === 'KRW' && total > 0)
                 .map(([currency, total]) => {
                   const formattedTotal = formatCurrency(total, currency);
                   const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
                   
                   return (
-                    <div key={currency} className="bg-blue-50 p-4 rounded-lg">
+                    <div key={currency} className="bg-blue-50 p-3 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                          <CurrencyIcon currency={currency} size={40} className="w-10 h-10 mr-3" />
+                          <span className="text-2xl mr-3">🇰🇷</span>
                           <div>
-                            <h4 className="text-base font-semibold text-gray-700">{currency}</h4>
-                            {currency === 'USDT' && (
-                              <p className="text-sm text-gray-500">암호화폐</p>
-                            )}
+                            <h4 className="text-sm font-semibold text-gray-700">한국 원</h4>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl lg:text-2xl font-bold text-gray-800">
+                          <p className="text-lg lg:text-xl font-bold text-gray-800">
                             {currencySymbol} {formattedTotal}
                           </p>
-                          {currency === 'USDT' && realTimeRates['USDT-KRW'] && (
-                            <p className="text-sm text-gray-600">
-                              ≈ ₩{formatCurrency(total * realTimeRates['USDT-KRW'], 'KRW')}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </Card>
+
+          {/* 외화 자산 (Center) */}
+          <Card className="p-4 lg:p-6">
+            <h3 className="text-base lg:text-lg font-bold text-green-600 mb-4 flex items-center">
+              <span className="text-xl mr-2">🌏</span>
+              외화 자산
+            </h3>
+            <div className="space-y-3">
+              {Object.entries(assetSummary)
+                .filter(([currency, total]) => (currency === 'VND' || currency === 'USD') && total > 0)
+                .map(([currency, total]) => {
+                  const formattedTotal = formatCurrency(total, currency);
+                  const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
+                  
+                  return (
+                    <div key={currency} className="bg-green-50 p-3 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <span className="text-2xl mr-3">
+                            {currency === 'VND' ? '🇻🇳' : '🇺🇸'}
+                          </span>
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-700">
+                              {currency === 'VND' ? '베트남 동' : '미국 달러'}
+                            </h4>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg lg:text-xl font-bold text-gray-800">
+                            {currencySymbol} {formattedTotal}
+                          </p>
+                          {currency === 'USD' && realTimeRates['USD-KRW'] && (
+                            <p className="text-xs text-gray-600">
+                              ≈ ₩{formatCurrency(total * realTimeRates['USD-KRW'], 'KRW')}
+                            </p>
+                          )}
+                          {currency === 'VND' && realTimeRates['VND-KRW'] && (
+                            <p className="text-xs text-gray-600">
+                              ≈ ₩{formatCurrency(total * realTimeRates['VND-KRW'], 'KRW')}
                             </p>
                           )}
                         </div>
@@ -312,47 +352,69 @@ export default function Dashboard({
             </div>
           </Card>
 
-          {/* 외화 자산 (Right Side) */}
-          <Card className="p-4 lg:p-6">
-            <h3 className="text-lg lg:text-xl font-bold text-green-600 mb-4 flex items-center">
-              <span className="text-2xl mr-2">🌏</span>
-              외화 자산
+          {/* 코인 자산 (Right) */}
+          <Card className="p-4 lg:p-6 sm:col-span-2 lg:col-span-1">
+            <h3 className="text-base lg:text-lg font-bold text-orange-600 mb-4 flex items-center">
+              <span className="text-xl mr-2">₿</span>
+              코인 자산
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {Object.entries(assetSummary)
-                .filter(([currency, total]) => (currency === 'VND' || currency === 'USD') && total > 0)
+                .filter(([currency, total]) => currency === 'USDT' && total > 0)
                 .map(([currency, total]) => {
                   const formattedTotal = formatCurrency(total, currency);
                   const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
                   
+                  // 거래소별로 분리해서 표시
+                  const bithumbUsdt = exchangeAssets.find(asset => asset.name === 'Bithumb USDT')?.quantity || 0;
+                  const binanceUsdt = binanceAssets.find(asset => asset.name === 'Binance USDT')?.quantity || 0;
+                  
                   return (
-                    <div key={currency} className="bg-green-50 p-4 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <CurrencyIcon currency={currency} size={40} className="w-10 h-10 mr-3" />
-                          <div>
-                            <h4 className="text-base font-semibold text-gray-700">{currency}</h4>
-                            <p className="text-sm text-gray-500">
-                              {currency === 'VND' ? '베트남 동' : '미국 달러'}
-                            </p>
+                    <div key={currency} className="space-y-2">
+                      {bithumbUsdt > 0 && (
+                        <div className="bg-orange-50 p-3 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <span className="text-2xl mr-3">🔵</span>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-700">빗썸 USDT</h4>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg lg:text-xl font-bold text-gray-800">
+                                {currencySymbol} {formatCurrency(bithumbUsdt, currency)}
+                              </p>
+                              {realTimeRates['USDT-KRW'] && (
+                                <p className="text-xs text-gray-600">
+                                  ≈ ₩{formatCurrency(bithumbUsdt * realTimeRates['USDT-KRW'], 'KRW')}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xl lg:text-2xl font-bold text-gray-800">
-                            {currencySymbol} {formattedTotal}
-                          </p>
-                          {currency === 'USD' && realTimeRates['USD-KRW'] && (
-                            <p className="text-sm text-gray-600">
-                              ≈ ₩{formatCurrency(total * realTimeRates['USD-KRW'], 'KRW')}
-                            </p>
-                          )}
-                          {currency === 'VND' && realTimeRates['VND-KRW'] && (
-                            <p className="text-sm text-gray-600">
-                              ≈ ₩{formatCurrency(total * realTimeRates['VND-KRW'], 'KRW')}
-                            </p>
-                          )}
+                      )}
+                      {binanceUsdt > 0 && (
+                        <div className="bg-orange-50 p-3 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <span className="text-2xl mr-3">🟡</span>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-700">바이낸스 USDT</h4>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg lg:text-xl font-bold text-gray-800">
+                                {currencySymbol} {formatCurrency(binanceUsdt, currency)}
+                              </p>
+                              {realTimeRates['USDT-KRW'] && (
+                                <p className="text-xs text-gray-600">
+                                  ≈ ₩{formatCurrency(binanceUsdt * realTimeRates['USDT-KRW'], 'KRW')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}
