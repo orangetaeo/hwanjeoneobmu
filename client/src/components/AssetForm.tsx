@@ -627,20 +627,52 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                 // KRW는 0이어도 모든 지폐 표시
                                 
                                 return (
-                                  <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
+                                  <div key={denom} className={`flex justify-between items-center rounded px-2 py-1 border ${
                                     changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
                                   }`}>
                                     <span className="text-gray-600">
                                       {parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권:
                                     </span>
-                                    <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
-                                      {newCount}장
-                                      {changeCount !== 0 && (
-                                        <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                          ({changeCount > 0 ? '+' : ''}{changeCount})
-                                        </span>
+                                    <div className="flex items-center space-x-2">
+                                      {editData && (
+                                        <div className="flex items-center space-x-1">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setDenominations(prev => ({
+                                                ...prev,
+                                                [denom]: (prev[denom] || 0) - 1
+                                              }));
+                                            }}
+                                            className="w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center text-red-600 text-xs"
+                                            data-testid={`button-decrease-${denom}-display`}
+                                          >
+                                            -
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setDenominations(prev => ({
+                                                ...prev,
+                                                [denom]: (prev[denom] || 0) + 1
+                                              }));
+                                            }}
+                                            className="w-5 h-5 rounded-full bg-green-100 hover:bg-green-200 flex items-center justify-center text-green-600 text-xs"
+                                            data-testid={`button-increase-${denom}-display`}
+                                          >
+                                            +
+                                          </button>
+                                        </div>
                                       )}
-                                    </span>
+                                      <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
+                                        {newCount}장
+                                        {changeCount !== 0 && (
+                                          <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            ({changeCount > 0 ? '+' : ''}{changeCount})
+                                          </span>
+                                        )}
+                                      </span>
+                                    </div>
                                   </div>
                                 );
                               });
@@ -661,21 +693,53 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                   if (currentCount === 0 && changeCount === 0) return null;
                                   
                                   return (
-                                    <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
+                                    <div key={denom} className={`flex justify-between items-center rounded px-2 py-1 border ${
                                       changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
                                     }`}>
                                       <span className="text-gray-600">
                                         {form.watch('currency') === 'USD' ? `$${denom}` :
                                          `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
                                       </span>
-                                      <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
-                                        {newCount}장
-                                        {changeCount !== 0 && (
-                                          <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            ({changeCount > 0 ? '+' : ''}{changeCount})
-                                          </span>
+                                      <div className="flex items-center space-x-2">
+                                        {editData && (
+                                          <div className="flex items-center space-x-1">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setDenominations(prev => ({
+                                                  ...prev,
+                                                  [denom]: (prev[denom] || 0) - 1
+                                                }));
+                                              }}
+                                              className="w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center text-red-600 text-xs"
+                                              data-testid={`button-decrease-${denom}-display`}
+                                            >
+                                              -
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setDenominations(prev => ({
+                                                  ...prev,
+                                                  [denom]: (prev[denom] || 0) + 1
+                                                }));
+                                              }}
+                                              className="w-5 h-5 rounded-full bg-green-100 hover:bg-green-200 flex items-center justify-center text-green-600 text-xs"
+                                              data-testid={`button-increase-${denom}-display`}
+                                            >
+                                              +
+                                            </button>
+                                          </div>
                                         )}
-                                      </span>
+                                        <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
+                                          {newCount}장
+                                          {changeCount !== 0 && (
+                                            <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                              ({changeCount > 0 ? '+' : ''}{changeCount})
+                                            </span>
+                                          )}
+                                        </span>
+                                      </div>
                                     </div>
                                   );
                                 })
@@ -1508,8 +1572,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
-              {/* USD, VND 통화 수정 모드 - 동적 입력 필드 */}
-              {editData && form.watch('currency') !== 'KRW' && (
+              {/* USD, VND 통화 수정 모드 - 동적 입력 필드 (비활성화됨 - 지폐 구성 표시에서만 관리) */}
+              {false && editData && form.watch('currency') !== 'KRW' && (
                 <div className="space-y-4">
                   {Object.entries(denominations).length > 0 ? (
                     Object.entries(denominations)
