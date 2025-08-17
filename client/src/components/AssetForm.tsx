@@ -692,10 +692,12 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                   {/* 디버깅을 위한 denominations 상태 표시 */}
                   <div className="text-xs text-gray-500 mb-2">
                     현재 denominations: {JSON.stringify(denominations)} (키 개수: {Object.keys(denominations).length})
+                    <br />
+                    조건 확인: type={type}, currency={form.watch('currency')}, KRW조건={type === 'cash' && form.watch('currency') === 'KRW'}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-                    {type === 'cash' && form.watch('currency') === 'KRW' ? (
-                      // KRW일 때는 항상 모든 지폐 표시
+                    {(
+                      // 항상 KRW 지폐 모두 표시
                       Object.entries({ '50,000': denominations['50,000'] || 0, '10,000': denominations['10,000'] || 0, '5,000': denominations['5,000'] || 0, '1,000': denominations['1,000'] || 0 })
                         .sort(([a], [b]) => {
                           const numA = parseFloat(a.replace(/,/g, ''));
@@ -822,122 +824,6 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             </div>
                           );
                         })
-                    ) : (
-                      Object.entries(denominations)
-                      .sort(([a], [b]) => {
-                        const numA = parseFloat(a.replace(/,/g, ''));
-                        const numB = parseFloat(b.replace(/,/g, ''));
-                        return numB - numA;
-                      })
-                      .map(([denom, count]) => {
-                        const countValue = typeof count === 'number' ? count : 0;
-                        return (
-                          <div key={denom} className={`space-y-3 p-4 border rounded-lg min-w-0 ${getDenominationColor(form.watch('currency'), denom)}`}>
-                            <label className="text-xs font-semibold text-gray-800 block text-center">
-                              {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
-                               form.watch('currency') === 'USD' ? `$${denom}` :
-                               `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}
-                            </label>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const newValue = countValue - 1;
-                                  updateDenomination(denom, newValue);
-                                  setInputDisplayValues(prev => ({
-                                    ...prev,
-                                    [denom]: formatInputWithCommas(newValue.toString())
-                                  }));
-                                }}
-                                className="h-8 w-8 p-0 flex-shrink-0"
-                                data-testid={`button-decrease-${denom}`}
-                              >
-                                <Minus size={14} />
-                              </Button>
-                              <Input
-                                type="text"
-                                value={inputDisplayValues[denom] !== undefined ? inputDisplayValues[denom] : formatInputWithCommas(countValue.toString())}
-                                onChange={(e) => {
-                                  const inputValue = e.target.value;
-                                  
-                                  setInputDisplayValues(prev => ({
-                                    ...prev,
-                                    [denom]: inputValue
-                                  }));
-                                  
-                                  if (inputValue === '') {
-                                    updateDenomination(denom, 0);
-                                    return;
-                                  }
-                                  
-                                  if (inputValue === '-') {
-                                    return;
-                                  }
-                                  
-                                  const cleanInput = inputValue.replace(/,/g, '');
-                                  if (/^-?\d+$/.test(cleanInput)) {
-                                    const numericValue = parseInt(cleanInput, 10);
-                                    if (!isNaN(numericValue)) {
-                                      updateDenomination(denom, numericValue);
-                                    }
-                                  } else {
-                                    setTimeout(() => {
-                                      setInputDisplayValues(prev => ({
-                                        ...prev,
-                                        [denom]: formatInputWithCommas(countValue.toString())
-                                      }));
-                                    }, 100);
-                                  }
-                                }}
-                                onBlur={() => {
-                                  setInputDisplayValues(prev => ({
-                                    ...prev,
-                                    [denom]: formatInputWithCommas(countValue.toString())
-                                  }));
-                                }}
-                                className="text-center text-sm font-medium h-10 w-full max-w-full"
-                                data-testid={`input-denom-${denom}`}
-                                placeholder="0"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const newValue = countValue + 1;
-                                  updateDenomination(denom, newValue);
-                                  setInputDisplayValues(prev => ({
-                                    ...prev,
-                                    [denom]: formatInputWithCommas(newValue.toString())
-                                  }));
-                                }}
-                                className="h-8 w-8 p-0 flex-shrink-0"
-                                data-testid={`button-increase-${denom}`}
-                              >
-                                <Plus size={14} />
-                              </Button>
-                            </div>
-                            <div className="text-xs text-gray-500 text-center space-y-1">
-                              {!editData && (
-                                <div>
-                                  총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                        form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
-                                </div>
-                              )}
-                              {editData && (
-                                <div>
-                                  수정 후: {countValue}장
-                                  <br />
-                                  총액: {form.watch('currency') === 'KRW' ? '₩' : 
-                                        form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
                     )}
                   </div>
 
