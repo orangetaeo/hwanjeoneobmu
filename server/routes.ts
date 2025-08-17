@@ -369,17 +369,17 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
 
     // 3. 초기 자산 생성
     const initialAssets = [
-      // 현금 자산
+      // 현금 자산 (현재 저장된 데이터 반영)
       {
         userId,
         type: 'cash',
         name: 'KRW 현금',
         currency: 'KRW',
-        balance: '3540000',
+        balance: '4020000',
         metadata: {
           denominations: {
-            '50000': 59,
-            '10000': 59,
+            '50000': 68,
+            '10000': 62,
             '5000': 0,
             '1000': 0
           }
@@ -390,16 +390,16 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'cash',
         name: 'USD 현금',
         currency: 'USD',
-        balance: '436',
+        balance: '755',
         metadata: {
           denominations: {
-            '100': 2,
+            '100': 6,
             '50': 1,
-            '20': 3,
-            '10': 8,
-            '5': 3,
+            '20': 0,
+            '10': 4,
+            '5': 4,
             '2': 0,
-            '1': 31
+            '1': 45
           }
         }
       },
@@ -408,19 +408,34 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         type: 'cash',
         name: 'VND 현금',
         currency: 'VND',
-        balance: '30790000',
+        balance: '49300000',
         metadata: {
           denominations: {
-            '500000': 56,
-            '200000': 10,
-            '100000': 5,
+            '500000': 93,
+            '200000': 7,
+            '100000': 12,
             '50000': 4,
-            '20000': 1,
-            '10000': 7
+            '20000': 0,
+            '10000': 0,
+            '5000': 0,
+            '2000': 0,
+            '1000': 0
           }
         }
       },
       // 한국 은행 계좌
+      {
+        userId,
+        type: 'account',
+        name: '하나은행',
+        currency: 'KRW',
+        balance: '0',
+        metadata: {
+          bank: '하나은행',
+          accountNumber: '123-456-7890',
+          accountHolder: '조윤희'
+        }
+      },
       {
         userId,
         type: 'account',
@@ -437,14 +452,14 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
       {
         userId,
         type: 'account',
-        name: '신한은행 (김학태)',
+        name: '우리은행 (김학태)',
         currency: 'VND',
-        balance: '26684000',
+        balance: '0',
         metadata: {
           country: '베트남',
-          bankName: '신한은행',
-          accountNumber: '110-123-456789',
-          accountHolder: '김학태'
+          bankName: '우리은행',
+          accountHolder: '김학태',
+          accountNumber: '1002-123-456789'
         }
       },
       {
@@ -456,24 +471,24 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         metadata: {
           country: '베트남',
           bankName: 'BIDV',
-          accountNumber: '110-456-789123',
-          accountHolder: '김학태'
+          accountHolder: '김학태',
+          accountNumber: '110-456-789123'
         }
       },
       {
         userId,
         type: 'account',
-        name: '우리은행 (김학태)',
+        name: '신한은행 (김학태)',
         currency: 'VND',
-        balance: '0',
+        balance: '26684000',
         metadata: {
           country: '베트남',
-          bankName: '우리은행',
-          accountNumber: '1002-123-456789',
+          bankName: '신한은행',
+          accountNumber: '110-123-456789',
           accountHolder: '김학태'
         }
       },
-      // 거래소 자산
+      // 거래소 자산 (현재 저장된 데이터 반영)
       {
         userId,
         type: 'exchange',

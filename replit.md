@@ -30,6 +30,13 @@ This is a full-stack asset management and exchange tracking application designed
   - Network fee calculation (1 USDT) properly applied
   - Real-time balance updates on both exchanges verified
   - Transaction history accurately recorded with full metadata
+- **Test Data Update**: Updated test data initialization with current asset states
+  - KRW 현금: 4,020,000원 (50,000원×68장, 10,000원×62장)
+  - USD 현금: 755달러 (정확한 지폐 구성 반영)
+  - VND 현금: 49,300,000동 (정확한 지폐 구성 반영)
+  - 한국 은행: 하나은행, 국민은행 계좌 정보
+  - 베트남 은행: 우리은행, BIDV, 신한은행 계좌 정보
+  - 거래소: Bithumb USDT (2,563.07), Binance USDT (1.14)
 - **Critical Bug Fix**: Resolved USD 현금 (755달러) missing from total asset calculation 
 - **Query Optimization**: Fixed infinite loop issue in React Query caused by timestamp-based cache keys
 - **Asset Calculation**: All cash assets (KRW, USD, VND) now properly included in Dashboard calculations
