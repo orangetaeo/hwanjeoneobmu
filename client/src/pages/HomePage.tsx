@@ -809,8 +809,8 @@ export default function HomePage() {
             }
           };
         } else if (assetFormType === 'exchange') {
-          // 중복 검증에서 ID가 설정되었으면 업데이트, 없으면 생성
-          if (formData.id) {
+          // 중복 검증에서 실제 데이터베이스 ID가 설정되었으면 업데이트, 없으면 생성
+          if (formData.id && formData.originalAsset) {
             console.log('Exchange 중복 자산 업데이트:', formData);
             
             // formData.balance가 이미 계산된 합계값이므로 그대로 사용
@@ -831,19 +831,21 @@ export default function HomePage() {
             
             console.log('Exchange asset updated successfully');
           } else {
+            // 새로운 자산 생성
             createData = {
               name: formData.exchangeName,
               type: 'exchange',
               currency: formData.coinName,
               balance: formData.quantity.toString(),
               metadata: {
-                exchange: formData.exchangeName
+                exchange: formData.exchangeName,
+                assetType: 'crypto'
               }
             };
           }
         } else if (assetFormType === 'binance') {
-          // 중복 검증에서 ID가 설정되었으면 업데이트, 없으면 생성
-          if (formData.id) {
+          // 중복 검증에서 실제 데이터베이스 ID가 설정되었으면 업데이트, 없으면 생성
+          if (formData.id && formData.originalAsset) {
             console.log('Binance 중복 자산 업데이트:', formData);
             
             // formData.balance가 이미 계산된 합계값이므로 그대로 사용
@@ -864,12 +866,16 @@ export default function HomePage() {
             
             console.log('Binance asset updated successfully');
           } else {
+            // 새로운 자산 생성
             createData = {
-              name: 'Binance',
+              name: `Binance ${formData.coinName}`,
               type: 'binance',
               currency: formData.coinName,
               balance: formData.quantity.toString(),
-              metadata: {}
+              metadata: {
+                exchange: 'Binance',
+                assetType: 'crypto'
+              }
             };
           }
         }
