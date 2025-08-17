@@ -488,51 +488,41 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
-              {/* 이 섹션을 제거 */}
-                                    return `${currencySymbol}${totalAmount.toLocaleString()}`;
-                                  }
-                                })()}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        {editData && (
-                          <>
-                            <div className="bg-white/70 rounded-lg p-3 border border-blue-100">
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-blue-700">기존 총계:</span>
-                                <span className="font-semibold text-blue-800">
-                                  {form.watch('currency') === 'KRW' ? '₩' : 
-                                   form.watch('currency') === 'USD' ? '$' : '₫'}
-                                  {Object.entries(editData?.metadata?.denominations || editData?.denominations || {}).reduce((total, [denom, count]) => {
-                                    return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                                  }, 0).toLocaleString()}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="inline-block w-8 h-0.5 bg-blue-300"></div>
-                              <div className="text-xs text-blue-600 font-medium mt-1">수정 후</div>
-                            </div>
-                            <div className="bg-white rounded-lg p-4 border-2 border-blue-200 shadow-sm">
-                              <div className="flex justify-between items-center">
-                                <span className="text-blue-800 font-medium text-lg">새로운 총계:</span>
-                                <span className="text-2xl font-bold text-blue-900">
-                                  {form.watch('currency') === 'KRW' ? '₩' : 
-                                   form.watch('currency') === 'USD' ? '$' : '₫'}
-                                  {Object.entries(denominations).reduce((total, [denom, count]) => {
-                                    return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                                  }, 0).toLocaleString()}
-                                </span>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
+              {/* 수정 모드일 때 기존 자산과 새로운 자산 비교 표시 */}
+              {editData && (
+                <div className="space-y-4">
+                  <div className="bg-white/70 rounded-lg p-3 border border-blue-100">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-blue-700">기존 총계:</span>
+                      <span className="font-semibold text-blue-800">
+                        {form.watch('currency') === 'KRW' ? '₩' : 
+                         form.watch('currency') === 'USD' ? '$' : '₫'}
+                        {Object.entries(editData?.metadata?.denominations || editData?.denominations || {}).reduce((total, [denom, count]) => {
+                          return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                        }, 0).toLocaleString()}
+                      </span>
                     </div>
                   </div>
+                  <div className="text-center">
+                    <div className="inline-block w-8 h-0.5 bg-blue-300"></div>
+                    <div className="text-xs text-blue-600 font-medium mt-1">수정 후</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border-2 border-blue-200 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-800 font-medium text-lg">새로운 총계:</span>
+                      <span className="text-2xl font-bold text-blue-900">
+                        {form.watch('currency') === 'KRW' ? '₩' : 
+                         form.watch('currency') === 'USD' ? '$' : '₫'}
+                        {Object.entries(denominations).reduce((total, [denom, count]) => {
+                          return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                        }, 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                  <h3 className="font-medium text-gray-900">지폐 구성</h3>
+              <h3 className="font-medium text-gray-900">지폐 구성</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
                     {Object.entries(denominations)
                       .sort(([a], [b]) => {
@@ -611,11 +601,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       );
                     })}
                   </div>
-
-                </div>
-              )}
-            </>
-          )}
+              </>
+            )}
 
           {(type === 'korean-account' || type === 'vietnamese-account') && (
             <>
