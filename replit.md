@@ -2,7 +2,22 @@
 
 This is a full-stack asset management and exchange tracking application built with React, Express, and PostgreSQL. The application allows users to manage various types of financial assets including cash, bank accounts, cryptocurrency holdings, and track exchange transactions. It features real-time exchange rate monitoring, Firebase integration for data persistence, and a comprehensive dashboard for portfolio management.
 
-## Recent Major Updates (August 15, 2025)
+## Recent Major Updates (August 17, 2025)
+
+### Version: "환전상 시스템 v1.8 - 현금 증감 내역 검색 기능 강화" (2025-08-17 03:55 AM)
+
+### 현금 거래 내역 검색 및 필터링 기능 완전 구현
+- **날짜 범위 검색**: 시작일-종료일 선택으로 특정 기간 거래 내역 조회
+- **거래 유형 필터**: 전체/증가/감소 선택으로 거래 타입별 분류 보기  
+- **통합 필터 UI**: 검색어, 날짜, 거래 유형을 한 화면에서 동시 적용
+- **필터 초기화**: 모든 필터를 한 번에 초기화하는 편의 기능
+- **반응형 레이아웃**: 모바일과 데스크톱에서 최적화된 필터링 인터페이스
+
+### 사용자 경험 개선사항
+- **직관적 아이콘**: 달력 아이콘으로 날짜 필터 구분 명확화
+- **실시간 필터링**: 입력과 동시에 즉시 결과 반영
+- **상태 표시**: 활성화된 필터 항목 시각적 표시
+- **데이터 무결성**: 날짜 형식 자동 검증 및 범위 확인
 
 ### Version: "환전상 시스템 v1.7 - PostgreSQL 완전 통합 완료" (2025-08-15 12:05 PM)
 

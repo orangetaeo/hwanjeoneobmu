@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Filter, ArrowUpDown, X, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, X, TrendingUp, TrendingDown, Clock, Calendar } from 'lucide-react';
 import { Transaction, CashAsset } from '@/types';
 import { formatCurrency } from '@/utils/helpers';
 
@@ -24,6 +24,9 @@ export default function CashTransactionHistory({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'increase' | 'decrease'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
@@ -42,12 +45,29 @@ export default function CashTransactionHistory({
 
   const filteredTransactions = cashTransactions
     .filter(transaction => {
+      // Search filter
       const matchesSearch = 
         transaction.fromAssetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.toAssetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (transaction.memo && transaction.memo.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      return matchesSearch;
+      // Date filter
+      const transactionDate = new Date(transaction.timestamp);
+      const matchesDateRange = 
+        (!startDate || transactionDate >= new Date(startDate)) &&
+        (!endDate || transactionDate <= new Date(endDate + 'T23:59:59'));
+      
+      // Type filter (increase/decrease)
+      const isDecrease = transaction.fromAssetName?.includes('현금') && 
+                        !transaction.fromAssetName?.includes('증가');
+      const isIncrease = !isDecrease;
+      
+      const matchesType = 
+        typeFilter === 'all' ||
+        (typeFilter === 'increase' && isIncrease) ||
+        (typeFilter === 'decrease' && isDecrease);
+      
+      return matchesSearch && matchesDateRange && matchesType;
     })
     .sort((a, b) => {
       let aValue, bValue;
@@ -122,9 +142,10 @@ export default function CashTransactionHistory({
             </div>
           </Card>
 
-          {/* 검색 및 정렬 */}
+          {/* 검색 및 필터 */}
           <Card className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="space-y-4">
+              {/* 검색어 입력 */}
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -133,29 +154,89 @@ export default function CashTransactionHistory({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
+                    data-testid="input-search-transactions"
                   />
                 </div>
               </div>
-              
-              <div className="flex gap-2">
-                <Select value={sortBy} onValueChange={setSortBy}>
+
+              {/* 필터 및 정렬 */}
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* 날짜 필터 */}
+                <div className="flex gap-2 items-center">
+                  <Calendar className="text-gray-400" size={16} />
+                  <Input
+                    type="date"
+                    placeholder="시작일"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-40"
+                    data-testid="input-start-date"
+                  />
+                  <span className="text-gray-500">~</span>
+                  <Input
+                    type="date"
+                    placeholder="종료일"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-40"
+                    data-testid="input-end-date"
+                  />
+                </div>
+
+                {/* 타입 필터 */}
+                <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease') => setTypeFilter(value)}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="timestamp">시간순</SelectItem>
-                    <SelectItem value="amount">금액순</SelectItem>
+                    <SelectItem value="all">전체</SelectItem>
+                    <SelectItem value="increase">증가</SelectItem>
+                    <SelectItem value="decrease">감소</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                >
-                  <ArrowUpDown size={16} />
-                </Button>
+                {/* 정렬 */}
+                <div className="flex gap-2">
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="timestamp">시간순</SelectItem>
+                      <SelectItem value="amount">금액순</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    data-testid="button-sort-order"
+                  >
+                    <ArrowUpDown size={16} />
+                  </Button>
+                </div>
               </div>
+
+              {/* 필터 초기화 버튼 */}
+              {(searchTerm || startDate || endDate || typeFilter !== 'all') && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStartDate('');
+                      setEndDate('');
+                      setTypeFilter('all');
+                    }}
+                    data-testid="button-clear-filters"
+                  >
+                    <X size={16} className="mr-2" />
+                    필터 초기화
+                  </Button>
+                </div>
+              )}
             </div>
           </Card>
 
