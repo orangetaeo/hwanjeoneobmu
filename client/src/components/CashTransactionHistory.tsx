@@ -121,7 +121,7 @@ export default function CashTransactionHistory({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:max-w-4xl overflow-y-auto p-3 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             {cashAsset.currency} 현금 증감 내역
@@ -129,78 +129,82 @@ export default function CashTransactionHistory({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* 현금 자산 정보 */}
-          <Card className="p-4 bg-gray-50">
-            <div className="flex justify-between items-center">
+          {/* 현금 자산 정보 - 모바일 최적화 */}
+          <Card className="p-3 sm:p-4 bg-gray-50">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <div>
-                <h3 className="font-semibold text-lg">{cashAsset.name}</h3>
-                <p className="text-sm text-gray-600">현재 잔액</p>
+                <h3 className="font-semibold text-base sm:text-lg">{cashAsset.name}</h3>
+                <p className="text-xs sm:text-sm text-gray-600">현재 잔액</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="text-left sm:text-right">
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 break-all">
                   {formatCurrency(cashAsset.balance, cashAsset.currency)} {cashAsset.currency}
                 </p>
               </div>
             </div>
           </Card>
 
-          {/* 검색 및 필터 */}
-          <Card className="p-4">
-            <div className="space-y-4">
+          {/* 검색 및 필터 - 모바일 최적화 */}
+          <Card className="p-3 sm:p-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* 검색어 입력 */}
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
                   <Input
-                    placeholder="거래내역 검색 (메모, 거래명 검색)"
+                    placeholder="거래내역 검색 (메모, 거래명)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-9 text-sm"
                     data-testid="input-search-transactions"
                   />
                 </div>
               </div>
 
-              {/* 필터 및 정렬 */}
-              <div className="flex flex-col md:flex-row gap-4">
+              {/* 필터 및 정렬 - 모바일 최적화 */}
+              <div className="space-y-3">
                 {/* 날짜 필터 */}
-                <div className="flex gap-2 items-center">
-                  <Calendar className="text-gray-400" size={16} />
-                  <Input
-                    type="date"
-                    placeholder="시작일"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-40"
-                    data-testid="input-start-date"
-                  />
-                  <span className="text-gray-500">~</span>
-                  <Input
-                    type="date"
-                    placeholder="종료일"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-40"
-                    data-testid="input-end-date"
-                  />
+                <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Calendar size={14} />
+                    <span>기간</span>
+                  </div>
+                  <div className="flex gap-2 items-center flex-1">
+                    <Input
+                      type="date"
+                      placeholder="시작일"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="flex-1 min-w-0 text-sm"
+                      data-testid="input-start-date"
+                    />
+                    <span className="text-gray-500 text-sm">~</span>
+                    <Input
+                      type="date"
+                      placeholder="종료일"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="flex-1 min-w-0 text-sm"
+                      data-testid="input-end-date"
+                    />
+                  </div>
                 </div>
 
-                {/* 타입 필터 */}
-                <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease') => setTypeFilter(value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체</SelectItem>
-                    <SelectItem value="increase">증가</SelectItem>
-                    <SelectItem value="decrease">감소</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {/* 정렬 */}
+                {/* 타입 필터 및 정렬 */}
                 <div className="flex gap-2">
+                  <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease') => setTypeFilter(value)}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체</SelectItem>
+                      <SelectItem value="increase">증가</SelectItem>
+                      <SelectItem value="decrease">감소</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="flex-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -214,8 +218,9 @@ export default function CashTransactionHistory({
                     size="sm"
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     data-testid="button-sort-order"
+                    className="px-3"
                   >
-                    <ArrowUpDown size={16} />
+                    <ArrowUpDown size={14} />
                   </Button>
                 </div>
               </div>
@@ -242,21 +247,21 @@ export default function CashTransactionHistory({
             </div>
           </Card>
 
-          {/* 거래 내역 헤더 */}
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">최근 거래 내역</h3>
-            <div className="flex items-center gap-3">
+          {/* 거래 내역 헤더 - 모바일 최적화 */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">최근 거래 내역</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm text-gray-600">표시 개수:</span>
               <Select value={displayCount.toString()} onValueChange={(value) => setDisplayCount(parseInt(value))}>
-                <SelectTrigger className="w-28">
+                <SelectTrigger className="w-20 sm:w-24 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">5개 보기</SelectItem>
-                  <SelectItem value="10">10개 보기</SelectItem>
-                  <SelectItem value="15">15개 보기</SelectItem>
+                  <SelectItem value="5">5개</SelectItem>
+                  <SelectItem value="10">10개</SelectItem>
+                  <SelectItem value="15">15개</SelectItem>
                 </SelectContent>
               </Select>
-
             </div>
           </div>
 
@@ -275,36 +280,42 @@ export default function CashTransactionHistory({
                 const { amount, isDecrease } = getTransactionAmount(transaction);
                 
                 return (
-                  <Card key={transaction.id} className="p-4 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-start space-x-3">
-                        <div className="mt-1">
+                  <Card key={transaction.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
+                        <div className="mt-0.5 sm:mt-1 flex-shrink-0">
                           {getTransactionIcon(isDecrease)}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-medium text-sm sm:text-base text-gray-900 truncate">
                               {getTransactionTypeText(transaction, isDecrease)}
                             </h4>
                           </div>
-                          <p className="text-sm text-gray-600 mb-1">
-                            {new Date(transaction.timestamp).toLocaleString('ko-KR')}
+                          <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                            {new Date(transaction.timestamp).toLocaleString('ko-KR', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </p>
                           {transaction.memo && (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs sm:text-sm text-gray-500 break-words">
                               메모: {transaction.memo}
                             </p>
                           )}
                         </div>
                       </div>
                       
-                      <div className="text-right">
-                        <p className={`text-lg font-bold ${
+                      <div className="text-right flex-shrink-0">
+                        <p className={`text-sm sm:text-lg font-bold break-all ${
                           isDecrease ? 'text-red-600' : 'text-green-600'
                         }`}>
                           {isDecrease ? '-' : '+'}
-                          {formatCurrency(amount, cashAsset.currency)} {cashAsset.currency}
+                          {formatCurrency(amount, cashAsset.currency)}
                         </p>
+                        <p className="text-xs text-gray-500">{cashAsset.currency}</p>
                       </div>
                     </div>
                   </Card>
