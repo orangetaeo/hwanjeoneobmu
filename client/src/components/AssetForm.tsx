@@ -152,25 +152,36 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     }
   }, [editData?.id, type, editData?.metadata?.denominations, editData?.denominations]);
 
+  // 현재 선택된 통화를 추적하기 위한 ref
+  const [lastCurrency, setLastCurrency] = useState<string>('');
+
   // 새로 추가할 때 통화 변경 시 현재 자산 정보 조회 및 지폐 구성 초기화
   useEffect(() => {
-    if (!editData && type === 'cash' && form.watch('currency')) {
-      fetchCurrentAssetInfo(form.watch('currency'));
+    if (!editData && type === 'cash') {
+      const currentCurrency = form.watch('currency');
       
-      // 통화가 변경될 때 지폐 구성을 해당 통화에 맞게 초기화
-      const defaultDenoms: Record<string, Record<string, number>> = {
-        'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
-        'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
-        'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
-      };
-      
-      const newCurrency = form.watch('currency');
-      if (defaultDenoms[newCurrency]) {
-        setDenominations(defaultDenoms[newCurrency]);
-        setInputDisplayValues({}); // 입력 표시 값도 초기화
+      if (currentCurrency) {
+        fetchCurrentAssetInfo(currentCurrency);
+        
+        // 통화가 실제로 변경된 경우에만 지폐 구성 초기화
+        if (lastCurrency && lastCurrency !== currentCurrency) {
+          const defaultDenoms: Record<string, Record<string, number>> = {
+            'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+            'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
+            'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
+          };
+          
+          if (defaultDenoms[currentCurrency]) {
+            setDenominations(defaultDenoms[currentCurrency]);
+            setInputDisplayValues({});
+          }
+        }
+        
+        // 현재 통화를 lastCurrency로 설정
+        setLastCurrency(currentCurrency);
       }
     }
-  }, [form.watch('currency'), editData, type]);
+  }, [form.watch('currency'), editData, type, lastCurrency]);
 
   function getFormValues() {
     if (editData) {
