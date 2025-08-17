@@ -1083,8 +1083,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
-              {/* 수정 모드일 때 하드코딩된 지폐 구조 */}
-              {editData && (
+              {/* 수정 모드일 때 KRW 하드코딩된 지폐 구조 */}
+              {editData && form.watch('currency') === 'KRW' && (
                 <div className="space-y-6">
                   {/* 50,000원권 */}
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
@@ -1533,7 +1533,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               size="sm"
                               onClick={() => {
                                 const currentCount = typeof count === 'number' ? count : 0;
-                                const newValue = Math.max(0, currentCount - 1);
+                                const newValue = currentCount - 1;
                                 setDenominations((prev: Record<string, number>) => ({
                                   ...prev,
                                   [denom]: newValue
