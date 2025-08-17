@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, Clock } from 'lucide-react';
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, CURRENCY_SYMBOLS } from '@/types';
 import { formatNumberWithCommas, formatCurrency } from '@/utils/helpers';
 
@@ -140,6 +140,20 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                         <span className="font-medium">{Number(count)}장</span>
                       </div>
                     ))}
+                  </div>
+
+                  {/* 현금 증감 내역 버튼 */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => onOpenModal('viewCashTransactions', asset)}
+                      data-testid={`button-view-transactions-${asset.id}`}
+                    >
+                      <Clock size={16} className="mr-2" />
+                      증감 내역 보기
+                    </Button>
                   </div>
                 </Card>
               ))}

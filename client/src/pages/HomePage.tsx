@@ -26,6 +26,7 @@ import AdvancedTransactionForm from '@/components/AdvancedTransactionForm';
 import UserSettingsForm from '@/components/UserSettingsForm';
 import ExchangeRateManager from '@/components/ExchangeRateManager';
 import ExchangeOperations from '@/components/ExchangeOperations';
+import CashTransactionHistory from '@/components/CashTransactionHistory';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,8 @@ export default function HomePage() {
   const [activeAssetTab, setActiveAssetTab] = useState('cash');
   const [showAdvancedTransactionForm, setShowAdvancedTransactionForm] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
+  const [showCashTransactionHistory, setShowCashTransactionHistory] = useState(false);
+  const [selectedCashAsset, setSelectedCashAsset] = useState<CashAsset | null>(null);
 
   // React Query로 실시간 데이터 로딩
   const { data: assetsData = [], isLoading: assetsLoading, error: assetsError } = useQuery({
@@ -289,6 +292,12 @@ export default function HomePage() {
         break;
       case 'transfer':
         setCurrentView('transaction');
+        break;
+      case 'viewCashTransactions':
+        if (data) {
+          setSelectedCashAsset(data);
+          setShowCashTransactionHistory(true);
+        }
         break;
       case 'reports':
         setModalInfo({
@@ -1277,6 +1286,19 @@ export default function HomePage() {
           </main>
         </div>
       </div>
+
+      {/* Cash Transaction History Modal */}
+      {showCashTransactionHistory && selectedCashAsset && (
+        <CashTransactionHistory
+          isOpen={showCashTransactionHistory}
+          onClose={() => {
+            setShowCashTransactionHistory(false);
+            setSelectedCashAsset(null);
+          }}
+          cashAsset={selectedCashAsset}
+          transactions={transactions}
+        />
+      )}
 
       {/* Modal */}
       {modalInfo && (
