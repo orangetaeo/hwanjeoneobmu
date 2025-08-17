@@ -34,7 +34,7 @@ export default function ExchangeOperations() {
           {/* 1단계 - 빗썸 거래 */}
           <div className="flex items-center justify-between p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl w-full sm:w-auto min-w-[200px]">
             <div className="flex items-center space-x-3">
-              <span className="text-2xl">🔵</span>
+              <Coins className="text-blue-500" size={24} />
               <div>
                 <div className="font-semibold text-sm sm:text-base">빗썸 KRW → USDT</div>
                 <div className="text-gray-600 dark:text-gray-400 text-xs">원화로 테더 구매</div>
@@ -49,7 +49,7 @@ export default function ExchangeOperations() {
           {/* 2단계 - 네트워크 이동 */}
           <div className="flex items-center justify-between p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl w-full sm:w-auto min-w-[200px]">
             <div className="flex items-center space-x-3">
-              <span className="text-2xl">🔄</span>
+              <ArrowRightLeft className="text-yellow-600" size={24} />
               <div>
                 <div className="font-semibold text-sm sm:text-base">빗썸 → 바이낸스</div>
                 <div className="text-gray-600 dark:text-gray-400 text-xs">네트워크 전송</div>
@@ -63,7 +63,7 @@ export default function ExchangeOperations() {
           {/* 3단계 - 바이낸스 P2P */}
           <div className="flex items-center justify-between p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-xl w-full sm:w-auto min-w-[200px]">
             <div className="flex items-center space-x-3">
-              <span className="text-2xl">🟡</span>
+              <TrendingUp className="text-green-600" size={24} />
               <div>
                 <div className="font-semibold text-sm sm:text-base">바이낸스 USDT → VND</div>
                 <div className="text-gray-600 dark:text-gray-400 text-xs">P2P 현금화</div>
