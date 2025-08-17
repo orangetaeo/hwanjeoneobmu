@@ -422,7 +422,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     
     // 현재 보유 자산이 없으면 새로 추가하는 것이므로 지폐가 하나라도 있으면 true
     if (!currentAssetInfo) {
-      return Object.values(denominations).some((count: number) => count > 0);
+      return Object.values(denominations).some((count) => (count as number) > 0);
     }
     
     // 기존 자산이 있으면 변경사항이 있는지 확인
@@ -591,9 +591,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                      `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
                                   </span>
                                   <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
-                                    {newCount}장
+                                    {currentCount}장
                                     {changeCount !== 0 && (
-                                      <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      <span className={`text-sm ml-1 font-semibold ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         ({changeCount > 0 ? '+' : ''}{changeCount})
                                       </span>
                                     )}
@@ -749,7 +749,34 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             </Button>
                           </div>
                           <div className="text-xs text-gray-500 text-center space-y-1">
-                            {!editData && (
+                            {!editData && currentAssetInfo?.denominations && (
+                              <div className="space-y-1">
+                                {/* 현재 보유량과 증감 표시 */}
+                                <div className="text-sm font-medium text-gray-700">
+                                  {(() => {
+                                    const currentCount = currentAssetInfo.denominations[denom] || 0;
+                                    const changeCount = countValue;
+                                    if (changeCount === 0) {
+                                      return `${currentCount}장`;
+                                    } else {
+                                      return (
+                                        <>
+                                          {currentCount}장
+                                          <span className={`ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            ({changeCount > 0 ? '+' : ''}{changeCount})
+                                          </span>
+                                        </>
+                                      );
+                                    }
+                                  })()}
+                                </div>
+                                <div>
+                                  총액: {form.watch('currency') === 'KRW' ? '₩' : 
+                                        form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
+                                </div>
+                              </div>
+                            )}
+                            {!editData && !currentAssetInfo?.denominations && (
                               <div>
                                 총액: {form.watch('currency') === 'KRW' ? '₩' : 
                                       form.watch('currency') === 'USD' ? '$' : '₫'}{(parseFloat(denom.replace(/,/g, '')) * countValue).toLocaleString()}
