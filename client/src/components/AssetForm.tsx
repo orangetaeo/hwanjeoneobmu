@@ -416,6 +416,36 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     return titles[type as keyof typeof titles];
   };
 
+  // 지폐 구성에 실제 변경사항이 있는지 확인하는 함수
+  const hasChanges = () => {
+    if (type !== 'cash') return true; // 현금 자산이 아니면 항상 true
+    
+    // 현재 보유 자산이 없으면 새로 추가하는 것이므로 지폐가 하나라도 있으면 true
+    if (!currentAssetInfo) {
+      return Object.values(denominations).some((count: number) => count > 0);
+    }
+    
+    // 기존 자산이 있으면 변경사항이 있는지 확인
+    const currentDenominations = currentAssetInfo.denominations || {};
+    
+    // 현재 지폐 구성과 기존 지폐 구성을 비교
+    const allDenoms = [
+      ...Object.keys(denominations),
+      ...Object.keys(currentDenominations)
+    ];
+    
+    for (const denom of allDenoms) {
+      const currentCount = denominations[denom] || 0;
+      const existingCount = currentDenominations[denom] || 0;
+      
+      if (currentCount !== 0) { // 0이 아닌 값이 하나라도 있으면 변경사항 있음
+        return true;
+      }
+    }
+    
+    return false; // 모든 지폐가 0이면 변경사항 없음
+  };
+
   return (
     <Card className="bg-white rounded-lg shadow-xl overflow-y-auto max-h-[95vh] sm:max-h-none">
       <div className="p-4 sm:p-6">
@@ -995,6 +1025,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
               type="submit"
               className="px-6 py-2"
               data-testid="button-submit"
+              disabled={type === 'cash' && !hasChanges()}
             >
               {editData ? '수정' : '추가'}
             </Button>
