@@ -488,61 +488,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
-              {form.watch('currency') && (
-                <div className="space-y-6">
-                  {/* 전체 합산 총계 - 셀렉터 위에 배치 */}
-                  <div className={`rounded-xl border shadow-sm ${
-                    Object.entries(denominations).reduce((total, [denom, count]) => {
-                      return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                    }, 0) < 0
-                      ? 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200' 
-                      : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
-                  }`}>
-                    <div className="p-5">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className={`w-3 h-3 rounded-full ${
-                          Object.entries(denominations).reduce((total, [denom, count]) => {
-                            return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                          }, 0) < 0 ? 'bg-red-500' : 'bg-green-500'
-                        }`}></div>
-                        <h4 className={`font-bold text-lg ${
-                          Object.entries(denominations).reduce((total, [denom, count]) => {
-                            return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                          }, 0) < 0 ? 'text-red-900' : 'text-green-900'
-                        }`}>
-                          {Object.entries(denominations).reduce((total, [denom, count]) => {
-                            return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                          }, 0) < 0 ? '현금 감소' : '현금 증가'}
-                        </h4>
-                      </div>
-                      <div className="space-y-3">
-                        {!editData && (
-                          <div className="bg-white/70 rounded-lg p-4 border border-opacity-100">
-                            <div className="flex justify-between items-center">
-                              <span className={`font-medium ${
-                                Object.entries(denominations).reduce((total, [denom, count]) => {
-                                  return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                                }, 0) < 0 ? 'text-red-800' : 'text-green-800'
-                              }`}>
-                                {Object.entries(denominations).reduce((total, [denom, count]) => {
-                                  return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                                }, 0) < 0 ? '차감할 금액:' : '추가할 금액:'}
-                              </span>
-                              <span className={`text-2xl font-bold ${
-                                Object.entries(denominations).reduce((total, [denom, count]) => {
-                                  return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                                }, 0) < 0 ? 'text-red-900' : 'text-green-900'
-                              }`}>
-                                {(() => {
-                                  const totalAmount = Object.entries(denominations).reduce((total, [denom, count]) => {
-                                    return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                                  }, 0);
-                                  const currencySymbol = form.watch('currency') === 'KRW' ? '₩' : 
-                                                        form.watch('currency') === 'USD' ? '$' : '₫';
-                                  
-                                  if (totalAmount < 0) {
-                                    return `-${currencySymbol}${Math.abs(totalAmount).toLocaleString()}`;
-                                  } else {
+              {/* 이 섹션을 제거 */}
                                     return `${currencySymbol}${totalAmount.toLocaleString()}`;
                                   }
                                 })()}
