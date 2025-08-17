@@ -341,9 +341,12 @@ export class DatabaseStorage implements IStorage {
     });
     
     // 출발 거래소 자산 감소 (exchange 또는 binance 타입 검색)
+    console.log('출발 자산 검색 시작:', { fromAssetName, userId });
     let fromAsset = await this.getAssetByName(userId, fromAssetName, 'exchange');
+    console.log('exchange 타입으로 검색:', fromAsset);
     if (!fromAsset) {
       fromAsset = await this.getAssetByName(userId, fromAssetName, 'binance');
+      console.log('binance 타입으로 검색:', fromAsset);
     }
     
     console.log('출발 자산 찾기 결과:', fromAsset);
@@ -498,6 +501,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAssetByName(userId: string, name: string, type: string): Promise<Asset | undefined> {
+    console.log('getAssetByName 호출:', { userId, name, type });
+    
     // 먼저 정확한 이름으로 검색
     let [result] = await db
       .select()
@@ -508,8 +513,11 @@ export class DatabaseStorage implements IStorage {
         eq(assets.type, type)
       ));
     
+    console.log('정확한 이름 검색 결과:', result);
+    
     // 정확한 이름으로 찾지 못한 경우, 빗썸 관련 자산은 유연한 매칭 시도
     if (!result && (name.includes('Bithumb') || name === 'Bithumb USDT')) {
+      console.log('빗썸 관련 자산 유연 검색 시작');
       const allAssets = await db
         .select()
         .from(assets)
@@ -518,14 +526,19 @@ export class DatabaseStorage implements IStorage {
           eq(assets.type, type)
         ));
       
+      console.log('같은 타입의 모든 자산:', allAssets.map(a => ({ name: a.name, type: a.type })));
+      
       // Bithumb 관련 자산 찾기
       result = allAssets.find(asset => 
         asset.name === 'Bithumb' || 
         asset.name === 'Bithumb USDT' || 
         asset.name.includes('Bithumb')
-      );
+      ) || undefined;
+      
+      console.log('빗썸 유연 검색 결과:', result);
     }
     
+    console.log('getAssetByName 최종 결과:', result);
     return result || undefined;
   }
 
