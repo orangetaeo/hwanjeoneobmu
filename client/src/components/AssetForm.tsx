@@ -995,6 +995,88 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
+              {/* USD, VND 통화 새로 추가 모드 - 동적 입력 필드 */}
+              {type === 'cash' && form.watch('currency') !== 'KRW' && !editData && (
+                <div className="space-y-4">
+                  {Object.entries(denominations).length > 0 ? (
+                    Object.entries(denominations)
+                      .sort((a, b) => {
+                        const numA = parseFloat(a[0].replace(/,/g, ''));
+                        const numB = parseFloat(b[0].replace(/,/g, ''));
+                        return numB - numA;
+                      })
+                      .map(([denom, count]) => (
+                        <div key={denom} className={`space-y-3 p-4 border rounded-lg ${getDenominationColor(form.watch('currency'), denom)}`}>
+                          <label className="text-xs font-semibold text-gray-800 block text-center">
+                            {form.watch('currency') === 'USD' ? 
+                              `$${denom}` : 
+                              `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`
+                            }
+                          </label>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const currentCount = typeof count === 'number' ? count : 0;
+                                const newValue = Math.max(0, currentCount - 1);
+                                setDenominations((prev: Record<string, number>) => ({
+                                  ...prev,
+                                  [denom]: newValue
+                                }));
+                              }}
+                              className="h-8 w-8 p-0 flex-shrink-0"
+                              data-testid={`button-decrease-${denom}-new`}
+                            >
+                              <Minus size={14} />
+                            </Button>
+                            <Input
+                              type="text"
+                              value={(typeof count === 'number' ? count : 0).toString()}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 0;
+                                setDenominations((prev: Record<string, number>) => ({
+                                  ...prev,
+                                  [denom]: Math.max(0, value)
+                                }));
+                              }}
+                              className="h-10 sm:h-9 text-center flex-1 min-w-0"
+                              placeholder="0"
+                              data-testid={`input-${denom}-new`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const currentCount = typeof count === 'number' ? count : 0;
+                                const newValue = currentCount + 1;
+                                setDenominations((prev: Record<string, number>) => ({
+                                  ...prev,
+                                  [denom]: newValue
+                                }));
+                              }}
+                              className="h-8 w-8 p-0 flex-shrink-0"
+                              data-testid={`button-increase-${denom}-new`}
+                            >
+                              <Plus size={14} />
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500 text-center">
+                            총액: {form.watch('currency') === 'USD' ? '$' : '₫'}
+                            {(parseFloat(denom.replace(/,/g, '')) * (typeof count === 'number' ? count : 0)).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      통화를 선택하면 지폐 입력 필드가 표시됩니다.
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 수정 모드일 때 하드코딩된 지폐 구조 */}
               {editData && (
                 <div className="space-y-6">
@@ -1396,6 +1478,136 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     </div>
 
                   </div>
+
+                  {/* 메모 입력 필드 */}
+                  <div className="mt-6">
+                    <FormField
+                      control={form.control}
+                      name="memo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>메모</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="현금 증감 관련 메모를 입력하세요"
+                              {...field}
+                              data-testid="input-cash-memo"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* USD, VND 통화 수정 모드 - 동적 입력 필드 */}
+              {editData && form.watch('currency') !== 'KRW' && (
+                <div className="space-y-4">
+                  {Object.entries(denominations).length > 0 ? (
+                    Object.entries(denominations)
+                      .sort((a, b) => {
+                        const numA = parseFloat(a[0].replace(/,/g, ''));
+                        const numB = parseFloat(b[0].replace(/,/g, ''));
+                        return numB - numA;
+                      })
+                      .map(([denom, count]) => (
+                        <div key={denom} className={`space-y-3 p-4 border rounded-lg ${getDenominationColor(form.watch('currency'), denom)}`}>
+                          <label className="text-xs font-semibold text-gray-800 block text-center">
+                            {form.watch('currency') === 'USD' ? 
+                              `$${denom}` : 
+                              `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`
+                            }
+                          </label>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const currentCount = typeof count === 'number' ? count : 0;
+                                const newValue = Math.max(0, currentCount - 1);
+                                setDenominations((prev: Record<string, number>) => ({
+                                  ...prev,
+                                  [denom]: newValue
+                                }));
+                                setInputDisplayValues((prev: Record<string, string>) => ({
+                                  ...prev,
+                                  [denom]: formatInputWithCommas(newValue.toString())
+                                }));
+                              }}
+                              className="h-8 w-8 p-0 flex-shrink-0"
+                              data-testid={`button-decrease-${denom}`}
+                            >
+                              <Minus size={14} />
+                            </Button>
+                            <Input
+                              type="text"
+                              value={inputDisplayValues[denom] !== undefined ? inputDisplayValues[denom] : formatInputWithCommas((typeof count === 'number' ? count : 0).toString())}
+                              onChange={(e) => {
+                                const inputValue = e.target.value;
+                                setInputDisplayValues((prev: Record<string, string>) => ({
+                                  ...prev,
+                                  [denom]: inputValue
+                                }));
+                                
+                                if (inputValue === '') {
+                                  setDenominations((prev: Record<string, number>) => ({
+                                    ...prev,
+                                    [denom]: 0
+                                  }));
+                                  return;
+                                }
+                                
+                                const cleanInput = inputValue.replace(/,/g, '');
+                                if (/^-?\d+$/.test(cleanInput)) {
+                                  const numericValue = parseInt(cleanInput, 10);
+                                  if (!isNaN(numericValue)) {
+                                    setDenominations((prev: Record<string, number>) => ({
+                                      ...prev,
+                                      [denom]: numericValue
+                                    }));
+                                  }
+                                }
+                              }}
+                              className="h-10 sm:h-9 text-center flex-1 min-w-0"
+                              placeholder="0"
+                              data-testid={`input-${denom}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const currentCount = typeof count === 'number' ? count : 0;
+                                const newValue = currentCount + 1;
+                                setDenominations((prev: Record<string, number>) => ({
+                                  ...prev,
+                                  [denom]: newValue
+                                }));
+                                setInputDisplayValues((prev: Record<string, string>) => ({
+                                  ...prev,
+                                  [denom]: formatInputWithCommas(newValue.toString())
+                                }));
+                              }}
+                              className="h-8 w-8 p-0 flex-shrink-0"
+                              data-testid={`button-increase-${denom}`}
+                            >
+                              <Plus size={14} />
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500 text-center">
+                            총액: {form.watch('currency') === 'USD' ? '$' : '₫'}
+                            {(parseFloat(denom.replace(/,/g, '')) * (typeof count === 'number' ? count : 0)).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      지폐 구성 정보를 불러오는 중입니다.
+                    </div>
+                  )}
 
                   {/* 메모 입력 필드 */}
                   <div className="mt-6">
