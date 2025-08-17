@@ -689,14 +689,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
               )}
 
               <h3 className="font-medium text-gray-900">지폐 구성</h3>
-                  {/* 디버깅을 위한 denominations 상태 표시 */}
-                  <div className="text-xs text-gray-500 mb-2">
-                    현재 denominations: {JSON.stringify(denominations)} (키 개수: {Object.keys(denominations).length})
-                    <br />
-                    조건 확인: type={type}, currency={form.watch('currency')}, KRW조건={type === 'cash' && form.watch('currency') === 'KRW'}
-                    <br />
-                    렌더링 배열: [50000, 10000, 5000, 1000] - 총 4개 지폐 강제 표시
-                  </div>
+
                   
                   {/* 50,000원권 */}
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
