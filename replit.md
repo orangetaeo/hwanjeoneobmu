@@ -8,6 +8,7 @@ This is a full-stack asset management and exchange tracking application designed
   - CashChangeDetailModal: Fully integrated across all cash management interfaces
   - Asset management > Cash management > Transaction history: Click functionality implemented
   - Comprehensive transaction detail display showing denomination changes by bill type
+  - Enhanced denomination display format: "50,000원권", "500,000동권", "100달러권" with localized formatting
 - **Complete Test Data System Finalized**: Comprehensive test data initialization now includes all components
   - Asset data: Current cash, bank accounts, and exchange assets with exact balances
   - Exchange rate data: USD→VND and KRW→VND rates for all denominations  
