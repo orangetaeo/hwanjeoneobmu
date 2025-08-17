@@ -689,13 +689,22 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
               )}
 
               <h3 className="font-medium text-gray-900">지폐 구성</h3>
+              
+              {/* 강력한 디버깅 정보 - 항상 표시 */}
+              <div className="bg-yellow-100 border border-yellow-300 rounded p-2 text-xs">
+                <strong>디버깅:</strong><br />
+                type: {type}<br />
+                editData: {editData ? '존재함' : '없음'}<br />
+                currency: {form.watch('currency')}<br />
+                조건 결과: {type === 'cash' && form.watch('currency') === 'KRW' && !editData ? 'TRUE - 새로 추가 모드 렌더링' : 'FALSE - 다른 모드 렌더링'}
+              </div>
 
               {/* 새로 추가 모드에서도 KRW이면 모든 지폐 강제 표시 */}
-              {!editData && type === 'cash' && form.watch('currency') === 'KRW' && (
+              {type === 'cash' && form.watch('currency') === 'KRW' && !editData && (
                 <div className="space-y-6">
                   {/* 디버깅 정보 */}
-                  <div className="text-xs text-gray-500 mb-2">
-                    새로 추가 모드 - KRW 4개 지폐 강제 표시
+                  <div className="text-xs text-red-500 mb-2 bg-red-50 p-2 border border-red-200 rounded">
+                    ✅ 새로 추가 모드 - KRW 4개 지폐 강제 표시 활성화됨!
                     <br />
                     현재 denominations: {JSON.stringify(denominations)} (키 개수: {Object.keys(denominations).length})
                   </div>
