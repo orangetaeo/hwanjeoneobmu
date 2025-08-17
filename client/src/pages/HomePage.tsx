@@ -847,8 +847,9 @@ export default function HomePage() {
             console.log('Binance 중복 자산 업데이트:', formData);
             
             // formData.balance가 이미 계산된 합계값이므로 그대로 사용
-            const updateBalance = formData.balance || formData.quantity.toString();
+            const updateBalance = formData.balance;
             console.log('업데이트할 잔액:', updateBalance);
+            console.log('FormData 전체:', formData);
             
             const response = await fetch(`/api/assets/${formData.id}`, {
               method: 'PUT',
