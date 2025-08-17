@@ -1,6 +1,13 @@
 # Overview
 
-This is a full-stack asset management and exchange tracking application designed to help users manage various financial assets including cash, bank accounts, and cryptocurrency holdings, while also tracking exchange transactions. The application aims to provide a comprehensive dashboard for portfolio management with real-time exchange rate monitoring. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
+This is a full-stack asset management and exchange tracking application designed to help users manage various financial assets including cash, bank accounts, and cryptocurrency holdings, while also tracking exchange transactions. The application provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
+
+## Recent Updates (2025-08-17)
+- **Enhanced Cash Management**: Completed comprehensive cash denomination tracking for KRW, USD, and VND currencies
+- **UI Improvements**: Implemented 2-column grid layout for denomination input fields for better mobile optimization
+- **Data Integrity**: Fixed duplicate denomination display issues through key normalization logic
+- **Transaction System**: Improved cash change tracking with detailed denomination change records
+- **Mobile Optimization**: Enhanced responsive design for cash input interfaces
 
 # User Preferences
 
