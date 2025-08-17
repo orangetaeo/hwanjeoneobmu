@@ -271,6 +271,12 @@ export default function Dashboard({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
           {Object.entries(assetSummary)
             .filter(([currency, total]) => currency && total > 0) // 유효한 데이터만 표시
+            .sort(([currencyA], [currencyB]) => {
+              // KRW를 맨 앞으로, 나머지는 원래 순서 유지
+              if (currencyA === 'KRW') return -1;
+              if (currencyB === 'KRW') return 1;
+              return 0;
+            })
             .map(([currency, total]) => {
               const formattedTotal = formatCurrency(total, currency);
               const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
