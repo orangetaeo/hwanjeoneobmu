@@ -70,6 +70,7 @@ Preferred communication style: Simple, everyday language.
   - Form validation uses proper asset name matching patterns: "BankName (AccountHolder)" for banks, "ExchangeName" for exchanges, "Binance CoinName" for Binance
   - Smart duplicate handling reduces data redundancy while maintaining data integrity with clear user feedback
   - Fixed critical balance calculation bug: now correctly adds new quantity to existing balance instead of overwriting
+  - Resolved data synchronization issue: NetworkTransfer and BithumbTrading components now properly display updated asset quantities through React Query cache invalidation
 - **Button Loading States**: Added loading functionality to prevent duplicate clicks and improve user experience
   - All asset add buttons in AssetManager show "처리중..." loading state during operations
   - Form submit buttons disabled and show loading text during submission process

@@ -60,9 +60,7 @@ export default function BithumbTrading() {
   
   const databaseUsdtBalance = bithumbUsdtAsset ? parseFloat(bithumbUsdtAsset.balance || '0') : 0;
   
-  // 디버깅 로그
-  console.log('빗썸 USDT 자산 검색 결과:', bithumbUsdtAsset);
-  console.log('데이터베이스 USDT 잔고:', databaseUsdtBalance);
+
 
   // 기존 데이터베이스 거래 내역도 유지 (수동 입력용)
   const { data: manualTrades = [] } = useQuery<BithumbTrade[]>({

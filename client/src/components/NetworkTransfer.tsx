@@ -78,21 +78,13 @@ export default function NetworkTransfer() {
     (asset.name === 'Bithumb' || asset.name === 'Bithumb USDT' || asset.name.includes('Bithumb'))
   );
 
-  console.log('빗썸 USDT 자산 검색 결과:', bithumbUsdtAsset);
-  console.log('전체 자산 목록:', (assets as any[]).map((a: any) => ({ name: a.name, type: a.type, currency: a.currency })));
+
 
   // 사용 가능한 USDT 계산 - 실제 자산 잔액 기준 (테스트 데이터 기준)
   const bithumbUsdtBalance = parseFloat(bithumbUsdtAsset?.balance || '0');
   const availableUsdt = bithumbUsdtBalance;
   
-  console.log('네트워크 이동 USDT 계산 (통일된 자산):', {
-    bithumbUsdtBalance,
-    availableUsdt,
-    transfersCount: transfers.length,
-    assetFound: !!bithumbUsdtAsset,
-    assetType: bithumbUsdtAsset?.type,
-    totalAssets: (assets as any[]).length
-  });
+
   
 
   // 네트워크 수수료 프리셋
