@@ -423,13 +423,13 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
           }
         }
       },
-      // 한국 은행 계좌
+      // 한국 은행 계좌 (현재 저장된 데이터 반영)
       {
         userId,
         type: 'account',
         name: '하나은행',
         currency: 'KRW',
-        balance: '0',
+        balance: '750000',
         metadata: {
           bank: '하나은행',
           accountNumber: '123-456-7890',
@@ -448,7 +448,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
           accountHolder: '김학태'
         }
       },
-      // 베트남 은행 계좌들
+      // 베트남 은행 계좌들 (현재 저장된 데이터 반영)
       {
         userId,
         type: 'account',
@@ -469,23 +469,21 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
         currency: 'VND',
         balance: '1200000',
         metadata: {
-          country: '베트남',
-          bankName: 'BIDV',
-          accountHolder: '김학태',
-          accountNumber: '110-456-789123'
+          bank: 'BIDV',
+          accountNumber: '110-456-789123',
+          accountHolder: '조윤희'
         }
       },
       {
         userId,
         type: 'account',
-        name: '신한은행 (김학태)',
+        name: '신한은행',
         currency: 'VND',
-        balance: '26684000',
+        balance: '22160000',
         metadata: {
-          country: '베트남',
-          bankName: '신한은행',
+          bank: '신한은행',
           accountNumber: '110-123-456789',
-          accountHolder: '김학태'
+          accountHolder: '조윤희'
         }
       },
       // 거래소 자산 (현재 저장된 데이터 반영)
