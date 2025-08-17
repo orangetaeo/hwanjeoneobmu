@@ -106,6 +106,10 @@ This is a full-stack asset management and exchange tracking application designed
   - Mobile Responsiveness: Ensured proper 2-column layout on mobile, 3-column on desktop
   - Bank-Specific Icons: Implemented unique icons for each bank (하나은행 🟢, 국민은행 🟤, 신한은행 🔵, 우리은행 🔷, BIDV 🟢)
   - Detailed View Enhancement: Applied consistent icon system to detailed asset breakdown view
+- **Page Title Icon Unification (2025-08-17)**: Synchronized page header icons with navigation
+  - Dynamic Header Icons: Page title icons now match corresponding navigation icons
+  - Consistent UX: Same icon used in navigation sidebar, mobile navigation, and page header
+  - Icon Mapping: Home (대시보드), Wallet (자산관리), Coins (거래소운영), List (거래내역), TrendingUp (환율관리), DollarSign (환전상시세)
 
 
 # User Preferences

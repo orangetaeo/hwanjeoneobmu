@@ -1006,7 +1006,13 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-12 lg:h-16">
             <div className="flex items-center space-x-2 lg:space-x-4">
-              <ChartLine className="text-primary w-5 h-5 lg:w-6 lg:h-6" />
+              {currentView === 'dashboard' && <Home className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {currentView === 'assets' && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {currentView === 'exchange-operations' && <Coins className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {currentView === 'transactions' && <List className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {currentView === 'rates' && <TrendingUp className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {currentView === 'exchange-rates' && <DollarSign className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {!['dashboard', 'assets', 'exchange-operations', 'transactions', 'rates', 'exchange-rates'].includes(currentView) && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               <h1 className="text-base lg:text-xl font-bold text-gray-900">
                 {currentView === 'dashboard' ? '대시보드' :
                  currentView === 'assets' ? '자산 관리' :
