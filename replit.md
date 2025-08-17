@@ -20,6 +20,11 @@ This is a full-stack asset management and exchange tracking application designed
   - Asset management > Cash management > Transaction history: Click functionality implemented
   - Comprehensive transaction detail display showing denomination changes by bill type
   - Enhanced denomination display format: "50,000원권", "500,000동권", "100달러권" with localized formatting
+- **Transaction History Modal UX Enhancement**: Fixed auto-focus issue in search field
+  - Added onOpenAutoFocus={(e) => e.preventDefault()} to DialogContent component
+  - Eliminated unwanted cursor blinking in search field when modal opens
+  - Users can now open transaction history without automatic search field focus
+  - Search functionality remains fully accessible when clicked manually
 - **Complete Test Data System Finalized**: Comprehensive test data initialization now includes all components
   - Asset data: Current cash, bank accounts, and exchange assets with exact balances
   - Exchange rate data: USD→VND and KRW→VND rates for all denominations  
