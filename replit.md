@@ -104,6 +104,8 @@ This is a full-stack asset management and exchange tracking application designed
   - National Flags: Added 🇰🇷 (KRW), 🇻🇳 (VND), 🇺🇸 (USD) for better visual identification
   - Font Size Enhancement: Increased asset amounts to text-lg/text-xl for better readability
   - Mobile Responsiveness: Ensured proper 2-column layout on mobile, 3-column on desktop
+  - Bank-Specific Icons: Implemented unique icons for each bank (하나은행 🟢, 국민은행 🟤, 신한은행 🔵, 우리은행 🔷, BIDV 🟢)
+  - Detailed View Enhancement: Applied consistent icon system to detailed asset breakdown view
 
 # User Preferences
 

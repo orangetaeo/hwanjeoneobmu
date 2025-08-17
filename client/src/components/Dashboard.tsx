@@ -466,31 +466,42 @@ export default function Dashboard({
                 한국 계좌
               </h2>
               <div className="space-y-2 lg:space-y-3">
-                {koreanAccounts.map(acc => (
-                  <div key={acc.id} className="p-3 lg:p-4 bg-blue-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-3">🏦</span>
-                        <div>
-                          <p className="font-semibold text-sm lg:text-base">
-                            {acc.name}
-                            {acc.metadata?.accountHolder && (
-                              <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                - {acc.metadata.accountHolder}
-                              </span>
+                {koreanAccounts.map(acc => {
+                  const getBankIcon = (bankName: string) => {
+                    if (bankName.includes('하나')) return '🟢'; // 하나은행 - 초록
+                    if (bankName.includes('국민')) return '🟤'; // 국민은행 - 갈색
+                    if (bankName.includes('신한')) return '🔵'; // 신한은행 - 파랑
+                    if (bankName.includes('우리')) return '🔷'; // 우리은행 - 파란 다이아몬드
+                    if (bankName.includes('농협')) return '🟢'; // 농협 - 초록
+                    return '🏦'; // 기본 은행 아이콘
+                  };
+                  
+                  return (
+                    <div key={acc.id} className="p-3 lg:p-4 bg-blue-50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <span className="text-2xl mr-3">{getBankIcon(acc.name)}</span>
+                          <div>
+                            <p className="font-semibold text-sm lg:text-base">
+                              {acc.name}
+                              {acc.metadata?.accountHolder && (
+                                <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
+                                  - {acc.metadata.accountHolder}
+                                </span>
+                              )}
+                            </p>
+                            {acc.metadata?.accountNumber && (
+                              <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
                             )}
-                          </p>
-                          {acc.metadata?.accountNumber && (
-                            <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
-                          )}
+                          </div>
                         </div>
+                        <p className="font-mono text-blue-600 text-base lg:text-lg font-bold">
+                          {formatCurrency(acc.balance, 'KRW')} KRW
+                        </p>
                       </div>
-                      <p className="font-mono text-blue-600 text-base lg:text-lg font-bold">
-                        {formatCurrency(acc.balance, 'KRW')} KRW
-                      </p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Card>
 
@@ -501,31 +512,42 @@ export default function Dashboard({
                 베트남 계좌
               </h2>
               <div className="space-y-2 lg:space-y-3">
-                {vietnameseAccounts.map(acc => (
-                  <div key={acc.id} className="p-3 lg:p-4 bg-green-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-3">🏦</span>
-                        <div>
-                          <p className="font-semibold text-sm lg:text-base">
-                            {acc.name}
-                            {acc.metadata?.accountHolder && (
-                              <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                - {acc.metadata.accountHolder}
-                              </span>
+                {vietnameseAccounts.map(acc => {
+                  const getVietnameseBankIcon = (bankName: string) => {
+                    if (bankName.includes('신한')) return '🔵'; // 신한은행 - 파랑
+                    if (bankName.includes('BIDV')) return '🟢'; // BIDV - 초록
+                    if (bankName.includes('우리')) return '🔷'; // 우리은행 - 파란 다이아몬드
+                    if (bankName.includes('Vietcombank')) return '🔴'; // Vietcombank - 빨강
+                    if (bankName.includes('ACB')) return '🟡'; // ACB - 노랑
+                    return '🏦'; // 기본 은행 아이콘
+                  };
+                  
+                  return (
+                    <div key={acc.id} className="p-3 lg:p-4 bg-green-50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <span className="text-2xl mr-3">{getVietnameseBankIcon(acc.name)}</span>
+                          <div>
+                            <p className="font-semibold text-sm lg:text-base">
+                              {acc.name}
+                              {acc.metadata?.accountHolder && (
+                                <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
+                                  - {acc.metadata.accountHolder}
+                                </span>
+                              )}
+                            </p>
+                            {acc.metadata?.accountNumber && (
+                              <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
                             )}
-                          </p>
-                          {acc.metadata?.accountNumber && (
-                            <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
-                          )}
+                          </div>
                         </div>
+                        <p className="font-mono text-green-600 text-base lg:text-lg font-bold">
+                          {formatCurrency(acc.balance, 'VND')} VND
+                        </p>
                       </div>
-                      <p className="font-mono text-green-600 text-base lg:text-lg font-bold">
-                        {formatCurrency(acc.balance, 'VND')} VND
-                      </p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Card>
 
