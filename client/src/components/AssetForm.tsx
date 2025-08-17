@@ -517,6 +517,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         }
       }
       
+      console.log('AssetForm onSubmit 전달 데이터:', data);
       onSubmit(data);
     } catch (error) {
       console.error('Error in duplicate checking or form submission:', error);
