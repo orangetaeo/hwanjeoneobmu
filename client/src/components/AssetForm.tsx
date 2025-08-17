@@ -462,7 +462,12 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         data.name = data.exchangeName || 'Exchange';
         data.type = 'exchange';
         data.currency = data.coinName || 'USDT';
-        data.balance = data.quantity?.toString() || '0';
+        
+        // 중복 처리에서 이미 balance가 설정되었다면 그대로 사용
+        if (!data.balance) {
+          data.balance = data.quantity?.toString() || '0';
+        }
+        
         data.metadata = {
           exchange: data.exchangeName || 'Exchange',
           assetType: 'crypto'
@@ -479,7 +484,12 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         data.name = 'Binance ' + (data.coinName || 'USDT');
         data.type = 'binance';
         data.currency = data.coinName || 'USDT';
-        data.balance = data.quantity?.toString() || '0';
+        
+        // 중복 처리에서 이미 balance가 설정되었다면 그대로 사용
+        if (!data.balance) {
+          data.balance = data.quantity?.toString() || '0';
+        }
+        
         data.metadata = {
           exchange: 'Binance',
           assetType: 'crypto'
