@@ -17,6 +17,14 @@ This is a full-stack asset management and exchange tracking application designed
   - Optimized text and icon sizes throughout the interface
   - Improved sidebar and real-time rates widget spacing
   - Enhanced responsive padding and margins for efficient space usage
+- **Header & Navigation Improvements**: Fixed z-index layering and dynamic page titles
+  - Header z-index set to z-50 to prevent navigation overlay issues
+  - Dynamic page title display based on current route
+  - Mobile navigation z-index adjusted to z-40 for proper layering
+- **Account Display Enhancement**: Fixed account holder name display from metadata
+  - Account names now properly show "Bank Name - Account Holder" format
+  - Metadata parsing implemented for accountHolder and accountNumber fields
+  - All Korean and Vietnamese accounts display correctly with holder names
 
 # User Preferences
 
