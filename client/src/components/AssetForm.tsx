@@ -169,11 +169,33 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       
       const existingAsset = assets.find((asset: any) => {
         const typeMatch = asset.type === 'exchange';
-        const nameMatch = asset.name === formData.exchangeName;
         const currencyMatch = asset.currency === formData.coinName;
         const notEditing = asset.id !== editData?.id;
         
-        return typeMatch && nameMatch && currencyMatch && notEditing;
+        // 거래소 이름 매칭: metadata.exchange 필드나 이름에서 거래소명 추출
+        let assetExchangeName = '';
+        if (asset.metadata?.exchange) {
+          assetExchangeName = asset.metadata.exchange;
+        } else if (asset.name) {
+          // "Bithumb USDT" 형태에서 "Bithumb" 추출
+          assetExchangeName = asset.name.split(' ')[0];
+        }
+        
+        const exchangeMatch = assetExchangeName === formData.exchangeName;
+        
+        console.log('Exchange duplicate check:', {
+          assetName: asset.name,
+          assetExchangeName,
+          formExchangeName: formData.exchangeName,
+          assetCurrency: asset.currency,
+          formCurrency: formData.coinName,
+          typeMatch,
+          exchangeMatch,
+          currencyMatch,
+          notEditing
+        });
+        
+        return typeMatch && exchangeMatch && currencyMatch && notEditing;
       });
       
       return existingAsset;
