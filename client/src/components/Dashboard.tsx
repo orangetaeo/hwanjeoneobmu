@@ -348,7 +348,7 @@ export default function Dashboard({
                             {acc.bankName || acc.name}
                             {acc.accountHolder && (
                               <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                ({acc.accountHolder})
+                                - {acc.accountHolder}
                               </span>
                             )}
                           </p>
@@ -383,7 +383,7 @@ export default function Dashboard({
                             {acc.bankName || acc.name}
                             {acc.accountHolder && (
                               <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                ({acc.accountHolder})
+                                - {acc.accountHolder}
                               </span>
                             )}
                           </p>
