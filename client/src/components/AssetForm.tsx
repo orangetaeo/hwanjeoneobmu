@@ -463,12 +463,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           assetType: 'crypto'
         };
         
-        // Generate unique ID if not editing and not a duplicate update
-        if (!editData && !data.id) {
-          data.id = Date.now().toString();
-        } else if (editData) {
+        // ID 설정: 편집 중이면 원본 ID, 중복 업데이트가 아닌 새 자산이면 임시 ID
+        if (editData) {
           data.id = editData.id;
+        } else if (!data.id) {
+          // 중복이 아닌 새 자산만 임시 ID 생성
+          data.id = Date.now().toString();
         }
+        // 중복 자산 업데이트인 경우 data.id는 이미 중복 검증에서 설정됨
       } else if (type === 'binance') {
         // 바이낸스 자산의 이름과 메타데이터 설정
         data.name = 'Binance ' + (data.coinName || 'USDT');
@@ -485,12 +487,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           assetType: 'crypto'
         };
         
-        // Generate unique ID if not editing and not a duplicate update
-        if (!editData && !data.id) {
-          data.id = Date.now().toString();
-        } else if (editData) {
+        // ID 설정: 편집 중이면 원본 ID, 중복 업데이트가 아닌 새 자산이면 임시 ID
+        if (editData) {
           data.id = editData.id;
+        } else if (!data.id) {
+          // 중복이 아닌 새 자산만 임시 ID 생성
+          data.id = Date.now().toString();
         }
+        // 중복 자산 업데이트인 경우 data.id는 이미 중복 검증에서 설정됨
       } else if (type === 'korean-account' || type === 'vietnamese-account') {
         // 계좌 자산의 이름 설정
         data.name = `${data.bankName} (${data.accountHolder})`;
