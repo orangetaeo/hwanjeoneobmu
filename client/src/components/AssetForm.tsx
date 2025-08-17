@@ -114,9 +114,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       );
       
       if (existingAsset) {
-        console.log('Found existing asset:', existingAsset);
-        console.log('Asset metadata:', existingAsset.metadata);
-        console.log('Asset denominations:', existingAsset.metadata?.denominations);
+        console.log('Found existing asset with denominations:', existingAsset.metadata?.denominations);
         
         setCurrentAssetInfo({
           currency: existingAsset.currency,
@@ -619,7 +617,10 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             // KRW 통화인 경우 4개 지폐 강제 표시
                             if (form.watch('currency') === 'KRW') {
                               return ['50,000', '10,000', '5,000', '1,000'].map((denom) => {
-                                const currentCount = (currentAssetInfo?.denominations?.[denom] as number) || 0;
+                                // 콤마 있는 키와 콤마 없는 키 모두 체크
+                                const denomWithoutComma = denom.replace(/,/g, '');
+                                const currentCount = (currentAssetInfo?.denominations?.[denom] as number) || 
+                                                   (currentAssetInfo?.denominations?.[denomWithoutComma] as number) || 0;
                                 const changeCount = denominations[denom] || 0;
                                 const newCount = currentCount + changeCount;
                                 
