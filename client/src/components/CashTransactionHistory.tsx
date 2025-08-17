@@ -197,18 +197,6 @@ export default function CashTransactionHistory({
                   </SelectContent>
                 </Select>
 
-                {/* 표시 개수 선택 */}
-                <Select value={displayCount.toString()} onValueChange={(value) => setDisplayCount(parseInt(value))}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5개 보기</SelectItem>
-                    <SelectItem value="10">10개 보기</SelectItem>
-                    <SelectItem value="15">15개 보기</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 {/* 정렬 */}
                 <div className="flex gap-2">
                   <Select value={sortBy} onValueChange={setSortBy}>
@@ -257,8 +245,20 @@ export default function CashTransactionHistory({
           {/* 거래 내역 헤더 */}
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">최근 거래 내역</h3>
-            <div className="text-sm text-gray-500">
-              최근 {displayCount}개 거래 (전체 {cashTransactions.length}개 중 {filteredTransactions.length}개 표시)
+            <div className="flex items-center gap-3">
+              <Select value={displayCount.toString()} onValueChange={(value) => setDisplayCount(parseInt(value))}>
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5개 보기</SelectItem>
+                  <SelectItem value="10">10개 보기</SelectItem>
+                  <SelectItem value="15">15개 보기</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="text-sm text-gray-500">
+                (전체 {cashTransactions.length}개 중 {filteredTransactions.length}개 표시)
+              </div>
             </div>
           </div>
 
