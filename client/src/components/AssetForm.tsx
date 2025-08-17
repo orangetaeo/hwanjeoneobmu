@@ -63,6 +63,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   // 현금 자산의 증가/감소 모드 (음수 허용)
   const [operation, setOperation] = useState<'increase' | 'decrease'>('increase');
   
+  // 입력 필드의 표시 값을 관리 (음수 입력 중일 때 "-" 표시용)
+  const [inputDisplayValues, setInputDisplayValues] = useState<Record<string, string>>({});
+  
   // 현재 보유 자산 정보 (통화 선택 시 API에서 조회)
   const [currentAssetInfo, setCurrentAssetInfo] = useState<any>(null);
 
@@ -574,7 +577,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => updateDenomination(denom, countValue - 1)}
+                              onClick={() => {
+                                const newValue = countValue - 1;
+                                updateDenomination(denom, newValue);
+                                setInputDisplayValues(prev => ({
+                                  ...prev,
+                                  [denom]: formatInputWithCommas(newValue.toString())
+                                }));
+                              }}
                               className="h-8 w-8 p-0 flex-shrink-0"
                               data-testid={`button-decrease-${denom}`}
                             >
@@ -582,18 +592,50 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             </Button>
                             <Input
                               type="text"
-                              value={formatInputWithCommas(countValue.toString())}
+                              value={inputDisplayValues[denom] !== undefined ? inputDisplayValues[denom] : formatInputWithCommas(countValue.toString())}
                               onChange={(e) => {
                                 const inputValue = e.target.value;
-                                // 음수 허용: -를 맨 앞에서만 허용
-                                if (inputValue === '-' || inputValue === '' || /^-?\d*,*\d*$/.test(inputValue)) {
-                                  if (inputValue === '-') {
-                                    updateDenomination(denom, 0); // 임시로 0 설정
-                                  } else {
-                                    const numericValue = parseCommaFormattedNumber(inputValue);
-                                    updateDenomination(denom, Math.floor(numericValue));
-                                  }
+                                
+                                // 입력 표시 값 업데이트
+                                setInputDisplayValues(prev => ({
+                                  ...prev,
+                                  [denom]: inputValue
+                                }));
+                                
+                                // 빈 문자열인 경우 0으로 설정
+                                if (inputValue === '') {
+                                  updateDenomination(denom, 0);
+                                  return;
                                 }
+                                
+                                // "-"만 입력된 경우 아직 숫자를 기다리는 중
+                                if (inputValue === '-') {
+                                  return;
+                                }
+                                
+                                // 음수를 포함한 유효한 숫자 패턴인지 확인
+                                const cleanInput = inputValue.replace(/,/g, ''); // 쉼표 제거
+                                if (/^-?\d+$/.test(cleanInput)) {
+                                  const numericValue = parseInt(cleanInput, 10);
+                                  if (!isNaN(numericValue)) {
+                                    updateDenomination(denom, numericValue);
+                                  }
+                                } else {
+                                  // 유효하지 않은 입력인 경우 이전 표시 값 복구
+                                  setTimeout(() => {
+                                    setInputDisplayValues(prev => ({
+                                      ...prev,
+                                      [denom]: formatInputWithCommas(countValue.toString())
+                                    }));
+                                  }, 100);
+                                }
+                              }}
+                              onBlur={() => {
+                                // 포커스가 벗어날 때 표시 값을 정규화
+                                setInputDisplayValues(prev => ({
+                                  ...prev,
+                                  [denom]: formatInputWithCommas(countValue.toString())
+                                }));
                               }}
                               className="text-center text-sm font-medium h-10 w-full max-w-full"
                               data-testid={`input-denom-${denom}`}
@@ -603,7 +645,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => updateDenomination(denom, countValue + 1)}
+                              onClick={() => {
+                                const newValue = countValue + 1;
+                                updateDenomination(denom, newValue);
+                                setInputDisplayValues(prev => ({
+                                  ...prev,
+                                  [denom]: formatInputWithCommas(newValue.toString())
+                                }));
+                              }}
                               className="h-8 w-8 p-0 flex-shrink-0"
                               data-testid={`button-increase-${denom}`}
                             >
