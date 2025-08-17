@@ -85,6 +85,12 @@ Preferred communication style: Simple, everyday language.
   - Input, save, update, and display features all working correctly
   - Real-time exchange rate information properly displayed
   - Form validation and error handling functioning as expected
+- **Binance P2P VND Account Configuration Fix**: Resolved critical account search logic issue
+  - Fixed VND account detection to use 우리은행 김학태 계좌 exclusively for P2P transactions
+  - Updated account search logic to check metadata.accountHolder field instead of name field
+  - Corrected existing P2P transaction records to point to correct 우리은행 account ID
+  - Added comprehensive logging for VND account detection debugging
+  - Confirmed proper VND amount calculation and display functionality
 
 # External Dependencies
 
