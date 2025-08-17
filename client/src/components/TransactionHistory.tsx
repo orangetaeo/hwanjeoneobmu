@@ -29,6 +29,8 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
         return '거래소 이동';
       case 'p2p_trade':
         return 'P2P 거래';
+      case 'cash_change':
+        return '현금 증감';
       case 'exchange':
         return '환전';
       case 'transfer':
@@ -154,6 +156,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                 <SelectItem value="exchange_purchase">코인 구매</SelectItem>
                 <SelectItem value="exchange_transfer">거래소 이동</SelectItem>
                 <SelectItem value="p2p_trade">P2P 거래</SelectItem>
+                <SelectItem value="cash_change">현금 증감</SelectItem>
                 <SelectItem value="exchange">환전</SelectItem>
                 <SelectItem value="transfer">이체</SelectItem>
               </SelectContent>

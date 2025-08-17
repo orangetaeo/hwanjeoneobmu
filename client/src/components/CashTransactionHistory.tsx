@@ -27,11 +27,17 @@ export default function CashTransactionHistory({
 
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
+    // cash_change 타입 거래이거나 현금 관련 거래 필터링
+    const isCashChangeTransaction = transaction.type === 'cash_change';
     const fromAssetMatches = transaction.fromAssetName?.includes(cashAsset.currency) && 
-                           transaction.fromAssetName?.includes('현금');
+                           (transaction.fromAssetName?.includes('현금') || transaction.fromAssetName?.includes('증가'));
     const toAssetMatches = transaction.toAssetName?.includes(cashAsset.currency) && 
-                         transaction.toAssetName?.includes('현금');
-    return fromAssetMatches || toAssetMatches;
+                         (transaction.toAssetName?.includes('현금') || transaction.toAssetName?.includes('감소'));
+    
+    // 메타데이터에 해당 자산 ID가 있는지 확인
+    const hasMatchingAssetId = transaction.metadata?.assetId === cashAsset.id;
+    
+    return isCashChangeTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId);
   });
 
   const filteredTransactions = cashTransactions
@@ -65,10 +71,14 @@ export default function CashTransactionHistory({
 
   const getTransactionAmount = (transaction: Transaction) => {
     // 현금 자산이 from인지 to인지에 따라 증가/감소 판단
-    const isDecrease = transaction.fromAssetName?.includes(cashAsset.currency) && 
-                      transaction.fromAssetName?.includes('현금');
-    const amount = isDecrease ? transaction.fromAmount : transaction.toAmount;
-    return { amount, isDecrease };
+    const isDecrease = transaction.fromAssetName?.includes('현금') && 
+                      !transaction.fromAssetName?.includes('증가');
+    const isIncrease = transaction.toAssetName?.includes('현금') && 
+                      !transaction.toAssetName?.includes('감소');
+    
+    // 증가인 경우와 감소인 경우에 따라 금액 결정
+    const amount = isIncrease ? transaction.toAmount : transaction.fromAmount;
+    return { amount, isDecrease: !isIncrease };
   };
 
   const getTransactionIcon = (isDecrease: boolean) => {
@@ -91,14 +101,9 @@ export default function CashTransactionHistory({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle className="text-xl font-bold">
-              {cashAsset.currency} 현금 증감 내역
-            </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X size={20} />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-bold">
+            {cashAsset.currency} 현금 증감 내역
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

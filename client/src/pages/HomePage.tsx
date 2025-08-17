@@ -721,6 +721,53 @@ export default function HomePage() {
 
             const updatedAsset = await response.json();
             console.log('Existing cash asset updated successfully:', updatedAsset);
+
+            // 현금 증감 거래 기록 생성
+            const changeAmount = Object.entries(newDenominations).reduce((total, [denom, count]) => {
+              const denomValue = parseFloat(String(denom).replace(/,/g, ''));
+              const countValue = typeof count === 'number' ? count : 0;
+              return total + (denomValue * countValue);
+            }, 0);
+
+            if (changeAmount !== 0) {
+              const transactionData = {
+                type: 'cash_change',
+                fromAssetName: changeAmount > 0 ? '현금 증가' : `${formData.currency} 현금`,
+                toAssetName: changeAmount > 0 ? `${formData.currency} 현금` : '현금 감소',
+                fromAmount: changeAmount > 0 ? changeAmount : Math.abs(changeAmount),
+                toAmount: changeAmount > 0 ? changeAmount : Math.abs(changeAmount),
+                fromCurrency: formData.currency,
+                toCurrency: formData.currency,
+                exchangeRate: 1,
+                memo: `${formData.currency} 현금 ${changeAmount > 0 ? '증가' : '감소'}: ${Math.abs(changeAmount).toLocaleString()}`,
+                timestamp: new Date().toISOString(),
+                profit: 0,
+                metadata: {
+                  assetId: assetId,
+                  denominationChanges: newDenominations
+                }
+              };
+
+              try {
+                const transactionResponse = await fetch('/api/transactions', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(transactionData)
+                });
+
+                if (transactionResponse.ok) {
+                  const createdTransaction = await transactionResponse.json();
+                  console.log('Cash change transaction created:', createdTransaction);
+                  
+                  // 거래 내역 상태도 업데이트
+                  const transactionsResponse = await fetch('/api/transactions');
+                  const latestTransactions = await transactionsResponse.json();
+                  setTransactions(latestTransactions);
+                }
+              } catch (error) {
+                console.error('Failed to create transaction record:', error);
+              }
+            }
           } else {
             // 기존 자산이 없으면 새로 생성
             createData = {
