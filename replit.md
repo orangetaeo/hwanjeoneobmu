@@ -9,6 +9,11 @@ This is a full-stack asset management and exchange tracking application designed
   - Memo field displays below denomination composition for clean UI organization
   - Enhanced transaction tracking with memo information in transaction history
   - Fixed USD/VND duplicate denomination input boxes issue
+- **Cash Transaction Detail Modal Enhancement**: Fixed denomination change display bug
+  - CashChangeDetailModal now correctly displays denomination changes (e.g., "50,000원권 +1장")
+  - Fixed data format mismatch between storage (comma format) and display (no-comma format)
+  - Enhanced denomination change calculation to handle both comma and non-comma formats
+  - Transaction memo display working perfectly in detail popups
 - **Cash Transaction Detail View Completed**: Integrated transaction detail modal in all components
   - CashTransactionHistory: Added click handlers for transaction items to open detail modal
   - CashChangeDetailModal: Fully integrated across all cash management interfaces

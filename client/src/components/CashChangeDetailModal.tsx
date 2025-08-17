@@ -23,10 +23,6 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
   const metadata = transaction.metadata as any;
   const denominationChanges = metadata?.denominationChanges || {};
   
-  // 디버깅을 위한 로그
-  console.log('CashChangeDetailModal - denominationChanges:', denominationChanges);
-  console.log('CashChangeDetailModal - metadata:', metadata);
-  
   // 통화별 지폐 단위 정의
   const getCurrencyDenominations = (currency: string) => {
     switch (currency) {
@@ -88,8 +84,6 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
       const noCommaFormat = denomination;
       
       const change = denominationChanges[commaFormat] || denominationChanges[noCommaFormat] || 0;
-      
-      console.log(`Checking denomination ${denomination}: commaFormat=${commaFormat}, noCommaFormat=${noCommaFormat}, change=${change}`);
       
       if (change > 0) {
         increases.push({
