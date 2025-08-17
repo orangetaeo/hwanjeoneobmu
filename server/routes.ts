@@ -513,7 +513,9 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
 
     console.log('초기 자산 생성 시작');
     for (const asset of initialAssets) {
-      await storage.createAsset(userId, asset);
+      console.log('자산 생성 중:', { name: asset.name, balance: asset.balance });
+      const createdAsset = await storage.createAsset(userId, asset);
+      console.log('자산 생성 완료:', { name: createdAsset.name, balance: createdAsset.balance });
     }
     console.log('초기 자산 생성 완료');
 

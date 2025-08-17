@@ -529,11 +529,12 @@ export class DatabaseStorage implements IStorage {
       console.log('같은 타입의 모든 자산:', allAssets.map(a => ({ name: a.name, type: a.type })));
       
       // Bithumb 관련 자산 찾기
-      result = allAssets.find(asset => 
+      const foundAsset = allAssets.find(asset => 
         asset.name === 'Bithumb' || 
         asset.name === 'Bithumb USDT' || 
         asset.name.includes('Bithumb')
-      ) || undefined;
+      );
+      result = foundAsset || undefined;
       
       console.log('빗썸 유연 검색 결과:', result);
     }
