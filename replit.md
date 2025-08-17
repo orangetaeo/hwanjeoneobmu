@@ -102,11 +102,12 @@ Preferred communication style: Simple, everyday language.
   - Changed TOAST_REMOVE_DELAY from 1,000,000ms to 1,000ms for better UX
   - All success and error messages now automatically disappear after 1 second
   - Applies to network transfers, P2P trades, asset management, and all other operations
-- **Mobile-Optimized Transaction History**: Enhanced network transfer history for mobile devices
+- **Mobile-Optimized Transaction History**: Enhanced network transfer and P2P trading history for mobile devices
   - Desktop: Maintains original table layout for detailed information
-  - Mobile: Card-based layout with hierarchical information display
-  - Improved readability with emphasized transfer amounts and organized metadata
-  - Touch-friendly design with proper spacing and visual hierarchy
+  - Mobile: Card-based layout with hierarchical information display for both network transfers and Binance P2P trades
+  - Improved readability with emphasized transaction amounts and organized metadata
+  - Touch-friendly design with proper spacing, visual hierarchy, and optimized management buttons
+  - Status indicators and action buttons properly adapted for mobile interaction
 
 # External Dependencies
 

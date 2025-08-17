@@ -450,103 +450,198 @@ export default function BinanceP2P() {
       )}
 
       {currentTab === 'history' && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <History className="mr-2" size={20} />
+        <Card className="p-3 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center">
+            <History className="mr-2" size={18} />
             바이낸스 P2P 거래 내역
           </h3>
 
           {p2pTrades.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400 text-sm sm:text-base">
               아직 P2P 거래 내역이 없습니다.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>거래일시</TableHead>
-                  <TableHead>상태</TableHead>
-                  <TableHead>USDT</TableHead>
-                  <TableHead>VND</TableHead>
-                  <TableHead>환율</TableHead>
-                  <TableHead>입금계좌</TableHead>
-                  <TableHead>관리</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* 데스크톱 테이블 */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>거래일시</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>USDT</TableHead>
+                      <TableHead>VND</TableHead>
+                      <TableHead>환율</TableHead>
+                      <TableHead>입금계좌</TableHead>
+                      <TableHead>관리</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {p2pTrades.map((trade) => (
+                      <TableRow key={trade.id}>
+                        <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {trade.status === 'pending' && (
+                            <Badge variant="outline" className="text-yellow-600 border-yellow-300">
+                              <Clock className="mr-1" size={12} />
+                              대기중
+                            </Badge>
+                          )}
+                          {trade.status === 'confirmed' && (
+                            <Badge variant="outline" className="text-green-600 border-green-300">
+                              <CheckCircle className="mr-1" size={12} />
+                              확인됨
+                            </Badge>
+                          )}
+                          {trade.status === 'cancelled' && (
+                            <Badge variant="outline" className="text-red-600 border-red-300">
+                              <XCircle className="mr-1" size={12} />
+                              취소됨
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-red-600 font-medium">
+                          -{trade.usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                        </TableCell>
+                        <TableCell className="text-green-600 font-medium">
+                          +{formatCurrency(trade.vndAmount, 'VND')} VND
+                        </TableCell>
+                        <TableCell>
+                          {trade.exchangeRate.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">우리은행</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            {trade.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-green-600 border-green-300 hover:bg-green-50"
+                                  onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'confirmed' })}
+                                  disabled={updateTransactionStatus.isPending}
+                                >
+                                  <CheckCircle size={14} />
+                                  입금 확인
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 border-red-300 hover:bg-red-50"
+                                  onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'cancelled' })}
+                                  disabled={updateTransactionStatus.isPending}
+                                >
+                                  <XCircle size={14} />
+                                  취소
+                                </Button>
+                              </>
+                            )}
+                            {trade.status === 'confirmed' && (
+                              <span className="text-xs text-green-600">완료됨</span>
+                            )}
+                            {trade.status === 'cancelled' && (
+                              <span className="text-xs text-gray-500">취소됨</span>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* 모바일 카드 리스트 */}
+              <div className="block sm:hidden space-y-3">
                 {p2pTrades.map((trade) => (
-                  <TableRow key={trade.id}>
-                    <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      {trade.status === 'pending' && (
-                        <Badge variant="outline" className="text-yellow-600 border-yellow-300">
-                          <Clock className="mr-1" size={12} />
-                          대기중
-                        </Badge>
-                      )}
-                      {trade.status === 'confirmed' && (
-                        <Badge variant="outline" className="text-green-600 border-green-300">
-                          <CheckCircle className="mr-1" size={12} />
-                          확인됨
-                        </Badge>
-                      )}
-                      {trade.status === 'cancelled' && (
-                        <Badge variant="outline" className="text-red-600 border-red-300">
-                          <XCircle className="mr-1" size={12} />
-                          취소됨
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-red-600 font-medium">
-                      -{trade.usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
-                    </TableCell>
-                    <TableCell className="text-green-600 font-medium">
-                      +{formatCurrency(trade.vndAmount, 'VND')} VND
-                    </TableCell>
-                    <TableCell>
-                      {trade.exchangeRate.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">우리은행</Badge>
-                    </TableCell>
-                    <TableCell>
+                  <div key={trade.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                    {/* 상단: 날짜와 상태 */}
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-sm font-medium">
+                        {new Date(trade.date).toLocaleDateString('ko-KR', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          weekday: 'short'
+                        })}
+                      </div>
+                      <div>
+                        {trade.status === 'pending' && (
+                          <Badge variant="outline" className="text-yellow-600 border-yellow-300 text-xs">
+                            <Clock className="mr-1" size={10} />
+                            대기중
+                          </Badge>
+                        )}
+                        {trade.status === 'confirmed' && (
+                          <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
+                            <CheckCircle className="mr-1" size={10} />
+                            확인됨
+                          </Badge>
+                        )}
+                        {trade.status === 'cancelled' && (
+                          <Badge variant="outline" className="text-red-600 border-red-300 text-xs">
+                            <XCircle className="mr-1" size={10} />
+                            취소됨
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 중간: 거래 금액 (가장 중요한 정보) */}
+                    <div className="mb-2">
+                      <div className="flex justify-between items-center">
+                        <div className="text-base font-bold text-red-600 dark:text-red-400">
+                          -{trade.usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                        </div>
+                        <div className="text-base font-bold text-green-600 dark:text-green-400">
+                          +{formatCurrency(trade.vndAmount, 'VND')} VND
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        환율: {trade.exchangeRate.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} VND/USDT
+                      </div>
+                    </div>
+
+                    {/* 하단: 계좌 정보와 관리 버튼 */}
+                    <div className="flex justify-between items-center">
+                      <Badge variant="outline" className="text-xs">우리은행</Badge>
                       <div className="flex space-x-1">
                         {trade.status === 'pending' && (
                           <>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-green-600 border-green-300 hover:bg-green-50"
+                              className="text-green-600 border-green-300 hover:bg-green-50 text-xs px-2 py-1"
                               onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'confirmed' })}
                               disabled={updateTransactionStatus.isPending}
                             >
-                              <CheckCircle size={14} />
-                              입금 확인
+                              <CheckCircle size={12} />
+                              확인
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-red-600 border-red-300 hover:bg-red-50"
+                              className="text-red-600 border-red-300 hover:bg-red-50 text-xs px-2 py-1"
                               onClick={() => updateTransactionStatus.mutate({ transactionId: trade.id, status: 'cancelled' })}
                               disabled={updateTransactionStatus.isPending}
                             >
-                              <XCircle size={14} />
+                              <XCircle size={12} />
                               취소
                             </Button>
                           </>
                         )}
                         {trade.status === 'confirmed' && (
-                          <span className="text-xs text-green-600">완료됨</span>
+                          <span className="text-xs text-green-600 dark:text-green-400">완료됨</span>
                         )}
                         {trade.status === 'cancelled' && (
-                          <span className="text-xs text-gray-500">취소됨</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">취소됨</span>
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </Card>
       )}
