@@ -71,6 +71,12 @@ Preferred communication style: Simple, everyday language.
   - Smart duplicate handling reduces data redundancy while maintaining data integrity with clear user feedback
   - Fixed critical balance calculation bug: now correctly adds new quantity to existing balance instead of overwriting
   - Resolved data synchronization issue: NetworkTransfer and BithumbTrading components now properly display updated asset quantities through React Query cache invalidation
+- **Enhanced Exchange Asset Duplicate Detection**: Refined duplicate validation logic for exchange assets
+  - Fixed exchange name matching to check both metadata.exchange field and name parsing ("Bithumb USDT" → "Bithumb")
+  - Added comprehensive debugging logs for duplicate validation process
+  - Corrected asset creation/update logic to only update when real database asset ID is found
+  - Eliminated false duplicates by distinguishing between temporary form IDs and actual database IDs
+  - System now correctly merges duplicate exchange assets instead of creating separate entries
 - **Button Loading States**: Added loading functionality to prevent duplicate clicks and improve user experience
   - All asset add buttons in AssetManager show "처리중..." loading state during operations
   - Form submit buttons disabled and show loading text during submission process
