@@ -191,7 +191,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       
       console.log('=== 바이낸스 중복 검사 시작 ===');
       console.log('Form data:', formData);
-      console.log('모든 자산:', assets.filter(a => a.type === 'binance'));
+      console.log('모든 자산:', assets.filter((a: any) => a.type === 'binance'));
       
       const expectedName = `Binance ${formData.coinName}`;
       console.log('예상 이름:', expectedName);

@@ -809,23 +809,59 @@ export default function HomePage() {
             }
           };
         } else if (assetFormType === 'exchange') {
-          createData = {
-            name: formData.exchangeName,
-            type: 'exchange',
-            currency: formData.coinName,
-            balance: formData.quantity.toString(),
-            metadata: {
-              exchange: formData.exchangeName
+          // 중복 검증에서 ID가 설정되었으면 업데이트, 없으면 생성
+          if (formData.id) {
+            console.log('Exchange 중복 자산 업데이트:', formData);
+            const response = await fetch(`/api/assets/${formData.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                balance: formData.balance.toString()
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error('Failed to update exchange asset');
             }
-          };
+            
+            console.log('Exchange asset updated successfully');
+          } else {
+            createData = {
+              name: formData.exchangeName,
+              type: 'exchange',
+              currency: formData.coinName,
+              balance: formData.quantity.toString(),
+              metadata: {
+                exchange: formData.exchangeName
+              }
+            };
+          }
         } else if (assetFormType === 'binance') {
-          createData = {
-            name: 'Binance',
-            type: 'binance',
-            currency: formData.coinName,
-            balance: formData.quantity.toString(),
-            metadata: {}
-          };
+          // 중복 검증에서 ID가 설정되었으면 업데이트, 없으면 생성
+          if (formData.id) {
+            console.log('Binance 중복 자산 업데이트:', formData);
+            const response = await fetch(`/api/assets/${formData.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                balance: formData.balance.toString()
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error('Failed to update binance asset');
+            }
+            
+            console.log('Binance asset updated successfully');
+          } else {
+            createData = {
+              name: 'Binance',
+              type: 'binance',
+              currency: formData.coinName,
+              balance: formData.quantity.toString(),
+              metadata: {}
+            };
+          }
         }
 
         // 새로운 자산 생성이 필요한 경우에만 실행
