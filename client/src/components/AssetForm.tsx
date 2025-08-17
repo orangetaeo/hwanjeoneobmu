@@ -152,10 +152,23 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     }
   }, [editData?.id, type, editData?.metadata?.denominations, editData?.denominations]);
 
-  // 새로 추가할 때 통화 변경 시 현재 자산 정보 조회
+  // 새로 추가할 때 통화 변경 시 현재 자산 정보 조회 및 지폐 구성 초기화
   useEffect(() => {
     if (!editData && type === 'cash' && form.watch('currency')) {
       fetchCurrentAssetInfo(form.watch('currency'));
+      
+      // 통화가 변경될 때 지폐 구성을 해당 통화에 맞게 초기화
+      const defaultDenoms: Record<string, Record<string, number>> = {
+        'KRW': { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 },
+        'USD': { '100': 0, '50': 0, '20': 0, '10': 0, '5': 0, '2': 0, '1': 0 },
+        'VND': { '500,000': 0, '200,000': 0, '100,000': 0, '50,000': 0, '20,000': 0, '10,000': 0, '5,000': 0, '2,000': 0, '1,000': 0 }
+      };
+      
+      const newCurrency = form.watch('currency');
+      if (defaultDenoms[newCurrency]) {
+        setDenominations(defaultDenoms[newCurrency]);
+        setInputDisplayValues({}); // 입력 표시 값도 초기화
+      }
     }
   }, [form.watch('currency'), editData, type]);
 
@@ -422,7 +435,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     
     // 현재 보유 자산이 없으면 새로 추가하는 것이므로 지폐가 하나라도 있으면 true
     if (!currentAssetInfo) {
-      return Object.values(denominations).some((count: number) => count > 0);
+      return Object.values(denominations).some((count) => (typeof count === 'number' ? count : 0) > 0);
     }
     
     // 기존 자산이 있으면 변경사항이 있는지 확인
