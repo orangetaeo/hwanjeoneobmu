@@ -64,12 +64,14 @@ export default function NetworkTransfer() {
     queryKey: ['/api/assets']
   });
 
-  // 빗썸 USDT 자산 직접 조회 (타입 통일: exchange만 사용)
+  // 빗썸 USDT 자산 직접 조회 - 이름 매칭 개선
   const bithumbUsdtAsset = (assets as any[]).find((asset: any) => 
-    asset.type === 'exchange' && asset.currency === 'USDT' && asset.name === 'Bithumb USDT'
+    asset.type === 'exchange' && asset.currency === 'USDT' && 
+    (asset.name === 'Bithumb' || asset.name === 'Bithumb USDT' || asset.name.includes('Bithumb'))
   );
 
   console.log('빗썸 USDT 자산 검색 결과:', bithumbUsdtAsset);
+  console.log('전체 자산 목록:', assets.map(a => ({ name: a.name, type: a.type, currency: a.currency })));
 
   // 사용 가능한 USDT 계산 - 실제 자산 잔액 기준 (테스트 데이터 기준)
   const bithumbUsdtBalance = parseFloat(bithumbUsdtAsset?.balance || '0');
@@ -80,7 +82,8 @@ export default function NetworkTransfer() {
     availableUsdt,
     transfersCount: transfers.length,
     assetFound: !!bithumbUsdtAsset,
-    assetType: bithumbUsdtAsset?.type
+    assetType: bithumbUsdtAsset?.type,
+    totalAssets: assets.length
   });
   
 
