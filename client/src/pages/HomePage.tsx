@@ -95,7 +95,14 @@ export default function HomePage() {
 
   // 자산 분류 및 상태 업데이트 - React Query 데이터 기반
   useEffect(() => {
-    if (!user || authLoading || assetsLoading || !Array.isArray(assetsData) || assetsData.length === 0) return;
+    if (!user || authLoading || assetsLoading || transactionsLoading || exchangeRatesLoading) {
+      return;
+    }
+    
+    if (!Array.isArray(assetsData)) {
+      setLoading(false);
+      return;
+    }
 
     // 자산을 타입별로 분류 - 디버깅 로그 추가
     console.log('All assets from API:', assetsData);
@@ -155,7 +162,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading, assetsData, transactionsData, exchangeRatesData]);
+  }, [user, authLoading, assetsLoading, transactionsLoading, exchangeRatesLoading, assetsData, transactionsData, exchangeRatesData]);
 
   // PostgreSQL 중심 운영 - localStorage 사용 중단
 

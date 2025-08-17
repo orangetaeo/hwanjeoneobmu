@@ -381,22 +381,32 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 )}
               />
 
-              {/* 현재 보유 자산 정보 표시 */}
+              {/* 현재 보유 자산 정보 표시 - 실시간 계산 */}
               {!editData && form.watch('currency') && currentAssetInfo && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
                   <h4 className="font-medium text-gray-800 flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    현재 보유 {currentAssetInfo.currency} 자산
+                    현재 보유 {currentAssetInfo.currency} 자산 {Object.entries(denominations).some(([, count]) => count !== 0) && (
+                      <span className="text-xs text-blue-600 font-normal ml-1">(실시간 계산 중)</span>
+                    )}
                   </h4>
                   <div className="grid grid-cols-1 gap-3">
+                    {/* 실시간 총 잔액 계산 */}
                     <div className="flex justify-between items-center bg-white rounded p-3 border border-gray-100">
                       <span className="text-gray-600">총 잔액:</span>
                       <span className="font-bold text-gray-900">
                         {form.watch('currency') === 'KRW' ? '₩' : 
                          form.watch('currency') === 'USD' ? '$' : '₫'}
-                        {currentAssetInfo.balance.toLocaleString()}
+                        {(() => {
+                          const changedAmount = Object.entries(denominations).reduce((total, [denom, count]) => {
+                            return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                          }, 0);
+                          const newBalance = currentAssetInfo.balance + changedAmount;
+                          return newBalance.toLocaleString();
+                        })()}
                       </span>
                     </div>
+                    {/* 실시간 지폐 구성 계산 */}
                     {Object.keys(currentAssetInfo.denominations).length > 0 && (
                       <div className="space-y-2">
                         <span className="text-sm text-gray-600">지폐 구성:</span>
@@ -407,17 +417,29 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               const numB = parseFloat(b.replace(/,/g, ''));
                               return numB - numA;
                             })
-                            .filter(([, count]) => (count as number) > 0)
-                            .map(([denom, count]) => (
-                              <div key={denom} className="flex justify-between bg-white rounded px-2 py-1 border border-gray-100">
-                                <span className="text-gray-600">
-                                  {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
-                                   form.watch('currency') === 'USD' ? `$${denom}` :
-                                   `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
-                                </span>
-                                <span className="font-medium">{count as number}장</span>
-                              </div>
-                            ))
+                            .map(([denom, currentCount]) => {
+                              const changeCount = denominations[denom] || 0;
+                              const newCount = (currentCount as number) + changeCount;
+                              return (
+                                <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
+                                  changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
+                                }`}>
+                                  <span className="text-gray-600">
+                                    {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
+                                     form.watch('currency') === 'USD' ? `$${denom}` :
+                                     `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
+                                  </span>
+                                  <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
+                                    {newCount}장
+                                    {changeCount !== 0 && (
+                                      <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        ({changeCount > 0 ? '+' : ''}{changeCount})
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })
                           }
                         </div>
                       </div>
@@ -471,11 +493,19 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                   return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
                                 }, 0) < 0 ? 'text-red-900' : 'text-green-900'
                               }`}>
-                                {form.watch('currency') === 'KRW' ? '₩' : 
-                                 form.watch('currency') === 'USD' ? '$' : '₫'}
-                                {Math.abs(Object.entries(denominations).reduce((total, [denom, count]) => {
-                                  return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                                }, 0)).toLocaleString()}
+                                {(() => {
+                                  const totalAmount = Object.entries(denominations).reduce((total, [denom, count]) => {
+                                    return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                                  }, 0);
+                                  const currencySymbol = form.watch('currency') === 'KRW' ? '₩' : 
+                                                        form.watch('currency') === 'USD' ? '$' : '₫';
+                                  
+                                  if (totalAmount < 0) {
+                                    return `-${currencySymbol}${Math.abs(totalAmount).toLocaleString()}`;
+                                  } else {
+                                    return `${currencySymbol}${totalAmount.toLocaleString()}`;
+                                  }
+                                })()}
                               </span>
                             </div>
                           </div>
@@ -549,11 +579,20 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               type="text"
                               value={formatInputWithCommas(countValue.toString())}
                               onChange={(e) => {
-                                const numericValue = parseCommaFormattedNumber(e.target.value);
-                                updateDenomination(denom, Math.floor(numericValue));
+                                const inputValue = e.target.value;
+                                // 음수 허용: -를 맨 앞에서만 허용
+                                if (inputValue === '-' || inputValue === '' || /^-?\d*,*\d*$/.test(inputValue)) {
+                                  if (inputValue === '-') {
+                                    updateDenomination(denom, 0); // 임시로 0 설정
+                                  } else {
+                                    const numericValue = parseCommaFormattedNumber(inputValue);
+                                    updateDenomination(denom, Math.floor(numericValue));
+                                  }
+                                }
                               }}
                               className="text-center text-sm font-medium h-10 w-full max-w-full"
                               data-testid={`input-denom-${denom}`}
+                              placeholder="0"
                             />
                             <Button
                               type="button"
