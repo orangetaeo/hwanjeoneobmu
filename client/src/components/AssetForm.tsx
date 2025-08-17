@@ -1575,27 +1575,6 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     </div>
 
                   </div>
-
-                  {/* 메모 입력 필드 */}
-                  <div className="mt-6">
-                    <FormField
-                      control={form.control}
-                      name="memo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>메모</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="현금 증감 관련 메모를 입력하세요"
-                              {...field}
-                              data-testid="input-cash-memo"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </div>
               )}
 
@@ -1613,8 +1592,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         <div key={denom} className={`space-y-3 p-4 border rounded-lg ${getDenominationColor(form.watch('currency'), denom)}`}>
                           <label className="text-xs font-semibold text-gray-800 block text-center">
                             {form.watch('currency') === 'USD' ? 
-                              `$${denom}` : 
-                              `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`
+                              `${denom}달러권` : 
+                              `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}동권`
                             }
                           </label>
                           <div className="flex items-center space-x-2">
@@ -1706,26 +1685,28 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     </div>
                   )}
 
-                  {/* 메모 입력 필드 */}
-                  <div className="mt-6">
-                    <FormField
-                      control={form.control}
-                      name="memo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>메모</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="현금 증감 관련 메모를 입력하세요"
-                              {...field}
-                              data-testid="input-cash-memo"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                </div>
+              )}
+              {/* 모든 현금 자산에 공통 메모 필드 추가 */}
+              {type === 'cash' && (
+                <div className="mt-6">
+                  <FormField
+                    control={form.control}
+                    name="memo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>메모</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="현금 증감 관련 메모를 입력하세요"
+                            {...field}
+                            data-testid="input-cash-memo-common"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               )}
             </>
