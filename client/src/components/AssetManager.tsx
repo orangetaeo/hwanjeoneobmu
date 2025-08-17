@@ -273,7 +273,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     <div className="min-w-0 flex-1 mr-4">
                       <h4 className="font-semibold text-gray-900 truncate">
                         {(() => {
+                          console.log('Exchange asset data:', { 
+                            name: asset.name, 
+                            metadata: asset.metadata, 
+                            type: asset.type 
+                          });
                           const exchangeName = asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange';
+                          console.log('Exchange name resolved:', exchangeName);
                           // 거래소 이름을 한글로 매핑
                           const koreanNames: Record<string, string> = {
                             'Bithumb': '빗썸',
@@ -281,7 +287,9 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                             'Coinone': '코인원',
                             'Korbit': '코빗'
                           };
-                          return koreanNames[exchangeName] || exchangeName;
+                          const finalName = koreanNames[exchangeName] || exchangeName;
+                          console.log('Final display name:', finalName);
+                          return finalName;
                         })()}
                       </h4>
                       <p className="text-sm text-gray-600 truncate">{asset.currency}</p>
