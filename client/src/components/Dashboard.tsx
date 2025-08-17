@@ -345,15 +345,15 @@ export default function Dashboard({
                         <CurrencyIcon currency="KRW" size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
                         <div>
                           <p className="font-semibold text-sm lg:text-base">
-                            {acc.bankName || acc.name}
-                            {acc.accountHolder && (
+                            {acc.name}
+                            {acc.metadata?.accountHolder && (
                               <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                - {acc.accountHolder}
+                                - {acc.metadata.accountHolder}
                               </span>
                             )}
                           </p>
-                          {acc.accountNumber && (
-                            <p className="text-xs lg:text-sm text-gray-500">{acc.accountNumber}</p>
+                          {acc.metadata?.accountNumber && (
+                            <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
                           )}
                         </div>
                       </div>
@@ -380,15 +380,15 @@ export default function Dashboard({
                         <CurrencyIcon currency="VND" size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
                         <div>
                           <p className="font-semibold text-sm lg:text-base">
-                            {acc.bankName || acc.name}
-                            {acc.accountHolder && (
+                            {acc.name}
+                            {acc.metadata?.accountHolder && (
                               <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
-                                - {acc.accountHolder}
+                                - {acc.metadata.accountHolder}
                               </span>
                             )}
                           </p>
-                          {acc.accountNumber && (
-                            <p className="text-xs lg:text-sm text-gray-500">{acc.accountNumber}</p>
+                          {acc.metadata?.accountNumber && (
+                            <p className="text-xs lg:text-sm text-gray-500">{acc.metadata.accountNumber}</p>
                           )}
                         </div>
                       </div>
