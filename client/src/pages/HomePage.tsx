@@ -61,14 +61,16 @@ export default function HomePage() {
   const [showCashTransactionHistory, setShowCashTransactionHistory] = useState(false);
   const [selectedCashAsset, setSelectedCashAsset] = useState<CashAsset | null>(null);
 
-  // React Query로 실시간 데이터 로딩
-  const { data: assetsData = [], isLoading: assetsLoading, error: assetsError } = useQuery({
-    queryKey: ['/api/assets'],
+  // React Query로 실시간 데이터 로딩 - 완전 캐시 비활성화
+  const { data: assetsData = [], isLoading: assetsLoading, error: assetsError, refetch: refetchAssets } = useQuery({
+    queryKey: ['/api/assets', Date.now()], // 타임스탬프로 강제 새로고침
     enabled: !authLoading && !!user,
     retry: 3,
     retryDelay: 1000,
-    staleTime: 0, // 캐시 사용 안함
-    gcTime: 0     // v5에서 cacheTime -> gcTime으로 변경
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false
   });
   
   const { data: transactionsData = [], isLoading: transactionsLoading, error: transactionsError } = useQuery({
