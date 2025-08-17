@@ -204,17 +204,22 @@ export default function Dashboard({
   }, [totalAssets, yesterdayAssets]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {/* Total Asset Summary */}
-      <Card className="p-6">
-        <h2 className="text-lg font-bold mb-4">총 자산 요약 <span className="text-sm font-normal text-gray-500">(실시간 환율적용한 예상금액)</span></h2>
+      <Card className="p-4 lg:p-6">
+        <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4">
+          총 자산 요약 
+          <span className="text-xs lg:text-sm font-normal text-gray-500 block sm:inline sm:ml-2">
+            (실시간 환율적용한 예상금액)
+          </span>
+        </h2>
         {isFetchingRates ? (
           <p className="text-gray-500">환율 정보 로딩 중...</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
             <div className="text-center">
-              <p className="text-sm text-gray-500 mb-2">원화 환산</p>
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-xs lg:text-sm text-gray-500 mb-2">원화 환산</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
                 {CURRENCY_SYMBOLS.KRW} {formatCurrency(totalAssets.krw, 'KRW')}
               </p>
               
@@ -231,8 +236,8 @@ export default function Dashboard({
               )}
             </div>
             <div className="text-center">
-              <p className="text-sm text-gray-500 mb-2">동화 환산</p>
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-xs lg:text-sm text-gray-500 mb-2">동화 환산</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
                 {CURRENCY_SYMBOLS.VND} {formatCurrency(totalAssets.vnd, 'VND')}
               </p>
               {assetChange && (
@@ -263,7 +268,7 @@ export default function Dashboard({
 
       {simpleView ? (
         /* Simple View - Asset Summary Cards */
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
           {Object.entries(assetSummary)
             .filter(([currency, total]) => currency && total > 0) // 유효한 데이터만 표시
             .map(([currency, total]) => {
@@ -271,11 +276,11 @@ export default function Dashboard({
               const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || '';
               
               return (
-                <Card key={currency} className="p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-center mb-3">
-                    <CurrencyIcon currency={currency} size={40} />
+                <Card key={currency} className="p-3 lg:p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-center mb-2 lg:mb-3">
+                    <CurrencyIcon currency={currency} size={32} className="w-8 h-8 lg:w-10 lg:h-10" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-600 mb-2">{currency}</h3>
+                  <h3 className="text-base lg:text-lg font-bold text-gray-600 mb-2">{currency}</h3>
                   <p className="text-xl font-semibold text-gray-800">
                     {currencySymbol} {formattedTotal}
                   </p>
@@ -301,22 +306,22 @@ export default function Dashboard({
         </div>
       ) : (
         /* Detailed View - Asset Breakdown */
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Cash Assets */}
-          <Card className="p-6">
-            <h2 className="text-lg font-bold mb-4 flex items-center">
-              <Wallet className="mr-2" size={20} />
+          <Card className="p-4 lg:p-6">
+            <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
+              <Wallet className="mr-2 w-4 h-4 lg:w-5 lg:h-5" />
               현금 자산
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2 lg:space-y-3">
               {cashAssets.map(asset => (
-                <div key={asset.id} className="p-4 bg-gray-50 rounded-lg">
+                <div key={asset.id} className="p-3 lg:p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <CurrencyIcon currency={asset.currency} size={24} className="mr-3" />
-                      <p className="font-semibold">{asset.name}</p>
+                      <CurrencyIcon currency={asset.currency} size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
+                      <p className="font-semibold text-sm lg:text-base">{asset.name}</p>
                     </div>
-                    <p className="font-mono text-gray-800">
+                    <p className="font-mono text-gray-800 text-sm lg:text-base">
                       {formatCurrency(asset.balance, asset.currency)} {asset.currency}
                     </p>
                   </div>
@@ -325,34 +330,34 @@ export default function Dashboard({
             </div>
           </Card>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Korean Accounts */}
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4 flex items-center">
-                <Building className="mr-2" size={20} />
+            <Card className="p-4 lg:p-6">
+              <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
+                <Building className="mr-2 w-4 h-4 lg:w-5 lg:h-5" />
                 한국 계좌
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-2 lg:space-y-3">
                 {koreanAccounts.map(acc => (
-                  <div key={acc.id} className="p-4 bg-gray-50 rounded-lg">
+                  <div key={acc.id} className="p-3 lg:p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <CurrencyIcon currency="KRW" size={24} className="mr-3" />
+                        <CurrencyIcon currency="KRW" size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
                         <div>
-                          <p className="font-semibold">
-                            {acc.bankName || acc.name}
+                          <p className="font-semibold text-sm lg:text-base">
+                            {acc.bankName}
                             {acc.accountHolder && (
-                              <span className="text-sm font-normal text-gray-600 ml-2">
+                              <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
                                 ({acc.accountHolder})
                               </span>
                             )}
                           </p>
                           {acc.accountNumber && (
-                            <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                            <p className="text-xs lg:text-sm text-gray-500">{acc.accountNumber}</p>
                           )}
                         </div>
                       </div>
-                      <p className="font-mono text-blue-600">
+                      <p className="font-mono text-blue-600 text-sm lg:text-base">
                         {formatCurrency(acc.balance, 'KRW')} KRW
                       </p>
                     </div>
@@ -362,32 +367,32 @@ export default function Dashboard({
             </Card>
 
             {/* Vietnamese Accounts */}
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4 flex items-center">
-                <Building className="mr-2" size={20} />
+            <Card className="p-4 lg:p-6">
+              <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
+                <Building className="mr-2 w-4 h-4 lg:w-5 lg:h-5" />
                 베트남 계좌
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-2 lg:space-y-3">
                 {vietnameseAccounts.map(acc => (
-                  <div key={acc.id} className="p-4 bg-gray-50 rounded-lg">
+                  <div key={acc.id} className="p-3 lg:p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <CurrencyIcon currency="VND" size={24} className="mr-3" />
+                        <CurrencyIcon currency="VND" size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
                         <div>
-                          <p className="font-semibold">
-                            {acc.bankName || acc.name}
+                          <p className="font-semibold text-sm lg:text-base">
+                            {acc.bankName}
                             {acc.accountHolder && (
-                              <span className="text-sm font-normal text-gray-600 ml-2">
+                              <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
                                 ({acc.accountHolder})
                               </span>
                             )}
                           </p>
                           {acc.accountNumber && (
-                            <p className="text-sm text-gray-500">{acc.accountNumber}</p>
+                            <p className="text-xs lg:text-sm text-gray-500">{acc.accountNumber}</p>
                           )}
                         </div>
                       </div>
-                      <p className="font-mono text-green-600">
+                      <p className="font-mono text-green-600 text-sm lg:text-base">
                         {formatCurrency(acc.balance, 'VND')} VND
                       </p>
                     </div>
@@ -397,23 +402,23 @@ export default function Dashboard({
             </Card>
 
             {/* Exchange Assets */}
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4 flex items-center">
-                <Coins className="mr-2" size={20} />
+            <Card className="p-4 lg:p-6">
+              <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
+                <Coins className="mr-2 w-4 h-4 lg:w-5 lg:h-5" />
                 코인 거래소
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-2 lg:space-y-3">
                 {exchangeAssets.map(asset => (
-                  <div key={asset.id} className="p-4 bg-gray-50 rounded-lg">
+                  <div key={asset.id} className="p-3 lg:p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <CurrencyIcon currency={asset.coinName} size={24} className="mr-3" />
+                        <CurrencyIcon currency={asset.coinName} size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
                         <div>
-                          <p className="font-semibold">{asset.exchangeName}</p>
-                          <p className="text-sm text-gray-600">{asset.coinName}</p>
+                          <p className="font-semibold text-sm lg:text-base">{asset.exchangeName}</p>
+                          <p className="text-xs lg:text-sm text-gray-600">{asset.coinName}</p>
                         </div>
                       </div>
-                      <p className="font-mono text-purple-600">
+                      <p className="font-mono text-purple-600 text-sm lg:text-base">
                         {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
                       </p>
                     </div>
@@ -423,20 +428,20 @@ export default function Dashboard({
             </Card>
 
             {/* Binance Assets */}
-            <Card className="p-6">
-              <h2 className="text-lg font-bold mb-4 flex items-center">
-                <Bitcoin className="mr-2" size={20} />
+            <Card className="p-4 lg:p-6">
+              <h2 className="text-base lg:text-lg font-bold mb-3 lg:mb-4 flex items-center">
+                <Bitcoin className="mr-2 w-4 h-4 lg:w-5 lg:h-5" />
                 바이낸스
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-2 lg:space-y-3">
                 {binanceAssets.map(asset => (
-                  <div key={asset.id} className="p-4 bg-gray-50 rounded-lg">
+                  <div key={asset.id} className="p-3 lg:p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <CurrencyIcon currency={asset.coinName} size={24} className="mr-3" />
-                        <p className="font-semibold">{asset.coinName}</p>
+                        <CurrencyIcon currency={asset.coinName} size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
+                        <p className="font-semibold text-sm lg:text-base">{asset.coinName}</p>
                       </div>
-                      <p className="font-mono text-yellow-600">
+                      <p className="font-mono text-yellow-600 text-sm lg:text-base">
                         {formatCurrency(asset.quantity, asset.coinName)} {asset.coinName}
                       </p>
                     </div>

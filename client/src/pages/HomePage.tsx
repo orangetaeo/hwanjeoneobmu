@@ -119,22 +119,12 @@ export default function HomePage() {
 
     try {
       // 계좌를 한국/베트남으로 분리 - 개선된 로직
-          console.log('All accounts before classification:', allAccounts.map(acc => ({
-            name: acc.name,
-            currency: acc.currency,
-            country: acc.metadata?.country,
-            bankName: acc.bankName || acc.name
-          })));
-          
           const koreanAccounts = allAccounts.filter((account: any) => 
             account.currency === 'KRW'
           );
           const vietnameseAccounts = allAccounts.filter((account: any) => 
             account.currency === 'VND'
           );
-          
-          console.log('Korean accounts:', koreanAccounts.map(acc => ({ name: acc.name, currency: acc.currency })));
-          console.log('Vietnamese accounts:', vietnameseAccounts.map(acc => ({ name: acc.name, currency: acc.currency })));
 
           // 거래소와 바이낸스 자산에 balance 필드 추가 (quantity -> balance 매핑)
           const processedExchanges = exchanges.map((asset: any) => ({
