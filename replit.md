@@ -71,6 +71,10 @@ Preferred communication style: Simple, everyday language.
   - BinanceP2P: TrendingUp for P2P trading, History for transaction history
   - TypeScript: Fixed all type safety issues and removed unused emoji functions
   - Achieved complete visual consistency with navigation bar design language throughout entire application
+- **Mobile Navigation Accessibility Fix**: Added missing "환전상 시세" (Exchange Rate Manager) menu to mobile navigation
+  - Fixed user-reported issue where exchange rate input interface was inaccessible on mobile devices
+  - Added DollarSign icon with "금은방" label for mobile navigation consistency
+  - Both RateManager and ExchangeRateManager components now accessible across all device types
 
 # External Dependencies
 
