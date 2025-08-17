@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,16 @@ export default function CashTransactionHistory({
   const [displayCount, setDisplayCount] = useState<number>(5);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isCashDetailModalOpen, setIsCashDetailModalOpen] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // 모달이 열릴 때 제목에 포커스를 주어 입력 필드 자동 포커스 방지
+  useEffect(() => {
+    if (isOpen && titleRef.current) {
+      setTimeout(() => {
+        titleRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
 
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
@@ -126,7 +136,11 @@ export default function CashTransactionHistory({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:max-w-4xl overflow-y-auto p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
+          <DialogTitle 
+            ref={titleRef}
+            tabIndex={-1}
+            className="text-xl font-bold outline-none"
+          >
             {cashAsset.currency} 현금 증감 내역
           </DialogTitle>
         </DialogHeader>
@@ -160,6 +174,7 @@ export default function CashTransactionHistory({
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 text-sm h-10 sm:h-9"
                     data-testid="input-search-transactions"
+                    autoFocus={false}
                   />
                 </div>
               </div>
