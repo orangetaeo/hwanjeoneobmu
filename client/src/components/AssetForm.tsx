@@ -1578,8 +1578,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
-              {/* USD, VND 통화 증감 모드 - 동적 입력 필드 */}
-              {!editData && form.watch('currency') !== 'KRW' && (
+              {/* USD, VND 통화 증감 모드 - 지폐 구성 입력만 표시 (현재 자산 정보는 위에서 표시됨) */}
+              {false && !editData && form.watch('currency') !== 'KRW' && (
                 <div className="space-y-4">
                   {Object.entries(denominations).length > 0 ? (
                     Object.entries(denominations)
@@ -1687,6 +1687,80 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
 
                 </div>
               )}
+
+              {/* USD, VND 통화의 지폐 구성 입력 필드 */}
+              {type === 'cash' && !editData && form.watch('currency') !== 'KRW' && (
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">새로운 지폐 구성</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {Object.entries(denominations)
+                      .sort((a, b) => {
+                        const numA = parseFloat(a[0].replace(/,/g, ''));
+                        const numB = parseFloat(b[0].replace(/,/g, ''));
+                        return numB - numA;
+                      })
+                      .map(([denom, count]) => {
+                        const numericValue = parseFloat(denom.replace(/,/g, ''));
+                        const displayDenom = form.watch('currency') === 'USD' 
+                          ? `${numericValue}달러권`
+                          : `${numericValue.toLocaleString()}동권`;
+                        
+                        return (
+                          <div key={denom} className="p-3 border rounded-lg bg-gray-50">
+                            <div className="text-center text-sm font-medium text-gray-700 mb-2">
+                              {displayDenom}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDenominations(prev => ({
+                                    ...prev,
+                                    [denom]: Math.max(0, (prev[denom] || 0) - 1)
+                                  }));
+                                }}
+                                className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center text-red-600"
+                                data-testid={`button-decrease-${denom}`}
+                              >
+                                -
+                              </button>
+                              <Input
+                                type="text"
+                                value={count}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0;
+                                  setDenominations(prev => ({
+                                    ...prev,
+                                    [denom]: Math.max(0, value)
+                                  }));
+                                }}
+                                className="w-16 h-8 text-center text-sm"
+                                data-testid={`input-${denom}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDenominations(prev => ({
+                                    ...prev,
+                                    [denom]: (prev[denom] || 0) + 1
+                                  }));
+                                }}
+                                className="w-8 h-8 rounded-full bg-green-100 hover:bg-green-200 flex items-center justify-center text-green-600"
+                                data-testid={`button-increase-${denom}`}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <div className="text-center text-xs text-gray-500 mt-1">
+                              총액: {form.watch('currency') === 'USD' ? '$' : ''}{(numericValue * count).toLocaleString()}{form.watch('currency') === 'VND' ? '₫' : ''}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
               {/* 모든 현금 자산에 공통 메모 필드 추가 */}
               {type === 'cash' && (
                 <div className="mt-6">
