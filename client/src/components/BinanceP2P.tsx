@@ -77,11 +77,10 @@ export default function BinanceP2P() {
     assetFound: !!binanceUsdtAsset
   });
 
-  // VND 은행 계좌 자산 직접 조회 (P2P 거래용)
+  // VND 은행 계좌 자산 직접 조회 (P2P 거래용) - 우리은행 김학태 계좌만 사용
   const vndBankAsset = (assets as any[]).find((asset: any) => 
     asset.type === 'account' && asset.currency === 'VND' && 
-    (asset.name.includes('신한은행') || asset.metadata?.bank === '신한은행' || 
-     asset.name.includes('우리은행') || asset.metadata?.bank === '우리은행')
+    (asset.name.includes('우리은행') && asset.name.includes('김학태'))
   );
 
 
