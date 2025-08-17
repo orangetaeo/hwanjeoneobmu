@@ -677,28 +677,46 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                 );
                               });
                             } else if (currentAssetInfo?.denominations && Object.keys(currentAssetInfo.denominations).length > 0) {
-                              // 다른 통화는 기존 로직 사용
-                              return Array.from(allDenoms)
+                              // 다른 통화는 키 정규화를 통해 중복 방지
+                              const normalizedDenoms = new Map<string, { normalizedKey: string, currentCount: number, changeCount: number }>();
+                              
+                              // 기존 지폐 처리 (콤마 없는 키)
+                              Object.entries(currentAssetInfo.denominations).forEach(([key, count]) => {
+                                const normalizedKey = parseFloat(key.replace(/,/g, '')).toLocaleString();
+                                if (!normalizedDenoms.has(normalizedKey)) {
+                                  normalizedDenoms.set(normalizedKey, { normalizedKey, currentCount: 0, changeCount: 0 });
+                                }
+                                normalizedDenoms.get(normalizedKey)!.currentCount += (typeof count === 'number' ? count : 0);
+                              });
+                              
+                              // 변경 지폐 처리 (콤마 있는 키)
+                              Object.entries(denominations).forEach(([key, count]) => {
+                                const normalizedKey = parseFloat(key.replace(/,/g, '')).toLocaleString();
+                                if (!normalizedDenoms.has(normalizedKey)) {
+                                  normalizedDenoms.set(normalizedKey, { normalizedKey, currentCount: 0, changeCount: 0 });
+                                }
+                                normalizedDenoms.get(normalizedKey)!.changeCount += (typeof count === 'number' ? count : 0);
+                              });
+                              
+                              return Array.from(normalizedDenoms.values())
                                 .sort((a, b) => {
-                                  const numA = parseFloat(a.replace(/,/g, ''));
-                                  const numB = parseFloat(b.replace(/,/g, ''));
+                                  const numA = parseFloat(a.normalizedKey.replace(/,/g, ''));
+                                  const numB = parseFloat(b.normalizedKey.replace(/,/g, ''));
                                   return numB - numA;
                                 })
-                                .map((denom) => {
-                                  const currentCount = (currentAssetInfo.denominations?.[denom] as number) || 0;
-                                  const changeCount = denominations[denom] || 0;
+                                .map(({ normalizedKey, currentCount, changeCount }) => {
                                   const newCount = currentCount + changeCount;
                                   
-                                  // 다른 통화는 0이면 표시하지 않음
+                                  // 현재 수량과 변경 수량이 모두 0이면 표시하지 않음
                                   if (currentCount === 0 && changeCount === 0) return null;
                                   
                                   return (
-                                    <div key={denom} className={`flex justify-between items-center rounded px-2 py-1 border ${
+                                    <div key={normalizedKey} className={`flex justify-between items-center rounded px-2 py-1 border ${
                                       changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
                                     }`}>
                                       <span className="text-gray-600">
-                                        {form.watch('currency') === 'USD' ? `$${denom}` :
-                                         `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
+                                        {form.watch('currency') === 'USD' ? `$${normalizedKey}` :
+                                         `${normalizedKey}₫`}:
                                       </span>
                                       <div className="flex items-center space-x-2">
                                         {editData && (
@@ -706,26 +724,30 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                             <button
                                               type="button"
                                               onClick={() => {
+                                                // 콤마 있는 키를 사용하여 상태 업데이트
+                                                const commaKey = parseFloat(normalizedKey.replace(/,/g, '')).toLocaleString();
                                                 setDenominations((prev: Record<string, number>) => ({
                                                   ...prev,
-                                                  [denom]: (prev[denom] || 0) - 1
+                                                  [commaKey]: (prev[commaKey] || 0) - 1
                                                 }));
                                               }}
                                               className="w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center text-red-600 text-xs"
-                                              data-testid={`button-decrease-${denom}-display`}
+                                              data-testid={`button-decrease-${normalizedKey}-display`}
                                             >
                                               -
                                             </button>
                                             <button
                                               type="button"
                                               onClick={() => {
+                                                // 콤마 있는 키를 사용하여 상태 업데이트
+                                                const commaKey = parseFloat(normalizedKey.replace(/,/g, '')).toLocaleString();
                                                 setDenominations((prev: Record<string, number>) => ({
                                                   ...prev,
-                                                  [denom]: (prev[denom] || 0) + 1
+                                                  [commaKey]: (prev[commaKey] || 0) + 1
                                                 }));
                                               }}
                                               className="w-5 h-5 rounded-full bg-green-100 hover:bg-green-200 flex items-center justify-center text-green-600 text-xs"
-                                              data-testid={`button-increase-${denom}-display`}
+                                              data-testid={`button-increase-${normalizedKey}-display`}
                                             >
                                               +
                                             </button>
