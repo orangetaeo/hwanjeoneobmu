@@ -58,6 +58,7 @@ export function useExchangeRates() {
 
       } catch (error) {
         console.error("환율 API 호출 실패:", error);
+        console.log("기본 환율 값 설정 중...");
         // 오류 발생 시 기본값 설정
         setRealTimeRates({
           'KRW-USD': 1 / 1350,

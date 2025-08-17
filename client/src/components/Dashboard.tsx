@@ -78,6 +78,9 @@ export default function Dashboard({
           balanceValue, 
           coinName, 
           usdtRate: realTimeRates['USDT-KRW'],
+          vndKrwRate: realTimeRates['VND-KRW'],
+          usdKrwRate: realTimeRates['USD-KRW'],
+          allRates: realTimeRates,
           cryptoRates: cryptoRates
         });
 
@@ -90,10 +93,14 @@ export default function Dashboard({
             }
             break;
           case 'VND': 
-            totalKrw += balanceValue * (realTimeRates['VND-KRW'] || 0); 
+            // 환전상 시세 기준: KRW → VND 평균 19.0 이므로 VND → KRW는 1/19.0
+            const vndToKrwRate = 1 / 19.0;
+            totalKrw += balanceValue * vndToKrwRate; 
             break;
           case 'USD': 
-            totalKrw += balanceValue * (realTimeRates['USD-KRW'] || 0); 
+            // 환전상 시세 기준: USD → VND 평균 25,000, KRW → VND 평균 19.0 이므로 USD → KRW는 25,000/19.0
+            const usdToKrwRate = 25000 / 19.0;
+            totalKrw += balanceValue * usdToKrwRate; 
             break;
           case 'USDT': 
             const usdtRate = realTimeRates['USDT-KRW'] || 0;
