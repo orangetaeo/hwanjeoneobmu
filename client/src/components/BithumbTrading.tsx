@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { History, RefreshCw, Coins } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/helpers';
 
@@ -21,6 +21,12 @@ interface BithumbTrade {
 
 export default function BithumbTrading() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // 컴포넌트 마운트 시 캐시 무효화
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+  }, [queryClient]);
 
   // 빗썸 실시간 USDT 데이터 조회 (잔고 + 거래내역)
   const { data: bithumbData, isLoading: isBithumbLoading, error: bithumbError, refetch } = useQuery({
@@ -38,9 +44,12 @@ export default function BithumbTrading() {
     retryDelay: 5000
   });
 
-  // 실제 자산 데이터베이스에서 빗썸 USDT 조회 (테스트 데이터 기준)
+  // 실제 자산 데이터베이스에서 빗썸 USDT 조회 (테스트 데이터 기준) - 캐시 갱신 강화
   const { data: assets = [] } = useQuery({
     queryKey: ['/api/assets'],
+    staleTime: 0, // 즉시 갱신
+    refetchOnMount: 'always', // 마운트 시 항상 갱신
+    refetchOnWindowFocus: true // 포커스 시 갱신
   });
   
   // 빗썸 USDT 자산 직접 조회 - 이름 매칭 개선

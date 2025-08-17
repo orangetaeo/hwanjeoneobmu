@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,11 @@ interface NetworkTransfer {
 export default function NetworkTransfer() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // 컴포넌트 마운트 시 캐시 무효화
+  React.useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+  }, [queryClient]);
 
   // 폼 상태
   const [usdtAmount, setUsdtAmount] = useState<string>('');
@@ -59,9 +64,12 @@ export default function NetworkTransfer() {
     txHash: tx.metadata?.txHash
   }));
 
-  // 빗썸 USDT 보유량 조회 (직접 자산에서 조회)
-  const { data: assets = [] } = useQuery<any[]>({
-    queryKey: ['/api/assets']
+  // 빗썸 USDT 보유량 조회 (직접 자산에서 조회) - 캐시 갱신 강화
+  const { data: assets = [], refetch: refetchAssets } = useQuery<any[]>({
+    queryKey: ['/api/assets'],
+    staleTime: 0, // 즉시 갱신
+    refetchOnMount: 'always', // 마운트 시 항상 갱신
+    refetchOnWindowFocus: true // 포커스 시 갱신
   });
 
   // 빗썸 USDT 자산 직접 조회 - 이름 매칭 개선
@@ -71,7 +79,7 @@ export default function NetworkTransfer() {
   );
 
   console.log('빗썸 USDT 자산 검색 결과:', bithumbUsdtAsset);
-  console.log('전체 자산 목록:', assets.map(a => ({ name: a.name, type: a.type, currency: a.currency })));
+  console.log('전체 자산 목록:', (assets as any[]).map((a: any) => ({ name: a.name, type: a.type, currency: a.currency })));
 
   // 사용 가능한 USDT 계산 - 실제 자산 잔액 기준 (테스트 데이터 기준)
   const bithumbUsdtBalance = parseFloat(bithumbUsdtAsset?.balance || '0');
@@ -83,7 +91,7 @@ export default function NetworkTransfer() {
     transfersCount: transfers.length,
     assetFound: !!bithumbUsdtAsset,
     assetType: bithumbUsdtAsset?.type,
-    totalAssets: assets.length
+    totalAssets: (assets as any[]).length
   });
   
 
