@@ -19,6 +19,27 @@ interface AssetManagerProps {
   onTabChange?: (value: string) => void;
 }
 
+// Hook to manage button loading states
+const useButtonLoading = () => {
+  const [loadingButtons, setLoadingButtons] = useState<Set<string>>(new Set());
+  
+  const setButtonLoading = (buttonId: string, loading: boolean) => {
+    setLoadingButtons(prev => {
+      const newSet = new Set(prev);
+      if (loading) {
+        newSet.add(buttonId);
+      } else {
+        newSet.delete(buttonId);
+      }
+      return newSet;
+    });
+  };
+  
+  const isButtonLoading = (buttonId: string) => loadingButtons.has(buttonId);
+  
+  return { setButtonLoading, isButtonLoading };
+};
+
 export default function AssetManager({ data, onOpenModal, activeTab = "cash", onTabChange }: AssetManagerProps) {
   const { 
     cashAssets = [], 
@@ -27,6 +48,22 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
     exchangeAssets = [], 
     binanceAssets = [] 
   } = data || {};
+  
+  const { setButtonLoading, isButtonLoading } = useButtonLoading();
+  
+  // Enhanced onOpenModal to handle loading states
+  const handleOpenModal = (type: string, data?: any) => {
+    const buttonId = `add-${type}`;
+    if (isButtonLoading(buttonId)) return; // Prevent duplicate clicks
+    
+    setButtonLoading(buttonId, true);
+    onOpenModal(type, data);
+    
+    // Reset loading state after a short delay
+    setTimeout(() => {
+      setButtonLoading(buttonId, false);
+    }, 1000);
+  };
 
   return (
     <div className="space-y-6">
@@ -78,9 +115,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <span className="text-xl mr-2">💰</span>
                 현금 자산 관리
               </h3>
-              <Button onClick={() => onOpenModal('addCashAsset')} data-testid="button-add-cash-asset">
+              <Button 
+                onClick={() => handleOpenModal('addCashAsset')} 
+                disabled={isButtonLoading('add-addCashAsset')}
+                data-testid="button-add-cash-asset"
+              >
                 <Plus size={16} className="mr-2" />
-                현금 증감
+                {isButtonLoading('add-addCashAsset') ? '처리중...' : '현금 증감'}
               </Button>
             </div>
 
@@ -177,9 +218,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <span className="text-xl mr-2">🇰🇷</span>
                 한국 은행 계좌
               </h3>
-              <Button onClick={() => onOpenModal('addKoreanAccount')} data-testid="button-add-korean-account">
+              <Button 
+                onClick={() => handleOpenModal('addKoreanAccount')} 
+                disabled={isButtonLoading('add-addKoreanAccount')}
+                data-testid="button-add-korean-account"
+              >
                 <Plus size={16} className="mr-2" />
-                계좌 추가
+                {isButtonLoading('add-addKoreanAccount') ? '처리중...' : '계좌 추가'}
               </Button>
             </div>
 
@@ -228,9 +273,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <span className="text-xl mr-2">🇻🇳</span>
                 베트남 은행 계좌
               </h3>
-              <Button onClick={() => onOpenModal('addVietnameseAccount')} data-testid="button-add-vietnamese-account">
+              <Button 
+                onClick={() => handleOpenModal('addVietnameseAccount')} 
+                disabled={isButtonLoading('add-addVietnameseAccount')}
+                data-testid="button-add-vietnamese-account"
+              >
                 <Plus size={16} className="mr-2" />
-                계좌 추가
+                {isButtonLoading('add-addVietnameseAccount') ? '처리중...' : '계좌 추가'}
               </Button>
             </div>
 
@@ -287,9 +336,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <span className="text-xl mr-2">₿</span>
                 거래소 자산
               </h3>
-              <Button onClick={() => onOpenModal('addExchangeAsset')} data-testid="button-add-exchange-asset">
+              <Button 
+                onClick={() => handleOpenModal('addExchangeAsset')} 
+                disabled={isButtonLoading('add-addExchangeAsset')}
+                data-testid="button-add-exchange-asset"
+              >
                 <Plus size={16} className="mr-2" />
-                거래소/ 자산 추가
+                {isButtonLoading('add-addExchangeAsset') ? '처리중...' : '거래소/ 자산 추가'}
               </Button>
             </div>
 
@@ -349,9 +402,13 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <span className="text-xl mr-2">🟡</span>
                 바이낸스 자산
               </h3>
-              <Button onClick={() => onOpenModal('addBinanceAsset')} data-testid="button-add-binance-asset">
+              <Button 
+                onClick={() => handleOpenModal('addBinanceAsset')} 
+                disabled={isButtonLoading('add-addBinanceAsset')}
+                data-testid="button-add-binance-asset"
+              >
                 <Plus size={16} className="mr-2" />
-                자산 추가
+                {isButtonLoading('add-addBinanceAsset') ? '처리중...' : '자산 추가'}
               </Button>
             </div>
 

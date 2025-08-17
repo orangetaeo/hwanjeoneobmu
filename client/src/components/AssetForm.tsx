@@ -85,6 +85,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   const [showCoinInput, setShowCoinInput] = useState(false);
   const [newExchange, setNewExchange] = useState('');
   const [newCoin, setNewCoin] = useState('');
+  
+  // Loading state for form submission to prevent duplicate clicks
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 거래소 추가 함수
   const addExchange = () => {
@@ -128,6 +131,67 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     } catch (error) {
       console.error('Error fetching current asset info:', error);
       setCurrentAssetInfo(null);
+    }
+  };
+
+  // Check for duplicate bank accounts
+  const checkBankAccountDuplicate = async (formData: any) => {
+    try {
+      const response = await fetch('/api/assets');
+      const assets = await response.json();
+      
+      const accountType = type === 'korean-account' ? 'korean-account' : 'vietnamese-account';
+      const existingAccount = assets.find((asset: any) => 
+        asset.type === accountType &&
+        asset.metadata?.bank === formData.bankName &&
+        asset.metadata?.accountNumber === formData.accountNumber &&
+        asset.metadata?.accountHolder === formData.accountHolder &&
+        asset.id !== editData?.id // Exclude current asset if editing
+      );
+      
+      return existingAccount;
+    } catch (error) {
+      console.error('Error checking bank account duplicate:', error);
+      return null;
+    }
+  };
+
+  // Check for duplicate exchange assets
+  const checkExchangeAssetDuplicate = async (formData: any) => {
+    try {
+      const response = await fetch('/api/assets');
+      const assets = await response.json();
+      
+      const existingAsset = assets.find((asset: any) => 
+        asset.type === 'exchange' &&
+        asset.metadata?.exchange === formData.exchangeName &&
+        asset.currency === formData.coinName &&
+        asset.id !== editData?.id // Exclude current asset if editing
+      );
+      
+      return existingAsset;
+    } catch (error) {
+      console.error('Error checking exchange asset duplicate:', error);
+      return null;
+    }
+  };
+
+  // Check for duplicate binance assets
+  const checkBinanceAssetDuplicate = async (formData: any) => {
+    try {
+      const response = await fetch('/api/assets');
+      const assets = await response.json();
+      
+      const existingAsset = assets.find((asset: any) => 
+        asset.type === 'binance' &&
+        asset.currency === formData.coinName &&
+        asset.id !== editData?.id // Exclude current asset if editing
+      );
+      
+      return existingAsset;
+    } catch (error) {
+      console.error('Error checking binance asset duplicate:', error);
+      return null;
     }
   };
 
@@ -278,7 +342,36 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     }
   }
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = async (data: any) => {
+    if (isSubmitting) return; // Prevent duplicate submissions
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Check for duplicates based on asset type
+      if (type === 'korean-account' || type === 'vietnamese-account') {
+        const duplicateAccount = await checkBankAccountDuplicate(data);
+        if (duplicateAccount) {
+          alert('동일한 계좌가 이미 존재합니다.\n은행명, 계좌번호, 예금주가 모두 동일한 계좌입니다.');
+          setIsSubmitting(false);
+          return;
+        }
+      } else if (type === 'exchange') {
+        const duplicateExchange = await checkExchangeAssetDuplicate(data);
+        if (duplicateExchange) {
+          // For exchanges, update existing asset instead of showing error
+          data.id = duplicateExchange.id;
+          data.balance = (parseFloat(duplicateExchange.balance) + parseFloat(data.quantity)).toString();
+        }
+      } else if (type === 'binance') {
+        const duplicateBinance = await checkBinanceAssetDuplicate(data);
+        if (duplicateBinance) {
+          // For binance, update existing asset instead of showing error
+          data.id = duplicateBinance.id;
+          data.balance = (parseFloat(duplicateBinance.balance) + parseFloat(data.quantity)).toString();
+        }
+      }
+    
     try {
       if (type === 'cash') {
         // 현재 denominations 상태를 사용 (폼 데이터가 아닌)
@@ -389,6 +482,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     } catch (error) {
       console.error('Error in form submission:', error);
       // Handle error appropriately - could show a toast or alert
+    } finally {
+      setIsSubmitting(false);
+    }
+    } catch (error) {
+      console.error('Error in duplicate checking or form submission:', error);
+      alert('처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1948,9 +2049,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
               type="submit"
               className="px-6 py-2"
               data-testid="button-submit"
-              disabled={type === 'cash' && !hasChanges()}
+              disabled={isSubmitting || (type === 'cash' && !hasChanges())}
             >
-              {editData ? '수정' : '추가'}
+              {isSubmitting ? '처리중...' : (editData ? '수정' : '추가')}
             </Button>
           </div>
         </form>

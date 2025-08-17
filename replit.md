@@ -62,6 +62,17 @@ Preferred communication style: Simple, everyday language.
 - **Currency Ordering**: KRW assets prioritized in display.
 
 # Recent Changes (2025-08-17)
+- **Duplicate Asset Validation System**: Implemented comprehensive duplicate checking and prevention features
+  - Bank accounts (Korean/Vietnamese): Alert users when identical accounts exist (excluding balance comparison)
+  - Exchange assets: Automatically update existing entries when same exchange+coin combination is found
+  - Binance assets: Automatically merge quantities when same coin is added multiple times
+  - Form validation excludes balance when checking for duplicate bank accounts but includes exchange/coin combinations for crypto assets
+  - Smart duplicate handling reduces data redundancy while maintaining data integrity
+- **Button Loading States**: Added loading functionality to prevent duplicate clicks and improve user experience
+  - All asset add buttons in AssetManager show "처리중..." loading state during operations
+  - Form submit buttons disabled and show loading text during submission process
+  - Duplicate click prevention through loading state management across entire asset management system
+  - Enhanced form submission with comprehensive error handling and validation logic
 - **Complete Icon System Unification**: Replaced ALL colorful emojis and flags with monochrome Lucide icons for cleaner, more professional appearance
   - Dashboard: Globe icons for currencies, Building for banks, Coins for exchanges, Bitcoin for crypto section
   - AssetManager: Banknote for cash, Building for banks, Coins for exchanges
