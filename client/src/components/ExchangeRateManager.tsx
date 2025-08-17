@@ -5,9 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Save, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
+import { Save, AlertTriangle, TrendingUp, DollarSign, Globe, Banknote } from 'lucide-react';
 import { ExchangeRate, InsertExchangeRate } from '@shared/schema';
-import CurrencyIcon from '@/components/CurrencyIcon';
 import { formatCurrency } from '@/utils/helpers';
 
 interface ExchangeRateManagerProps {
@@ -124,7 +123,7 @@ export default function ExchangeRateManager({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-center mb-2">
-              <CurrencyIcon currency="USD" size={20} className="mr-2" />
+              <Globe className="mr-2 text-blue-600" size={20} />
               <span className="font-semibold">USD → VND</span>
             </div>
             <p className="text-xl font-bold text-blue-600">
@@ -133,7 +132,7 @@ export default function ExchangeRateManager({
           </div>
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <div className="flex items-center justify-center mb-2">
-              <CurrencyIcon currency="KRW" size={20} className="mr-2" />
+              <Globe className="mr-2 text-green-600" size={20} />
               <span className="font-semibold">KRW → VND</span>
             </div>
             <p className="text-xl font-bold text-green-600">
@@ -142,7 +141,7 @@ export default function ExchangeRateManager({
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
             <div className="flex items-center justify-center mb-2">
-              <CurrencyIcon currency="USDT" size={20} className="mr-2" />
+              <Globe className="mr-2 text-purple-600" size={20} />
               <span className="font-semibold">USDT → KRW</span>
             </div>
             <p className="text-xl font-bold text-purple-600">
@@ -151,7 +150,7 @@ export default function ExchangeRateManager({
           </div>
           <div className="text-center p-4 bg-orange-50 rounded-lg">
             <div className="flex items-center justify-center mb-2">
-              <CurrencyIcon currency="USD" size={20} className="mr-2" />
+              <Globe className="mr-2 text-orange-600" size={20} />
               <span className="font-semibold">USD → KRW</span>
             </div>
             <p className="text-xl font-bold text-orange-600">
@@ -308,7 +307,7 @@ export default function ExchangeRateManager({
           return (
             <Card key={currencyPair} className="p-6">
               <h4 className="text-md font-bold mb-4 flex items-center">
-                <CurrencyIcon currency={from} size={20} className="mr-2" />
+                <Banknote className="mr-2 text-primary" size={20} />
                 <span className="mr-2">{from} → {to}</span>
                 <Badge variant="secondary">{rateList.length}개 설정</Badge>
               </h4>

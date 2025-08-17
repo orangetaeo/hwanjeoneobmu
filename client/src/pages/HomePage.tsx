@@ -1306,6 +1306,7 @@ export default function HomePage() {
                 {currentView === 'exchange-rates' && (
                   <ExchangeRateManager
                     rates={exchangeRates}
+                    realTimeRates={realTimeRates}
                     onSave={async (rate) => {
                       try {
                         const response = await fetch('/api/exchange-rates', {
