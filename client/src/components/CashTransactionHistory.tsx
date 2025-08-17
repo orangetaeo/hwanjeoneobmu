@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search, Filter, ArrowUpDown, X, TrendingUp, TrendingDown, Clock, Calendar } from 'lucide-react';
 import { Transaction, CashAsset } from '@/types';
+import CashChangeDetailModal from '@/components/CashChangeDetailModal';
 import { formatCurrency } from '@/utils/helpers';
 
 interface CashTransactionHistoryProps {
@@ -28,6 +29,8 @@ export default function CashTransactionHistory({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [displayCount, setDisplayCount] = useState<number>(5);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isCashDetailModalOpen, setIsCashDetailModalOpen] = useState(false);
 
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
@@ -280,7 +283,15 @@ export default function CashTransactionHistory({
                 const { amount, isDecrease } = getTransactionAmount(transaction);
                 
                 return (
-                  <Card key={transaction.id} className="p-3 sm:p-4 hover:shadow-md transition-shadow">
+                  <Card 
+                    key={transaction.id} 
+                    className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => {
+                      setSelectedTransaction(transaction);
+                      setIsCashDetailModalOpen(true);
+                    }}
+                    data-testid={`transaction-${transaction.id}`}
+                  >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
                         <div className="mt-0.5 sm:mt-1 flex-shrink-0">
@@ -325,6 +336,16 @@ export default function CashTransactionHistory({
           </div>
         </div>
       </DialogContent>
+      
+      {/* Cash Change Detail Modal */}
+      <CashChangeDetailModal
+        transaction={selectedTransaction}
+        isOpen={isCashDetailModalOpen}
+        onClose={() => {
+          setIsCashDetailModalOpen(false);
+          setSelectedTransaction(null);
+        }}
+      />
     </Dialog>
   );
 }
