@@ -66,7 +66,9 @@ export default function HomePage() {
     queryKey: ['/api/assets'],
     enabled: !authLoading && !!user,
     retry: 3,
-    retryDelay: 1000
+    retryDelay: 1000,
+    staleTime: 0, // 캐시 사용 안함
+    gcTime: 0     // v5에서 cacheTime -> gcTime으로 변경
   });
   
   const { data: transactionsData = [], isLoading: transactionsLoading, error: transactionsError } = useQuery({
@@ -111,6 +113,7 @@ export default function HomePage() {
     console.log('All assets from API:', assetsData);
     
     const cashAssets = assetsData.filter((asset: any) => asset.type === 'cash');
+    console.log('Cash assets found:', cashAssets);
     const allAccounts = assetsData.filter((asset: any) => asset.type === 'account');
     const exchanges = assetsData.filter((asset: any) => asset.type === 'exchange');
     const binanceAssets = assetsData.filter((asset: any) => asset.type === 'binance');

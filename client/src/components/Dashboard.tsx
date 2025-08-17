@@ -50,6 +50,14 @@ export default function Dashboard({
     }
 
     const all = [...cashAssets, ...koreanAccounts, ...vietnameseAccounts, ...exchangeAssets, ...binanceAssets];
+    console.log('Dashboard - All assets for calculation:', { 
+      cashAssets, 
+      koreanAccounts, 
+      vietnameseAccounts, 
+      exchangeAssets, 
+      binanceAssets,
+      totalAssets: all.length 
+    });
     let totalKrw = 0;
 
     all.forEach(asset => {
@@ -83,6 +91,9 @@ export default function Dashboard({
           allRates: realTimeRates,
           cryptoRates: cryptoRates
         });
+
+        // 각 통화별 처리 전에 로그 출력
+        console.log(`Processing ${currency} asset: ${(asset as any).name}`);
 
         switch(currency) {
           case 'KRW': 
