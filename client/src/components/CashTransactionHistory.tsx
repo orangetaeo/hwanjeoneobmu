@@ -256,9 +256,7 @@ export default function CashTransactionHistory({
                   <SelectItem value="15">15개 보기</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="text-sm text-gray-500">
-                (전체 {cashTransactions.length}개 중 {filteredTransactions.length}개 표시)
-              </div>
+
             </div>
           </div>
 
