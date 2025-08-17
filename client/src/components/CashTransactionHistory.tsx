@@ -87,7 +87,8 @@ export default function CashTransactionHistory({
       }
       
       return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-    });
+    })
+    .slice(0, 5); // 최근 5개만 표시
 
   const getTransactionAmount = (transaction: Transaction) => {
     // 현금 자산이 from인지 to인지에 따라 증가/감소 판단
@@ -239,6 +240,14 @@ export default function CashTransactionHistory({
               )}
             </div>
           </Card>
+
+          {/* 거래 내역 헤더 */}
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900">최근 거래 내역</h3>
+            <div className="text-sm text-gray-500">
+              최근 5개 거래 (전체 {cashTransactions.length}개 중 {filteredTransactions.length}개 표시)
+            </div>
+          </div>
 
           {/* 거래 내역 리스트 */}
           <div className="space-y-3">
