@@ -129,24 +129,14 @@ export default function BithumbTrading() {
       {/* 모바일 최적화 상단 통계 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="p-3 sm:p-4">
-          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2 flex items-center">
-            보유 USDT 
-            {isBithumbLoading && <span className="ml-1 text-xs text-blue-500">🔄</span>}
-            {bithumbError && <span className="ml-1 text-xs text-orange-500">📊</span>}
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">
+            보유 USDT
           </h3>
           <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
             {(totalUsdtOwned || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
             <span className="text-sm sm:text-base ml-1">USDT</span>
           </p>
-          {databaseUsdtBalance > 0 ? (
-            <p className="text-xs text-blue-500 mt-1">자산 관리 데이터</p>
-          ) : bithumbError ? (
-            <p className="text-xs text-orange-500 mt-1">테스트 데이터</p>
-          ) : realTimeBalance > 0 ? (
-            <p className="text-xs text-green-500 mt-1">실시간 빗썸 잔고</p>
-          ) : (
-            <p className="text-xs text-gray-500 mt-1">수동 입력 합계</p>
-          )}
+
         </Card>
         
         <Card className="p-3 sm:p-4">
