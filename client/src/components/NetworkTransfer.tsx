@@ -408,7 +408,15 @@ export default function NetworkTransfer() {
                       const networkFee = transfer.networkFee || 0;
                       return (
                         <TableRow key={transfer.id}>
-                          <TableCell>{new Date(transfer.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(transfer.date).toLocaleString('ko-KR', { 
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                          })}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{transfer.network || 'TRC20'}</Badge>
                           </TableCell>
@@ -447,11 +455,19 @@ export default function NetworkTransfer() {
                       {/* 상단: 날짜와 네트워크 */}
                       <div className="flex justify-between items-center mb-2">
                         <div className="text-sm font-medium">
-                          {new Date(transfer.date).toLocaleDateString('ko-KR', { 
+                          <div>{new Date(transfer.date).toLocaleDateString('ko-KR', { 
                             month: 'short', 
                             day: 'numeric',
                             weekday: 'short'
-                          })}
+                          })}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(transfer.date).toLocaleTimeString('ko-KR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                              hour12: false
+                            })}
+                          </div>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           {transfer.network || 'TRC20'}

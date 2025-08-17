@@ -479,7 +479,15 @@ export default function BinanceP2P() {
                   <TableBody>
                     {p2pTrades.map((trade) => (
                       <TableRow key={trade.id}>
-                        <TableCell>{new Date(trade.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(trade.date).toLocaleString('ko-KR', { 
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: false
+                        })}</TableCell>
                         <TableCell>
                           {trade.status === 'pending' && (
                             <Badge variant="outline" className="text-yellow-600 border-yellow-300">
@@ -559,11 +567,19 @@ export default function BinanceP2P() {
                     {/* 상단: 날짜와 상태 */}
                     <div className="flex justify-between items-center mb-2">
                       <div className="text-sm font-medium">
-                        {new Date(trade.date).toLocaleDateString('ko-KR', { 
+                        <div>{new Date(trade.date).toLocaleDateString('ko-KR', { 
                           month: 'short', 
                           day: 'numeric',
                           weekday: 'short'
-                        })}
+                        })}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(trade.date).toLocaleTimeString('ko-KR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                          })}
+                        </div>
                       </div>
                       <div>
                         {trade.status === 'pending' && (
