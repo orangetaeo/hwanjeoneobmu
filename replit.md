@@ -62,12 +62,12 @@ Preferred communication style: Simple, everyday language.
 - **Currency Ordering**: KRW assets prioritized in display.
 
 # Recent Changes (2025-08-17)
-- **Duplicate Asset Validation System**: Implemented comprehensive duplicate checking and prevention features
-  - Bank accounts (Korean/Vietnamese): Alert users when identical accounts exist (excluding balance comparison)
-  - Exchange assets: Automatically update existing entries when same exchange+coin combination is found
-  - Binance assets: Automatically merge quantities when same coin is added multiple times
-  - Form validation excludes balance when checking for duplicate bank accounts but includes exchange/coin combinations for crypto assets
-  - Smart duplicate handling reduces data redundancy while maintaining data integrity
+- **Duplicate Asset Validation System**: Fully implemented and tested comprehensive duplicate checking and prevention features
+  - Bank accounts (Korean/Vietnamese): Alert users when identical accounts exist (same bank name, account holder, and account number - excluding balance comparison)
+  - Exchange assets: Automatically update existing entries when same exchange+coin combination is found, merging quantities with user notification
+  - Binance assets: Automatically merge quantities when same coin is added multiple times with user notification
+  - Form validation uses proper asset name matching patterns: "BankName (AccountHolder)" for banks, "ExchangeName" for exchanges, "Binance CoinName" for Binance
+  - Smart duplicate handling reduces data redundancy while maintaining data integrity with clear user feedback
 - **Button Loading States**: Added loading functionality to prevent duplicate clicks and improve user experience
   - All asset add buttons in AssetManager show "처리중..." loading state during operations
   - Form submit buttons disabled and show loading text during submission process

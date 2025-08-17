@@ -141,13 +141,15 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       const assets = await response.json();
       
       const accountType = type === 'korean-account' ? 'korean-account' : 'vietnamese-account';
-      const existingAccount = assets.find((asset: any) => 
-        asset.type === accountType &&
-        asset.metadata?.bank === formData.bankName &&
-        asset.metadata?.accountNumber === formData.accountNumber &&
-        asset.metadata?.accountHolder === formData.accountHolder &&
-        asset.id !== editData?.id // Exclude current asset if editing
-      );
+      
+      const existingAccount = assets.find((asset: any) => {
+        // Bank account assets have name format: "BankName (AccountHolder)"  
+        const expectedName = `${formData.bankName} (${formData.accountHolder})`;
+        return asset.type === accountType &&
+          asset.name === expectedName &&
+          asset.metadata?.accountNumber === formData.accountNumber &&
+          asset.id !== editData?.id; // Exclude current asset if editing
+      });
       
       return existingAccount;
     } catch (error) {
@@ -162,12 +164,12 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       const response = await fetch('/api/assets');
       const assets = await response.json();
       
-      const existingAsset = assets.find((asset: any) => 
-        asset.type === 'exchange' &&
-        asset.metadata?.exchange === formData.exchangeName &&
-        asset.currency === formData.coinName &&
-        asset.id !== editData?.id // Exclude current asset if editing
-      );
+      const existingAsset = assets.find((asset: any) => {
+        return asset.type === 'exchange' &&
+          asset.name === formData.exchangeName &&
+          asset.currency === formData.coinName &&
+          asset.id !== editData?.id; // Exclude current asset if editing
+      });
       
       return existingAsset;
     } catch (error) {
@@ -182,11 +184,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       const response = await fetch('/api/assets');
       const assets = await response.json();
       
-      const existingAsset = assets.find((asset: any) => 
-        asset.type === 'binance' &&
-        asset.currency === formData.coinName &&
-        asset.id !== editData?.id // Exclude current asset if editing
-      );
+      const existingAsset = assets.find((asset: any) => {
+        // Binance assets have name format: "Binance CoinName"
+        const expectedName = `Binance ${formData.coinName}`;
+        return asset.type === 'binance' &&
+          asset.name === expectedName &&
+          asset.currency === formData.coinName &&
+          asset.id !== editData?.id; // Exclude current asset if editing
+      });
       
       return existingAsset;
     } catch (error) {
@@ -362,6 +367,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           // For exchanges, update existing asset instead of showing error
           data.id = duplicateExchange.id;
           data.balance = (parseFloat(duplicateExchange.balance) + parseFloat(data.quantity)).toString();
+          alert(`동일한 거래소/코인 조합이 발견되어 기존 자산에 추가합니다.\n${duplicateExchange.name} ${duplicateExchange.currency}: ${duplicateExchange.balance} + ${data.quantity} = ${data.balance}`);
         }
       } else if (type === 'binance') {
         const duplicateBinance = await checkBinanceAssetDuplicate(data);
@@ -369,10 +375,10 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           // For binance, update existing asset instead of showing error
           data.id = duplicateBinance.id;
           data.balance = (parseFloat(duplicateBinance.balance) + parseFloat(data.quantity)).toString();
+          alert(`동일한 코인이 발견되어 기존 자산에 추가합니다.\n${duplicateBinance.name}: ${duplicateBinance.balance} + ${data.quantity} = ${data.balance}`);
         }
       }
     
-    try {
       if (type === 'cash') {
         // 현재 denominations 상태를 사용 (폼 데이터가 아닌)
         const finalDenominations = { ...denominations };
@@ -479,12 +485,6 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       }
       
       onSubmit(data);
-    } catch (error) {
-      console.error('Error in form submission:', error);
-      // Handle error appropriately - could show a toast or alert
-    } finally {
-      setIsSubmitting(false);
-    }
     } catch (error) {
       console.error('Error in duplicate checking or form submission:', error);
       alert('처리 중 오류가 발생했습니다. 다시 시도해주세요.');
