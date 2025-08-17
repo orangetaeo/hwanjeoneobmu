@@ -137,19 +137,59 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   // Check for duplicate bank accounts
   const checkBankAccountDuplicate = async (formData: any) => {
     try {
+      console.log('=== 은행 계좌 중복 검사 시작 ===');
+      console.log('Form data:', formData);
+      console.log('Asset type:', type);
+      
       const response = await fetch('/api/assets');
       const assets = await response.json();
       
-      const accountType = type === 'korean-account' ? 'korean-account' : 'vietnamese-account';
+      console.log('전체 자산 목록:', assets);
+      
+      // 실제 데이터베이스에서는 모든 계좌가 'account' 타입으로 저장됨
+      const expectedCurrency = type === 'korean-account' ? 'KRW' : 'VND';
+      console.log('예상 계좌 통화:', expectedCurrency);
+      
+      const expectedName = `${formData.bankName} (${formData.accountHolder})`;
+      console.log('예상 자산 이름:', expectedName);
       
       const existingAccount = assets.find((asset: any) => {
-        // Bank account assets have name format: "BankName (AccountHolder)"  
-        const expectedName = `${formData.bankName} (${formData.accountHolder})`;
-        return asset.type === accountType &&
-          asset.name === expectedName &&
-          asset.metadata?.accountNumber === formData.accountNumber &&
-          asset.id !== editData?.id; // Exclude current asset if editing
+        console.log('자산 검사:', {
+          assetType: asset.type,
+          assetName: asset.name,
+          assetCurrency: asset.currency,
+          accountNumber: asset.metadata?.accountNumber,
+          bankName: asset.metadata?.bank || asset.metadata?.bankName,
+          accountHolder: asset.metadata?.accountHolder,
+          expectedType: 'account',
+          expectedName: expectedName,
+          expectedCurrency: expectedCurrency,
+          expectedAccountNumber: formData.accountNumber,
+          expectedBank: formData.bankName,
+          expectedHolder: formData.accountHolder
+        });
+        
+        const typeMatch = asset.type === 'account';
+        const currencyMatch = asset.currency === expectedCurrency;
+        const bankMatch = (asset.metadata?.bank || asset.metadata?.bankName) === formData.bankName;
+        const holderMatch = asset.metadata?.accountHolder === formData.accountHolder;
+        const accountMatch = asset.metadata?.accountNumber === formData.accountNumber;
+        const notEditing = asset.id !== editData?.id;
+        
+        console.log('매치 결과:', { 
+          typeMatch, 
+          currencyMatch, 
+          bankMatch, 
+          holderMatch, 
+          accountMatch, 
+          notEditing 
+        });
+        
+        return typeMatch && currencyMatch && bankMatch && holderMatch && accountMatch && notEditing;
       });
+      
+      console.log('중복 계좌 찾기 결과:', existingAccount);
+      console.log('=== 은행 계좌 중복 검사 완료 ===');
       
       return existingAccount;
     } catch (error) {
@@ -161,15 +201,37 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   // Check for duplicate exchange assets
   const checkExchangeAssetDuplicate = async (formData: any) => {
     try {
+      console.log('=== 거래소 자산 중복 검사 시작 ===');
+      console.log('Form data:', formData);
+      console.log('Asset type:', type);
+      
       const response = await fetch('/api/assets');
       const assets = await response.json();
       
+      console.log('전체 자산 목록:', assets);
+      
       const existingAsset = assets.find((asset: any) => {
-        return asset.type === 'exchange' &&
-          asset.name === formData.exchangeName &&
-          asset.currency === formData.coinName &&
-          asset.id !== editData?.id; // Exclude current asset if editing
+        console.log('거래소 자산 검사:', {
+          assetType: asset.type,
+          assetName: asset.name,
+          assetCurrency: asset.currency,
+          expectedType: 'exchange',
+          expectedName: formData.exchangeName,
+          expectedCurrency: formData.coinName
+        });
+        
+        const typeMatch = asset.type === 'exchange';
+        const nameMatch = asset.name === formData.exchangeName;
+        const currencyMatch = asset.currency === formData.coinName;
+        const notEditing = asset.id !== editData?.id;
+        
+        console.log('거래소 매치 결과:', { typeMatch, nameMatch, currencyMatch, notEditing });
+        
+        return typeMatch && nameMatch && currencyMatch && notEditing;
       });
+      
+      console.log('중복 거래소 자산 찾기 결과:', existingAsset);
+      console.log('=== 거래소 자산 중복 검사 완료 ===');
       
       return existingAsset;
     } catch (error) {
@@ -181,17 +243,40 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   // Check for duplicate binance assets
   const checkBinanceAssetDuplicate = async (formData: any) => {
     try {
+      console.log('=== 바이낸스 자산 중복 검사 시작 ===');
+      console.log('Form data:', formData);
+      console.log('Asset type:', type);
+      
       const response = await fetch('/api/assets');
       const assets = await response.json();
       
+      console.log('전체 자산 목록:', assets);
+      
+      const expectedName = `Binance ${formData.coinName}`;
+      console.log('예상 바이낸스 자산 이름:', expectedName);
+      
       const existingAsset = assets.find((asset: any) => {
-        // Binance assets have name format: "Binance CoinName"
-        const expectedName = `Binance ${formData.coinName}`;
-        return asset.type === 'binance' &&
-          asset.name === expectedName &&
-          asset.currency === formData.coinName &&
-          asset.id !== editData?.id; // Exclude current asset if editing
+        console.log('바이낸스 자산 검사:', {
+          assetType: asset.type,
+          assetName: asset.name,
+          assetCurrency: asset.currency,
+          expectedType: 'binance',
+          expectedName: expectedName,
+          expectedCurrency: formData.coinName
+        });
+        
+        const typeMatch = asset.type === 'binance';
+        const nameMatch = asset.name === expectedName;
+        const currencyMatch = asset.currency === formData.coinName;
+        const notEditing = asset.id !== editData?.id;
+        
+        console.log('바이낸스 매치 결과:', { typeMatch, nameMatch, currencyMatch, notEditing });
+        
+        return typeMatch && nameMatch && currencyMatch && notEditing;
       });
+      
+      console.log('중복 바이낸스 자산 찾기 결과:', existingAsset);
+      console.log('=== 바이낸스 자산 중복 검사 완료 ===');
       
       return existingAsset;
     } catch (error) {
