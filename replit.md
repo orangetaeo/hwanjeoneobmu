@@ -25,6 +25,10 @@ This is a full-stack asset management and exchange tracking application designed
   - Account names now properly show "Bank Name - Account Holder" format
   - Metadata parsing implemented for accountHolder and accountNumber fields
   - All Korean and Vietnamese accounts display correctly with holder names
+- **Dashboard Currency Ordering**: Implemented KRW-first display priority
+  - KRW currency assets now appear first in both simple and detailed view modes
+  - Maintains original order for other currencies (USD, VND, USDT)
+  - Applied to both cash assets section and asset summary cards
 
 # User Preferences
 
