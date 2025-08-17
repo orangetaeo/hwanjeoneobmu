@@ -345,7 +345,7 @@ export default function Dashboard({
                         <CurrencyIcon currency="KRW" size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
                         <div>
                           <p className="font-semibold text-sm lg:text-base">
-                            {acc.bankName}
+                            {acc.bankName || acc.name}
                             {acc.accountHolder && (
                               <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
                                 ({acc.accountHolder})
@@ -380,7 +380,7 @@ export default function Dashboard({
                         <CurrencyIcon currency="VND" size={20} className="mr-2 lg:mr-3 w-5 h-5 lg:w-6 lg:h-6" />
                         <div>
                           <p className="font-semibold text-sm lg:text-base">
-                            {acc.bankName}
+                            {acc.bankName || acc.name}
                             {acc.accountHolder && (
                               <span className="text-xs lg:text-sm font-normal text-gray-600 ml-1 lg:ml-2">
                                 ({acc.accountHolder})

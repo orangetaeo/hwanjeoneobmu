@@ -993,12 +993,20 @@ export default function HomePage() {
   return (
     <div className="bg-gray-50 min-h-screen font-sans">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-12 lg:h-16">
             <div className="flex items-center space-x-2 lg:space-x-4">
               <ChartLine className="text-primary w-5 h-5 lg:w-6 lg:h-6" />
-              <h1 className="text-base lg:text-xl font-bold text-gray-900">자산 관리</h1>
+              <h1 className="text-base lg:text-xl font-bold text-gray-900">
+                {currentView === 'dashboard' ? '대시보드' :
+                 currentView === 'assets' ? '자산 관리' :
+                 currentView === 'exchange-operations' ? '거래소 운영' :
+                 currentView === 'transactions' ? '거래 내역' :
+                 currentView === 'rates' ? '환율 관리' :
+                 currentView === 'exchange-rates' ? '환전상 시세' :
+                 '자산 관리'}
+              </h1>
             </div>
             <div className="flex items-center space-x-2 lg:space-x-4">
               <div className="flex items-center space-x-1 lg:space-x-2">
@@ -1020,7 +1028,7 @@ export default function HomePage() {
       </header>
 
       {/* Mobile Navigation */}
-      <nav className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
+      <nav className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-40">
         <div className="flex justify-around items-center h-12 px-1">
           <Button 
             variant="ghost" 
