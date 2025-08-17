@@ -124,80 +124,19 @@ export default function BithumbTrading() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* API 연결 테스트 - 디자인 통일화 */}
-      <Card className="p-3 sm:p-4 mb-3 sm:mb-4 bg-blue-50 dark:bg-blue-900/20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-          <div className="flex-1">
-            <h3 className="font-medium text-blue-800 dark:text-blue-200 text-sm sm:text-base flex items-center">
-              <Coins className="mr-2" size={16} />
-              빗썸 API 연결 상태
-            </h3>
-            <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-300">
-              {bithumbError ? 'API 연결 실패 (테스트 데이터 표시 중)' : 'API 연결 성공'}
-            </p>
-          </div>
-          <div className="flex space-x-2 w-full sm:w-auto">
-            <Button
-              onClick={() => refetch()}
-              variant="outline"
-              size="sm"
-              className="text-blue-700 border-blue-300 dark:text-blue-200 dark:border-blue-600 flex-1 sm:flex-none"
-              disabled={isBithumbLoading}
-            >
-              {isBithumbLoading ? <RefreshCw className="mr-1 sm:mr-2" size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw className="mr-1 sm:mr-2" size={12} />}
-              <span className="text-xs sm:text-sm">새로고침</span>
-            </Button>
-            <Button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/bithumb/test');
-                  const result = await response.json();
-                  console.log('API 테스트 결과:', result);
-                  toast({
-                    title: result.success ? "API 연결 성공" : "API 연결 실패",
-                    description: result.message,
-                    variant: result.success ? "default" : "destructive"
-                  });
-                } catch (error) {
-                  console.error('API 테스트 오류:', error);
-                  toast({
-                    title: "테스트 실패",
-                    description: "API 테스트 중 오류가 발생했습니다",
-                    variant: "destructive"
-                  });
-                }
-              }}
-              variant="outline"
-              size="sm"
-              className="text-blue-700 border-blue-300 dark:text-blue-200 dark:border-blue-600 flex-1 sm:flex-none"
-            >
-              <span className="text-xs sm:text-sm">API 테스트</span>
-            </Button>
-          </div>
-        </div>
-      </Card>
+
 
       {/* 모바일 최적화 상단 통계 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="p-3 sm:p-4">
-          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2 flex items-center">
-            보유 USDT 
-            {isBithumbLoading && <span className="ml-1 text-xs text-blue-500">🔄</span>}
-            {bithumbError && <span className="ml-1 text-xs text-orange-500">📊</span>}
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">
+            보유 USDT
           </h3>
           <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
             {(totalUsdtOwned || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
             <span className="text-sm sm:text-base ml-1">USDT</span>
           </p>
-          {databaseUsdtBalance > 0 ? (
-            <p className="text-xs text-blue-500 mt-1">자산 관리 데이터</p>
-          ) : bithumbError ? (
-            <p className="text-xs text-orange-500 mt-1">테스트 데이터</p>
-          ) : realTimeBalance > 0 ? (
-            <p className="text-xs text-green-500 mt-1">실시간 빗썸 잔고</p>
-          ) : (
-            <p className="text-xs text-gray-500 mt-1">수동 입력 합계</p>
-          )}
+
         </Card>
         
         <Card className="p-3 sm:p-4">
