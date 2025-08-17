@@ -1599,8 +1599,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
-              {/* USD, VND 통화 수정 모드 - 동적 입력 필드 (비활성화됨 - 지폐 구성 표시에서만 관리) */}
-              {false && editData && form.watch('currency') !== 'KRW' && (
+              {/* USD, VND 통화 증감 모드 - 동적 입력 필드 */}
+              {!editData && form.watch('currency') !== 'KRW' && (
                 <div className="space-y-4">
                   {Object.entries(denominations).length > 0 ? (
                     Object.entries(denominations)
