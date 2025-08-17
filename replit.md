@@ -110,6 +110,13 @@ This is a full-stack asset management and exchange tracking application designed
   - Dynamic Header Icons: Page title icons now match corresponding navigation icons
   - Consistent UX: Same icon used in navigation sidebar, mobile navigation, and page header
   - Icon Mapping: Home (대시보드), Wallet (자산관리), Coins (거래소운영), List (거래내역), TrendingUp (환율관리), DollarSign (환전상시세)
+- **Asset Management Category Design Unification (2025-08-17)**: Complete visual consistency across all asset categories
+  - Category Header Icons: Added distinctive icons for each section (💰 현금, 🇰🇷 한국은행, 🇻🇳 베트남은행, ₿ 거래소, 🟡 바이낸스)
+  - Asset Card Icons: Enhanced individual asset cards with contextual icons
+  - Currency Flags: Added 🇰🇷 🇺🇸 🇻🇳 flags to cash assets for clear visual identification
+  - Bank-Specific Icons: Maintained existing color-coded bank system (하나🟢, 국민🟤, 신한🔵, 우리🔷, BIDV🟢)
+  - Exchange Color Coding: Applied consistent exchange icons (빗썸🔵, 업비트🟢, 바이낸스🟡, 코인원🟡, 코빗🔴)
+  - Unified Visual Language: All asset management sections now follow consistent icon and layout patterns
 
 
 # User Preferences

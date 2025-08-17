@@ -74,7 +74,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
           <TabsContent value="cash" className="p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">현금 자산 관리</h3>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="text-xl mr-2">💰</span>
+                현금 자산 관리
+              </h3>
               <Button onClick={() => onOpenModal('addCashAsset')} data-testid="button-add-cash-asset">
                 <Plus size={16} className="mr-2" />
                 현금 증감
@@ -95,6 +98,9 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
                       <h4 className="font-semibold text-gray-900 flex items-center truncate">
+                        <span className="text-xl mr-2 flex-shrink-0">
+                          {asset.currency === 'KRW' ? '🇰🇷' : asset.currency === 'USD' ? '🇺🇸' : '🇻🇳'}
+                        </span>
                         <span className="truncate">{asset.currency}</span>
                         <span className="ml-2 text-2xl flex-shrink-0">
                           {CURRENCY_SYMBOLS[asset.currency as keyof typeof CURRENCY_SYMBOLS]}
@@ -169,7 +175,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
           <TabsContent value="korean-banks" className="p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">한국 은행 계좌</h3>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="text-xl mr-2">🇰🇷</span>
+                한국 은행 계좌
+              </h3>
               <Button onClick={() => onOpenModal('addKoreanAccount')} data-testid="button-add-korean-account">
                 <Plus size={16} className="mr-2" />
                 계좌 추가
@@ -181,7 +190,19 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <Card key={account.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h4 className="font-semibold text-gray-900 truncate">{account.bankName || account.metadata?.bank || account.name}</h4>
+                      <h4 className="font-semibold text-gray-900 flex items-center truncate">
+                        <span className="text-lg mr-2 flex-shrink-0">
+                          {(() => {
+                            const bankName = account.bankName || account.metadata?.bank || account.name;
+                            if (bankName?.includes('하나')) return '🟢';
+                            if (bankName?.includes('국민')) return '🟤';
+                            if (bankName?.includes('신한')) return '🔵';
+                            if (bankName?.includes('우리')) return '🔷';
+                            return '🏦';
+                          })()}
+                        </span>
+                        <span className="truncate">{account.bankName || account.metadata?.bank || account.name}</span>
+                      </h4>
                       <p className="text-sm text-gray-600 truncate">{account.accountHolder || account.metadata?.accountHolder}</p>
                       <p className="text-sm text-gray-500 truncate">{account.accountNumber || account.metadata?.accountNumber}</p>
                     </div>
@@ -214,7 +235,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
           <TabsContent value="vietnamese-banks" className="p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">베트남 은행 계좌</h3>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="text-xl mr-2">🇻🇳</span>
+                베트남 은행 계좌
+              </h3>
               <Button onClick={() => onOpenModal('addVietnameseAccount')} data-testid="button-add-vietnamese-account">
                 <Plus size={16} className="mr-2" />
                 계좌 추가
@@ -226,7 +250,18 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <Card key={account.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h4 className="font-semibold text-gray-900 truncate">{account.bankName || account.metadata?.bank || account.name}</h4>
+                      <h4 className="font-semibold text-gray-900 flex items-center truncate">
+                        <span className="text-lg mr-2 flex-shrink-0">
+                          {(() => {
+                            const bankName = account.bankName || account.metadata?.bank || account.name;
+                            if (bankName?.includes('BIDV')) return '🟢';
+                            if (bankName?.includes('신한')) return '🔵';
+                            if (bankName?.includes('우리')) return '🔷';
+                            return '🏦';
+                          })()}
+                        </span>
+                        <span className="truncate">{account.bankName || account.metadata?.bank || account.name}</span>
+                      </h4>
                       <p className="text-sm text-gray-600 truncate">{account.accountHolder || account.metadata?.accountHolder}</p>
                       <p className="text-sm text-gray-500 truncate">{account.accountNumber || account.metadata?.accountNumber}</p>
                     </div>
@@ -259,7 +294,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
           <TabsContent value="exchanges" className="p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">거래소 자산</h3>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="text-xl mr-2">₿</span>
+                거래소 자산
+              </h3>
               <Button onClick={() => onOpenModal('addExchangeAsset')} data-testid="button-add-exchange-asset">
                 <Plus size={16} className="mr-2" />
                 거래소/ 자산 추가
@@ -271,18 +309,30 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <Card key={asset.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h4 className="font-semibold text-gray-900 truncate">
-                        {(() => {
-                          const exchangeName = asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange';
-                          // 거래소 이름을 한글로 매핑
-                          const koreanNames: Record<string, string> = {
-                            'Bithumb': '빗썸',
-                            'Upbit': '업비트',
-                            'Coinone': '코인원',
-                            'Korbit': '코빗'
-                          };
-                          return koreanNames[exchangeName] || exchangeName;
-                        })()}
+                      <h4 className="font-semibold text-gray-900 flex items-center truncate">
+                        <span className="text-lg mr-2 flex-shrink-0">
+                          {(() => {
+                            const exchangeName = asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange';
+                            if (exchangeName?.includes('Bithumb')) return '🔵';
+                            if (exchangeName?.includes('Upbit')) return '🟢';
+                            if (exchangeName?.includes('Coinone')) return '🟡';
+                            if (exchangeName?.includes('Korbit')) return '🔴';
+                            return '🟣';
+                          })()}
+                        </span>
+                        <span className="truncate">
+                          {(() => {
+                            const exchangeName = asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange';
+                            // 거래소 이름을 한글로 매핑
+                            const koreanNames: Record<string, string> = {
+                              'Bithumb': '빗썸',
+                              'Upbit': '업비트',
+                              'Coinone': '코인원',
+                              'Korbit': '코빗'
+                            };
+                            return koreanNames[exchangeName] || exchangeName;
+                          })()}
+                        </span>
                       </h4>
                       <p className="text-sm text-gray-600 truncate">{asset.currency}</p>
                     </div>
@@ -315,7 +365,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
 
           <TabsContent value="binance" className="p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">바이낸스 자산</h3>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <span className="text-xl mr-2">🟡</span>
+                바이낸스 자산
+              </h3>
               <Button onClick={() => onOpenModal('addBinanceAsset')} data-testid="button-add-binance-asset">
                 <Plus size={16} className="mr-2" />
                 자산 추가
@@ -327,7 +380,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <Card key={asset.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h4 className="font-semibold text-gray-900 truncate">{asset.metadata?.exchange || 'Binance'}</h4>
+                      <h4 className="font-semibold text-gray-900 flex items-center truncate">
+                        <span className="text-lg mr-2 flex-shrink-0">🟡</span>
+                        <span className="truncate">{asset.metadata?.exchange || 'Binance'}</span>
+                      </h4>
                       <p className="text-sm text-gray-600 truncate">{asset.currency}</p>
                     </div>
                     <div className="flex space-x-2">
