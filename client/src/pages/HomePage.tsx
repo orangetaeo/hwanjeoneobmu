@@ -1045,7 +1045,7 @@ export default function HomePage() {
             onClick={() => setCurrentView('dashboard')}
             data-testid="mobile-nav-dashboard"
           >
-            <Home className="w-4 h-4" />
+            <span className="text-base">📊</span>
             <span className="text-xs font-medium truncate">대시보드</span>
           </Button>
           <Button 
@@ -1054,7 +1054,7 @@ export default function HomePage() {
             onClick={() => setCurrentView('assets')}
             data-testid="mobile-nav-assets"
           >
-            <Wallet className="w-4 h-4" />
+            <span className="text-base">💰</span>
             <span className="text-xs truncate">자산</span>
           </Button>
           <Button 
@@ -1063,7 +1063,7 @@ export default function HomePage() {
             onClick={() => setCurrentView('exchange-operations')}
             data-testid="mobile-nav-exchange-operations"
           >
-            <Coins className="w-4 h-4" />
+            <span className="text-base">🔄</span>
             <span className="text-xs truncate">거래소</span>
           </Button>
           <Button 
@@ -1072,7 +1072,7 @@ export default function HomePage() {
             onClick={() => setCurrentView('transactions')}
             data-testid="mobile-nav-transactions"
           >
-            <List className="w-4 h-4" />
+            <span className="text-base">📋</span>
             <span className="text-xs truncate">내역</span>
           </Button>
           <Button 
@@ -1081,7 +1081,7 @@ export default function HomePage() {
             onClick={() => setCurrentView('rates')}
             data-testid="mobile-nav-rates"
           >
-            <TrendingUp className="w-4 h-4" />
+            <span className="text-base">📈</span>
             <span className="text-xs truncate">환율</span>
           </Button>
           <Button 
@@ -1090,7 +1090,7 @@ export default function HomePage() {
             onClick={() => setShowUserSettings(true)}
             data-testid="mobile-nav-settings"
           >
-            <Settings className="w-4 h-4" />
+            <span className="text-base">⚙️</span>
             <span className="text-xs truncate">설정</span>
           </Button>
         </div>
@@ -1106,13 +1106,13 @@ export default function HomePage() {
                 <ul className="space-y-2">
                   {/* 네비게이션 메뉴 항목들 */}
                   {[
-                    { id: 'dashboard', label: '대시보드', icon: Home },
-                    { id: 'assets', label: '자산 관리', icon: Wallet },
-                    { id: 'exchange-operations', label: '거래소 운영', icon: Coins },
-                    { id: 'transactions', label: '거래 내역', icon: List },
-                    { id: 'rates', label: '환율 관리', icon: TrendingUp },
-                    { id: 'exchange-rates', label: '환전상 시세', icon: DollarSign },
-                    { id: 'settings', label: '설정', icon: Settings }
+                    { id: 'dashboard', label: '대시보드', emoji: '📊' },
+                    { id: 'assets', label: '자산 관리', emoji: '💰' },
+                    { id: 'exchange-operations', label: '거래소 운영', emoji: '🔄' },
+                    { id: 'transactions', label: '거래 내역', emoji: '📋' },
+                    { id: 'rates', label: '환율 관리', emoji: '📈' },
+                    { id: 'exchange-rates', label: '환전상 시세', emoji: '💱' },
+                    { id: 'settings', label: '설정', emoji: '⚙️' }
                   ].map((item) => (
                     <li key={item.id}>
                       <Button 
@@ -1127,7 +1127,7 @@ export default function HomePage() {
                         }}
                         data-testid={`desktop-nav-${item.id}`}
                       >
-                        <item.icon className="mr-3" size={18} />
+                        <span className="text-xl mr-3">{item.emoji}</span>
                         <span>{item.label}</span>
                       </Button>
                     </li>
