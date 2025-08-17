@@ -605,7 +605,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     {form.watch('currency') && (
                       <div className="space-y-2">
                         <span className="text-sm text-gray-600">지폐 구성:</span>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                           {/* 현재 보유중인 모든 지폐 및 새로 추가되는 지폐 표시 */}
                           {(() => {
                             // 현재 보유 지폐와 변경할 지폐를 모두 포함한 전체 지폐 목록 생성
@@ -639,7 +639,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                           <button
                                             type="button"
                                             onClick={() => {
-                                              setDenominations(prev => ({
+                                              setDenominations((prev: Record<string, number>) => ({
                                                 ...prev,
                                                 [denom]: (prev[denom] || 0) - 1
                                               }));
@@ -652,7 +652,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                           <button
                                             type="button"
                                             onClick={() => {
-                                              setDenominations(prev => ({
+                                              setDenominations((prev: Record<string, number>) => ({
                                                 ...prev,
                                                 [denom]: (prev[denom] || 0) + 1
                                               }));
@@ -706,7 +706,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                             <button
                                               type="button"
                                               onClick={() => {
-                                                setDenominations(prev => ({
+                                                setDenominations((prev: Record<string, number>) => ({
                                                   ...prev,
                                                   [denom]: (prev[denom] || 0) - 1
                                                 }));
@@ -719,7 +719,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                             <button
                                               type="button"
                                               onClick={() => {
-                                                setDenominations(prev => ({
+                                                setDenominations((prev: Record<string, number>) => ({
                                                   ...prev,
                                                   [denom]: (prev[denom] || 0) + 1
                                                 }));
@@ -1069,14 +1069,15 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
               {type === 'cash' && form.watch('currency') !== 'KRW' && !editData && (
                 <div className="space-y-4">
                   {Object.entries(denominations).length > 0 ? (
-                    Object.entries(denominations)
-                      .sort((a, b) => {
-                        const numA = parseFloat(a[0].replace(/,/g, ''));
-                        const numB = parseFloat(b[0].replace(/,/g, ''));
-                        return numB - numA;
-                      })
-                      .map(([denom, count]) => (
-                        <div key={denom} className={`space-y-3 p-4 border rounded-lg ${getDenominationColor(form.watch('currency'), denom)}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(denominations)
+                        .sort((a, b) => {
+                          const numA = parseFloat(a[0].replace(/,/g, ''));
+                          const numB = parseFloat(b[0].replace(/,/g, ''));
+                          return numB - numA;
+                        })
+                        .map(([denom, count]) => (
+                          <div key={denom} className={`space-y-3 p-4 border rounded-lg ${getDenominationColor(form.watch('currency'), denom)}`}>
                           <label className="text-xs font-semibold text-gray-800 block text-center">
                             {form.watch('currency') === 'USD' ? 
                               `$${denom}` : 
@@ -1138,7 +1139,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                             {(parseFloat(denom.replace(/,/g, '')) * (typeof count === 'number' ? count : 0)).toLocaleString()}
                           </div>
                         </div>
-                      ))
+                        ))
+                      }
+                    </div>
                   ) : (
                     <div className="text-center text-gray-500 py-4">
                       통화를 선택하면 지폐 입력 필드가 표시됩니다.
