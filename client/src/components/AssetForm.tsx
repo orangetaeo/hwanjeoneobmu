@@ -391,10 +391,46 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                     )}
                   </h4>
                   <div className="grid grid-cols-1 gap-3">
+                    {/* 기존 총 잔액 */}
+                    <div className="flex justify-between items-center bg-gray-100 rounded p-3 border border-gray-200">
+                      <span className="text-gray-600">기존 총 잔액:</span>
+                      <span className="font-semibold text-gray-800">
+                        {form.watch('currency') === 'KRW' ? '₩' : 
+                         form.watch('currency') === 'USD' ? '$' : '₫'}
+                        {currentAssetInfo.balance.toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    {/* 변경량 표시 */}
+                    {Object.entries(denominations).some(([, count]) => count !== 0) && (
+                      <div className="flex justify-between items-center bg-blue-50 rounded p-3 border border-blue-200">
+                        <span className="text-blue-700">변경량:</span>
+                        <span className={`font-semibold ${
+                          Object.entries(denominations).reduce((total, [denom, count]) => {
+                            return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                          }, 0) >= 0 ? 'text-green-700' : 'text-red-700'
+                        }`}>
+                          {(() => {
+                            const changeAmount = Object.entries(denominations).reduce((total, [denom, count]) => {
+                              return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                            }, 0);
+                            const currencySymbol = form.watch('currency') === 'KRW' ? '₩' : 
+                                                  form.watch('currency') === 'USD' ? '$' : '₫';
+                            
+                            if (changeAmount >= 0) {
+                              return `+${currencySymbol}${changeAmount.toLocaleString()}`;
+                            } else {
+                              return `-${currencySymbol}${Math.abs(changeAmount).toLocaleString()}`;
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    )}
+
                     {/* 실시간 총 잔액 계산 */}
-                    <div className="flex justify-between items-center bg-white rounded p-3 border border-gray-100">
-                      <span className="text-gray-600">총 잔액:</span>
-                      <span className="font-bold text-gray-900">
+                    <div className="flex justify-between items-center bg-white rounded p-3 border-2 border-blue-300 shadow-sm">
+                      <span className="text-blue-800 font-medium">계산 후 총 잔액:</span>
+                      <span className="font-bold text-blue-900 text-lg">
                         {form.watch('currency') === 'KRW' ? '₩' : 
                          form.watch('currency') === 'USD' ? '$' : '₫'}
                         {(() => {
