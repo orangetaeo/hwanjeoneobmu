@@ -689,8 +689,111 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
               )}
 
               <h3 className="font-medium text-gray-900">지폐 구성</h3>
+                  {/* 디버깅을 위한 denominations 상태 표시 */}
+                  <div className="text-xs text-gray-500 mb-2">
+                    현재 denominations: {JSON.stringify(denominations)} (키 개수: {Object.keys(denominations).length})
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-                    {Object.entries(denominations)
+                    {Object.entries(denominations).length === 0 && !editData && type === 'cash' ? (
+                      // denominations가 비어있을 때 강제로 KRW 지폐 구성 표시
+                      Object.entries({ '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 })
+                        .sort(([a], [b]) => {
+                          const numA = parseFloat(a.replace(/,/g, ''));
+                          const numB = parseFloat(b.replace(/,/g, ''));
+                          return numB - numA;
+                        })
+                        .map(([denom, count]) => {
+                          const countValue = typeof count === 'number' ? count : 0;
+                          return (
+                            <div key={denom} className={`space-y-3 p-4 border rounded-lg min-w-0 ${getDenominationColor(form.watch('currency'), denom)}`}>
+                              <label className="text-xs font-semibold text-gray-800 block text-center">
+                                {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
+                                 form.watch('currency') === 'USD' ? `$${denom}` :
+                                 `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}
+                              </label>
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newValue = countValue - 1;
+                                    // denominations가 비어있을 때 강제로 설정
+                                    const newDenoms = { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 };
+                                    newDenoms[denom] = newValue;
+                                    setDenominations(newDenoms);
+                                    setInputDisplayValues(prev => ({
+                                      ...prev,
+                                      [denom]: formatInputWithCommas(newValue.toString())
+                                    }));
+                                  }}
+                                  className="h-8 w-8 p-0 flex-shrink-0"
+                                  data-testid={`button-decrease-${denom}`}
+                                >
+                                  <Minus size={14} />
+                                </Button>
+                                <Input
+                                  type="text"
+                                  value={inputDisplayValues[denom] !== undefined ? inputDisplayValues[denom] : formatInputWithCommas(countValue.toString())}
+                                  onChange={(e) => {
+                                    const inputValue = e.target.value;
+                                    
+                                    // 입력 표시 값 업데이트
+                                    setInputDisplayValues(prev => ({
+                                      ...prev,
+                                      [denom]: inputValue
+                                    }));
+                                    
+                                    if (inputValue === '') {
+                                      const newDenoms = { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 };
+                                      newDenoms[denom] = 0;
+                                      setDenominations(newDenoms);
+                                      return;
+                                    }
+                                    
+                                    if (inputValue === '-') {
+                                      return;
+                                    }
+                                    
+                                    const cleanInput = inputValue.replace(/,/g, '');
+                                    if (/^-?\d+$/.test(cleanInput)) {
+                                      const numericValue = parseInt(cleanInput, 10);
+                                      if (!isNaN(numericValue)) {
+                                        const newDenoms = { ...denominations, '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 };
+                                        newDenoms[denom] = numericValue;
+                                        setDenominations(newDenoms);
+                                      }
+                                    }
+                                  }}
+                                  className="h-10 sm:h-9 text-center flex-1 min-w-0"
+                                  placeholder="0"
+                                  data-testid={`input-${denom}`}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newValue = countValue + 1;
+                                    const newDenoms = { '50,000': 0, '10,000': 0, '5,000': 0, '1,000': 0 };
+                                    newDenoms[denom] = newValue;
+                                    setDenominations(newDenoms);
+                                    setInputDisplayValues(prev => ({
+                                      ...prev,
+                                      [denom]: formatInputWithCommas(newValue.toString())
+                                    }));
+                                  }}
+                                  className="h-8 w-8 p-0 flex-shrink-0"
+                                  data-testid={`button-increase-${denom}`}
+                                >
+                                  <Plus size={14} />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })
+                    ) : (
+                      Object.entries(denominations)
                       .sort(([a], [b]) => {
                         // Remove commas and convert to number for sorting
                         const numA = parseFloat(a.replace(/,/g, ''));
@@ -811,7 +914,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                           </div>
                         </div>
                       );
-                    })}
+                      })
+                    )}
                   </div>
 
                   {/* 메모 입력 필드 */}
