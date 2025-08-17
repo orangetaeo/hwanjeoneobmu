@@ -43,12 +43,17 @@ export default function BithumbTrading() {
     queryKey: ['/api/assets'],
   });
   
-  // 빗썸 USDT 자산 직접 조회
+  // 빗썸 USDT 자산 직접 조회 - 이름 매칭 개선
   const bithumbUsdtAsset = (assets as any[]).find((asset: any) => 
-    asset.type === 'exchange' && asset.currency === 'USDT' && asset.name === 'Bithumb USDT'
+    asset.type === 'exchange' && asset.currency === 'USDT' && 
+    (asset.name === 'Bithumb' || asset.name === 'Bithumb USDT' || asset.name.includes('Bithumb'))
   );
   
   const databaseUsdtBalance = bithumbUsdtAsset ? parseFloat(bithumbUsdtAsset.balance || '0') : 0;
+  
+  // 디버깅 로그
+  console.log('빗썸 USDT 자산 검색 결과:', bithumbUsdtAsset);
+  console.log('데이터베이스 USDT 잔고:', databaseUsdtBalance);
 
   // 기존 데이터베이스 거래 내역도 유지 (수동 입력용)
   const { data: manualTrades = [] } = useQuery<BithumbTrade[]>({
