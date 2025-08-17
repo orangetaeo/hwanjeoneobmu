@@ -585,36 +585,50 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       <div className="space-y-2">
                         <span className="text-sm text-gray-600">지폐 구성:</span>
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                          {Object.entries(currentAssetInfo.denominations)
-                            .sort(([a], [b]) => {
-                              const numA = parseFloat(a.replace(/,/g, ''));
-                              const numB = parseFloat(b.replace(/,/g, ''));
-                              return numB - numA;
-                            })
-                            .map(([denom, currentCount]) => {
-                              const changeCount = denominations[denom] || 0;
-                              const newCount = (currentCount as number) + changeCount;
-                              return (
-                                <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
-                                  changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
-                                }`}>
-                                  <span className="text-gray-600">
-                                    {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
-                                     form.watch('currency') === 'USD' ? `$${denom}` :
-                                     `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
-                                  </span>
-                                  <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
-                                    {newCount}장
-                                    {changeCount !== 0 && (
-                                      <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        ({changeCount > 0 ? '+' : ''}{changeCount})
-                                      </span>
-                                    )}
-                                  </span>
-                                </div>
-                              );
-                            })
-                          }
+                          {/* 현재 보유중인 모든 지폐 및 새로 추가되는 지폐 표시 */}
+                          {(() => {
+                            // 현재 보유 지폐와 변경할 지폐를 모두 포함한 전체 지폐 목록 생성
+                            const allDenoms = new Set([
+                              ...Object.keys(currentAssetInfo.denominations || {}),
+                              ...Object.keys(denominations)
+                            ]);
+                            
+                            return Array.from(allDenoms)
+                              .sort((a, b) => {
+                                const numA = parseFloat(a.replace(/,/g, ''));
+                                const numB = parseFloat(b.replace(/,/g, ''));
+                                return numB - numA;
+                              })
+                              .map((denom) => {
+                                const currentCount = (currentAssetInfo.denominations?.[denom] as number) || 0;
+                                const changeCount = denominations[denom] || 0;
+                                const newCount = currentCount + changeCount;
+                                
+                                // 현재 보유량이 있거나 변경량이 있는 경우만 표시
+                                if (currentCount === 0 && changeCount === 0) return null;
+                                
+                                return (
+                                  <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
+                                    changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
+                                  }`}>
+                                    <span className="text-gray-600">
+                                      {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
+                                       form.watch('currency') === 'USD' ? `$${denom}` :
+                                       `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
+                                    </span>
+                                    <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
+                                      {newCount}장
+                                      {changeCount !== 0 && (
+                                        <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          ({changeCount > 0 ? '+' : ''}{changeCount})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                              .filter(Boolean); // null 값 제거
+                          })()}
                         </div>
                       </div>
                     )}
