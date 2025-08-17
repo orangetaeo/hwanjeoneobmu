@@ -401,10 +401,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       </span>
                     </div>
                     
-                    {/* 변경량 표시 */}
+                    {/* 현금 증가 박스 */}
                     {Object.entries(denominations).some(([, count]) => count !== 0) && (
                       <div className="flex justify-between items-center bg-blue-50 rounded p-3 border border-blue-200">
-                        <span className="text-blue-700">변경량:</span>
+                        <span className="text-blue-700">
+                          {Object.entries(denominations).reduce((total, [denom, count]) => {
+                            return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                          }, 0) >= 0 ? '현금 증가:' : '현금 감소:'}
+                        </span>
                         <span className={`font-semibold ${
                           Object.entries(denominations).reduce((total, [denom, count]) => {
                             return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
