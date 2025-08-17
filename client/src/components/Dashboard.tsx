@@ -54,14 +54,15 @@ export default function Dashboard({
 
     all.forEach(asset => {
       try {
-        const balance = Number((asset as any).balance ?? (asset as any).quantity ?? 0);
+        const rawBalance = (asset as any).balance ?? (asset as any).quantity ?? 0;
+        const balance = typeof rawBalance === 'string' ? parseFloat(rawBalance) : Number(rawBalance);
         const currency = (asset as any).currency;
         const coinName = (asset as any).coinName;
 
-        // Validate numeric balance - support both balance and quantity fields
-        const balanceValue = balance || ((asset as any).quantity);
-        if (isNaN(balanceValue) || balanceValue < 0) {
-          console.warn(`Invalid balance for asset ${(asset as any).name || 'unknown'}: ${balanceValue}`);
+        // Validate numeric balance - support both balance and quantity fields  
+        const balanceValue = isNaN(balance) ? 0 : balance;
+        if (balanceValue < 0) {
+          console.warn(`Negative balance for asset ${(asset as any).name || 'unknown'}: ${balanceValue}`);
           return;
         }
 
@@ -130,11 +131,12 @@ export default function Dashboard({
     allAssets.forEach(asset => {
       const assetData = asset as any;
       const currency = assetData.currency || 'Unknown';
-      const balance = parseFloat(assetData.balance || assetData.quantity) || 0;
+      const rawBalance = assetData.balance ?? assetData.quantity ?? 0;
+      const balance = typeof rawBalance === 'string' ? parseFloat(rawBalance) : Number(rawBalance) || 0;
       
       console.log('Dashboard asset summary:', { asset: assetData.name, currency, balance, balance_field: assetData.balance, quantity_field: assetData.quantity });
       
-      if (currency && balance > 0) {
+      if (currency && balance >= 0) {
         summary[currency] = (summary[currency] || 0) + balance;
       }
     });
