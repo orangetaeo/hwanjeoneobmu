@@ -112,18 +112,18 @@ export default function NetworkTransfer() {
         toAssetType: 'binance',
         toAssetId: null,
         toAssetName: 'Binance USDT',
-        fromAmount: (amount + fee).toString(), // 문자열로 변환
-        toAmount: amount.toString(), // 문자열로 변환
+        fromAmount: (amount + fee).toString(), // 빗썸에서 총 차감 금액 (이동 수량 + 네트워크 수수료)
+        toAmount: amount.toString(), // 바이낸스에 실제 도착하는 금액 (이동 수량만)
         rate: '1', // USDT to USDT이므로 1:1 환율
-        fees: fee.toString(), // 수수료 문자열로
-        memo: `${selectedNetwork} 네트워크 이동`,
+        fees: fee.toString(), // 네트워크 수수료만
+        memo: `${selectedNetwork} 네트워크 이동 (수수료: ${fee} USDT)`,
         metadata: {
           platform: 'bithumb_to_binance',
           network: selectedNetwork,
           networkFee: fee,
           txHash: txHash || null,
-          grossAmount: amount,
-          netAmount: amount - fee
+          grossAmount: amount + fee, // 총 차감된 금액
+          netAmount: amount // 실제 도착 금액
         }
       };
 
@@ -416,7 +416,7 @@ export default function NetworkTransfer() {
                         -{networkFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </TableCell>
                       <TableCell className="text-green-600 font-medium">
-                        {(usdtAmount - networkFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+                        {usdtAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                       </TableCell>
                       <TableCell>
                         {transfer.txHash ? (
