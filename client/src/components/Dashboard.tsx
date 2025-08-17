@@ -45,17 +45,25 @@ export default function Dashboard({
 
   // Calculate total assets in KRW and VND
   const totalAssets = useMemo(() => {
+    console.log('Dashboard totalAssets calculation triggered:', {
+      isFetchingRates,
+      hasUsdKrwRate: !!realTimeRates['USD-KRW'],
+      cashAssetsLength: cashAssets?.length || 0,
+      realTimeRates
+    });
+    
     if (isFetchingRates || !realTimeRates['USD-KRW']) {
+      console.log('Dashboard calculation skipped - missing rates');
       return { krw: 0, vnd: 0 };
     }
 
     const all = [...cashAssets, ...koreanAccounts, ...vietnameseAccounts, ...exchangeAssets, ...binanceAssets];
     console.log('Dashboard - All assets for calculation:', { 
-      cashAssets, 
-      koreanAccounts, 
-      vietnameseAccounts, 
-      exchangeAssets, 
-      binanceAssets,
+      cashAssets: cashAssets.map(a => ({ name: a.name, currency: a.currency, balance: a.balance })), 
+      koreanAccounts: koreanAccounts.length, 
+      vietnameseAccounts: vietnameseAccounts.length, 
+      exchangeAssets: exchangeAssets.length, 
+      binanceAssets: binanceAssets.length,
       totalAssets: all.length 
     });
     let totalKrw = 0;

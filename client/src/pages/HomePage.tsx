@@ -112,8 +112,8 @@ export default function HomePage() {
     // 자산을 타입별로 분류 - 디버깅 로그 추가
     console.log('All assets from API:', assetsData);
     
-    const cashAssets = assetsData.filter((asset: any) => asset.type === 'cash');
-    console.log('Cash assets found:', cashAssets);
+    const filteredCashAssets = assetsData.filter((asset: any) => asset.type === 'cash');
+    console.log('Cash assets found:', filteredCashAssets);
     const allAccounts = assetsData.filter((asset: any) => asset.type === 'account');
     const exchanges = assetsData.filter((asset: any) => asset.type === 'exchange');
     const binanceAssets = assetsData.filter((asset: any) => asset.type === 'binance');
@@ -155,8 +155,9 @@ export default function HomePage() {
 
           console.log('Processed exchanges for Dashboard:', processedExchanges);
           console.log('Processed binance assets for Dashboard:', processedBinanceAssets);
+          console.log('Setting cash assets to Dashboard:', filteredCashAssets);
 
-          setCashAssets(cashAssets || []);
+          setCashAssets(filteredCashAssets || []); // API에서 받은 현금 자산 필터링 결과
           setKoreanAccounts(koreanAccounts || []);
           setVietnameseAccounts(vietnameseAccounts || []);
           setExchangeAssets(processedExchanges || []);
