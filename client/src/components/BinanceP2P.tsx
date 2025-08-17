@@ -223,57 +223,61 @@ export default function BinanceP2P() {
                        parseFloat(usdtAmount) <= availableUsdt;
 
   return (
-    <div className="space-y-6">
-      {/* 상단 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">바이낸스 보유 USDT</h3>
-          <p className="text-2xl font-bold text-blue-600">
-            {(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+    <div className="space-y-3 sm:space-y-6">
+      {/* 모바일 최적화 상단 통계 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">바이낸스 보유 USDT</h3>
+          <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+            {(isNaN(availableUsdt) ? 0 : availableUsdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="text-sm sm:text-base ml-1">USDT</span>
           </p>
-          <p className="text-xs text-gray-500 mt-1">
-            전체: {binanceUsdtAsset ? parseFloat(binanceUsdtAsset.balance || '0').toLocaleString('en-US', { minimumFractionDigits: 8, maximumFractionDigits: 8 }) : '0.00000000'} USDT
-          </p>
-        </Card>
-        
-        <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">총 구매 VND</h3>
-          <p className="text-2xl font-bold text-green-600">
-            {formatCurrency(totalVndAcquired, 'VND')} đ
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            전체: {binanceUsdtAsset ? parseFloat(binanceUsdtAsset.balance || '0').toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT
           </p>
         </Card>
         
-        <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">평균 환율</h3>
-          <p className="text-2xl font-bold text-purple-600">
-            {avgExchangeRate.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} VND/USDT
+        <Card className="p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">총 구매 VND</h3>
+          <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
+            {formatCurrency(totalVndAcquired, 'VND')}
+            <span className="text-sm sm:text-base ml-1">đ</span>
+          </p>
+        </Card>
+        
+        <Card className="p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">평균 환율</h3>
+          <p className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
+            {avgExchangeRate.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            <span className="text-sm sm:text-base ml-1">VND/USDT</span>
           </p>
         </Card>
 
-        <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">사용한 USDT</h3>
-          <p className="text-2xl font-bold text-orange-600">
-            {totalUsdtUsed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+        <Card className="p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">사용한 USDT</h3>
+          <p className="text-lg sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
+            {totalUsdtUsed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="text-sm sm:text-base ml-1">USDT</span>
           </p>
         </Card>
       </div>
 
-      {/* 탭 선택 */}
-      <div className="flex space-x-4">
+      {/* 모바일 최적화 탭 선택 */}
+      <div className="flex space-x-2 sm:space-x-4">
         <Button
           variant={currentTab === 'p2p' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('p2p')}
-          className="flex items-center"
+          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
         >
-          <Coins className="mr-2" size={16} />
+          <Coins className="mr-1 sm:mr-2" size={14} />
           P2P 거래
         </Button>
         <Button
           variant={currentTab === 'history' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('history')}
-          className="flex items-center"
+          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
         >
-          <History className="mr-2" size={16} />
+          <History className="mr-1 sm:mr-2" size={14} />
           거래 내역
         </Button>
       </div>

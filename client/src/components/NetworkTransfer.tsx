@@ -163,89 +163,92 @@ export default function NetworkTransfer() {
   const canTransfer = usdtAmount && networkFee && parseFloat(usdtAmount) <= availableUsdt;
 
   return (
-    <div className="space-y-6">
-      {/* 상단 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">빗썸 보유 USDT</h3>
-          <p className="text-2xl font-bold text-blue-600">
-            {availableUsdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+    <div className="space-y-3 sm:space-y-6">
+      {/* 모바일 최적화 상단 통계 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <Card className="p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">빗썸 보유 USDT</h3>
+          <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+            {availableUsdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+            <span className="text-sm sm:text-base ml-1">USDT</span>
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             전체: {bithumbUsdtBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
           </p>
         </Card>
         
-        <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">총 이동 수량</h3>
-          <p className="text-2xl font-bold text-green-600">
-            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+        <Card className="p-3 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">총 이동 수량</h3>
+          <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
+            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.usdtAmount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+            <span className="text-sm sm:text-base ml-1">USDT</span>
           </p>
         </Card>
         
-        <Card className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">총 네트워크 수수료</h3>
-          <p className="text-2xl font-bold text-red-600">
-            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.networkFee || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
+        <Card className="p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2">총 네트워크 수수료</h3>
+          <p className="text-lg sm:text-2xl font-bold text-red-600 dark:text-red-400">
+            {transfers.reduce((sum: number, transfer: NetworkTransfer) => sum + (transfer.networkFee || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+            <span className="text-sm sm:text-base ml-1">USDT</span>
           </p>
         </Card>
       </div>
 
-      {/* 탭 선택 */}
-      <div className="flex space-x-4">
+      {/* 모바일 최적화 탭 선택 */}
+      <div className="flex space-x-2 sm:space-x-4">
         <Button
           variant={currentTab === 'transfer' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('transfer')}
-          className="flex items-center"
+          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
         >
-          <Send className="mr-2" size={16} />
+          <Send className="mr-1 sm:mr-2" size={14} />
           USDT 이동
         </Button>
         <Button
           variant={currentTab === 'history' ? 'default' : 'outline'}
           onClick={() => setCurrentTab('history')}
-          className="flex items-center"
+          className="flex items-center flex-1 sm:flex-none text-xs sm:text-sm"
         >
-          <History className="mr-2" size={16} />
+          <History className="mr-1 sm:mr-2" size={14} />
           이동 내역
         </Button>
       </div>
 
       {currentTab === 'transfer' && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <ArrowRightLeft className="mr-2" size={20} />
+        <Card className="p-3 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center">
+            <ArrowRightLeft className="mr-2" size={18} />
             빗썸 → 바이낸스 USDT 이동
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
+          <div className="space-y-4 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6 sm:space-y-0">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">네트워크 선택</label>
+                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">네트워크 선택</label>
                 <Select value={selectedNetwork} onValueChange={(value) => {
                   setSelectedNetwork(value);
                   setNetworkFee(networkFeePresets[value as keyof typeof networkFeePresets].toString());
                 }}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-xs sm:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="TRC20">
                       <div className="flex items-center justify-between w-full">
-                        <span>TRC20 (Tron)</span>
-                        <Badge variant="secondary" className="ml-2">~1 USDT</Badge>
+                        <span className="text-xs sm:text-sm">TRC20 (Tron)</span>
+                        <Badge variant="secondary" className="ml-2 text-xs">~1 USDT</Badge>
                       </div>
                     </SelectItem>
                     <SelectItem value="ERC20">
                       <div className="flex items-center justify-between w-full">
-                        <span>ERC20 (Ethereum)</span>
-                        <Badge variant="destructive" className="ml-2">~15 USDT</Badge>
+                        <span className="text-xs sm:text-sm">ERC20 (Ethereum)</span>
+                        <Badge variant="destructive" className="ml-2 text-xs">~15 USDT</Badge>
                       </div>
                     </SelectItem>
                     <SelectItem value="BSC">
                       <div className="flex items-center justify-between w-full">
-                        <span>BSC (Binance Smart Chain)</span>
-                        <Badge variant="secondary" className="ml-2">~0.8 USDT</Badge>
+                        <span className="text-xs sm:text-sm">BSC (Binance Smart Chain)</span>
+                        <Badge variant="secondary" className="ml-2 text-xs">~0.8 USDT</Badge>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -253,7 +256,7 @@ export default function NetworkTransfer() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">이동 수량 (USDT)</label>
+                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">이동 수량 (USDT)</label>
                 <div className="flex space-x-2">
                   <Input
                     value={formatInputWithCommas(usdtAmount)}
@@ -264,10 +267,10 @@ export default function NetworkTransfer() {
                         setUsdtAmount(rawValue);
                       }
                     }}
-                    placeholder="이동할 USDT 수량 (예: 1,000.50)"
+                    placeholder="이동할 USDT 수량"
                     type="text"
                     inputMode="numeric"
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm"
                   />
                   <Button
                     type="button"
@@ -278,18 +281,18 @@ export default function NetworkTransfer() {
                       setUsdtAmount(maxMovable.toString());
                     }}
                     disabled={availableUsdt <= parseFloat(networkFee || '0')}
-                    className="px-3 py-1 text-xs"
+                    className="px-2 sm:px-3 py-1 text-xs"
                   >
-                    MAX
+                    max
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  최대 이동 가능: {formatInputWithCommas(Math.max(0, availableUsdt - parseFloat(networkFee || '0')).toString())} USDT (수수료 제외)
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  최대 이동 가능: {formatInputWithCommas(Math.max(0, availableUsdt - parseFloat(networkFee || '0')).toString())} USDT
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">네트워크 수수료 (USDT)</label>
+                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">네트워크 수수료 (USDT)</label>
                 <Input
                   value={formatInputWithCommas(networkFee)}
                   onChange={(e) => {
@@ -299,59 +302,61 @@ export default function NetworkTransfer() {
                       setNetworkFee(rawValue);
                     }
                   }}
-                  placeholder="네트워크 수수료 자동 입력됨 (예: 1.50)"
+                  placeholder="네트워크 수수료"
                   type="text"
                   inputMode="numeric"
+                  className="text-xs sm:text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 네트워크 선택 시 자동으로 입력됩니다
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  네트워크 선택 시 자동으로 입력됩니다
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">트랜잭션 해시 (선택사항)</label>
+                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">트랜잭션 해시 (선택사항)</label>
                 <Input
                   value={txHash}
                   onChange={(e) => setTxHash(e.target.value)}
                   placeholder="0x... 또는 트랜잭션 ID"
                   type="text"
+                  className="text-xs sm:text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 블록체인 거래 완료 후 받는 고유 번호입니다. 나중에 거래 상태를 추적하는 데 사용됩니다.
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  블록체인 거래 완료 후 받는 고유 번호입니다
                 </p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-3 flex items-center">
-                  <Calculator className="mr-2" size={16} />
+            <div className="space-y-3 sm:space-y-4">
+              <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h4 className="font-medium mb-2 sm:mb-3 flex items-center text-sm sm:text-base">
+                  <Calculator className="mr-2" size={14} />
                   이동 정보
                 </h4>
                 
-                <div className="space-y-2 text-sm">
+                <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
                     <span>이동 수량:</span>
                     <span>{formatInputWithCommas(usdtAmount || '0')} USDT</span>
                   </div>
                   <div className="flex justify-between">
                     <span>네트워크 수수료:</span>
-                    <span className="text-red-600">-{networkFee ? parseFloat(networkFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
+                    <span className="text-red-600 dark:text-red-400">-{networkFee ? parseFloat(networkFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} USDT</span>
                   </div>
                   <div className="flex justify-between">
                     <span>네트워크:</span>
-                    <Badge variant="outline">{selectedNetwork}</Badge>
+                    <Badge variant="outline" className="text-xs">{selectedNetwork}</Badge>
                   </div>
-                  <hr />
+                  <hr className="my-2" />
                   <div className="flex justify-between font-medium">
                     <span>총 차감 수량:</span>
-                    <span className="text-red-600">
+                    <span className="text-red-600 dark:text-red-400">
                       {usdtAmount && networkFee 
                         ? formatInputWithCommas((parseFloat(usdtAmount) + parseFloat(networkFee)).toString())
                         : '0'} USDT
                     </span>
                   </div>
-                  <div className="flex justify-between font-medium text-green-600">
+                  <div className="flex justify-between font-medium text-green-600 dark:text-green-400">
                     <span>바이낸스 도착 예정:</span>
                     <span>{formatInputWithCommas(usdtAmount || '0')} USDT</span>
                   </div>
@@ -361,8 +366,8 @@ export default function NetworkTransfer() {
               <Button
                 onClick={() => transferUsdt.mutate()}
                 disabled={!canTransfer || transferUsdt.isPending}
-                className="w-full"
-                size="lg"
+                className="w-full text-sm sm:text-base"
+                size="sm"
               >
                 {transferUsdt.isPending ? "처리 중..." : "USDT 이동 기록"}
               </Button>
