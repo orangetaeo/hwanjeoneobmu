@@ -14,7 +14,8 @@ const cashAssetSchema = z.object({
   currency: z.enum(['KRW', 'USD', 'VND'], { required_error: "통화를 선택해주세요" }),
   balance: z.number().min(0, "잔액은 0 이상이어야 합니다"),
   denominations: z.record(z.string(), z.number().min(0)),
-  operation: z.enum(['increase', 'decrease']).optional()
+  operation: z.enum(['increase', 'decrease']).optional(),
+  memo: z.string().optional()
 });
 
 const accountSchema = z.object({
@@ -170,6 +171,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         formData.balance = parseFloat(editData.balance) || 0;
         const denominations = editData.metadata?.denominations || editData.denominations || {};
         formData.denominations = denominations;
+        formData.memo = editData.metadata?.memo || '';
         
         console.log('Cash edit data processed:', {
           currency: formData.currency,
@@ -228,7 +230,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
   function getDefaultValues() {
     switch (type) {
       case 'cash':
-        return { currency: 'KRW', balance: 0, denominations: {}, operation: 'increase' };
+        return { currency: 'KRW', balance: 0, denominations: {}, operation: 'increase', memo: '' };
       case 'korean-account':
       case 'vietnamese-account':
         return { bankName: '', accountNumber: '', accountHolder: '', balance: 0 };
@@ -277,6 +279,12 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         data.name = `${data.currency} 현금`;
         data.type = 'cash';
         data.operation = operation; // 증가/감소 정보 추가
+        
+        // 메타데이터에 지폐 구성과 메모 포함
+        data.metadata = {
+          denominations: finalDenominations,
+          memo: data.memo || ''
+        };
         // Generate unique ID if not editing
         if (!editData) {
           data.id = Date.now().toString();
@@ -729,6 +737,27 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* 메모 입력 필드 */}
+                  <div className="mt-6">
+                    <FormField
+                      control={form.control}
+                      name="memo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>메모</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="현금 증감 관련 메모를 입력하세요"
+                              {...field}
+                              data-testid="input-cash-memo"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
               </>
             )}
