@@ -375,8 +375,19 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         if (duplicateExchange) {
           // For exchanges, update existing asset instead of showing error
           data.id = duplicateExchange.id; // 실제 데이터베이스 ID 사용
-          data.balance = (parseFloat(duplicateExchange.balance) + parseFloat(data.quantity)).toString();
+          const existingBalance = parseFloat(duplicateExchange.balance);
+          const addingQuantity = parseFloat(data.quantity);
+          const newBalance = existingBalance + addingQuantity;
+          data.balance = newBalance.toString();
           data.originalAsset = duplicateExchange; // 원본 자산 정보 보존
+          
+          console.log('거래소 계산:', {
+            existing: existingBalance,
+            adding: addingQuantity,
+            result: newBalance,
+            stringResult: data.balance
+          });
+          
           alert(`동일한 거래소/코인 조합이 발견되어 기존 자산에 추가합니다.\n${duplicateExchange.name} ${duplicateExchange.currency}: ${duplicateExchange.balance} + ${data.quantity} = ${data.balance}`);
         }
       } else if (type === 'binance') {
@@ -384,8 +395,19 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         if (duplicateBinance) {
           // For binance, update existing asset instead of showing error
           data.id = duplicateBinance.id; // 실제 데이터베이스 ID 사용
-          data.balance = (parseFloat(duplicateBinance.balance) + parseFloat(data.quantity)).toString();
+          const existingBalance = parseFloat(duplicateBinance.balance);
+          const addingQuantity = parseFloat(data.quantity);
+          const newBalance = existingBalance + addingQuantity;
+          data.balance = newBalance.toString();
           data.originalAsset = duplicateBinance; // 원본 자산 정보 보존
+          
+          console.log('바이낸스 계산:', {
+            existing: existingBalance,
+            adding: addingQuantity,
+            result: newBalance,
+            stringResult: data.balance
+          });
+          
           alert(`동일한 코인이 발견되어 기존 자산에 추가합니다.\n${duplicateBinance.name}: ${duplicateBinance.balance} + ${data.quantity} = ${data.balance}`);
         }
       }
