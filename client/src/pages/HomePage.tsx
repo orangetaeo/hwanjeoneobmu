@@ -27,6 +27,7 @@ import UserSettingsForm from '@/components/UserSettingsForm';
 import ExchangeRateManager from '@/components/ExchangeRateManager';
 import ExchangeOperations from '@/components/ExchangeOperations';
 import CashTransactionHistory from '@/components/CashTransactionHistory';
+import CashChangeDetailModal from '@/components/CashChangeDetailModal';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,8 @@ export default function HomePage() {
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [showCashTransactionHistory, setShowCashTransactionHistory] = useState(false);
   const [selectedCashAsset, setSelectedCashAsset] = useState<CashAsset | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isCashDetailModalOpen, setIsCashDetailModalOpen] = useState(false);
 
   // React Query로 실시간 데이터 로딩
   const { data: assetsData = [], isLoading: assetsLoading, error: assetsError, refetch: refetchAssets } = useQuery({
@@ -288,6 +291,12 @@ export default function HomePage() {
         if (data) {
           setSelectedCashAsset(data);
           setShowCashTransactionHistory(true);
+        }
+        break;
+      case 'viewCashChangeDetail':
+        if (data) {
+          setSelectedTransaction(data);
+          setIsCashDetailModalOpen(true);
         }
         break;
       case 'reports':
@@ -1326,6 +1335,11 @@ export default function HomePage() {
                 {currentView === 'transactions' && (
                   <TransactionHistory
                     transactions={transactions}
+                    onTransactionClick={(transaction) => {
+                      if (transaction.type === 'cash_change') {
+                        handleOpenModal('viewCashChangeDetail', transaction);
+                      }
+                    }}
                   />
                 )}
               </>
@@ -1346,6 +1360,16 @@ export default function HomePage() {
           transactions={transactions}
         />
       )}
+
+      {/* Cash Change Detail Modal */}
+      <CashChangeDetailModal
+        transaction={selectedTransaction}
+        isOpen={isCashDetailModalOpen}
+        onClose={() => {
+          setIsCashDetailModalOpen(false);
+          setSelectedTransaction(null);
+        }}
+      />
 
       {/* Modal */}
       {modalInfo && (

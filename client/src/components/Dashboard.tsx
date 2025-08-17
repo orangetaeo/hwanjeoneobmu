@@ -13,6 +13,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import CurrencyIcon from '@/components/CurrencyIcon';
+
 import { CashAsset, BankAccount, ExchangeAsset, BinanceAsset, Transaction, CURRENCY_SYMBOLS } from '@/types';
 import { formatNumberWithCommas, formatCurrency } from '@/utils/helpers';
 
@@ -28,7 +29,7 @@ interface DashboardProps {
   realTimeRates: Record<string, number>;
   cryptoRates: Record<string, { KRW?: number; USDT?: number; }>;
   isFetchingRates: boolean;
-  onOpenModal: (type: string) => void;
+  onOpenModal: (type: string, data?: any) => void;
 }
 
 export default function Dashboard({ 
@@ -480,33 +481,45 @@ export default function Dashboard({
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {transactions.slice(0, 5).map(transaction => (
-                <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-2 bg-blue-100 rounded-full">
-                      <ArrowRightLeft className="text-blue-600" size={20} />
+              {transactions.slice(0, 5).map(transaction => {
+                return (
+                  <div 
+                    key={transaction.id} 
+                    className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg ${
+                      transaction.type === 'cash_change' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''
+                    }`}
+                    onClick={() => {
+                      if (transaction.type === 'cash_change') {
+                        onOpenModal('viewCashChangeDetail', transaction);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <ArrowRightLeft className="text-blue-600" size={20} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {transaction.fromAssetName} → {transaction.toAssetName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {transaction.timestamp instanceof Date 
+                            ? transaction.timestamp.toLocaleString('ko-KR')
+                            : new Date(transaction.timestamp).toLocaleString('ko-KR')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {transaction.fromAssetName} → {transaction.toAssetName}
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">
+                        {formatCurrency(transaction.toAmount, transaction.toCurrency)}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {transaction.timestamp instanceof Date 
-                          ? transaction.timestamp.toLocaleString('ko-KR')
-                          : new Date(transaction.timestamp).toLocaleString('ko-KR')}
+                        @{formatCurrency(transaction.rate, transaction.toCurrency)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">
-                      {formatCurrency(transaction.toAmount, transaction.toCurrency)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      @{formatCurrency(transaction.rate, transaction.toCurrency)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </Card>
@@ -561,6 +574,8 @@ export default function Dashboard({
           </div>
         </Card>
       </div>
+
+
     </div>
   );
 }
