@@ -63,11 +63,11 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
     const num = parseInt(denomination);
     switch (currency) {
       case 'KRW':
-        return num >= 1000 ? `${(num / 1000).toLocaleString()}천원권` : `${num}원권`;
+        return `${num.toLocaleString()}원권`;
       case 'USD':
-        return `${num}달러 지폐`;
+        return `${num}달러권`;
       case 'VND':
-        return num >= 1000 ? `${(num / 1000).toLocaleString()}천동 지폐` : `${num}동 지폐`;
+        return `${num.toLocaleString()}동권`;
       default:
         return `${num}`;
     }
