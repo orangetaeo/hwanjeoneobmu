@@ -8,7 +8,9 @@ import {
   List,
   ChartLine,
   Plus,
-  Coins
+  Coins,
+  Menu,
+  X
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 // Firebase는 실시간 환율 전용으로 제한 - 데이터 저장은 PostgreSQL 사용
@@ -63,6 +65,7 @@ export default function HomePage() {
   const [selectedCashAsset, setSelectedCashAsset] = useState<CashAsset | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isCashDetailModalOpen, setIsCashDetailModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // React Query로 실시간 데이터 로딩
   const { data: assetsData = [], isLoading: assetsLoading, error: assetsError, refetch: refetchAssets } = useQuery({
@@ -1006,6 +1009,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-12 lg:h-16">
             <div className="flex items-center space-x-2 lg:space-x-4">
+              {/* 모바일 햄버거 메뉴 버튼 */}
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="md:hidden p-1.5"
+                onClick={() => setIsMobileMenuOpen(true)}
+                data-testid="mobile-menu-button"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+              
               {currentView === 'dashboard' && <Home className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'assets' && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'exchange-operations' && <Coins className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
@@ -1042,71 +1056,144 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Mobile Navigation */}
+      {/* 모바일 햄버거 메뉴 오버레이 */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="fixed left-0 top-0 bottom-0 w-64 bg-white shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">메뉴</h2>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(false)}
+                data-testid="mobile-menu-close"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <nav className="p-4">
+              <ul className="space-y-2">
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'dashboard' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-dashboard"
+                  >
+                    <Home className="w-5 h-5 mr-3" />
+                    대시보드
+                  </Button>
+                </li>
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'assets' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('assets'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-assets"
+                  >
+                    <Wallet className="w-5 h-5 mr-3" />
+                    자산 관리
+                  </Button>
+                </li>
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'exchange-operations' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('exchange-operations'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-exchange-operations"
+                  >
+                    <Coins className="w-5 h-5 mr-3" />
+                    거래소 운영
+                  </Button>
+                </li>
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'transactions' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('transactions'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-transactions"
+                  >
+                    <List className="w-5 h-5 mr-3" />
+                    거래 내역
+                  </Button>
+                </li>
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'rates' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('rates'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-rates"
+                  >
+                    <TrendingUp className="w-5 h-5 mr-3" />
+                    환율 관리
+                  </Button>
+                </li>
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'exchange-rates' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('exchange-rates'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-exchange-rates"
+                  >
+                    <DollarSign className="w-5 h-5 mr-3" />
+                    환전상 시세
+                  </Button>
+                </li>
+                <li className="pt-4 border-t">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start"
+                    onClick={() => { setShowUserSettings(true); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-settings"
+                  >
+                    <Settings className="w-5 h-5 mr-3" />
+                    설정
+                  </Button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* 모바일 하단 네비게이션 - 주요 4개 메뉴만 */}
       <nav className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-40">
-        <div className="flex justify-around items-center h-12 px-1">
+        <div className="flex justify-around items-center h-14 px-2">
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('dashboard')}
             data-testid="mobile-nav-dashboard"
           >
-            <Home className="w-4 h-4" />
-            <span className="text-xs font-medium truncate">대시보드</span>
+            <Home className="w-5 h-5" />
+            <span className="text-xs font-medium">대시보드</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'assets' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('assets')}
-            data-testid="mobile-nav-assets"
-          >
-            <Wallet className="w-4 h-4" />
-            <span className="text-xs truncate">자산</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'exchange-operations' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'exchange-operations' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('exchange-operations')}
             data-testid="mobile-nav-exchange-operations"
           >
-            <Coins className="w-4 h-4" />
-            <span className="text-xs truncate">거래소</span>
+            <Coins className="w-5 h-5" />
+            <span className="text-xs font-medium">환전거래</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'transactions' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('transactions')}
-            data-testid="mobile-nav-transactions"
-          >
-            <List className="w-4 h-4" />
-            <span className="text-xs truncate">내역</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'rates' ? 'text-primary' : 'text-gray-400'}`}
-            onClick={() => setCurrentView('rates')}
-            data-testid="mobile-nav-rates"
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-xs truncate">환율</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'exchange-rates' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'exchange-rates' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('exchange-rates')}
             data-testid="mobile-nav-exchange-rates"
           >
-            <DollarSign className="w-4 h-4" />
-            <span className="text-xs truncate">금은방</span>
+            <DollarSign className="w-5 h-5" />
+            <span className="text-xs font-medium">환전상 시세</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 text-gray-400`}
-            onClick={() => setShowUserSettings(true)}
-            data-testid="mobile-nav-settings"
+            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'assets' ? 'text-primary' : 'text-gray-400'}`}
+            onClick={() => setCurrentView('assets')}
+            data-testid="mobile-nav-assets"
           >
-            <Settings className="w-4 h-4" />
-            <span className="text-xs truncate">설정</span>
+            <Wallet className="w-5 h-5" />
+            <span className="text-xs font-medium">자산관리</span>
           </Button>
         </div>
       </nav>
