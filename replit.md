@@ -106,11 +106,7 @@ This is a full-stack asset management and exchange tracking application designed
   - Mobile Responsiveness: Ensured proper 2-column layout on mobile, 3-column on desktop
   - Bank-Specific Icons: Implemented unique icons for each bank (하나은행 🟢, 국민은행 🟤, 신한은행 🔵, 우리은행 🔷, BIDV 🟢)
   - Detailed View Enhancement: Applied consistent icon system to detailed asset breakdown view
-- **Navigation Icon Modernization (2025-08-17)**: Enhanced UI/UX with emoji-based navigation
-  - Desktop Sidebar: Replaced lucide-react icons with meaningful emojis (📊 대시보드, 💰 자산관리, 🔄 거래소운영, 📋 거래내역, 📈 환율관리, 💱 환전상시세, ⚙️ 설정)
-  - Mobile Navigation: Updated bottom navigation bar with consistent emoji system
-  - Visual Consistency: Unified icon language across desktop and mobile interfaces
-  - Enhanced Recognition: More intuitive and universal symbol system for better user experience
+
 
 # User Preferences
 
