@@ -741,7 +741,7 @@ export default function HomePage() {
                 rate: "1.0",
                 fees: "0",
                 profit: "0",
-                memo: `${formData.currency} 현금 ${changeAmount > 0 ? '증가' : '감소'}: ${Math.abs(changeAmount).toLocaleString()}`,
+                memo: formData.memo || '', // 사용자가 입력한 메모만 사용, 자동 생성 메모 제거
                 metadata: {
                   assetId: assetId,
                   denominationChanges: newDenominations
