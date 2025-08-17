@@ -303,16 +303,45 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     }));
   };
 
+  // 지폐 고유 색상 반환 함수
+  const getDenominationColor = (currency: string, denomination: string) => {
+    const denomValue = parseFloat(denomination.replace(/,/g, ''));
+    
+    switch (currency) {
+      case 'KRW':
+        if (denomValue >= 50000) return 'bg-yellow-100 border-yellow-300'; // 노란색 계열
+        if (denomValue >= 10000) return 'bg-green-100 border-green-300'; // 초록색 계열
+        if (denomValue >= 5000) return 'bg-red-100 border-red-300'; // 빨간색 계열
+        return 'bg-blue-100 border-blue-300'; // 파란색 계열
+        
+      case 'USD':
+        if (denomValue >= 100) return 'bg-green-100 border-green-300'; // 초록색 계열 (달러 특성)
+        if (denomValue >= 50) return 'bg-pink-100 border-pink-300'; // 분홍색 계열
+        if (denomValue >= 20) return 'bg-green-50 border-green-200'; // 연한 초록색
+        if (denomValue >= 10) return 'bg-yellow-100 border-yellow-300'; // 노란색 계열
+        if (denomValue >= 5) return 'bg-purple-100 border-purple-300'; // 보라색 계열
+        if (denomValue >= 2) return 'bg-gray-100 border-gray-300'; // 회색 계열
+        return 'bg-emerald-100 border-emerald-300'; // 에메랄드 계열
+        
+      case 'VND':
+        if (denomValue >= 500000) return 'bg-purple-100 border-purple-300'; // 보라색 계열
+        if (denomValue >= 200000) return 'bg-orange-100 border-orange-300'; // 주황색 계열
+        if (denomValue >= 100000) return 'bg-green-100 border-green-300'; // 초록색 계열
+        if (denomValue >= 50000) return 'bg-pink-100 border-pink-300'; // 분홍색 계열
+        if (denomValue >= 20000) return 'bg-blue-100 border-blue-300'; // 파란색 계열
+        if (denomValue >= 10000) return 'bg-yellow-100 border-yellow-300'; // 노란색 계열
+        if (denomValue >= 5000) return 'bg-red-100 border-red-300'; // 빨간색 계열
+        if (denomValue >= 2000) return 'bg-teal-100 border-teal-300'; // 청록색 계열
+        return 'bg-indigo-100 border-indigo-300'; // 남색 계열
+        
+      default:
+        return 'bg-gray-100 border-gray-300';
+    }
+  };
+
   const getTitle = () => {
     if (type === 'cash') {
-      if (editData) {
-        return '현금 자산 수정';
-      } else {
-        const totalAmount = Object.entries(denominations).reduce((total, [denom, count]) => {
-          return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-        }, 0);
-        return totalAmount < 0 ? '현금 자산 차감' : '현금 자산 추가';
-      }
+      return editData ? '현금 자산 수정' : '현금 증감';
     }
     
     const titles = {
@@ -401,35 +430,35 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       </span>
                     </div>
                     
-                    {/* 현금 증가 박스 */}
-                    {Object.entries(denominations).some(([, count]) => count !== 0) && (
-                      <div className="flex justify-between items-center bg-blue-50 rounded p-3 border border-blue-200">
-                        <span className="text-blue-700">
-                          {Object.entries(denominations).reduce((total, [denom, count]) => {
+                    {/* 현금 증감 박스 - 항상 표시 */}
+                    <div className="flex justify-between items-center bg-blue-50 rounded p-3 border border-blue-200">
+                      <span className="text-blue-700">
+                        {Object.entries(denominations).reduce((total, [denom, count]) => {
+                          return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                        }, 0) >= 0 ? '현금 증감:' : '현금 증감:'}
+                      </span>
+                      <span className={`font-semibold ${
+                        Object.entries(denominations).reduce((total, [denom, count]) => {
+                          return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
+                        }, 0) >= 0 ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        {(() => {
+                          const changeAmount = Object.entries(denominations).reduce((total, [denom, count]) => {
                             return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                          }, 0) >= 0 ? '현금 증가:' : '현금 감소:'}
-                        </span>
-                        <span className={`font-semibold ${
-                          Object.entries(denominations).reduce((total, [denom, count]) => {
-                            return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                          }, 0) >= 0 ? 'text-green-700' : 'text-red-700'
-                        }`}>
-                          {(() => {
-                            const changeAmount = Object.entries(denominations).reduce((total, [denom, count]) => {
-                              return total + (parseFloat(denom.replace(/,/g, '')) * ((typeof count === 'number' ? count : 0)));
-                            }, 0);
-                            const currencySymbol = form.watch('currency') === 'KRW' ? '₩' : 
-                                                  form.watch('currency') === 'USD' ? '$' : '₫';
-                            
-                            if (changeAmount >= 0) {
-                              return `+${currencySymbol}${changeAmount.toLocaleString()}`;
-                            } else {
-                              return `-${currencySymbol}${Math.abs(changeAmount).toLocaleString()}`;
-                            }
-                          })()}
-                        </span>
-                      </div>
-                    )}
+                          }, 0);
+                          const currencySymbol = form.watch('currency') === 'KRW' ? '₩' : 
+                                                form.watch('currency') === 'USD' ? '$' : '₫';
+                          
+                          if (changeAmount === 0) {
+                            return `${currencySymbol}0`;
+                          } else if (changeAmount >= 0) {
+                            return `+${currencySymbol}${changeAmount.toLocaleString()}`;
+                          } else {
+                            return `-${currencySymbol}${Math.abs(changeAmount).toLocaleString()}`;
+                          }
+                        })()}
+                      </span>
+                    </div>
 
                     {/* 실시간 총 잔액 계산 */}
                     <div className="flex justify-between items-center bg-white rounded p-3 border-2 border-blue-300 shadow-sm">
@@ -534,7 +563,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       .map(([denom, count]) => {
                       const countValue = typeof count === 'number' ? count : 0;
                       return (
-                        <div key={denom} className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50 min-w-0">
+                        <div key={denom} className={`space-y-3 p-4 border rounded-lg min-w-0 ${getDenominationColor(form.watch('currency'), denom)}`}>
                           <label className="text-xs font-semibold text-gray-800 block text-center">
                             {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
                              form.watch('currency') === 'USD' ? `$${denom}` :

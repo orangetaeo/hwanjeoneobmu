@@ -465,7 +465,7 @@ export default function Dashboard({
                 data-testid="button-add-cash"
               >
                 <Plus className="mr-3 text-blue-600" size={20} />
-                <span className="font-medium text-blue-700">현금 추가</span>
+                <span className="font-medium text-blue-700">현금 증감</span>
               </Button>
               
               <Button 

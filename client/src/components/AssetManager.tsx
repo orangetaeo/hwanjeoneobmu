@@ -77,7 +77,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
               <h3 className="text-lg font-semibold text-gray-900">현금 자산 관리</h3>
               <Button onClick={() => onOpenModal('addCashAsset')} data-testid="button-add-cash-asset">
                 <Plus size={16} className="mr-2" />
-                현금 추가
+                현금 증감
               </Button>
             </div>
 
