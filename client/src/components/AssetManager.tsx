@@ -250,7 +250,7 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                 <Card key={asset.id} className="p-6 overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h4 className="font-semibold text-gray-900 truncate">{asset.metadata?.exchange || 'Exchange'}</h4>
+                      <h4 className="font-semibold text-gray-900 truncate">{asset.metadata?.exchange || asset.name?.split(' ')[0] || 'Exchange'}</h4>
                       <p className="text-sm text-gray-600 truncate">{asset.currency}</p>
                     </div>
                     <div className="flex space-x-2">

@@ -283,6 +283,57 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
         } else {
           data.id = editData.id;
         }
+      } else if (type === 'exchange') {
+        // 거래소 자산의 이름과 메타데이터 설정
+        data.name = data.exchangeName || 'Exchange';
+        data.type = 'exchange';
+        data.currency = data.coinName || 'USDT';
+        data.balance = data.quantity?.toString() || '0';
+        data.metadata = {
+          exchange: data.exchangeName || 'Exchange',
+          assetType: 'crypto'
+        };
+        
+        // Generate unique ID if not editing
+        if (!editData) {
+          data.id = Date.now().toString();
+        } else {
+          data.id = editData.id;
+        }
+      } else if (type === 'binance') {
+        // 바이낸스 자산의 이름과 메타데이터 설정
+        data.name = 'Binance ' + (data.coinName || 'USDT');
+        data.type = 'binance';
+        data.currency = data.coinName || 'USDT';
+        data.balance = data.quantity?.toString() || '0';
+        data.metadata = {
+          exchange: 'Binance',
+          assetType: 'crypto'
+        };
+        
+        // Generate unique ID if not editing
+        if (!editData) {
+          data.id = Date.now().toString();
+        } else {
+          data.id = editData.id;
+        }
+      } else if (type === 'korean-account' || type === 'vietnamese-account') {
+        // 계좌 자산의 이름 설정
+        data.name = `${data.bankName} (${data.accountHolder})`;
+        data.type = type;
+        data.currency = type === 'korean-account' ? 'KRW' : 'VND';
+        data.metadata = {
+          bank: data.bankName,
+          accountNumber: data.accountNumber,
+          accountHolder: data.accountHolder
+        };
+        
+        // Generate unique ID if not editing
+        if (!editData) {
+          data.id = Date.now().toString();
+        } else {
+          data.id = editData.id;
+        }
       } else {
         // For other asset types, generate ID if not editing
         if (!editData) {
