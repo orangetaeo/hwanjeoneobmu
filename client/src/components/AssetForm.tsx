@@ -114,12 +114,17 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       );
       
       if (existingAsset) {
+        console.log('Found existing asset:', existingAsset);
+        console.log('Asset metadata:', existingAsset.metadata);
+        console.log('Asset denominations:', existingAsset.metadata?.denominations);
+        
         setCurrentAssetInfo({
           currency: existingAsset.currency,
           balance: parseFloat(existingAsset.balance),
           denominations: existingAsset.metadata?.denominations || {}
         });
       } else {
+        console.log('No existing asset found for currency:', currency);
         setCurrentAssetInfo(null);
       }
     } catch (error) {
@@ -599,7 +604,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                       </span>
                     </div>
                     {/* 실시간 지폐 구성 계산 */}
-                    {Object.keys(currentAssetInfo.denominations).length > 0 && (
+                    {form.watch('currency') && (
                       <div className="space-y-2">
                         <span className="text-sm text-gray-600">지폐 구성:</span>
                         <div className="grid grid-cols-2 gap-2 text-sm">
@@ -607,14 +612,14 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                           {(() => {
                             // 현재 보유 지폐와 변경할 지폐를 모두 포함한 전체 지폐 목록 생성
                             const allDenoms = new Set([
-                              ...Object.keys(currentAssetInfo.denominations || {}),
+                              ...Object.keys(currentAssetInfo?.denominations || {}),
                               ...Object.keys(denominations)
                             ]);
                             
                             // KRW 통화인 경우 4개 지폐 강제 표시
                             if (form.watch('currency') === 'KRW') {
                               return ['50,000', '10,000', '5,000', '1,000'].map((denom) => {
-                                const currentCount = (currentAssetInfo.denominations?.[denom] as number) || 0;
+                                const currentCount = (currentAssetInfo?.denominations?.[denom] as number) || 0;
                                 const changeCount = denominations[denom] || 0;
                                 const newCount = currentCount + changeCount;
                                 
@@ -638,7 +643,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                                   </div>
                                 );
                               });
-                            } else {
+                            } else if (currentAssetInfo?.denominations && Object.keys(currentAssetInfo.denominations).length > 0) {
                               // 다른 통화는 기존 로직 사용
                               return Array.from(allDenoms)
                                 .sort((a, b) => {
