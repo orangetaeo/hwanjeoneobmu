@@ -41,14 +41,7 @@ export default function Dashboard({
 }: DashboardProps) {
   const { cashAssets = [], koreanAccounts = [], vietnameseAccounts = [], exchangeAssets = [], binanceAssets = [] } = assets;
   
-  // 강제 디버깅: cashAssets가 비어있으면 콘솔에서 확인 가능하도록
-  console.log('Dashboard props received:', {
-    cashAssets: cashAssets?.length || 0,
-    koreanAccounts: koreanAccounts?.length || 0,
-    vietnameseAccounts: vietnameseAccounts?.length || 0,
-    exchangeAssets: exchangeAssets?.length || 0,
-    binanceAssets: binanceAssets?.length || 0
-  });
+
   const [simpleView, setSimpleView] = useState(true);
   const [yesterdayAssets, setYesterdayAssets] = useState<{ krw: number; vnd: number } | null>(null);
 
@@ -67,21 +60,7 @@ export default function Dashboard({
     }
 
     const all = [...cashAssets, ...koreanAccounts, ...vietnameseAccounts, ...exchangeAssets, ...binanceAssets];
-    console.log('Dashboard - All assets for calculation:', { 
-      cashAssets: cashAssets?.map(a => ({ name: a.name, currency: a.currency, balance: a.balance })) || 'EMPTY', 
-      koreanAccounts: koreanAccounts?.length || 0, 
-      vietnameseAccounts: vietnameseAccounts?.length || 0, 
-      exchangeAssets: exchangeAssets?.length || 0, 
-      binanceAssets: binanceAssets?.length || 0,
-      totalAssets: all.length 
-    });
-    
-    // USD 현금 포함 여부 특별 확인
-    const usdCash = cashAssets?.find(asset => asset.currency === 'USD');
-    console.log('USD 현금 포함 여부:', usdCash ? 
-      `포함됨 - ${usdCash.name}: ${usdCash.balance}달러` : 
-      '포함되지 않음 - cashAssets 배열에 USD 없음'
-    );
+
     let totalKrw = 0;
 
     all.forEach(asset => {
@@ -116,18 +95,17 @@ export default function Dashboard({
           cryptoRates: cryptoRates
         });
 
-        // 각 통화별 처리 전에 로그 출력
-        console.log(`Processing ${currency} asset: ${(asset as any).name}`);
+
 
         switch(currency) {
           case 'KRW': 
             if (coinName && cryptoRates && cryptoRates[coinName]?.KRW) {
               const amount = balanceValue * cryptoRates[coinName].KRW;
               totalKrw += amount;
-              console.log(`KRW 암호화폐 계산: ${(asset as any).name} = ${amount.toLocaleString()}원`);
+
             } else {
               totalKrw += balanceValue;
-              console.log(`KRW 계산: ${(asset as any).name} = ${balanceValue.toLocaleString()}원`);
+
             }
             break;
           case 'VND': 
@@ -135,18 +113,18 @@ export default function Dashboard({
             const vndKrwRate = realTimeRates['VND-KRW'] || 0.053; // 기본값: 0.053
             const vndAmount = balanceValue * vndKrwRate;
             totalKrw += vndAmount; 
-            console.log(`VND 계산: ${(asset as any).name} = ${balanceValue.toLocaleString()}동 → ${vndAmount.toLocaleString()}원`);
+
             break;
           case 'USD': 
             // API 환율 사용: USD → KRW
             const usdKrwRate = realTimeRates['USD-KRW'] || 1350; // 기본값: 1350
             const usdAmount = balanceValue * usdKrwRate;
             totalKrw += usdAmount; 
-            console.log(`🇺🇸 USD 계산: ${(asset as any).name} = ${balanceValue}달러 → ${usdAmount.toLocaleString()}원 (환율: ${usdKrwRate})`);
+
             break;
           case 'USDT': 
             const usdtRate = realTimeRates['USDT-KRW'] || 0;
-            console.log('USDT calculation:', { balanceValue, usdtRate, result: balanceValue * usdtRate });
+
             totalKrw += balanceValue * usdtRate;
             break;
           default: 
@@ -164,11 +142,7 @@ export default function Dashboard({
       }
     });
 
-    // 총 자산 계산 완료 - 명확한 로그 출력
-    console.log('=== 총 자산 계산 완료 ===');
-    console.log(`총 KRW 자산: ${totalKrw.toLocaleString()}원`);
-    console.log(`총 VND 자산: ${(totalKrw * (realTimeRates['KRW-VND'] || 0)).toLocaleString()}동`);
-    console.log('========================');
+
 
     return {
       krw: totalKrw,
@@ -244,21 +218,7 @@ export default function Dashboard({
                 {CURRENCY_SYMBOLS.KRW} {formatCurrency(totalAssets.krw, 'KRW')}
               </p>
               
-              {/* USD 현금 포함 여부 표시 */}
-              <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                  포함된 자산: {(cashAssets?.length || 0) + (koreanAccounts?.length || 0) + (vietnameseAccounts?.length || 0) + (exchangeAssets?.length || 0) + (binanceAssets?.length || 0)}개
-                </div>
-                {cashAssets?.find(a => a.currency === 'USD') ? (
-                  <div className="text-xs font-medium text-green-600 dark:text-green-400">
-                    ✅ USD 현금: {cashAssets.find(a => a.currency === 'USD')?.balance}달러 포함됨
-                  </div>
-                ) : (
-                  <div className="text-xs font-medium text-red-600 dark:text-red-400">
-                    ❌ USD 현금 누락 (현금 자산: {cashAssets?.length || 0}개)
-                  </div>
-                )}
-              </div>
+
               
               {assetChange && (
                 <div className={`flex items-center justify-center mt-2 text-sm ${assetChange.krw >= 0 ? 'text-green-600' : 'text-red-600'}`}>
