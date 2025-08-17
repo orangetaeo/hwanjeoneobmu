@@ -1092,6 +1092,15 @@ export default function HomePage() {
           </Button>
           <Button 
             variant="ghost" 
+            className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 ${currentView === 'exchange-rates' ? 'text-primary' : 'text-gray-400'}`}
+            onClick={() => setCurrentView('exchange-rates')}
+            data-testid="mobile-nav-exchange-rates"
+          >
+            <DollarSign className="w-4 h-4" />
+            <span className="text-xs truncate">금은방</span>
+          </Button>
+          <Button 
+            variant="ghost" 
             className={`flex flex-col items-center space-y-0.5 p-1 min-w-0 text-gray-400`}
             onClick={() => setShowUserSettings(true)}
             data-testid="mobile-nav-settings"
