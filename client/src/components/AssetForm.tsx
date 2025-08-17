@@ -680,18 +680,20 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               // 다른 통화는 키 정규화를 통해 중복 방지
                               const normalizedDenoms = new Map<string, { normalizedKey: string, currentCount: number, changeCount: number }>();
                               
-                              // 기존 지폐 처리 (콤마 없는 키)
+                              // 기존 지폐 처리 (콤마 없는 키를 콤마 있는 형태로 변환)
                               Object.entries(currentAssetInfo.denominations).forEach(([key, count]) => {
-                                const normalizedKey = parseFloat(key.replace(/,/g, '')).toLocaleString();
+                                const numericValue = parseFloat(key.replace(/,/g, ''));
+                                const normalizedKey = numericValue.toLocaleString();
                                 if (!normalizedDenoms.has(normalizedKey)) {
                                   normalizedDenoms.set(normalizedKey, { normalizedKey, currentCount: 0, changeCount: 0 });
                                 }
                                 normalizedDenoms.get(normalizedKey)!.currentCount += (typeof count === 'number' ? count : 0);
                               });
                               
-                              // 변경 지폐 처리 (콤마 있는 키)
+                              // 변경 지폐 처리 (콤마 있는 키를 동일한 형태로 처리)
                               Object.entries(denominations).forEach(([key, count]) => {
-                                const normalizedKey = parseFloat(key.replace(/,/g, '')).toLocaleString();
+                                const numericValue = parseFloat(key.replace(/,/g, ''));
+                                const normalizedKey = numericValue.toLocaleString();
                                 if (!normalizedDenoms.has(normalizedKey)) {
                                   normalizedDenoms.set(normalizedKey, { normalizedKey, currentCount: 0, changeCount: 0 });
                                 }
