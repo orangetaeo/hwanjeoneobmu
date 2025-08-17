@@ -422,7 +422,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
     
     // 현재 보유 자산이 없으면 새로 추가하는 것이므로 지폐가 하나라도 있으면 true
     if (!currentAssetInfo) {
-      return Object.values(denominations).some((count) => (count as number) > 0);
+      return Object.values(denominations).some((count: number) => count > 0);
     }
     
     // 기존 자산이 있으면 변경사항이 있는지 확인
@@ -567,7 +567,7 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                         })()}
                       </span>
                     </div>
-                    {/* 지폐 구성 표시 */}
+                    {/* 실시간 지폐 구성 계산 */}
                     {Object.keys(currentAssetInfo.denominations).length > 0 && (
                       <div className="space-y-2">
                         <span className="text-sm text-gray-600">지폐 구성:</span>
@@ -578,19 +578,29 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                               const numB = parseFloat(b.replace(/,/g, ''));
                               return numB - numA;
                             })
-                            .filter(([, currentCount]) => (currentCount as number) > 0)
-                            .map(([denom, currentCount]) => (
-                              <div key={denom} className="flex justify-between rounded px-2 py-1 border bg-white border-gray-100">
-                                <span className="text-gray-600">
-                                  {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
-                                   form.watch('currency') === 'USD' ? `$${denom}` :
-                                   `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
-                                </span>
-                                <span className="font-medium text-gray-800">
-                                  {currentCount as number}장
-                                </span>
-                              </div>
-                            ))
+                            .map(([denom, currentCount]) => {
+                              const changeCount = denominations[denom] || 0;
+                              const newCount = (currentCount as number) + changeCount;
+                              return (
+                                <div key={denom} className={`flex justify-between rounded px-2 py-1 border ${
+                                  changeCount !== 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
+                                }`}>
+                                  <span className="text-gray-600">
+                                    {form.watch('currency') === 'KRW' ? `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}원권` :
+                                     form.watch('currency') === 'USD' ? `$${denom}` :
+                                     `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`}:
+                                  </span>
+                                  <span className={`font-medium ${changeCount !== 0 ? 'text-blue-800' : 'text-gray-800'}`}>
+                                    {newCount}장
+                                    {changeCount !== 0 && (
+                                      <span className={`text-xs ml-1 ${changeCount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        ({changeCount > 0 ? '+' : ''}{changeCount})
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })
                           }
                         </div>
                       </div>
