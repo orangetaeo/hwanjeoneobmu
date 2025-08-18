@@ -589,7 +589,6 @@ export default function TransactionForm() {
                 )}
               </div>
               <div>
-                <Label>주는 통화: {formData.toCurrency}</Label>
                 
                 {/* VND 권종별 분배 표시 (수정 가능) */}
                 {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
