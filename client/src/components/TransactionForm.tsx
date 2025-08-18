@@ -37,7 +37,8 @@ const CURRENCY_DENOMINATIONS = {
   KRW: [
     { value: "50000", label: "5만원" },
     { value: "10000", label: "1만원" },
-    { value: "5000_1000", label: "5천/1천원" }
+    { value: "5000", label: "5천원" },
+    { value: "1000", label: "1천원" }
   ]
 };
 
@@ -229,10 +230,16 @@ export default function TransactionForm() {
   const getDenominationRate = (fromCurrency: string, toCurrency: string, denomination: string) => {
     if (!Array.isArray(exchangeRates)) return null;
     
+    // KRW 1천원권의 경우 5/1천원권 매도 시세 사용
+    let searchDenomination = denomination;
+    if (fromCurrency === "KRW" && denomination === "1000") {
+      searchDenomination = "5000_1000";
+    }
+    
     return exchangeRates.find((rate: any) => 
       rate.fromCurrency === fromCurrency && 
       rate.toCurrency === toCurrency && 
-      rate.denomination === denomination
+      rate.denomination === searchDenomination
     );
   };
 
@@ -250,7 +257,9 @@ export default function TransactionForm() {
     if (currency === "KRW") {
       if (denomination === "50000") return 50000;
       if (denomination === "10000") return 10000;
-      if (denomination === "5000_1000") return 6000; // 5천원 + 1천원 조합
+      if (denomination === "5000") return 5000;
+      if (denomination === "1000") return 1000;
+      if (denomination === "5000_1000") return 6000; // 5천원 + 1천원 조합 (기존 호환성)
     } else if (currency === "USD") {
       return parseInt(denomination) || 0;
     } else if (currency === "VND") {
