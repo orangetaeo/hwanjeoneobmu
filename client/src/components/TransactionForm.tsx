@@ -568,7 +568,7 @@ export default function TransactionForm() {
                                   </div>
                                 )}
                               </div>
-                              {useRate && formData.denominationAmounts[denom.value] && (
+                              {useRate && typeof useRate === 'number' && formData.denominationAmounts[denom.value] && (
                                 <div className="text-xs text-orange-600 font-medium mt-1">
                                   환전 예상: ≈ {formatNumber(
                                     parseFloat(formData.denominationAmounts[denom.value]) * 
