@@ -172,17 +172,17 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
 
   const { date, time } = formatDateTime(transaction.timestamp);
 
-  // 환전 타입 텍스트 결정 - 비즈니스 관점에 맞춘 표기
-  const getExchangeTypeText = (transaction: Transaction) => {
+  // 환전 타입 텍스트 결정 - 현재 보고 있는 현금 자산에 맞춘 표기
+  const getExchangeTypeText = (transaction: Transaction, currency: string) => {
     if ((transaction.type as string) !== 'cash_exchange') return '';
     
-    // 비즈니스 관점: 고객이 VND 주고 KRW 받아감
-    // 사업자는 VND를 받고(수령) KRW를 줌(지급)
-    // 하지만 거래 기록상 KRW가 fromAsset, VND가 toAsset이므로 비즈니스 의미로 해석
-    if (transaction.fromAssetName && transaction.fromAssetName.includes('KRW')) {
-      return 'KRW 현금 환전 수령'; // KRW가 관련된 거래는 KRW 수령
-    } else if (transaction.toAssetName && transaction.toAssetName.includes('VND')) {
-      return 'VND 현금 환전 지급'; // VND가 관련된 거래는 VND 지급
+    // 현재 보고 있는 통화에 따라 정확한 표기
+    if (currency === 'KRW') {
+      // KRW 현금 상세 페이지 - 사업자가 KRW를 받음 (수령)
+      return 'KRW 현금 환전 수령';
+    } else if (currency === 'VND') {
+      // VND 현금 상세 페이지 - 사업자가 VND를 줌 (지급)
+      return 'VND 현금 환전 지급';
     }
     
     return '현금환전';
@@ -198,7 +198,7 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
           </DialogTitle>
           <DialogDescription>
             {(transaction.type as string) === 'cash_exchange' 
-              ? `${getExchangeTypeText(transaction)} - ${date} ${time}` 
+              ? `${getExchangeTypeText(transaction, currency)} - ${date} ${time}` 
               : `${transaction.toAssetName} - ${date} ${time}`}
           </DialogDescription>
         </DialogHeader>
