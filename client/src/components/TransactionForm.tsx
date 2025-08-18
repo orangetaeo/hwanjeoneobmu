@@ -316,8 +316,10 @@ export default function TransactionForm() {
       if (calculatedToAmount > 0) {
         // VND의 경우 원본값 저장하고 무조건 내림 적용
         if (formData.toCurrency === "VND") {
+          console.log("Setting VND original amount:", calculatedToAmount);
           setVndOriginalAmount(calculatedToAmount);
           const finalAmount = formatVNDWithFloor(calculatedToAmount);
+          console.log("VND floored amount:", finalAmount);
           
           setFormData(prev => ({ 
             ...prev, 
@@ -329,6 +331,7 @@ export default function TransactionForm() {
           const breakdown = calculateVNDBreakdown(finalAmount);
           setVndBreakdown(breakdown);
         } else {
+          setVndOriginalAmount(0); // 다른 통화는 0으로 리셋
           const finalAmount = Math.floor(calculatedToAmount);
           setFormData(prev => ({ 
             ...prev, 
@@ -847,8 +850,10 @@ export default function TransactionForm() {
                 <div className="flex items-center gap-2">
                   <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
                   {formData.toCurrency === "VND" && vndOriginalAmount > 0 && (() => {
+                    console.log("VND original amount in display:", vndOriginalAmount);
                     const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
                     const difference = vndOriginalAmount - flooredAmount;
+                    console.log("VND difference:", difference);
                     
                     return difference > 0 ? (
                       <span className="text-sm text-orange-600 font-medium">
@@ -859,7 +864,10 @@ export default function TransactionForm() {
                 </div>
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
                   <div className="text-xl font-bold text-blue-700">
-                    {formatNumber(formData.toAmount, formData.toCurrency)} {formData.toCurrency}
+                    {formData.toCurrency === "VND" ? 
+                      parseFloat(formData.toAmount).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
+                      formatNumber(formData.toAmount, formData.toCurrency)
+                    } {formData.toCurrency}
                   </div>
                   <div className="text-sm text-blue-600 mt-1">
                     환전 지급 금액
