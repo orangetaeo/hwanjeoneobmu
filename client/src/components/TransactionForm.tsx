@@ -616,21 +616,24 @@ export default function TransactionForm() {
                                     min="0"
                                     step="1"
                                     placeholder="0"
-                                    value={formData.denominationAmounts[denom.value] || ""}
+                                    value={formData.denominationAmounts[denom.value] ? 
+                                      parseInt(formData.denominationAmounts[denom.value]).toLocaleString() : ""}
                                     onChange={(e) => {
                                       const value = e.target.value;
-                                      // 정수만 허용 (소수점 제거)
-                                      const integerValue = value.replace(/[^0-9]/g, '');
+                                      // 콤마와 숫자만 허용
+                                      const cleanValue = value.replace(/[^0-9,]/g, '');
+                                      // 콤마를 제거한 순수 숫자값 저장
+                                      const numericValue = cleanValue.replace(/,/g, '');
                                       setFormData({
                                         ...formData,
                                         denominationAmounts: {
                                           ...formData.denominationAmounts,
-                                          [denom.value]: integerValue
+                                          [denom.value]: numericValue
                                         }
                                       });
                                     }}
                                     onKeyDown={(e) => {
-                                      // 소수점, 마이너스, e, E 등 문자 입력 방지
+                                      // 소수점, 마이너스, e, E 등 문자 입력 방지 (콤마는 허용)
                                       if (['.', '-', '+', 'e', 'E'].includes(e.key)) {
                                         e.preventDefault();
                                       }
