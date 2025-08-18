@@ -54,7 +54,7 @@ export default function TransactionForm() {
   const [formData, setFormData] = useState({
     transactionType: "cash_exchange",
     fromCurrency: "VND",
-    toCurrency: "USD",
+    toCurrency: "KRW",
     fromDenomination: "",
     toDenomination: "",
     fromAmount: "",
@@ -107,7 +107,7 @@ export default function TransactionForm() {
       setFormData({
         transactionType: "cash_exchange",
         fromCurrency: "VND",
-        toCurrency: "USD",
+        toCurrency: "KRW",
         fromDenomination: "",
         toDenomination: "",
         fromAmount: "",
@@ -312,8 +312,8 @@ export default function TransactionForm() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="VND">VND (베트남 동)</SelectItem>
-                    <SelectItem value="USD">USD (미국 달러)</SelectItem>
                     <SelectItem value="KRW">KRW (한국 원)</SelectItem>
+                    <SelectItem value="USD">USD (미국 달러)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -327,9 +327,9 @@ export default function TransactionForm() {
                     <SelectValue placeholder="통화 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="VND">VND (베트남 동)</SelectItem>
-                    <SelectItem value="USD">USD (미국 달러)</SelectItem>
                     <SelectItem value="KRW">KRW (한국 원)</SelectItem>
+                    <SelectItem value="USD">USD (미국 달러)</SelectItem>
+                    <SelectItem value="VND">VND (베트남 동)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
