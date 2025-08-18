@@ -573,7 +573,7 @@ export default function TransactionForm() {
                       return (
                         <div 
                           key={denom.value} 
-                          className={`border rounded-xl p-4 transition-all shadow-sm cursor-pointer ${isSelected ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300 hover:shadow-md'}`}
+                          className={`border rounded-lg p-2 transition-all shadow-sm cursor-pointer ${isSelected ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300 hover:shadow-md'}`}
                           onClick={() => {
                             if (isSelected) {
                               const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
@@ -591,8 +591,8 @@ export default function TransactionForm() {
                           data-testid={`card-denom-${denom.value}`}
                         >
                           {/* 상단: 권종명, 매도시세 */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
                               <div 
                                 className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer ${(isSelected || hasData) ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}
                                 onClick={(e) => {
@@ -616,7 +616,7 @@ export default function TransactionForm() {
                                 )}
                               </div>
                               <div className="flex-1">
-                                <div className="text-lg font-semibold text-gray-800">
+                                <div className="text-base font-semibold text-gray-800">
                                   {denom.label}
                                 </div>
                                 {/* 접힌 상태에서 데이터 표시 */}
@@ -637,11 +637,11 @@ export default function TransactionForm() {
                               </div>
                             </div>
                             {useRate > 0 && (
-                              <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-center min-w-[100px]">
+                              <div className="px-2 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[80px]">
                                 <div className="text-xs text-red-600 font-medium">
                                   매도 시세
                                 </div>
-                                <div className="text-base font-bold text-red-700">
+                                <div className="text-sm font-bold text-red-700">
                                   {useRate.toFixed(2)}
                                 </div>
                               </div>
@@ -650,7 +650,7 @@ export default function TransactionForm() {
                           
                           {/* 하단: 수량 입력 및 계산 결과 */}
                           {isSelected && (
-                            <div className="bg-white p-4 rounded-lg border border-green-200 space-y-3">
+                            <div className="bg-white p-3 rounded-lg border border-green-200 space-y-2">
                               <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                                 <div className="flex items-center space-x-3">
                                   <label className="text-sm font-medium text-gray-700 min-w-[40px]">수량:</label>
