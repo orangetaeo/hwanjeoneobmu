@@ -65,6 +65,7 @@ Preferred communication style: Simple, everyday language.
 ## Core Implementations
 - **Exchange Rate Management**: Comprehensive system with database schemas for current and historical rates, UPSERT functionality, change percentage tracking, advanced validation, and currency denomination support.
 - **Transaction System Integration**: Rebuilt TransactionForm leveraging the exchange rate system for auto-rate fetching, smart transaction logic, customer information capture, denomination awareness, real-time calculation, and professional validation.
+- **Sell Rate Display System**: Implemented visual sell rate indicators in red boxes positioned on each denomination selection card, displaying "매도 시세" labels with rates formatted to 2 decimal places, providing immediate rate reference for staff during customer transactions.
 - **Duplicate Asset Validation**: Comprehensive checking and prevention for bank accounts, exchange assets, and Binance assets, including merging quantities and user notifications.
 - **Unified Icon System**: Replaced all colorful emojis and flags with monochrome Lucide icons for a consistent and professional appearance across the application.
 - **Mobile Navigation Enhancement**: Redesigned mobile navigation with a hamburger menu, sliding sidebar, and simplified bottom navigation for improved accessibility.
