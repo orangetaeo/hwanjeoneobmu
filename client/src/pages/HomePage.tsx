@@ -1452,11 +1452,7 @@ export default function HomePage() {
                   <ExchangeOperations />
                 )}
                 {currentView === 'new-transaction' && (
-                  <TransactionForm
-                    allAssets={allAssetsForTransaction}
-                    onTransactionSuccess={() => setCurrentView('dashboard')}
-                    onOpenModal={handleOpenModal}
-                  />
+                  <TransactionForm />
                 )}
                 {currentView === 'rates' && (
                   <RateManager
@@ -1467,46 +1463,6 @@ export default function HomePage() {
                 )}
                 {currentView === 'exchange-rates' && (
                   <ExchangeRateManager
-                    rates={exchangeRates}
-                    realTimeRates={realTimeRates}
-                    onSave={async (rate) => {
-                      try {
-                        const response = await fetch('/api/exchange-rates', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(rate)
-                        });
-
-                        if (!response.ok) {
-                          throw new Error('Failed to save exchange rate');
-                        }
-
-                        const exchangeRatesRes = await fetch('/api/exchange-rates');
-                        const exchangeRatesData = await exchangeRatesRes.json();
-                        setExchangeRates(exchangeRatesData);
-                      } catch (error) {
-                        console.error('환율 저장 실패:', error);
-                      }
-                    }}
-                    onUpdate={async (id, rate) => {
-                      try {
-                        const response = await fetch(`/api/exchange-rates/${id}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(rate)
-                        });
-
-                        if (!response.ok) {
-                          throw new Error('Failed to update exchange rate');
-                        }
-
-                        const exchangeRatesRes = await fetch('/api/exchange-rates');
-                        const exchangeRatesData = await exchangeRatesRes.json();
-                        setExchangeRates(exchangeRatesData);
-                      } catch (error) {
-                        console.error('환율 수정 실패:', error);
-                      }
-                    }}
                     realTimeRates={realTimeRates}
                   />
                 )}
