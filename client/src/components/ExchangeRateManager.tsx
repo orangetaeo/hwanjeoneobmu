@@ -214,10 +214,17 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     saveMutation.mutate(cleanedFormData);
   };
 
-  // 숫자 포맷팅 함수
-  const formatRate = (rate: string | null) => {
+  // 숫자 포맷팅 함수 (USD는 정수, KRW는 소숫점 2자리)
+  const formatRate = (rate: string | null, currency: string = 'VND') => {
     if (!rate) return "-";
     const num = parseFloat(rate);
+    
+    // USD 시세는 정수로 표시
+    if (currency === 'USD') {
+      return num.toLocaleString('ko-KR', { maximumFractionDigits: 0, minimumFractionDigits: 0 });
+    }
+    
+    // KRW나 기타 통화는 소숫점 2자리까지
     return num.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
   };
 
@@ -405,13 +412,21 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     placeholder={formData.fromCurrency === 'KRW' ? "예: 19.20" : "예: 26100"}
                     value={formData.goldShopRate}
                     onChange={(e) => {
-                      let value;
+                      let value = e.target.value;
                       if (formData.fromCurrency === 'USD') {
-                        // USD는 정수만 허용
-                        value = e.target.value.replace(/[^0-9,]/g, '');
+                        // USD는 정수만 허용, 콤마 포함
+                        value = value.replace(/[^0-9,]/g, '');
                       } else {
-                        // KRW는 소숫점 허용
-                        value = e.target.value.replace(/[^0-9.,]/g, '');
+                        // KRW는 소숫점 2자리까지 허용, 콤마 포함
+                        value = value.replace(/[^0-9.,]/g, '');
+                        
+                        // 소숫점 2자리 제한
+                        if (value.includes('.')) {
+                          const parts = value.split('.');
+                          if (parts[1] && parts[1].length > 2) {
+                            value = parts[0] + '.' + parts[1].substring(0, 2);
+                          }
+                        }
                       }
                       setFormData({ ...formData, goldShopRate: value });
                     }}
@@ -428,13 +443,21 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       placeholder={formData.fromCurrency === 'KRW' ? "예: 19.00" : "예: 26000"}
                       value={formData.myBuyRate}
                       onChange={(e) => {
-                        let value;
+                        let value = e.target.value;
                         if (formData.fromCurrency === 'USD') {
-                          // USD는 정수만 허용
-                          value = e.target.value.replace(/[^0-9,]/g, '');
+                          // USD는 정수만 허용, 콤마 포함
+                          value = value.replace(/[^0-9,]/g, '');
                         } else {
-                          // KRW는 소숫점 허용
-                          value = e.target.value.replace(/[^0-9.,]/g, '');
+                          // KRW는 소숫점 2자리까지 허용, 콤마 포함
+                          value = value.replace(/[^0-9.,]/g, '');
+                          
+                          // 소숫점 2자리 제한
+                          if (value.includes('.')) {
+                            const parts = value.split('.');
+                            if (parts[1] && parts[1].length > 2) {
+                              value = parts[0] + '.' + parts[1].substring(0, 2);
+                            }
+                          }
                         }
                         setFormData({ ...formData, myBuyRate: value });
                       }}
@@ -448,13 +471,21 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       placeholder={formData.fromCurrency === 'KRW' ? "예: 19.40" : "예: 26200"}
                       value={formData.mySellRate}
                       onChange={(e) => {
-                        let value;
+                        let value = e.target.value;
                         if (formData.fromCurrency === 'USD') {
-                          // USD는 정수만 허용
-                          value = e.target.value.replace(/[^0-9,]/g, '');
+                          // USD는 정수만 허용, 콤마 포함
+                          value = value.replace(/[^0-9,]/g, '');
                         } else {
-                          // KRW는 소숫점 허용
-                          value = e.target.value.replace(/[^0-9.,]/g, '');
+                          // KRW는 소숫점 2자리까지 허용, 콤마 포함
+                          value = value.replace(/[^0-9.,]/g, '');
+                          
+                          // 소숫점 2자리 제한
+                          if (value.includes('.')) {
+                            const parts = value.split('.');
+                            if (parts[1] && parts[1].length > 2) {
+                              value = parts[0] + '.' + parts[1].substring(0, 2);
+                            }
+                          }
                         }
                         setFormData({ ...formData, mySellRate: value });
                       }}
@@ -536,15 +567,15 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">금은방</span>
-                          <div className="font-medium">{formatRate(rate.goldShopRate)}</div>
+                          <div className="font-medium">{formatRate(rate.goldShopRate, rate.fromCurrency)}</div>
                         </div>
                         <div>
                           <span className="text-gray-500">매입</span>
-                          <div className="font-medium text-green-600">{formatRate(rate.myBuyRate)}</div>
+                          <div className="font-medium text-green-600">{formatRate(rate.myBuyRate, rate.fromCurrency)}</div>
                         </div>
                         <div>
                           <span className="text-gray-500">매도</span>
-                          <div className="font-medium text-red-600">{formatRate(rate.mySellRate)}</div>
+                          <div className="font-medium text-red-600">{formatRate(rate.mySellRate, rate.fromCurrency)}</div>
                         </div>
                       </div>
                       
@@ -620,15 +651,15 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
                         <span className="text-gray-500">금은방</span>
-                        <div className="font-medium">{formatRate(history.goldShopRate)}</div>
+                        <div className="font-medium">{formatRate(history.goldShopRate, history.fromCurrency)}</div>
                       </div>
                       <div>
                         <span className="text-gray-500">매입</span>
-                        <div className="font-medium text-green-600">{formatRate(history.myBuyRate)}</div>
+                        <div className="font-medium text-green-600">{formatRate(history.myBuyRate, history.fromCurrency)}</div>
                       </div>
                       <div>
                         <span className="text-gray-500">매도</span>
-                        <div className="font-medium text-red-600">{formatRate(history.mySellRate)}</div>
+                        <div className="font-medium text-red-600">{formatRate(history.mySellRate, history.fromCurrency)}</div>
                       </div>
                     </div>
                   </div>
