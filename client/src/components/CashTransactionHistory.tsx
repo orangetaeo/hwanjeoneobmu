@@ -85,11 +85,13 @@ export default function CashTransactionHistory({
       let isIncrease = false;
       
       if ((transaction.type as string) === 'cash_exchange') {
-        // cash_exchange의 경우 fromAsset이면 감소, toAsset이면 증가 (정확한 로직)
+        // cash_exchange 비즈니스 로직: 고객이 KRW를 주고 VND를 받아감
+        // fromAssetName = 고객이 준 돈 = 사업자가 받음(증가)
+        // toAssetName = 고객이 받은 돈 = 사업자가 줌(감소)
         if (transaction.fromAssetName === cashAsset.name) {
-          isDecrease = true; // FROM에서 나가는 것은 감소
+          isIncrease = true; // 고객이 준 돈을 사업자가 받음 (증가)
         } else if (transaction.toAssetName === cashAsset.name) {
-          isIncrease = true; // TO로 들어오는 것은 증가
+          isDecrease = true; // 고객이 받은 돈을 사업자가 줌 (감소)
         }
       } else {
         // cash_change의 경우 기존 로직 유지
@@ -132,12 +134,14 @@ export default function CashTransactionHistory({
     let amount = 0;
     
     if ((transaction.type as string) === 'cash_exchange') {
-      // cash_exchange의 경우 fromAsset이면 감소, toAsset이면 증가 (올바른 로직)
+      // cash_exchange 비즈니스 로직: 고객이 KRW를 주고 VND를 받아감
+      // fromAssetName = 고객이 준 돈 = 사업자가 받음(증가)
+      // toAssetName = 고객이 받은 돈 = 사업자가 줌(감소)
       if (transaction.fromAssetName === cashAsset.name) {
-        isDecrease = true; // FROM에서 나가는 것은 감소
+        isIncrease = true; // 고객이 준 돈을 사업자가 받음 (증가)
         amount = parseFloat(transaction.fromAmount.toString());
       } else if (transaction.toAssetName === cashAsset.name) {
-        isIncrease = true; // TO로 들어오는 것은 증가
+        isDecrease = true; // 고객이 받은 돈을 사업자가 줌 (감소)
         amount = parseFloat(transaction.toAmount.toString());
       }
     } else {
