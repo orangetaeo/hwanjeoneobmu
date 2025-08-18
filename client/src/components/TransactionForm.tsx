@@ -771,12 +771,13 @@ export default function TransactionForm() {
                   권종별 분배 (고액권 우선)
                 </div>
                 <div className="space-y-2 sm:space-y-3">
-                  {[500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                    // 단순히 toAmount 기준으로 계산 (권종 접기와 무관)
+                  {(() => {
+                    // VND 분배는 항상 toAmount만 기준으로 계산 (권종과 완전히 분리)
                     const totalVNDAmount = parseFloat(formData.toAmount || "0");
-                    const autoBreakdown = calculateVNDBreakdown(Math.floor(totalVNDAmount));
-                    const currentBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : autoBreakdown;
-                    const count = currentBreakdown[denom.toString()] || 0;
+                    const fixedBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(totalVNDAmount));
+                    
+                    return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
+                      const count = fixedBreakdown[denom.toString()] || 0;
                     
                     // VND 현금 자산의 지폐 구성에서 실제 보유 수량 가져오기
                     const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -825,7 +826,8 @@ export default function TransactionForm() {
                       );
                     }
                     return null;
-                  })}
+                    });
+                  })()}
                 </div>
                 
                 {/* 권종별 분배 총액 확인 - 모바일 최적화 */}
