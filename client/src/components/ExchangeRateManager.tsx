@@ -484,12 +484,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                           {rate.denomination && (
                             <Badge variant="outline">{formatDenomination(rate.denomination, rate.fromCurrency)}</Badge>
                           )}
-                          {rate.isActive === "false" && (
-                            <Badge variant="destructive">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              비활성화
-                            </Badge>
-                          )}
+
                         </div>
                         <span className="text-xs text-gray-500">
                           {new Date(rate.updatedAt).toLocaleString("ko-KR")}
@@ -525,10 +520,10 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                             id: rate.id, 
                             isActive: rate.isActive !== "true" 
                           })}
-                          disabled={toggleMutation.isPending}
+                          disabled={toggleMutation.isPending && toggleMutation.variables?.id === rate.id}
                           className="text-xs px-3 py-1"
                         >
-                          {toggleMutation.isPending ? "처리중..." : 
+                          {(toggleMutation.isPending && toggleMutation.variables?.id === rate.id) ? "처리중..." : 
                            rate.isActive === "true" ? "비활성화" : "활성화"}
                         </Button>
                       </div>
