@@ -311,15 +311,20 @@ export default function TransactionForm() {
       }, 0);
       
       if (calculatedToAmount > 0) {
+        // VND의 경우 천 단위 반내림 적용
+        const finalAmount = formData.toCurrency === "VND" ? 
+          formatVNDWithRoundDown(calculatedToAmount) : 
+          Math.floor(calculatedToAmount);
+          
         setFormData(prev => ({ 
           ...prev, 
-          toAmount: Math.floor(calculatedToAmount).toString(),
-          exchangeRate: (calculatedToAmount / total).toString()
+          toAmount: finalAmount.toString(),
+          exchangeRate: (finalAmount / total).toString()
         }));
         
         // VND인 경우 권종별 분배도 업데이트
         if (formData.toCurrency === "VND") {
-          const breakdown = calculateVNDBreakdown(Math.floor(calculatedToAmount));
+          const breakdown = calculateVNDBreakdown(finalAmount);
           setVndBreakdown(breakdown);
         }
       }
@@ -346,6 +351,28 @@ export default function TransactionForm() {
     }
 
     // 고객 정보는 선택사항이므로 검증 제거
+
+    // 권종별 보유 수량 검증 (VND 분배)
+    if (formData.toCurrency === "VND" && Object.keys(vndBreakdown).length > 0) {
+      const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+        asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+      ) : null;
+      
+      if (vndCashAsset?.metadata?.denominations) {
+        const denomComposition = vndCashAsset.metadata.denominations;
+        for (const [denom, requiredCount] of Object.entries(vndBreakdown)) {
+          const availableCount = denomComposition[denom] || 0;
+          if (requiredCount > availableCount) {
+            toast({
+              variant: "destructive",
+              title: "보유 수량 부족",
+              description: `${parseInt(denom).toLocaleString()} VND 권종이 ${requiredCount - availableCount}장 부족합니다.`,
+            });
+            return;
+          }
+        }
+      }
+    }
 
     // 거래 데이터 구성
     const transactionData = {
@@ -377,10 +404,24 @@ export default function TransactionForm() {
     createTransactionMutation.mutate(transactionData);
   };
 
-  // 숫자 포맷팅 함수
-  const formatNumber = (num: string | number) => {
+  // VND 천 단위 반내림 함수
+  const formatVNDWithRoundDown = (amount: number) => {
+    // 천 단위 반내림 (마지막 3자리를 000으로 만들기)
+    const roundedDown = Math.floor(amount / 1000) * 1000;
+    return roundedDown;
+  };
+
+  // 숫자 포맷팅 함수 (통화별 처리)
+  const formatNumber = (num: string | number, currency?: string) => {
     if (!num) return "";
     const numValue = typeof num === "string" ? parseFloat(num) : num;
+    
+    // VND의 경우 천 단위 반내림 적용
+    if (currency === "VND") {
+      const roundedDown = formatVNDWithRoundDown(numValue);
+      return roundedDown.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+    }
+    
     return numValue.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
   };
 
@@ -563,11 +604,16 @@ export default function TransactionForm() {
                               </div>
                               {useRate > 0 && formData.denominationAmounts[denom.value] && (
                                 <div className="text-xs text-orange-600 font-medium mt-1">
-                                  환전 예상: ≈ {Math.floor(
-                                    parseFloat(formData.denominationAmounts[denom.value]) * 
-                                    getDenominationValue(formData.fromCurrency, denom.value) * 
-                                    useRate
-                                  ).toLocaleString()} {formData.toCurrency}
+                                  환전 예상: ≈ {(() => {
+                                    const calculatedAmount = parseFloat(formData.denominationAmounts[denom.value]) * 
+                                      getDenominationValue(formData.fromCurrency, denom.value) * 
+                                      useRate;
+                                    // VND의 경우 천 단위 반내림 적용
+                                    const finalAmount = formData.toCurrency === "VND" ? 
+                                      formatVNDWithRoundDown(calculatedAmount) : 
+                                      Math.floor(calculatedAmount);
+                                    return finalAmount.toLocaleString();
+                                  })()} {formData.toCurrency}
                                   <span className="ml-1 text-gray-500">
                                     (환율: {useRate.toFixed(2)})
                                   </span>
@@ -593,7 +639,12 @@ export default function TransactionForm() {
                         const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
                         const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
                         const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
-                        const exchangedAmount = Math.floor(totalValue * rate);
+                        const calculatedAmount = totalValue * rate;
+                        
+                        // VND의 경우 천 단위 반내림 적용
+                        const exchangedAmount = formData.toCurrency === "VND" ? 
+                          formatVNDWithRoundDown(calculatedAmount) : 
+                          Math.floor(calculatedAmount);
                         
                         return (
                           <div key={denomValue} className="flex justify-between text-xs">
@@ -604,8 +655,8 @@ export default function TransactionForm() {
                       })}
                       <div className="border-t pt-1 mt-2 flex justify-between font-bold text-blue-800">
                         <span>합계</span>
-                        <span>{Math.floor(
-                          formData.fromDenominations.reduce((total, denomValue) => {
+                        <span>{(() => {
+                          const totalCalculated = formData.fromDenominations.reduce((total, denomValue) => {
                             const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
                             if (amount <= 0) return total;
                             
@@ -613,8 +664,15 @@ export default function TransactionForm() {
                             const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
                             const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
                             return total + (totalValue * rate);
-                          }, 0)
-                        ).toLocaleString()} {formData.toCurrency}</span>
+                          }, 0);
+                          
+                          // VND의 경우 천 단위 반내림 적용
+                          const finalTotal = formData.toCurrency === "VND" ? 
+                            formatVNDWithRoundDown(totalCalculated) : 
+                            Math.floor(totalCalculated);
+                          
+                          return finalTotal.toLocaleString();
+                        })()} {formData.toCurrency}</span>
                       </div>
                     </div>
                   </div>
@@ -694,7 +752,7 @@ export default function TransactionForm() {
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-xs font-medium text-orange-700">예상 지급:</span>
                         <span className="text-sm font-bold text-orange-800">
-                          {Math.floor(parseFloat(formData.toAmount)).toLocaleString()} VND
+                          {formatVNDWithRoundDown(parseFloat(formData.toAmount)).toLocaleString()} VND
                         </span>
                       </div>
                       {Math.abs(
@@ -752,7 +810,7 @@ export default function TransactionForm() {
                 <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
                   <div className="text-xl font-bold text-blue-700">
-                    {formatNumber(formData.toAmount)} {formData.toCurrency}
+                    {formatNumber(formData.toAmount, formData.toCurrency)} {formData.toCurrency}
                   </div>
                   <div className="text-sm text-blue-600 mt-1">
                     환전 지급 금액
