@@ -527,10 +527,10 @@ export default function TransactionForm() {
                                 {denom.label}
                               </Label>
                             </div>
-                            {useRate && (
+                            {useRate && typeof useRate === 'number' && (
                               <div className="text-right">
                                 <div className="text-sm font-medium text-green-600">
-                                  {(useRate || 0).toFixed(2)}
+                                  {useRate.toFixed(2)}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   {formData.fromCurrency === "KRW" ? "매도가" : "매입가"}
