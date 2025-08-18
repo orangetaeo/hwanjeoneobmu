@@ -311,9 +311,9 @@ export default function TransactionForm() {
       }, 0);
       
       if (calculatedToAmount > 0) {
-        // VND의 경우 천 단위 반내림 적용
+        // VND의 경우 무조건 내림 적용
         const finalAmount = formData.toCurrency === "VND" ? 
-          formatVNDWithRoundDown(calculatedToAmount) : 
+          formatVNDWithFloor(calculatedToAmount) : 
           Math.floor(calculatedToAmount);
           
         setFormData(prev => ({ 
@@ -404,11 +404,10 @@ export default function TransactionForm() {
     createTransactionMutation.mutate(transactionData);
   };
 
-  // VND 천 단위 반내림 함수
-  const formatVNDWithRoundDown = (amount: number) => {
-    // 천 단위 반내림 (마지막 3자리를 000으로 만들기)
-    const roundedDown = Math.floor(amount / 1000) * 1000;
-    return roundedDown;
+  // VND 무조건 내림 함수
+  const formatVNDWithFloor = (amount: number) => {
+    // 무조건 내림 처리
+    return Math.floor(amount);
   };
 
   // 숫자 포맷팅 함수 (통화별 처리)
@@ -416,10 +415,10 @@ export default function TransactionForm() {
     if (!num) return "";
     const numValue = typeof num === "string" ? parseFloat(num) : num;
     
-    // VND의 경우 천 단위 반내림 적용
+    // VND의 경우 무조건 내림 적용
     if (currency === "VND") {
-      const roundedDown = formatVNDWithRoundDown(numValue);
-      return roundedDown.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+      const floorValue = formatVNDWithFloor(numValue);
+      return floorValue.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
     }
     
     return numValue.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
@@ -608,9 +607,9 @@ export default function TransactionForm() {
                                     const calculatedAmount = parseFloat(formData.denominationAmounts[denom.value]) * 
                                       getDenominationValue(formData.fromCurrency, denom.value) * 
                                       useRate;
-                                    // VND의 경우 천 단위 반내림 적용
+                                    // VND의 경우 무조건 내림 적용
                                     const finalAmount = formData.toCurrency === "VND" ? 
-                                      formatVNDWithRoundDown(calculatedAmount) : 
+                                      formatVNDWithFloor(calculatedAmount) : 
                                       Math.floor(calculatedAmount);
                                     return finalAmount.toLocaleString();
                                   })()} {formData.toCurrency}
@@ -641,9 +640,9 @@ export default function TransactionForm() {
                         const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
                         const calculatedAmount = totalValue * rate;
                         
-                        // VND의 경우 천 단위 반내림 적용
+                        // VND의 경우 무조건 내림 적용
                         const exchangedAmount = formData.toCurrency === "VND" ? 
-                          formatVNDWithRoundDown(calculatedAmount) : 
+                          formatVNDWithFloor(calculatedAmount) : 
                           Math.floor(calculatedAmount);
                         
                         return (
@@ -666,9 +665,9 @@ export default function TransactionForm() {
                             return total + (totalValue * rate);
                           }, 0);
                           
-                          // VND의 경우 천 단위 반내림 적용
+                          // VND의 경우 무조건 내림 적용
                           const finalTotal = formData.toCurrency === "VND" ? 
-                            formatVNDWithRoundDown(totalCalculated) : 
+                            formatVNDWithFloor(totalCalculated) : 
                             Math.floor(totalCalculated);
                           
                           return finalTotal.toLocaleString();
@@ -746,23 +745,23 @@ export default function TransactionForm() {
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-medium text-orange-700">분배 총액:</span>
                         <span className="text-sm font-bold text-orange-800">
-                          {Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString()} VND
+                          {Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString()} VND
                         </span>
                       </div>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-xs font-medium text-orange-700">예상 지급:</span>
                         <span className="text-sm font-bold text-orange-800">
-                          {formatVNDWithRoundDown(parseFloat(formData.toAmount)).toLocaleString()} VND
+                          {formatVNDWithFloor(parseFloat(formData.toAmount)).toLocaleString()} VND
                         </span>
                       </div>
                       {Math.abs(
-                        Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
-                        Math.floor(parseFloat(formData.toAmount))
+                        Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
+                        formatVNDWithFloor(parseFloat(formData.toAmount))
                       ) > 0 && (
                         <div className="mt-1 text-xs text-red-600 font-medium">
                           ⚠️ 차이: {Math.abs(
-                            Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
-                            Math.floor(parseFloat(formData.toAmount))
+                            Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
+                            formatVNDWithFloor(parseFloat(formData.toAmount))
                           ).toLocaleString()} VND
                         </div>
                       )}
