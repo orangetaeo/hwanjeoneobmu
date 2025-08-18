@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote } from "lucide-react";
+import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote, TrendingUp } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Asset {
   id: string;
@@ -43,7 +44,8 @@ const CURRENCY_DENOMINATIONS = {
 // 거래 유형별 설정
 const TRANSACTION_TYPES = [
   { value: "cash_exchange", label: "현금 환전", icon: ArrowRightLeft },
-  { value: "bank_transfer", label: "계좌 송금 환전(카카오뱅크 3333-03-1258874 예금주:김학태)", icon: Banknote }
+  { value: "bank_transfer", label: "계좌 송금 환전(카카오뱅크 3333-03-1258874 예금주:김학태)", icon: Banknote },
+  { value: "foreign_to_account", label: "외화 수령 → 원화 계좌이체", icon: TrendingUp }
 ];
 
 export default function TransactionForm() {
@@ -55,8 +57,9 @@ export default function TransactionForm() {
     transactionType: "cash_exchange",
     fromCurrency: "KRW",
     toCurrency: "VND",
-    fromDenomination: "",
+    fromDenominations: [] as string[], // 여러 권종 선택
     toDenomination: "",
+    denominationAmounts: {} as Record<string, string>, // 권종별 금액
     fromAmount: "",
     toAmount: "",
     exchangeRate: "",
@@ -108,8 +111,9 @@ export default function TransactionForm() {
         transactionType: "cash_exchange",
         fromCurrency: "KRW",
         toCurrency: "VND",
-        fromDenomination: "",
+        fromDenominations: [],
         toDenomination: "",
+        denominationAmounts: {},
         fromAmount: "",
         toAmount: "",
         exchangeRate: "",
@@ -149,10 +153,13 @@ export default function TransactionForm() {
     // 거래 유형에 따른 buy/sell 결정
     const transactionType = formData.fromCurrency === "VND" ? "sell" : "buy";
     
+    // 선택된 권종 중 첫 번째를 기준으로 환율 조회
+    const denomination = formData.fromDenominations.length > 0 ? formData.fromDenominations[0] : "50000";
+    
     const rate = await fetchExchangeRate(
       formData.fromCurrency,
       formData.toCurrency,
-      formData.fromDenomination,
+      denomination,
       transactionType
     );
 
@@ -194,6 +201,26 @@ export default function TransactionForm() {
     }
   };
 
+  // 권종별 총액 계산
+  const calculateTotalFromAmount = () => {
+    let total = 0;
+    Object.entries(formData.denominationAmounts).forEach(([_, amount]) => {
+      const value = parseFloat(amount as string);
+      if (!isNaN(value)) {
+        total += value;
+      }
+    });
+    return total.toFixed(2);
+  };
+
+  // 권종별 금액이 변경될 때 총액 업데이트
+  useEffect(() => {
+    if (formData.transactionType === "cash_exchange" && Object.keys(formData.denominationAmounts).length > 0) {
+      const total = calculateTotalFromAmount();
+      setFormData(prev => ({ ...prev, fromAmount: total }));
+    }
+  }, [formData.denominationAmounts, formData.transactionType]);
+
   // 통화별 자산 필터링
   const getAssetsByCurrency = (currency: string) => {
     return Array.isArray(assets) ? assets.filter((asset: any) => asset.currency === currency) : [];
@@ -213,12 +240,13 @@ export default function TransactionForm() {
       return;
     }
 
-    // 고객 정보 검증 (현금 환전의 경우)
-    if (formData.transactionType === "cash_exchange" && (!formData.customerName || !formData.customerPhone)) {
+    // 고객 정보 검증
+    if ((formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account") && 
+        (!formData.customerName || !formData.customerPhone)) {
       toast({
         variant: "destructive",
         title: "고객 정보 필요",
-        description: "현금 환전 시 고객명과 연락처를 입력하세요.",
+        description: "고객명과 연락처를 입력하세요.",
       });
       return;
     }
@@ -241,7 +269,8 @@ export default function TransactionForm() {
       metadata: {
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
-        fromDenomination: formData.fromDenomination,
+        fromDenominations: formData.fromDenominations,
+        denominationAmounts: formData.denominationAmounts,
         toDenomination: formData.toDenomination,
         exchangeRateSource: calculatedData.rateSource,
         isAutoCalculated: calculatedData.isAutoCalculated
@@ -305,7 +334,7 @@ export default function TransactionForm() {
                 <Label>받는 통화 (From)</Label>
                 <Select 
                   value={formData.fromCurrency} 
-                  onValueChange={(value) => setFormData({ ...formData, fromCurrency: value, fromDenomination: "" })}
+                  onValueChange={(value) => setFormData({ ...formData, fromCurrency: value, fromDenominations: [], denominationAmounts: {} })}
                 >
                   <SelectTrigger data-testid="select-from-currency">
                     <SelectValue placeholder="통화 선택" />
@@ -339,21 +368,72 @@ export default function TransactionForm() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>받는 권종</Label>
-                <Select 
-                  value={formData.fromDenomination} 
-                  onValueChange={(value) => setFormData({ ...formData, fromDenomination: value })}
-                >
-                  <SelectTrigger data-testid="select-from-denomination">
-                    <SelectValue placeholder="권종 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
+                {formData.transactionType === "bank_transfer" || formData.transactionType === "foreign_to_account" ? (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="총 금액 입력"
+                      value={formData.fromAmount}
+                      onChange={(e) => setFormData({ ...formData, fromAmount: e.target.value })}
+                      data-testid="input-total-amount"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      계좌이체/송금 시 총 금액만 입력
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
                     {CURRENCY_DENOMINATIONS[formData.fromCurrency as keyof typeof CURRENCY_DENOMINATIONS]?.map((denom) => (
-                      <SelectItem key={denom.value} value={denom.value}>
-                        {denom.label}
-                      </SelectItem>
+                      <div key={denom.value} className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`denom-${denom.value}`}
+                            checked={formData.fromDenominations.includes(denom.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  fromDenominations: [...formData.fromDenominations, denom.value]
+                                });
+                              } else {
+                                const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
+                                const newAmounts = { ...formData.denominationAmounts };
+                                delete newAmounts[denom.value];
+                                setFormData({
+                                  ...formData,
+                                  fromDenominations: newDenominations,
+                                  denominationAmounts: newAmounts
+                                });
+                              }
+                            }}
+                            data-testid={`checkbox-denom-${denom.value}`}
+                          />
+                          <Label htmlFor={`denom-${denom.value}`} className="text-sm">
+                            {denom.label}
+                          </Label>
+                        </div>
+                        {formData.fromDenominations.includes(denom.value) && (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="금액"
+                            value={formData.denominationAmounts[denom.value] || ""}
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              denominationAmounts: {
+                                ...formData.denominationAmounts,
+                                [denom.value]: e.target.value
+                              }
+                            })}
+                            data-testid={`input-amount-${denom.value}`}
+                            className="ml-6 w-32"
+                          />
+                        )}
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
               </div>
               <div>
                 <Label>주는 권종</Label>
@@ -419,18 +499,29 @@ export default function TransactionForm() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>받는 금액 ({formData.fromCurrency})</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0"
-                  value={formData.fromAmount}
-                  onChange={(e) => {
-                    setFormData({ ...formData, fromAmount: e.target.value });
-                    handleAmountCalculation('fromAmount', e.target.value);
-                  }}
-                  data-testid="input-from-amount"
-                />
-                {formData.fromAmount && (
+                {formData.transactionType === "cash_exchange" ? (
+                  <div className="p-3 bg-green-50 border rounded-lg">
+                    <div className="text-lg font-semibold text-green-700">
+                      {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
+                    </div>
+                    <div className="text-xs text-green-600 mt-1">
+                      권종별 금액 합계
+                    </div>
+                  </div>
+                ) : (
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0"
+                    value={formData.fromAmount}
+                    onChange={(e) => {
+                      setFormData({ ...formData, fromAmount: e.target.value });
+                      handleAmountCalculation('fromAmount', e.target.value);
+                    }}
+                    data-testid="input-from-amount"
+                  />
+                )}
+                {formData.fromAmount && formData.transactionType !== "cash_exchange" && (
                   <div className="text-xs text-gray-500 mt-1">
                     {formatNumber(formData.fromAmount)} {formData.fromCurrency}
                   </div>
@@ -457,8 +548,8 @@ export default function TransactionForm() {
               </div>
             </div>
 
-            {/* 고객 정보 (현금 환전 시) */}
-            {formData.transactionType === "cash_exchange" && (
+            {/* 고객 정보 */}
+            {(formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account") && (
               <div className="p-4 bg-yellow-50 rounded-lg space-y-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
