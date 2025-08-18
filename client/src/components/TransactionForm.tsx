@@ -565,12 +565,9 @@ export default function TransactionForm() {
                           onClick={() => {
                             if (isSelected) {
                               const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
-                              const newAmounts = { ...formData.denominationAmounts };
-                              delete newAmounts[denom.value];
                               setFormData({
                                 ...formData,
-                                fromDenominations: newDenominations,
-                                denominationAmounts: newAmounts
+                                fromDenominations: newDenominations
                               });
                             } else {
                               setFormData({
