@@ -861,22 +861,17 @@ export default function TransactionForm() {
                     console.log("VND difference:", difference);
                     console.log("Difference > 0:", difference > 0);
                     
-                    // 천 단위 내림으로 인한 차이 계산
-                    const originalAmount = vndOriginalAmount;
-                    const flooredAmount = Math.floor(originalAmount / 1000) * 1000;
-                    const thousandDifference = originalAmount - flooredAmount;
-                    
-                    return thousandDifference > 0 ? (
+                    return difference > 1 ? (
                       <span className="text-sm text-orange-600 font-medium">
-                        ⚠️ 차이: {Math.floor(thousandDifference).toLocaleString()} VND
+                        ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
                       </span>
                     ) : null;
                   })()}
                 </div>
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
                   <div className="text-xl font-bold text-blue-700">
-                    {formData.toCurrency === "VND" && vndOriginalAmount > 0 ? 
-                      (Math.floor(vndOriginalAmount / 1000) * 1000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
+                    {formData.toCurrency === "VND" ? 
+                      (Math.floor(parseFloat(formData.toAmount) / 1000) * 1000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
                       formatNumber(formData.toAmount, formData.toCurrency)
                     } {formData.toCurrency}
                   </div>
