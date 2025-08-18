@@ -572,13 +572,13 @@ export default function TransactionForm() {
                                   </div>
                                 )}
                               </div>
-                              {useRate && typeof useRate === 'number' && formData.denominationAmounts[denom.value] && (
+                              {useRate > 0 && formData.denominationAmounts[denom.value] && (
                                 <div className="text-xs text-orange-600 font-medium mt-1">
-                                  환전 예상: ≈ {(
+                                  환전 예상: ≈ {Math.floor(
                                     parseFloat(formData.denominationAmounts[denom.value]) * 
                                     getDenominationValue(formData.fromCurrency, denom.value) * 
                                     useRate
-                                  ).toFixed(2)} {formData.toCurrency}
+                                  ).toLocaleString()} {formData.toCurrency}
                                   <span className="ml-1 text-gray-500">
                                     (환율: {useRate.toFixed(2)})
                                   </span>
@@ -605,8 +605,10 @@ export default function TransactionForm() {
                         const currentBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : autoBreakdown;
                         const count = currentBreakdown[denom.toString()] || 0;
                         
-                        // VND 현금 자산에서 현재 보유 수량 계산 (임시로 전체 금액 / 권종 가치)
-                        const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => asset.name === "VND 현금") : null;
+                        // VND 현금 자산에서만 현재 보유 수량 계산
+                        const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                          asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                        ) : null;
                         const totalVndCash = vndCashAsset ? parseFloat(vndCashAsset.balance) : 0;
                         const availableCount = Math.floor(totalVndCash / denom);
                         
