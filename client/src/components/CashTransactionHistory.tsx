@@ -168,10 +168,10 @@ export default function CashTransactionHistory({
       // -> 사업자는 VND를 수령하고 KRW를 지급 (하지만 고객 관점에서는 KRW를 수령)
       
       if (cashAsset.currency === 'KRW') {
-        // KRW 자산 - 실제로는 감소하지만 고객이 KRW를 받았으므로 "수령"으로 표기
+        // KRW 자산 - 사업자가 고객으로부터 VND를 받고 KRW를 줌 = KRW 현금 수령
         return 'KRW 현금 환전 수령';
       } else if (cashAsset.currency === 'VND') {
-        // VND 자산 - 실제로는 증가하지만 고객에게 VND를 받았으므로 "지급"으로 표기  
+        // VND 자산 - 사업자가 고객으로부터 VND를 받음 = VND 현금 지급  
         return 'VND 현금 환전 지급';
       }
       

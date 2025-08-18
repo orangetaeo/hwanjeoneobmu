@@ -172,16 +172,17 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
 
   const { date, time } = formatDateTime(transaction.timestamp);
 
-  // 환전 타입 텍스트 결정 - 비즈니스 규칙에 따른 표기
+  // 환전 타입 텍스트 결정 - 비즈니스 관점에 맞춘 표기
   const getExchangeTypeText = (transaction: Transaction) => {
     if ((transaction.type as string) !== 'cash_exchange') return '';
     
-    // 정확한 비즈니스 규칙 적용:
-    // KRW→VND 거래에서: KRW 증가 = "수령", VND 증가 = "지급"
-    if (transaction.toAssetName && transaction.toAssetName.includes('KRW')) {
-      return 'KRW 현금 환전 수령'; // KRW 증가는 수령
+    // 비즈니스 관점: 고객이 VND 주고 KRW 받아감
+    // 사업자는 VND를 받고(수령) KRW를 줌(지급)
+    // 하지만 거래 기록상 KRW가 fromAsset, VND가 toAsset이므로 비즈니스 의미로 해석
+    if (transaction.fromAssetName && transaction.fromAssetName.includes('KRW')) {
+      return 'KRW 현금 환전 수령'; // KRW가 관련된 거래는 KRW 수령
     } else if (transaction.toAssetName && transaction.toAssetName.includes('VND')) {
-      return 'VND 현금 환전 지급'; // VND 증가는 지급
+      return 'VND 현금 환전 지급'; // VND가 관련된 거래는 VND 지급
     }
     
     return '현금환전';
