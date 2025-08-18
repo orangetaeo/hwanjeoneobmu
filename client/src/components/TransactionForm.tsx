@@ -59,7 +59,7 @@ export default function TransactionForm() {
     toCurrency: "VND",
     fromDenominations: [] as string[], // 여러 권종 선택
     toDenomination: "",
-    denominationAmounts: {} as Record<string, string>, // 권종별 금액
+    denominationAmounts: {} as Record<string, string>, // 권종별 수량
     fromAmount: "",
     toAmount: "",
     exchangeRate: "",
@@ -206,16 +206,17 @@ export default function TransactionForm() {
     }
   };
 
-  // 권종별 총액 계산
+  // 권종별 총액 계산 (수량 × 권종 가치)
   const calculateTotalFromAmount = () => {
     let total = 0;
-    Object.entries(formData.denominationAmounts).forEach(([_, amount]) => {
-      const value = parseFloat(amount as string);
-      if (!isNaN(value)) {
-        total += value;
+    Object.entries(formData.denominationAmounts).forEach(([denomination, quantity]) => {
+      const qty = parseFloat(quantity as string);
+      if (!isNaN(qty)) {
+        const denominationValue = getDenominationValue(formData.fromCurrency, denomination);
+        total += qty * denominationValue;
       }
     });
-    return total.toFixed(2);
+    return total;
   };
 
   // 특정 권종의 환율 정보 조회
@@ -237,6 +238,20 @@ export default function TransactionForm() {
     } else {
       return rate.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
     }
+  };
+
+  // 권종 가치 계산 함수
+  const getDenominationValue = (currency: string, denomination: string): number => {
+    if (currency === "KRW") {
+      if (denomination === "50000") return 50000;
+      if (denomination === "10000") return 10000;
+      if (denomination === "5000_1000") return 6000; // 5천원 + 1천원 조합
+    } else if (currency === "USD") {
+      return parseInt(denomination) || 0;
+    } else if (currency === "VND") {
+      return parseInt(denomination) || 0;
+    }
+    return 0;
   };
 
   // 권종별 금액이 변경될 때 총액 업데이트
@@ -457,26 +472,40 @@ export default function TransactionForm() {
                             )}
                           </div>
                           {formData.fromDenominations.includes(denom.value) && (
-                            <div className="ml-6 flex items-center space-x-2">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="금액"
-                                value={formData.denominationAmounts[denom.value] || ""}
-                                onChange={(e) => setFormData({
-                                  ...formData,
-                                  denominationAmounts: {
-                                    ...formData.denominationAmounts,
-                                    [denom.value]: e.target.value
-                                  }
-                                })}
-                                data-testid={`input-amount-${denom.value}`}
-                                className="w-32"
-                              />
+                            <div className="ml-6 space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  placeholder="수량"
+                                  value={formData.denominationAmounts[denom.value] || ""}
+                                  onChange={(e) => setFormData({
+                                    ...formData,
+                                    denominationAmounts: {
+                                      ...formData.denominationAmounts,
+                                      [denom.value]: e.target.value
+                                    }
+                                  })}
+                                  data-testid={`input-quantity-${denom.value}`}
+                                  className="w-20"
+                                />
+                                <span className="text-sm text-gray-600">장</span>
+                                {formData.denominationAmounts[denom.value] && (
+                                  <div className="text-sm font-medium text-blue-600">
+                                    = {formatNumber(
+                                      parseFloat(formData.denominationAmounts[denom.value]) * 
+                                      getDenominationValue(formData.fromCurrency, denom.value)
+                                    )} {formData.fromCurrency}
+                                  </div>
+                                )}
+                              </div>
                               {rateInfo && formData.denominationAmounts[denom.value] && (
-                                <div className="text-xs text-gray-600">
-                                  ≈ {formatRate(
-                                    parseFloat(formData.denominationAmounts[denom.value]) * rateInfo.myBuyRate, 
+                                <div className="text-xs text-gray-600 ml-2">
+                                  환전 예상: ≈ {formatRate(
+                                    parseFloat(formData.denominationAmounts[denom.value]) * 
+                                    getDenominationValue(formData.fromCurrency, denom.value) * 
+                                    rateInfo.myBuyRate, 
                                     formData.toCurrency
                                   )} {formData.toCurrency}
                                 </div>
@@ -559,7 +588,7 @@ export default function TransactionForm() {
                       {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
                     </div>
                     <div className="text-xs text-green-600 mt-1">
-                      권종별 금액 합계
+                      권종별 총액 합계
                     </div>
                   </div>
                 ) : (
