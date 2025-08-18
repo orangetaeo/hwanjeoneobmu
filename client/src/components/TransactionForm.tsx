@@ -617,13 +617,24 @@ export default function TransactionForm() {
                                     step="1"
                                     placeholder="0"
                                     value={formData.denominationAmounts[denom.value] || ""}
-                                    onChange={(e) => setFormData({
-                                      ...formData,
-                                      denominationAmounts: {
-                                        ...formData.denominationAmounts,
-                                        [denom.value]: e.target.value
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      // 정수만 허용 (소수점 제거)
+                                      const integerValue = value.replace(/[^0-9]/g, '');
+                                      setFormData({
+                                        ...formData,
+                                        denominationAmounts: {
+                                          ...formData.denominationAmounts,
+                                          [denom.value]: integerValue
+                                        }
+                                      });
+                                    }}
+                                    onKeyDown={(e) => {
+                                      // 소수점, 마이너스, e, E 등 문자 입력 방지
+                                      if (['.', '-', '+', 'e', 'E'].includes(e.key)) {
+                                        e.preventDefault();
                                       }
-                                    })}
+                                    }}
                                     onClick={(e) => e.stopPropagation()}
                                     data-testid={`input-quantity-${denom.value}`}
                                     className="w-32 h-12 text-center font-semibold text-lg border-2 border-gray-300 rounded-lg focus:border-green-500"
