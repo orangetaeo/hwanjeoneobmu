@@ -332,6 +332,7 @@ export default function TransactionForm() {
       if (Object.keys(formData.denominationAmounts).length === 0 || total === 0) {
         setVndBreakdown({});
         setVndOriginalAmount(0);
+        setVndBaseAmount(0);
         setFormData(prev => ({ ...prev, toAmount: "0" }));
         return;
       }
@@ -365,9 +366,12 @@ export default function TransactionForm() {
             exchangeRate: (finalAmount / total).toString()
           }));
           
-          // VND인 경우 권종별 분배도 업데이트
-          const breakdown = calculateVNDBreakdown(finalAmount);
-          setVndBreakdown(breakdown);
+          // VND 기준 금액 설정 (처음 계산 시에만)
+          if (vndBaseAmount === 0) {
+            setVndBaseAmount(finalAmount);
+            const breakdown = calculateVNDBreakdown(finalAmount);
+            setVndBreakdown(breakdown);
+          }
         } else {
           setVndOriginalAmount(0); // 다른 통화는 0으로 리셋
           const finalAmount = Math.floor(calculatedToAmount);
@@ -381,6 +385,7 @@ export default function TransactionForm() {
         // 계산된 금액이 0이면 모든 것을 초기화
         setVndBreakdown({});
         setVndOriginalAmount(0);
+        setVndBaseAmount(0);
         setFormData(prev => ({ ...prev, toAmount: "0" }));
       }
     }
