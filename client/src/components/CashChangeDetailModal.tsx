@@ -1,4 +1,5 @@
-import { Transaction, CashAsset } from '@shared/schema';
+import { Transaction } from '@shared/schema';
+import { CashAsset } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -26,8 +27,12 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   
   // cash_exchange 타입의 경우 현재 보고 있는 통화에 맞는 권종별 변화 데이터만 생성
   if ((transaction.type as string) === 'cash_exchange') {
+    console.log('Cash exchange transaction metadata:', metadata);
     const denominationAmounts = metadata?.denominationAmounts || {};
     const vndBreakdown = metadata?.vndBreakdown || {};
+    console.log('denominationAmounts:', denominationAmounts);
+    console.log('vndBreakdown:', vndBreakdown);
+    console.log('cashAsset.currency:', cashAsset.currency);
     
     // 현재 보고 있는 현금 자산의 통화에 따라 해당 권종만 표시
     if (cashAsset.currency === 'KRW') {
@@ -39,11 +44,22 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
       });
     } else if (cashAsset.currency === 'VND') {
       // VND 현금 상세 페이지: vndBreakdown (VND 감소)
-      Object.entries(vndBreakdown).forEach(([denom, amount]) => {
-        if (amount && (amount as number) > 0) {
-          denominationChanges[denom] = -(amount as number); // VND 감소
+      if (Object.keys(vndBreakdown).length === 0) {
+        // vndBreakdown이 없는 경우, VND 거래 금액으로 임시 권종 생성
+        const vndAmount = parseFloat(transaction.toAmount.toString());
+        console.log('VND amount from toAmount:', vndAmount);
+        denominationChanges['500000'] = -(Math.floor(vndAmount / 500000));
+        const remaining = vndAmount % 500000;
+        if (remaining >= 100000) {
+          denominationChanges['100000'] = -(Math.floor(remaining / 100000));
         }
-      });
+      } else {
+        Object.entries(vndBreakdown).forEach(([denom, amount]) => {
+          if (amount && (amount as number) > 0) {
+            denominationChanges[denom] = -(amount as number); // VND 감소
+          }
+        });
+      }
     }
   }
   
