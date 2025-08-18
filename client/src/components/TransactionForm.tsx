@@ -567,6 +567,28 @@ export default function TransactionForm() {
                     ))}
                   </SelectContent>
                 </Select>
+                
+                {/* VND 권종별 분배 표시 */}
+                {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
+                  <div className="mt-3 p-3 bg-orange-50 border rounded-lg">
+                    <div className="text-sm font-medium text-orange-700 mb-2">권종별 분배 (고액권 우선)</div>
+                    <div className="space-y-1 text-xs">
+                      {[500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
+                        const breakdown = calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)));
+                        const count = breakdown[denom.toString()] || 0;
+                        if (count > 0) {
+                          return (
+                            <div key={denom} className="flex justify-between">
+                              <span>{formatNumber(denom)} VND</span>
+                              <span className="font-medium text-orange-600">{count}장</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -623,25 +645,7 @@ export default function TransactionForm() {
                   </div>
                 )}
                 
-                {/* VND 권종별 분배 표시 */}
-                {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
-                  <div className="mt-3 p-3 bg-orange-50 border rounded-lg">
-                    <div className="text-sm font-medium text-orange-700 mb-2">권종별 분배 (고액권 우선)</div>
-                    <div className="space-y-1 text-xs">
-                      {Object.entries(calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).map(([denom, count]) => {
-                        if (count > 0) {
-                          return (
-                            <div key={denom} className="flex justify-between">
-                              <span>{formatNumber(parseInt(denom))} VND</span>
-                              <span className="font-medium text-orange-600">{count}장</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
-                  </div>
-                )}
+
               </div>
             </div>
 
