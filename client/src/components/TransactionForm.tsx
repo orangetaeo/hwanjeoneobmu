@@ -277,18 +277,24 @@ export default function TransactionForm() {
       const total = calculateTotalFromAmount();
       setFormData(prev => ({ ...prev, fromAmount: total.toString() }));
       
-      // 첫 번째 선택된 권종의 매입 시세로 환율 자동 설정
+      // 첫 번째 선택된 권종의 적절한 시세로 환율 자동 설정
       const firstDenomination = formData.fromDenominations[0];
       if (firstDenomination) {
         const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, firstDenomination);
-        if (rateInfo && rateInfo.myBuyRate) {
-          const newExchangeRate = rateInfo.myBuyRate.toString();
-          const calculatedToAmount = (total * rateInfo.myBuyRate).toString();
-          setFormData(prev => ({ 
-            ...prev, 
-            exchangeRate: newExchangeRate,
-            toAmount: calculatedToAmount
-          }));
+        if (rateInfo) {
+          // KRW → 외화: 매도가 사용 (환전소가 외화를 매도)
+          // 외화 → KRW: 매입가 사용 (환전소가 외화를 매입)
+          const useRate = formData.fromCurrency === "KRW" ? rateInfo.mySellRate : rateInfo.myBuyRate;
+          
+          if (useRate) {
+            const newExchangeRate = useRate.toString();
+            const calculatedToAmount = (total * useRate).toString();
+            setFormData(prev => ({ 
+              ...prev, 
+              exchangeRate: newExchangeRate,
+              toAmount: calculatedToAmount
+            }));
+          }
         }
       }
     }
