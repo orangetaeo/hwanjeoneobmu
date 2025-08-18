@@ -1452,10 +1452,10 @@ export default function HomePage() {
                   <ExchangeOperations />
                 )}
                 {currentView === 'new-transaction' && (
-                  <AdvancedTransactionForm
+                  <TransactionForm
                     allAssets={allAssetsForTransaction}
-                    onTransactionSuccess={handleAdvancedTransactionSuccess}
-                    onCancel={() => setCurrentView('dashboard')}
+                    onTransactionSuccess={() => setCurrentView('dashboard')}
+                    onOpenModal={handleOpenModal}
                   />
                 )}
                 {currentView === 'rates' && (
