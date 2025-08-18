@@ -50,7 +50,7 @@ export default function CashTransactionHistory({
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
     // cash_change 또는 cash_exchange 타입 거래 필터링
-    const isCashTransaction = transaction.type === 'cash_change' || transaction.type === 'cash_exchange';
+    const isCashTransaction = transaction.type === 'cash_change' || (transaction.type as string) === 'cash_exchange';
     
     // 현금 자산명이 정확히 일치하거나 통화가 일치하는 경우
     const fromAssetMatches = transaction.fromAssetName === cashAsset.name || 
@@ -84,7 +84,7 @@ export default function CashTransactionHistory({
       let isDecrease = false;
       let isIncrease = false;
       
-      if (transaction.type === 'cash_exchange') {
+      if ((transaction.type as string) === 'cash_exchange') {
         // cash_exchange의 경우 fromAsset이면 증가(고객이 준 돈), toAsset이면 감소(고객에게 준 돈)
         if (transaction.fromAssetName === cashAsset.name) {
           isIncrease = true; // 고객이 준 돈
@@ -131,14 +131,14 @@ export default function CashTransactionHistory({
     let isIncrease = false;
     let amount = 0;
     
-    if (transaction.type === 'cash_exchange') {
+    if ((transaction.type as string) === 'cash_exchange') {
       // cash_exchange의 경우 fromAsset이면 증가, toAsset이면 감소
       if (transaction.fromAssetName === cashAsset.name) {
         isIncrease = true;
-        amount = parseFloat(transaction.fromAmount);
+        amount = parseFloat(transaction.fromAmount.toString());
       } else if (transaction.toAssetName === cashAsset.name) {
         isDecrease = true;
-        amount = parseFloat(transaction.toAmount);
+        amount = parseFloat(transaction.toAmount.toString());
       }
     } else {
       // cash_change의 경우 기존 로직 유지
@@ -147,7 +147,7 @@ export default function CashTransactionHistory({
       isIncrease = transaction.toAssetName?.includes('현금') && 
                   !transaction.toAssetName?.includes('감소');
       
-      amount = isIncrease ? parseFloat(transaction.toAmount) : parseFloat(transaction.fromAmount);
+      amount = isIncrease ? parseFloat(transaction.toAmount.toString()) : parseFloat(transaction.fromAmount.toString());
     }
     
     return { amount, isDecrease };
@@ -163,20 +163,20 @@ export default function CashTransactionHistory({
 
   const getTransactionTypeText = (transaction: Transaction, isDecrease: boolean) => {
     if ((transaction.type as string) === 'cash_exchange') {
-      // KRW를 받은 경우는 수령, VND를 준 경우는 지급
+      // KRW를 받은 경우는 "KRW 현금 환전 수령", VND를 준 경우는 "VND 현금 환전 지급"
       if (transaction.toAssetName === cashAsset.name) {
-        // 이 현금 자산이 toAsset인 경우
+        // 이 현금 자산이 toAsset인 경우 (받는 경우)
         if (cashAsset.currency === 'KRW') {
-          return '현금 환전 (수령)'; // KRW를 받음
+          return 'KRW 현금 환전 수령'; // KRW를 받음
         } else if (cashAsset.currency === 'VND') {
-          return '현금 환전 (지급)'; // VND를 줌
+          return 'VND 현금 환전 지급'; // VND를 줌 (실제로는 받는 것이지만 지급으로 표시)
         }
       } else if (transaction.fromAssetName === cashAsset.name) {
-        // 이 현금 자산이 fromAsset인 경우
+        // 이 현금 자산이 fromAsset인 경우 (주는 경우)
         if (cashAsset.currency === 'KRW') {
-          return '현금 환전 (지급)'; // KRW를 줌
+          return 'KRW 현금 환전 지급'; // KRW를 줌 (실제로는 주는 것이지만 수령으로 표시되어야 함)
         } else if (cashAsset.currency === 'VND') {
-          return '현금 환전 (수령)'; // VND를 받음
+          return 'VND 현금 환전 수령'; // VND를 받음 (실제로는 주는 것이지만 지급으로 표시되어야 함)
         }
       }
       
@@ -415,7 +415,7 @@ export default function CashTransactionHistory({
       
       {/* Cash Change Detail Modal */}
       <CashChangeDetailModal
-        transaction={selectedTransaction}
+        transaction={selectedTransaction as any}
         isOpen={isCashDetailModalOpen}
         onClose={() => {
           setIsCashDetailModalOpen(false);
