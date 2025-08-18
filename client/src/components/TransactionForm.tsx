@@ -756,18 +756,9 @@ export default function TransactionForm() {
                 
 
               </div>
-              <div>
-                
-                {/* VND 권종별 분배 표시 (수정 가능) */}
-                {(() => {
-                  console.log("VND 분배 조건 체크:");
-                  console.log("toCurrency:", formData.toCurrency);
-                  console.log("toAmount:", formData.toAmount);
-                  console.log("parseFloat(toAmount):", parseFloat(formData.toAmount || "0"));
-                  const shouldShow = formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0;
-                  console.log("shouldShow:", shouldShow);
-                  return shouldShow;
-                })() && (
+
+              {/* VND 권종별 분배 표시 (수정 가능) - 위치를 권종 선택 영역 밖으로 이동 */}
+              {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
                   <div className="mt-4 p-4 bg-orange-50 border rounded-lg">
                     <div className="text-sm font-medium text-orange-700 mb-3">권종별 분배 (고액권 우선)</div>
                     <div className="space-y-3">
@@ -777,7 +768,7 @@ export default function TransactionForm() {
                         const currentBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : autoBreakdown;
                         const count = currentBreakdown[denom.toString()] || 0;
                         
-                        console.log(`권종 ${denom}: count=${count}, autoBreakdown:`, autoBreakdown, `currentBreakdown:`, currentBreakdown);
+
                         
                         // VND 현금 자산의 지폐 구성에서 실제 보유 수량 가져오기
                         const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -856,7 +847,7 @@ export default function TransactionForm() {
                     </div>
                   </div>
                 )}
-              </div>
+
             </div>
 
 
