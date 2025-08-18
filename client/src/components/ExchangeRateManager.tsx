@@ -216,15 +216,25 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
 
   // 숫자 포맷팅 함수 (USD는 정수, KRW는 소숫점 2자리)
   const formatRate = (rate: string | null, currency: string = 'VND') => {
-    if (!rate) return "-";
+    if (!rate || rate === '') return "-";
     const num = parseFloat(rate);
+    
+    if (isNaN(num)) return "-";
     
     // USD 시세는 정수로 표시
     if (currency === 'USD') {
-      return num.toLocaleString('ko-KR', { maximumFractionDigits: 0, minimumFractionDigits: 0 });
+      return Math.round(num).toLocaleString('ko-KR');
     }
     
-    // KRW나 기타 통화는 소숫점 2자리까지
+    // KRW는 소숫점 2자리로 제한하여 표시
+    if (currency === 'KRW') {
+      return num.toLocaleString('ko-KR', { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+      });
+    }
+    
+    // 기타 통화는 소숫점 2자리까지
     return num.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
   };
 
