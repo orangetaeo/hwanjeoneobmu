@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// 숫자에서 콤마 제거하는 함수
+// 숫자에서 콤마 제거하는 함수 (소숫점은 보존)
 export function removeCommas(value: string): string {
   return value.replace(/,/g, '');
 }
@@ -19,9 +19,27 @@ export function addCommas(value: string): string {
 
 // 입력 필드용 숫자 포맷팅 (콤마 포함)
 export function formatNumberInput(value: string): string {
-  const cleanValue = removeCommas(value);
-  if (!cleanValue || isNaN(Number(cleanValue))) return '';
-  return addCommas(cleanValue);
+  if (!value) return '';
+  
+  // 소숫점과 숫자만 허용하고 콤마는 제거
+  const cleanValue = value.replace(/[^0-9.]/g, '');
+  
+  // 빈 문자열이거나 유효하지 않은 숫자면 원본 반환
+  if (!cleanValue) return '';
+  
+  // 소숫점이 포함된 경우 정수 부분만 콤마 적용
+  if (cleanValue.includes('.')) {
+    const parts = cleanValue.split('.');
+    const integerPart = parts[0];
+    const decimalPart = parts[1] || '';
+    
+    // 정수 부분에 콤마 추가
+    const formattedInteger = integerPart ? Number(integerPart).toLocaleString() : '';
+    return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+  }
+  
+  // 소숫점이 없으면 기존 방식
+  return Number(cleanValue).toLocaleString();
 }
 
 export function formatCurrency(amount: number | string, currency: string = 'KRW'): string {
