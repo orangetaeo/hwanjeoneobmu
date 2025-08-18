@@ -229,11 +229,14 @@ export default function TransactionForm() {
     let total = 0;
     Object.entries(formData.denominationAmounts).forEach(([denomination, quantity]) => {
       const qty = parseFloat(quantity as string);
-      if (!isNaN(qty)) {
+      if (!isNaN(qty) && qty > 0) {
         const denominationValue = getDenominationValue(formData.fromCurrency, denomination);
-        total += qty * denominationValue;
+        const subtotal = qty * denominationValue;
+        console.log(`권종 계산: ${denomination} × ${qty}장 = ${subtotal} ${formData.fromCurrency}`);
+        total += subtotal;
       }
     });
+    console.log(`총 합계: ${total} ${formData.fromCurrency}`);
     return total;
   };
 
