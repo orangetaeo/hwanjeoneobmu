@@ -505,6 +505,18 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
           accountHolder: '김학태'
         }
       },
+      {
+        userId,
+        type: 'account',
+        name: '카카오뱅크 (김학태)',
+        currency: 'KRW',
+        balance: '0',
+        metadata: {
+          bankName: '카카오뱅크',
+          accountNumber: '3333-03-1258874',
+          accountHolder: '김학태'
+        }
+      },
       // 베트남 은행 계좌들 (현재 저장된 데이터 반영)
       {
         userId,

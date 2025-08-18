@@ -43,8 +43,7 @@ const CURRENCY_DENOMINATIONS = {
 // 거래 유형별 설정
 const TRANSACTION_TYPES = [
   { value: "cash_exchange", label: "현금 환전", icon: ArrowRightLeft },
-  { value: "bank_transfer", label: "계좌 송금", icon: Banknote },
-  { value: "customer_deposit", label: "고객 입금", icon: User }
+  { value: "bank_transfer", label: "계좌 송금 환전(카카오뱅크 3333-03-1258874 예금주:김학태)", icon: Banknote }
 ];
 
 export default function TransactionForm() {
