@@ -92,7 +92,22 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
 
   // 환전상 시세 저장/업데이트 mutation
   const saveMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/exchange-rates", "POST", data),
+    mutationFn: async (data: any) => {
+      const response = await fetch("/api/exchange-rates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "시세 저장에 실패했습니다.");
+      }
+
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "환전상 시세 저장 완료",
