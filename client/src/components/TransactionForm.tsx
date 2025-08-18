@@ -861,9 +861,9 @@ export default function TransactionForm() {
                     console.log("VND difference:", difference);
                     console.log("Difference > 0:", difference > 0);
                     
-                    return difference > 1 ? (
+                    return difference > 0 ? (
                       <span className="text-sm text-orange-600 font-medium">
-                        ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
+                        ⚠️ 차이: {difference.toLocaleString()} VND
                       </span>
                     ) : null;
                   })()}
