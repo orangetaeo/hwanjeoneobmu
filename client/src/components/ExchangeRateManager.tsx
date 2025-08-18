@@ -84,6 +84,24 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     queryKey: ["/api/exchange-rates"],
   });
 
+  // 기준통화 변경 시 최근 시세 자동 입력
+  useEffect(() => {
+    if (Array.isArray(exchangeRates) && exchangeRates.length > 0) {
+      const recentRate = exchangeRates
+        .filter((rate: ExchangeRate) => rate.fromCurrency === formData.fromCurrency)
+        .sort((a: ExchangeRate, b: ExchangeRate) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+      
+      if (recentRate) {
+        setFormData(prev => ({
+          ...prev,
+          goldShopRate: recentRate.goldShopRate || "",
+          myBuyRate: recentRate.myBuyRate || "",
+          mySellRate: recentRate.mySellRate || ""
+        }));
+      }
+    }
+  }, [formData.fromCurrency, exchangeRates]);
+
   // 환전상 시세 히스토리 조회
   const { data: rateHistory = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: ["/api/exchange-rates/history"],
@@ -454,10 +472,9 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       .map((rate: ExchangeRate) => (
                     <div 
                       key={rate.id} 
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        rate.isActive === "false" ? "bg-gray-50 border-gray-300" : "bg-white border-gray-200 hover:border-blue-300"
+                      className={`p-4 border rounded-lg ${
+                        rate.isActive === "false" ? "bg-gray-50 border-gray-300" : "bg-white border-gray-200"
                       }`}
-                      onClick={() => toggleMutation.mutate({ id: rate.id, isActive: rate.isActive !== "true" })}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -499,6 +516,22 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                           {rate.memo}
                         </div>
                       )}
+                      
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          size="sm"
+                          variant={rate.isActive === "true" ? "destructive" : "default"}
+                          onClick={() => toggleMutation.mutate({ 
+                            id: rate.id, 
+                            isActive: rate.isActive !== "true" 
+                          })}
+                          disabled={toggleMutation.isPending}
+                          className="text-xs px-3 py-1"
+                        >
+                          {toggleMutation.isPending ? "처리중..." : 
+                           rate.isActive === "true" ? "비활성화" : "활성화"}
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
