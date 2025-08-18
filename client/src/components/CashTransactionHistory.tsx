@@ -85,11 +85,11 @@ export default function CashTransactionHistory({
       let isIncrease = false;
       
       if ((transaction.type as string) === 'cash_exchange') {
-        // cash_exchange의 경우 fromAsset이면 증가(고객이 준 돈), toAsset이면 감소(고객에게 준 돈)
+        // cash_exchange의 경우 fromAsset이면 감소, toAsset이면 증가 (정확한 로직)
         if (transaction.fromAssetName === cashAsset.name) {
-          isIncrease = true; // 고객이 준 돈
+          isDecrease = true; // FROM에서 나가는 것은 감소
         } else if (transaction.toAssetName === cashAsset.name) {
-          isDecrease = true; // 고객에게 준 돈
+          isIncrease = true; // TO로 들어오는 것은 증가
         }
       } else {
         // cash_change의 경우 기존 로직 유지
@@ -132,12 +132,12 @@ export default function CashTransactionHistory({
     let amount = 0;
     
     if ((transaction.type as string) === 'cash_exchange') {
-      // cash_exchange의 경우 fromAsset이면 증가, toAsset이면 감소
+      // cash_exchange의 경우 fromAsset이면 감소, toAsset이면 증가 (올바른 로직)
       if (transaction.fromAssetName === cashAsset.name) {
-        isIncrease = true;
+        isDecrease = true; // FROM에서 나가는 것은 감소
         amount = parseFloat(transaction.fromAmount.toString());
       } else if (transaction.toAssetName === cashAsset.name) {
-        isDecrease = true;
+        isIncrease = true; // TO로 들어오는 것은 증가
         amount = parseFloat(transaction.toAmount.toString());
       }
     } else {
