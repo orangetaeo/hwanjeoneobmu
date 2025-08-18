@@ -163,23 +163,23 @@ export default function CashTransactionHistory({
 
   const getTransactionTypeText = (transaction: Transaction, isDecrease: boolean) => {
     if ((transaction.type as string) === 'cash_exchange') {
-      // 실제 거래 의미에 따른 정확한 표기
-      // KRW를 받는 경우: "KRW 현금 환전 수령"
-      // VND를 주는 경우: "VND 현금 환전 지급"
+      // 비즈니스 규칙에 따른 표기:
+      // - KRW 현금 증가 = "KRW 현금 환전 수령" (고객이 VND 주고 KRW 받음)
+      // - VND 현금 증가 = "VND 현금 환전 지급" (고객에게 VND 줌)
       
       if (transaction.toAssetName === cashAsset.name) {
-        // 이 현금 자산이 증가하는 경우 (받는 경우)
+        // 이 현금 자산이 증가하는 경우
         if (cashAsset.currency === 'KRW') {
           return 'KRW 현금 환전 수령'; // KRW를 받음
         } else if (cashAsset.currency === 'VND') {
-          return 'VND 현금 환전 수령'; // VND를 받음 (실제로는 받는 상황)
+          return 'VND 현금 환전 지급'; // VND 증가지만 지급으로 표기
         }
       } else if (transaction.fromAssetName === cashAsset.name) {
-        // 이 현금 자산이 감소하는 경우 (주는 경우)
+        // 이 현금 자산이 감소하는 경우
         if (cashAsset.currency === 'KRW') {
           return 'KRW 현금 환전 지급'; // KRW를 줌
         } else if (cashAsset.currency === 'VND') {
-          return 'VND 현금 환전 지급'; // VND를 줌
+          return 'VND 현금 환전 수령'; // VND를 받음
         }
       }
       
