@@ -73,6 +73,9 @@ export default function TransactionForm() {
 
   // VND 권종별 분배 수정용 상태
   const [vndBreakdown, setVndBreakdown] = useState<Record<string, number>>({});
+  
+  // VND 분배 기준 금액 (권종 접기와 독립적)
+  const [vndBaseAmount, setVndBaseAmount] = useState<number>(0);
 
   // 권종별 환율의 평균 계산
   const calculateAverageExchangeRate = () => {
@@ -772,9 +775,8 @@ export default function TransactionForm() {
                 </div>
                 <div className="space-y-2 sm:space-y-3">
                   {(() => {
-                    // VND 분배는 항상 toAmount만 기준으로 계산 (권종과 완전히 분리)
-                    const totalVNDAmount = parseFloat(formData.toAmount || "0");
-                    const fixedBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(totalVNDAmount));
+                    // VND 분배는 vndBaseAmount 기준으로 계산 (권종 접기와 완전히 독립)
+                    const fixedBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(vndBaseAmount);
                     
                     return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                       const count = fixedBreakdown[denom.toString()] || 0;
@@ -836,18 +838,16 @@ export default function TransactionForm() {
                     <span className="text-xs font-medium text-orange-700">분배 총액:</span>
                     <span className="text-sm font-bold text-orange-800">
                       {(() => {
-                        const totalVNDAmount = parseFloat(formData.toAmount || "0");
-                        const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(totalVNDAmount));
+                        const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(vndBaseAmount);
                         return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
                       })()} VND
                     </span>
                   </div>
 
                   {(() => {
-                    const totalVNDAmount = parseFloat(formData.toAmount || "0");
-                    const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(totalVNDAmount));
+                    const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(vndBaseAmount);
                     const breakdownTotal = Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0);
-                    const difference = Math.abs(breakdownTotal - Math.floor(totalVNDAmount));
+                    const difference = Math.abs(breakdownTotal - vndBaseAmount);
                     
                     return difference > 0 ? (
                       <div className="mt-1 text-xs text-red-600 font-medium">
