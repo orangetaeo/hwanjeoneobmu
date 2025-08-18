@@ -934,90 +934,16 @@ export default function TransactionForm() {
             </div>
 
             {/* 거래 확인 */}
-            {formData.fromAmount && formData.toAmount && (formData.exchangeRate || calculateTotalFromAmount() > 0) && (
-              <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200 shadow-lg">
-                <div className="p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-green-500 rounded-full">
-                      <ArrowRightLeft className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-800">거래 확인</h3>
-                  </div>
-                  
-                  <div className="grid gap-3">
-                    {/* 고객이 주는 금액 */}
-                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                          <span className="text-red-600 font-bold text-sm">받</span>
-                        </div>
-                        <span className="text-gray-700 font-medium">고객이 주는 금액</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-red-600">
-                          {formatNumber(formData.fromAmount)} {formData.fromCurrency}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 고객이 받는 금액 */}
-                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 font-bold text-sm">줄</span>
-                        </div>
-                        <span className="text-gray-700 font-medium">고객이 받는 금액</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-blue-600">
-                          {formatNumber(formData.toAmount)} {formData.toCurrency}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 적용 환율 */}
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <Calculator className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <span className="text-gray-700 font-medium">적용 환율</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-purple-600">
-                          {formatNumber(calculateAverageExchangeRate().toString())}
-                        </div>
-                        <div className="text-xs text-purple-500 font-medium">(권종별 평균)</div>
-                      </div>
-                    </div>
-
-                    {/* 고객 정보 */}
-                    {formData.customerName && (
-                      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4 text-yellow-600" />
-                          </div>
-                          <span className="text-gray-700 font-medium">고객명</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-yellow-600">
-                            {formData.customerName}
-                          </div>
-                          {formData.customerPhone && (
-                            <div className="text-sm text-yellow-500">{formData.customerPhone}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 확인 체크표시 */}
-                  <div className="mt-4 p-2 bg-green-100 rounded-lg border border-green-300">
-                    <div className="text-center text-sm text-green-700 font-medium">
-                      ✓ 거래 내용을 확인하신 후 "거래 확정" 버튼을 눌러주세요
-                    </div>
-                  </div>
+            {formData.fromAmount && formData.toAmount && formData.exchangeRate && (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="font-medium mb-2">거래 확인</h3>
+                <div className="space-y-1 text-sm">
+                  <div>고객이 주는 금액: <span className="font-medium">{formatNumber(formData.fromAmount)} {formData.fromCurrency}</span></div>
+                  <div>고객이 받는 금액: <span className="font-medium">{formatNumber(formData.toAmount)} {formData.toCurrency}</span></div>
+                  <div>적용 환율: <span className="font-medium">{formatNumber(calculateAverageExchangeRate().toString())}</span> <span className="text-xs text-gray-500">(권종별 평균)</span></div>
+                  {formData.customerName && (
+                    <div>고객: <span className="font-medium">{formData.customerName}</span></div>
+                  )}
                 </div>
               </div>
             )}
