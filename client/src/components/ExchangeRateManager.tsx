@@ -509,6 +509,29 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       }}
                       data-testid="input-my-buy-rate"
                     />
+                    {/* 실시간 환율 정보 표시 */}
+                    {realTimeRates && (
+                      <div className="mt-2 p-2 bg-blue-50 rounded-md border">
+                        <div className="text-xs text-blue-600 font-medium mb-1">📊 오늘 시장 환율 (참고용)</div>
+                        <div className="text-sm space-y-1">
+                          {formData.fromCurrency === 'USD' && realTimeRates['USD-VND'] && (
+                            <div className="text-gray-700">
+                              USD → VND: <span className="font-medium">{Math.round(realTimeRates['USD-VND']).toLocaleString('ko-KR')}</span>
+                            </div>
+                          )}
+                          {formData.fromCurrency === 'KRW' && realTimeRates['KRW-VND'] && (
+                            <div className="text-gray-700">
+                              KRW → VND: <span className="font-medium">{realTimeRates['KRW-VND'].toFixed(2)}</span>
+                            </div>
+                          )}
+                          {formData.fromCurrency === 'USD' && realTimeRates['USD-KRW'] && (
+                            <div className="text-gray-600 text-xs">
+                              USD → KRW: {Math.round(realTimeRates['USD-KRW']).toLocaleString('ko-KR')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label>내 매도가 (나 → 고객) <span className="text-red-500">*</span></Label>

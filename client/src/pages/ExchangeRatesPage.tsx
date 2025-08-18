@@ -20,19 +20,23 @@ export default function ExchangeRatesPage() {
     }
   });
 
-  // 실시간 환율 데이터 (RateManager로부터)
+  // 실시간 환율 데이터 (API에서 가져오기)
   const { data: realTimeRates = {} } = useQuery({
     queryKey: ['/api/rates'],
     queryFn: async (): Promise<Record<string, number>> => {
-      // 이 부분은 RateManager 컴포넌트에서 가져와야 함
-      const rates: Record<string, number> = {
-        'USD-VND': 25400,
-        'KRW-VND': 21.4,
-        'USDT-KRW': 1387.69,
-        'USD-KRW': 1350
-      };
-      return rates;
-    }
+      try {
+        const response = await fetch('/api/rates');
+        if (!response.ok) {
+          throw new Error('Failed to fetch real-time rates');
+        }
+        const data = await response.json();
+        return data.allRates || {};
+      } catch (error) {
+        console.error('실시간 환율 조회 실패:', error);
+        return {};
+      }
+    },
+    refetchInterval: 30000, // 30초마다 자동 갱신
   });
 
   // 환율 생성 뮤테이션
