@@ -650,77 +650,7 @@ export default function TransactionForm() {
                   </div>
                 )}
                 
-                {/* 매도 시세 합계 확인 */}
-                {formData.fromDenominations.length > 0 && (
-                  <div className="mt-4 p-3 bg-blue-50 border rounded-lg">
-                    <div className="text-sm font-medium text-blue-700 mb-2">매도 시세 합계 확인</div>
-                    <div className="space-y-1 text-sm">
-                      {formData.fromDenominations.map((denomValue) => {
-                        const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
-                        if (amount <= 0) return null;
-                        
-                        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
-                        const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
-                        const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
-                        const calculatedAmount = totalValue * rate;
-                        
-                        // VND의 경우 무조건 내림 적용
-                        const exchangedAmount = formData.toCurrency === "VND" ? 
-                          formatVNDWithFloor(calculatedAmount) : 
-                          Math.floor(calculatedAmount);
-                        
-                        return (
-                          <div key={denomValue} className="flex justify-between text-xs">
-                            <span>{CURRENCY_DENOMINATIONS[formData.fromCurrency as keyof typeof CURRENCY_DENOMINATIONS]?.find(d => d.value === denomValue)?.label} × {amount}장</span>
-                            <span className="font-medium">{exchangedAmount.toLocaleString()} {formData.toCurrency}</span>
-                          </div>
-                        );
-                      })}
-                      <div className="border-t pt-1 mt-2 flex flex-col font-bold text-blue-800">
-                        <div className="flex justify-between">
-                          <span>합계</span>
-                          <span>{(() => {
-                            const totalCalculated = formData.fromDenominations.reduce((total, denomValue) => {
-                              const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
-                              if (amount <= 0) return total;
-                              
-                              const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
-                              const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
-                              const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
-                              return total + (totalValue * rate);
-                            }, 0);
-                            
-                            // VND의 경우 무조건 내림 적용
-                            const finalTotal = formData.toCurrency === "VND" ? 
-                              formatVNDWithFloor(totalCalculated) : 
-                              Math.floor(totalCalculated);
-                            
-                            return finalTotal.toLocaleString();
-                          })()} {formData.toCurrency}</span>
-                        </div>
-                        {formData.toCurrency === "VND" && (() => {
-                          const originalTotal = formData.fromDenominations.reduce((total, denomValue) => {
-                            const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
-                            if (amount <= 0) return total;
-                            
-                            const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
-                            const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
-                            const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
-                            return total + (totalValue * rate);
-                          }, 0);
-                          const flooredTotal = formatVNDWithFloor(originalTotal);
-                          const difference = originalTotal - flooredTotal;
-                          
-                          return difference > 0 ? (
-                            <div className="text-xs text-gray-600 mt-1">
-                              원본: {originalTotal.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} VND (내림 전)
-                            </div>
-                          ) : null;
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                )}
+
               </div>
               <div>
                 
