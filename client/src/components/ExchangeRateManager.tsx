@@ -405,7 +405,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     placeholder="예: 26,100"
                     value={formatNumberInput(formData.goldShopRate)}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9.,]/g, '');
+                      const value = e.target.value.replace(/[^0-9.]/g, '');
                       setFormData({ ...formData, goldShopRate: value });
                     }}
                     data-testid="input-gold-shop-rate"
@@ -421,7 +421,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       placeholder="예: 26,000"
                       value={formatNumberInput(formData.myBuyRate)}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.,]/g, '');
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
                         setFormData({ ...formData, myBuyRate: value });
                       }}
                       data-testid="input-my-buy-rate"
@@ -434,7 +434,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       placeholder="예: 26,200"
                       value={formatNumberInput(formData.mySellRate)}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.,]/g, '');
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
                         setFormData({ ...formData, mySellRate: value });
                       }}
                       data-testid="input-my-sell-rate"
