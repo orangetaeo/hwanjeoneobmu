@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Globe, Banknote, DollarSign, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, removeCommas, formatNumberInput } from "@/lib/utils";
 
 interface ExchangeRate {
   id: string;
@@ -137,8 +137,8 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
 
     // 매입가 > 매도가 검증
     if (formData.myBuyRate && formData.mySellRate) {
-      const buyRate = parseFloat(formData.myBuyRate);
-      const sellRate = parseFloat(formData.mySellRate);
+      const buyRate = parseFloat(removeCommas(formData.myBuyRate));
+      const sellRate = parseFloat(removeCommas(formData.mySellRate));
       if (buyRate > sellRate) {
         toast({
           variant: "destructive",
@@ -149,7 +149,15 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
       }
     }
 
-    saveMutation.mutate(formData);
+    // 데이터 저장 시 콤마 제거
+    const cleanedFormData = {
+      ...formData,
+      goldShopRate: removeCommas(formData.goldShopRate),
+      myBuyRate: removeCommas(formData.myBuyRate),
+      mySellRate: removeCommas(formData.mySellRate)
+    };
+
+    saveMutation.mutate(cleanedFormData);
   };
 
   // 숫자 포맷팅 함수
@@ -278,11 +286,13 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                 <div>
                   <Label>금은방 시세 (참고용)</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="예: 26100"
-                    value={formData.goldShopRate}
-                    onChange={(e) => setFormData({ ...formData, goldShopRate: e.target.value })}
+                    type="text"
+                    placeholder="예: 26,100"
+                    value={formatNumberInput(formData.goldShopRate)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.,]/g, '');
+                      setFormData({ ...formData, goldShopRate: value });
+                    }}
                     data-testid="input-gold-shop-rate"
                   />
                 </div>
@@ -292,22 +302,26 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                   <div>
                     <Label>내 매입가 (고객 → 나)</Label>
                     <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="예: 26000"
-                      value={formData.myBuyRate}
-                      onChange={(e) => setFormData({ ...formData, myBuyRate: e.target.value })}
+                      type="text"
+                      placeholder="예: 26,000"
+                      value={formatNumberInput(formData.myBuyRate)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.,]/g, '');
+                        setFormData({ ...formData, myBuyRate: value });
+                      }}
                       data-testid="input-my-buy-rate"
                     />
                   </div>
                   <div>
                     <Label>내 매도가 (나 → 고객)</Label>
                     <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="예: 26200"
-                      value={formData.mySellRate}
-                      onChange={(e) => setFormData({ ...formData, mySellRate: e.target.value })}
+                      type="text"
+                      placeholder="예: 26,200"
+                      value={formatNumberInput(formData.mySellRate)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.,]/g, '');
+                        setFormData({ ...formData, mySellRate: value });
+                      }}
                       data-testid="input-my-sell-rate"
                     />
                   </div>

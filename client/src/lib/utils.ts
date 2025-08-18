@@ -5,8 +5,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// 숫자에서 콤마 제거하는 함수
+export function removeCommas(value: string): string {
+  return value.replace(/,/g, '');
+}
+
+// 숫자에 콤마 추가하는 함수 (입력 표시용)
+export function addCommas(value: string): string {
+  const num = removeCommas(value);
+  if (!num || isNaN(Number(num))) return value;
+  return Number(num).toLocaleString();
+}
+
+// 입력 필드용 숫자 포맷팅 (콤마 포함)
+export function formatNumberInput(value: string): string {
+  const cleanValue = removeCommas(value);
+  if (!cleanValue || isNaN(Number(cleanValue))) return '';
+  return addCommas(cleanValue);
+}
+
 export function formatCurrency(amount: number | string, currency: string = 'KRW'): string {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const num = typeof amount === 'string' ? parseFloat(removeCommas(amount)) : amount;
   
   if (isNaN(num)) return '0';
   
