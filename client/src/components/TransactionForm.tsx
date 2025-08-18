@@ -528,13 +528,18 @@ export default function TransactionForm() {
                                 <Label htmlFor={`denom-${denom.value}`} className="text-base md:text-sm font-semibold">
                                   {denom.label}
                                 </Label>
-                                {useRate && typeof useRate === 'number' && (
-                                  <div className="text-xs text-gray-600 mt-1">
-                                    매도가: <span className="font-medium text-green-600">{useRate.toFixed(2)}</span>
-                                  </div>
-                                )}
                               </div>
                             </div>
+                            {useRate && typeof useRate === 'number' && (
+                              <div className="px-3 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[80px]">
+                                <div className="text-xs text-red-600 font-medium">
+                                  매도 시세
+                                </div>
+                                <div className="text-sm font-bold text-red-700">
+                                  {useRate.toFixed(2)}
+                                </div>
+                              </div>
+                            )}
                           </div>
                           
                           {isSelected && (
