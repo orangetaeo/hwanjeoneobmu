@@ -768,29 +768,29 @@ export class DatabaseStorage implements IStorage {
     
     console.log('권종별 수량 정보:', denominationAmounts);
     
-    // 출발 통화 자산 업데이트 (권종별 차감)
+    // 출발 통화 자산 업데이트 (고객이 준 돈 - 권종별 증가)
     const fromAsset = await this.getAssetByName(userId, transaction.fromAssetName!, 'cash');
     if (fromAsset) {
       const currentBalance = parseFloat(fromAsset.balance || "0");
-      const newBalance = Math.max(0, currentBalance - fromAmount);
+      const newBalance = currentBalance + fromAmount;
       
       // 기존 권종별 정보 가져오기
       const currentMetadata = fromAsset.metadata as any || {};
       const currentDenominations = currentMetadata.denominations || {};
       
-      // 권종별 수량 차감 (모든 통화에 적용)
+      // 권종별 수량 증가 (고객이 준 돈)
       const updatedDenominations = { ...currentDenominations };
       for (const [denomination, amount] of Object.entries(denominationAmounts)) {
         if (amount && parseFloat(amount as string) > 0) {
           const currentQty = updatedDenominations[denomination] || 0;
-          const deductQty = parseInt(amount as string);
-          updatedDenominations[denomination] = Math.max(0, currentQty - deductQty);
+          const addQty = parseInt(amount as string);
+          updatedDenominations[denomination] = currentQty + addQty;
           
-          console.log(`출발 ${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${deductQty}장 차감)`);
+          console.log(`받은 ${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${addQty}장 증가)`);
         }
       }
       
-      console.log('출발 자산 업데이트:', {
+      console.log('받은 자산 업데이트 (고객이 준 돈):', {
         assetName: transaction.fromAssetName,
         currentBalance,
         newBalance,
@@ -845,15 +845,15 @@ export class DatabaseStorage implements IStorage {
           }
         });
       } 
-      // 일반적인 경우 (총액만 증가)
+      // 일반적인 경우 (고객에게 준 돈 - 총액만 감소)
       else {
-        const newBalance = currentBalance + toAmount;
+        const newBalance = Math.max(0, currentBalance - toAmount);
         
-        console.log('도착 자산 업데이트:', {
+        console.log('준 자산 업데이트 (고객에게 준 돈):', {
           assetName: transaction.toAssetName,
           currentBalance,
           newBalance,
-          addedAmount: toAmount
+          deductedAmount: toAmount
         });
         
         await this.updateAsset(userId, toAsset.id, {
