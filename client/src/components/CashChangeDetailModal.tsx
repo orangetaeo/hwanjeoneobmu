@@ -182,8 +182,8 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
           </DialogTitle>
           <DialogDescription>
             {transaction.type === 'cash_exchange' 
-              ? `${transaction.fromAssetName} → ${transaction.toAssetName}(현금환전) - ${date} ${time}` 
-              : `${transaction.toAssetName} - ${date} ${time}`}
+              ? `${transaction.fromAssetName} → ${transaction.toAssetName}` 
+              : transaction.toAssetName} - {date} {time}
           </DialogDescription>
         </DialogHeader>
 
