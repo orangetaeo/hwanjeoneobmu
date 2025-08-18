@@ -652,10 +652,30 @@ export default function TransactionForm() {
                           </div>
                         );
                       })}
-                      <div className="border-t pt-1 mt-2 flex justify-between font-bold text-blue-800">
-                        <span>합계</span>
-                        <span>{(() => {
-                          const totalCalculated = formData.fromDenominations.reduce((total, denomValue) => {
+                      <div className="border-t pt-1 mt-2 flex flex-col font-bold text-blue-800">
+                        <div className="flex justify-between">
+                          <span>합계</span>
+                          <span>{(() => {
+                            const totalCalculated = formData.fromDenominations.reduce((total, denomValue) => {
+                              const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
+                              if (amount <= 0) return total;
+                              
+                              const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
+                              const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                              const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
+                              return total + (totalValue * rate);
+                            }, 0);
+                            
+                            // VND의 경우 무조건 내림 적용
+                            const finalTotal = formData.toCurrency === "VND" ? 
+                              formatVNDWithFloor(totalCalculated) : 
+                              Math.floor(totalCalculated);
+                            
+                            return finalTotal.toLocaleString();
+                          })()} {formData.toCurrency}</span>
+                        </div>
+                        {formData.toCurrency === "VND" && (() => {
+                          const originalTotal = formData.fromDenominations.reduce((total, denomValue) => {
                             const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
                             if (amount <= 0) return total;
                             
@@ -664,14 +684,15 @@ export default function TransactionForm() {
                             const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
                             return total + (totalValue * rate);
                           }, 0);
+                          const flooredTotal = formatVNDWithFloor(originalTotal);
+                          const difference = originalTotal - flooredTotal;
                           
-                          // VND의 경우 무조건 내림 적용
-                          const finalTotal = formData.toCurrency === "VND" ? 
-                            formatVNDWithFloor(totalCalculated) : 
-                            Math.floor(totalCalculated);
-                          
-                          return finalTotal.toLocaleString();
-                        })()} {formData.toCurrency}</span>
+                          return difference > 0 ? (
+                            <div className="text-xs text-gray-600 mt-1">
+                              원본: {originalTotal.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} VND (내림 전)
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -814,6 +835,27 @@ export default function TransactionForm() {
                   <div className="text-sm text-blue-600 mt-1">
                     환전 지급 금액
                   </div>
+                  {formData.toCurrency === "VND" && formData.toAmount && (() => {
+                    const originalAmount = parseFloat(formData.toAmount);
+                    // 원본 계산 값을 찾기 위해 환율 적용 다시 계산
+                    const totalFromAmount = formData.transactionType === "cash_exchange" ? 
+                      calculateTotalFromAmount() : 
+                      parseFloat(formData.fromAmount || "0");
+                    
+                    if (totalFromAmount > 0) {
+                      const rateValue = parseFloat(formData.exchangeRate || "0");
+                      const calculatedOriginal = totalFromAmount * rateValue;
+                      const flooredAmount = formatVNDWithFloor(calculatedOriginal);
+                      const difference = calculatedOriginal - flooredAmount;
+                      
+                      return difference > 0 ? (
+                        <div className="text-xs text-gray-600 mt-1">
+                          원본: {calculatedOriginal.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} VND (내림 전)
+                        </div>
+                      ) : null;
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
             </div>
