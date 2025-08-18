@@ -934,7 +934,7 @@ export default function TransactionForm() {
             </div>
 
             {/* 거래 확인 */}
-            {formData.fromAmount && formData.toAmount && formData.exchangeRate && (
+            {formData.fromAmount && formData.toAmount && (formData.exchangeRate || calculateTotalFromAmount() > 0) && (
               <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200 shadow-lg">
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-4">
