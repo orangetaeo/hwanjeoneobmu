@@ -570,11 +570,11 @@ export default function TransactionForm() {
                               </div>
                               {useRate && typeof useRate === 'number' && formData.denominationAmounts[denom.value] && (
                                 <div className="text-xs text-orange-600 font-medium mt-1">
-                                  환전 예상: ≈ {formatNumber(
+                                  환전 예상: ≈ {(
                                     parseFloat(formData.denominationAmounts[denom.value]) * 
                                     getDenominationValue(formData.fromCurrency, denom.value) * 
                                     useRate
-                                  )} {formData.toCurrency}
+                                  ).toFixed(2)} {formData.toCurrency}
                                   <span className="ml-1 text-gray-500">
                                     (환율: {useRate.toFixed(2)})
                                   </span>
