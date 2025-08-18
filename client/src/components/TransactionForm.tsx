@@ -282,7 +282,13 @@ export default function TransactionForm() {
       if (firstDenomination) {
         const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, firstDenomination);
         if (rateInfo && rateInfo.myBuyRate) {
-          setFormData(prev => ({ ...prev, exchangeRate: rateInfo.myBuyRate.toString() }));
+          const newExchangeRate = rateInfo.myBuyRate.toString();
+          const calculatedToAmount = (total * rateInfo.myBuyRate).toString();
+          setFormData(prev => ({ 
+            ...prev, 
+            exchangeRate: newExchangeRate,
+            toAmount: calculatedToAmount
+          }));
         }
       }
     }
@@ -564,45 +570,7 @@ export default function TransactionForm() {
               </div>
             </div>
 
-            {/* 환율 적용 섹션 */}
-            <div className="p-4 bg-blue-50 rounded-lg space-y-4">
-              <div className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" />
-                <Label>환율 설정</Label>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAutoExchangeRate}
-                  disabled={!formData.fromCurrency || !formData.toCurrency}
-                  data-testid="button-auto-rate"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  자동 환율 적용
-                </Button>
-                
-                <div className="flex-1">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="환율 입력"
-                    value={formData.exchangeRate}
-                    onChange={(e) => setFormData({ ...formData, exchangeRate: e.target.value })}
-                    data-testid="input-exchange-rate"
-                  />
-                </div>
-              </div>
 
-              {calculatedData.rateSource && (
-                <div className="text-sm text-blue-600">
-                  <Badge variant="secondary">
-                    {calculatedData.rateSource}
-                  </Badge>
-                </div>
-              )}
-            </div>
 
             {/* 금액 입력 */}
             <div className="grid grid-cols-2 gap-4">
@@ -660,12 +628,17 @@ export default function TransactionForm() {
                   <div className="mt-3 p-3 bg-orange-50 border rounded-lg">
                     <div className="text-sm font-medium text-orange-700 mb-2">권종별 분배 (고액권 우선)</div>
                     <div className="space-y-1 text-xs">
-                      {Object.entries(calculateVNDBreakdown(parseFloat(formData.toAmount))).map(([denom, count]) => (
-                        <div key={denom} className="flex justify-between">
-                          <span>{formatNumber(parseInt(denom))} VND</span>
-                          <span className="font-medium">{count}장</span>
-                        </div>
-                      ))}
+                      {Object.entries(calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).map(([denom, count]) => {
+                        if (count > 0) {
+                          return (
+                            <div key={denom} className="flex justify-between">
+                              <span>{formatNumber(parseInt(denom))} VND</span>
+                              <span className="font-medium text-orange-600">{count}장</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
                   </div>
                 )}
