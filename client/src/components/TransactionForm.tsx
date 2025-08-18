@@ -244,7 +244,7 @@ export default function TransactionForm() {
   const getDenominationRate = (fromCurrency: string, toCurrency: string, denomination: string) => {
     if (!Array.isArray(exchangeRates)) return null;
     
-    // KRW 5천원권과 1천원권의 경우 5/1천원권 매도 시세 사용
+    // KRW 5천원권과 1천원권의 경우 5/1천원권 매매 시세 사용
     let searchDenomination = denomination;
     if (fromCurrency === "KRW" && (denomination === "5000" || denomination === "1000")) {
       searchDenomination = "5000_1000";
@@ -333,7 +333,7 @@ export default function TransactionForm() {
         return;
       }
       
-      // 권종별 매도 시세 합계로 정확한 금액 계산 (소수점 보존)
+      // 권종별 매매 시세 합계로 정확한 금액 계산 (소수점 보존)
       const calculatedToAmount = formData.fromDenominations.reduce((totalAmount, denomValue) => {
         const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
         if (amount <= 0) return totalAmount;
@@ -660,7 +660,7 @@ export default function TransactionForm() {
                             {useRate > 0 && (
                               <div className="px-2 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[80px]">
                                 <div className="text-xs text-red-600 font-medium">
-                                  매도 시세
+                                  매매 시세
                                 </div>
                                 <div className="text-sm font-bold text-red-700">
                                   {useRate.toFixed(2)}
@@ -772,7 +772,7 @@ export default function TransactionForm() {
                 </div>
                 <div className="space-y-2 sm:space-y-3">
                   {[500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                    // 수정된 분배가 있으면 사용, 없으면 자동 계산
+                    // 항상 전체 toAmount 기준으로 자동 계산 (권종 접기와 무관)
                     const autoBreakdown = calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)));
                     const currentBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : autoBreakdown;
                     const count = currentBreakdown[denom.toString()] || 0;
