@@ -162,12 +162,25 @@ export default function CashTransactionHistory({
   };
 
   const getTransactionTypeText = (transaction: Transaction, isDecrease: boolean) => {
-    if (transaction.type === 'cash_exchange') {
-      if (isDecrease) {
-        return '현금 환전 (지급)';
-      } else {
-        return '현금 환전 (수령)';
+    if ((transaction.type as string) === 'cash_exchange') {
+      // KRW를 받은 경우는 수령, VND를 준 경우는 지급
+      if (transaction.toAssetName === cashAsset.name) {
+        // 이 현금 자산이 toAsset인 경우
+        if (cashAsset.currency === 'KRW') {
+          return '현금 환전 (수령)'; // KRW를 받음
+        } else if (cashAsset.currency === 'VND') {
+          return '현금 환전 (지급)'; // VND를 줌
+        }
+      } else if (transaction.fromAssetName === cashAsset.name) {
+        // 이 현금 자산이 fromAsset인 경우
+        if (cashAsset.currency === 'KRW') {
+          return '현금 환전 (지급)'; // KRW를 줌
+        } else if (cashAsset.currency === 'VND') {
+          return '현금 환전 (수령)'; // VND를 받음
+        }
       }
+      
+      return '현금 환전';
     } else {
       if (isDecrease) {
         return '현금 감소';

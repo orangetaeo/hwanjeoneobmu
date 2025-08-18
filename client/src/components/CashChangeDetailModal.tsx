@@ -172,6 +172,21 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
 
   const { date, time } = formatDateTime(transaction.timestamp);
 
+  // 환전 타입 텍스트 결정 - KRW 받으면 수령, VND 주면 지급
+  const getExchangeTypeText = (transaction: Transaction) => {
+    if ((transaction.type as string) !== 'cash_exchange') return '';
+    
+    // KRW를 받은 경우 (fromAssetName이 KRW가 아니고 toAssetName이 KRW인 경우) = 수령
+    // VND를 준 경우 (fromAssetName이 VND가 아니고 toAssetName이 VND인 경우) = 지급
+    if (transaction.toAssetName.includes('KRW')) {
+      return '현금환전 수령'; // KRW를 받음
+    } else if (transaction.toAssetName.includes('VND')) {
+      return '현금환전 지급'; // VND를 줌
+    }
+    
+    return '현금환전';
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -182,7 +197,7 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
           </DialogTitle>
           <DialogDescription>
             {(transaction.type as string) === 'cash_exchange' 
-              ? `${transaction.fromAssetName} → ${transaction.toAssetName}(현금환전 ${transaction.toAssetName?.includes(currency === 'MIXED' ? 'VND' : currency) ? '수령' : '지급'}) - ${date} ${time}` 
+              ? `${transaction.fromAssetName} → ${transaction.toAssetName}(${getExchangeTypeText(transaction)}) - ${date} ${time}` 
               : `${transaction.toAssetName} - ${date} ${time}`}
           </DialogDescription>
         </DialogHeader>
