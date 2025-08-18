@@ -221,17 +221,23 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     
     if (isNaN(num)) return "-";
     
+    console.log('formatRate:', { rate, currency, num }); // 디버깅용
+    
     // USD 시세는 정수로 표시
     if (currency === 'USD') {
-      return Math.round(num).toLocaleString('ko-KR');
+      const result = Math.round(num).toLocaleString('ko-KR');
+      console.log('USD 포맷 결과:', result);
+      return result;
     }
     
-    // KRW는 소숫점 2자리로 제한하여 표시
+    // KRW는 소숫점 2자리로 제한하여 표시  
     if (currency === 'KRW') {
-      return num.toLocaleString('ko-KR', { 
+      const result = num.toLocaleString('ko-KR', { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
       });
+      console.log('KRW 포맷 결과:', result);
+      return result;
     }
     
     // 기타 통화는 소숫점 2자리까지
