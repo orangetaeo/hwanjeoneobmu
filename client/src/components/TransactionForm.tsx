@@ -618,8 +618,14 @@ export default function TransactionForm() {
                               <div className="flex-1">
                                 <div className="text-base font-semibold text-gray-800">
                                   {denom.label}
+                                  {/* 접힌 상태에서 권종명 옆에 수량 표시 */}
+                                  {!isSelected && hasData && (
+                                    <span className="ml-2 text-sm font-medium text-gray-600">
+                                      ({parseInt(formData.denominationAmounts[denom.value]).toLocaleString()}장)
+                                    </span>
+                                  )}
                                 </div>
-                                {/* 접힌 상태에서 데이터 표시 */}
+                                {/* 접힌 상태에서 권액 표시 */}
                                 {!isSelected && hasData && (
                                   <div className="text-sm text-gray-600 mt-1">
                                     <span className="font-bold text-blue-600">
@@ -627,10 +633,6 @@ export default function TransactionForm() {
                                         parseFloat(formData.denominationAmounts[denom.value]) * 
                                         getDenominationValue(formData.fromCurrency, denom.value)
                                       )} {formData.fromCurrency}
-                                    </span>
-                                    <span className="mx-2">•</span>
-                                    <span className="font-medium">
-                                      {parseInt(formData.denominationAmounts[denom.value]).toLocaleString()}장
                                     </span>
                                   </div>
                                 )}
