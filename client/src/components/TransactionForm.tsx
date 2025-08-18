@@ -559,36 +559,41 @@ export default function TransactionForm() {
                       const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
                       
                       return (
-                        <div key={denom.value} className={`border rounded-xl p-4 transition-all shadow-sm ${isSelected ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300 hover:shadow-md'}`}>
-                          {/* 상단: 체크박스, 권종명, 매도시세 */}
+                        <div 
+                          key={denom.value} 
+                          className={`border rounded-xl p-4 transition-all shadow-sm cursor-pointer ${isSelected ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300 hover:shadow-md'}`}
+                          onClick={() => {
+                            if (isSelected) {
+                              const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
+                              const newAmounts = { ...formData.denominationAmounts };
+                              delete newAmounts[denom.value];
+                              setFormData({
+                                ...formData,
+                                fromDenominations: newDenominations,
+                                denominationAmounts: newAmounts
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                fromDenominations: [...formData.fromDenominations, denom.value]
+                              });
+                            }
+                          }}
+                          data-testid={`card-denom-${denom.value}`}
+                        >
+                          {/* 상단: 권종명, 매도시세 */}
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-4">
-                              <Checkbox
-                                id={`denom-${denom.value}`}
-                                checked={isSelected}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setFormData({
-                                      ...formData,
-                                      fromDenominations: [...formData.fromDenominations, denom.value]
-                                    });
-                                  } else {
-                                    const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
-                                    const newAmounts = { ...formData.denominationAmounts };
-                                    delete newAmounts[denom.value];
-                                    setFormData({
-                                      ...formData,
-                                      fromDenominations: newDenominations,
-                                      denominationAmounts: newAmounts
-                                    });
-                                  }
-                                }}
-                                data-testid={`checkbox-denom-${denom.value}`}
-                                className="w-5 h-5"
-                              />
-                              <Label htmlFor={`denom-${denom.value}`} className="text-lg font-semibold text-gray-800 cursor-pointer">
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                                {isSelected && (
+                                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="text-lg font-semibold text-gray-800">
                                 {denom.label}
-                              </Label>
+                              </div>
                             </div>
                             {useRate > 0 && (
                               <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-center min-w-[100px]">
@@ -621,6 +626,7 @@ export default function TransactionForm() {
                                         [denom.value]: e.target.value
                                       }
                                     })}
+                                    onClick={(e) => e.stopPropagation()}
                                     data-testid={`input-quantity-${denom.value}`}
                                     className="w-32 h-12 text-center font-semibold text-lg border-2 border-gray-300 rounded-lg focus:border-green-500"
                                   />
