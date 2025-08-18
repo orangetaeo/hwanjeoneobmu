@@ -811,9 +811,8 @@ export class DatabaseStorage implements IStorage {
     if (toAsset) {
       const currentBalance = parseFloat(toAsset.balance || "0");
       
-      // 도착 통화가 VND이고 권종별 분배가 있는 경우
+      // 도착 통화가 VND이고 VND 권종별 분배가 있는 경우 - VND 차감 처리
       if (transaction.toAssetName?.includes('VND') && metadata.vndBreakdown) {
-        // VND 권종별 추가
         const currentMetadata = toAsset.metadata as any || {};
         const currentDenominations = currentMetadata.denominations || {};
         const updatedDenominations = { ...currentDenominations };
@@ -821,19 +820,20 @@ export class DatabaseStorage implements IStorage {
         for (const [denomination, amount] of Object.entries(metadata.vndBreakdown)) {
           if (amount && (amount as number) > 0) {
             const currentQty = updatedDenominations[denomination] || 0;
-            const addQty = amount as number;
-            updatedDenominations[denomination] = currentQty + addQty;
+            const deductQty = amount as number;
+            updatedDenominations[denomination] = Math.max(0, currentQty - deductQty);
             
-            console.log(`VND ${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${addQty}장 추가)`);
+            console.log(`VND ${denomination} 권종 차감: ${currentQty} → ${updatedDenominations[denomination]} (${deductQty}장 차감)`);
           }
         }
         
-        const newBalance = currentBalance + toAmount;
+        const newBalance = Math.max(0, currentBalance - toAmount);
         
-        console.log('VND 도착 자산 권종별 업데이트:', {
+        console.log('VND 도착 자산 권종별 차감:', {
           assetName: transaction.toAssetName,
           currentBalance,
           newBalance,
+          deductedAmount: toAmount,
           denominationChanges: updatedDenominations
         });
         
