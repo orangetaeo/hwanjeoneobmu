@@ -61,7 +61,7 @@ Preferred communication style: Simple, everyday language.
 - **Dynamic Elements**: Dynamic page titles and visual indicators.
 - **Currency Ordering**: KRW assets prioritized in display.
 
-# Recent Changes (2025-08-17)
+# Recent Changes (2025-08-18)
 - **Duplicate Asset Validation System**: Fully implemented and tested comprehensive duplicate checking and prevention features
   - Bank accounts (Korean/Vietnamese): Alert users when identical accounts exist (same bank name, account holder, and account number - excluding balance comparison)
   - Exchange assets: Automatically update existing entries when same exchange+coin combination is found, merging quantities with user notification
@@ -133,6 +133,11 @@ Preferred communication style: Simple, everyday language.
   - Improved readability with emphasized transaction amounts and organized metadata
   - Touch-friendly design with proper spacing, visual hierarchy, and optimized management buttons
   - Status indicators and action buttons properly adapted for mobile interaction
+- **Exchange Operations UI Cleanup**: Simplified exchange operations interface by removing visual process indicators
+  - Removed 3-step trading process visualization (KRW → USDT, Bithumb → Binance, USDT → VND)
+  - Cleaned up ExchangeOperations.tsx to focus on core functionality without process flow diagrams
+  - Maintained header, tab navigation, and all operational features while removing decorative process cards
+  - Streamlined user experience by eliminating redundant visual process explanations
 
 # External Dependencies
 
