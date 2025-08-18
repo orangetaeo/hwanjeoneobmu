@@ -51,6 +51,7 @@ Preferred communication style: Simple, everyday language.
 - **User Experience**: Modal-based workflows for state management and error handling.
 - **Dynamic Rendering**: Conditional rendering based on currency for specific denominations (e.g., KRW banknotes).
 - **Automated Test Data**: Standardized test data sets for consistent development and testing.
+- **VND Floor Profit System**: Automatic calculation and storage of profit from VND amount floor operations, with visual indicators showing difference amounts and separate profit tracking in transaction metadata.
 
 ## UI/UX Decisions
 - **Dashboard Layout**: 3-column responsive design with distinct sections for KRW, foreign currency, and crypto assets.
@@ -70,6 +71,7 @@ Preferred communication style: Simple, everyday language.
 - **Unified Icon System**: Replaced all colorful emojis and flags with monochrome Lucide icons for a consistent and professional appearance across the application.
 - **Mobile Navigation Enhancement**: Redesigned mobile navigation with a hamburger menu, sliding sidebar, and simplified bottom navigation for improved accessibility.
 - **Exchange Rate History Mobile Optimization**: Enhanced mobile user experience for exchange rate history display with responsive design patterns, single-line header layout displaying currency pair, denomination, change percentage, and date, improved mobile readability with proper spacing and touch-friendly design, and responsive grid layout that stacks vertically on mobile.
+- **VND Amount Processing**: Implemented Math.floor (무조건 내림) for all VND calculations and displays, with visual difference indicators and automatic profit tracking for floor-based rounding differences stored in transaction metadata.
 
 # External Dependencies
 

@@ -374,6 +374,21 @@ export default function TransactionForm() {
       }
     }
 
+    // VND 내림으로 인한 수익 계산
+    let floorProfit = 0;
+    if (formData.toCurrency === "VND") {
+      const totalFromAmount = formData.transactionType === "cash_exchange" ? 
+        calculateTotalFromAmount() : 
+        parseFloat(formData.fromAmount || "0");
+      
+      if (totalFromAmount > 0) {
+        const rateValue = parseFloat(formData.exchangeRate || "0");
+        const calculatedOriginal = totalFromAmount * rateValue;
+        const flooredAmount = formatVNDWithFloor(calculatedOriginal);
+        floorProfit = calculatedOriginal - flooredAmount;
+      }
+    }
+
     // 거래 데이터 구성
     const transactionData = {
       type: formData.transactionType,
@@ -387,7 +402,7 @@ export default function TransactionForm() {
       toAmount: formData.toAmount,
       rate: formData.exchangeRate,
       fees: "0",
-      profit: "0",
+      profit: floorProfit.toString(),
       memo: formData.memo,
       metadata: {
         customerName: formData.customerName,
@@ -396,7 +411,8 @@ export default function TransactionForm() {
         denominationAmounts: formData.denominationAmounts,
         toDenomination: formData.toDenomination,
         exchangeRateSource: calculatedData.rateSource,
-        isAutoCalculated: calculatedData.isAutoCalculated
+        isAutoCalculated: calculatedData.isAutoCalculated,
+        floorProfit: floorProfit // VND 내림으로 인한 수익
       },
       status: "confirmed"
     };
@@ -829,33 +845,34 @@ export default function TransactionForm() {
               <div>
                 <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
-                  <div className="text-xl font-bold text-blue-700">
-                    {formatNumber(formData.toAmount, formData.toCurrency)} {formData.toCurrency}
+                  <div className="flex items-center gap-2">
+                    <div className="text-xl font-bold text-blue-700">
+                      {formatNumber(formData.toAmount, formData.toCurrency)} {formData.toCurrency}
+                    </div>
+                    {formData.toCurrency === "VND" && formData.toAmount && (() => {
+                      // 원본 계산 값을 찾기 위해 환율 적용 다시 계산
+                      const totalFromAmount = formData.transactionType === "cash_exchange" ? 
+                        calculateTotalFromAmount() : 
+                        parseFloat(formData.fromAmount || "0");
+                      
+                      if (totalFromAmount > 0) {
+                        const rateValue = parseFloat(formData.exchangeRate || "0");
+                        const calculatedOriginal = totalFromAmount * rateValue;
+                        const flooredAmount = formatVNDWithFloor(calculatedOriginal);
+                        const difference = calculatedOriginal - flooredAmount;
+                        
+                        return difference > 0 ? (
+                          <div className="text-sm text-orange-600 font-medium">
+                            ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
+                          </div>
+                        ) : null;
+                      }
+                      return null;
+                    })()}
                   </div>
                   <div className="text-sm text-blue-600 mt-1">
-                    환전 지급 금액
+                    환전 지급 금액 (무조건 내림)
                   </div>
-                  {formData.toCurrency === "VND" && formData.toAmount && (() => {
-                    const originalAmount = parseFloat(formData.toAmount);
-                    // 원본 계산 값을 찾기 위해 환율 적용 다시 계산
-                    const totalFromAmount = formData.transactionType === "cash_exchange" ? 
-                      calculateTotalFromAmount() : 
-                      parseFloat(formData.fromAmount || "0");
-                    
-                    if (totalFromAmount > 0) {
-                      const rateValue = parseFloat(formData.exchangeRate || "0");
-                      const calculatedOriginal = totalFromAmount * rateValue;
-                      const flooredAmount = formatVNDWithFloor(calculatedOriginal);
-                      const difference = calculatedOriginal - flooredAmount;
-                      
-                      return difference > 0 ? (
-                        <div className="text-xs text-gray-600 mt-1">
-                          원본: {calculatedOriginal.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} VND (내림 전)
-                        </div>
-                      ) : null;
-                    }
-                    return null;
-                  })()}
                 </div>
               </div>
             </div>
