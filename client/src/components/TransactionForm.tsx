@@ -605,12 +605,14 @@ export default function TransactionForm() {
                         const currentBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : autoBreakdown;
                         const count = currentBreakdown[denom.toString()] || 0;
                         
-                        // VND 현금 자산에서만 현재 보유 수량 계산
+                        // VND 현금 자산의 지폐 구성에서 실제 보유 수량 가져오기
                         const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
                           asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                         ) : null;
-                        const totalVndCash = vndCashAsset ? parseFloat(vndCashAsset.balance) : 0;
-                        const availableCount = Math.floor(totalVndCash / denom);
+                        
+                        // 지폐 구성에서 해당 권종의 실제 보유 수량
+                        const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                        const availableCount = denomComposition[denom.toString()] || 0;
                         
                         if (count > 0 || Object.keys(vndBreakdown).length > 0) {
                           return (
