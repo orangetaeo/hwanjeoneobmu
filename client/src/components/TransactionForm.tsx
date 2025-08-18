@@ -39,6 +39,12 @@ const CURRENCY_DENOMINATIONS = {
     { value: "10000", label: "1만원" },
     { value: "5000", label: "5천원" },
     { value: "1000", label: "1천원" }
+  ],
+  VND: [
+    { value: "500000", label: "50만동" },
+    { value: "200000", label: "20만동" },
+    { value: "100000", label: "10만동" },
+    { value: "50000", label: "5만동" }
   ]
 };
 
@@ -56,8 +62,8 @@ export default function TransactionForm() {
   // 상태 관리
   const [formData, setFormData] = useState({
     transactionType: "cash_exchange",
-    fromCurrency: "KRW",
-    toCurrency: "VND",
+    fromCurrency: "VND",
+    toCurrency: "KRW",
     fromDenominations: [] as string[], // 여러 권종 선택
     toDenomination: "",
     denominationAmounts: {} as Record<string, string>, // 권종별 수량
