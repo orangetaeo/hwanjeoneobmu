@@ -580,10 +580,16 @@ export default function TransactionForm() {
                           onClick={() => {
                             if (isSelected) {
                               const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
+                              // 선택 해제시 해당 권종의 수량도 초기화
+                              const newDenominationAmounts = { ...formData.denominationAmounts };
+                              delete newDenominationAmounts[denom.value];
+                              
                               setFormData({
                                 ...formData,
-                                fromDenominations: newDenominations
+                                fromDenominations: newDenominations,
+                                denominationAmounts: newDenominationAmounts
                               });
+                              console.log(`권종 선택 해제: ${denom.value}, 수량 초기화됨`);
                             } else {
                               setFormData({
                                 ...formData,
@@ -602,13 +608,14 @@ export default function TransactionForm() {
                                   e.stopPropagation();
                                   // 접힌 상태에서 체크박스 클릭 시 데이터 초기화
                                   if (!isSelected && hasData) {
+                                    const newDenominationAmounts = { ...formData.denominationAmounts };
+                                    delete newDenominationAmounts[denom.value];
+                                    
                                     setFormData({
                                       ...formData,
-                                      denominationAmounts: {
-                                        ...formData.denominationAmounts,
-                                        [denom.value]: ""
-                                      }
+                                      denominationAmounts: newDenominationAmounts
                                     });
+                                    console.log(`체크박스로 권종 데이터 초기화: ${denom.value}`);
                                   }
                                 }}
                               >
