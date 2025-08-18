@@ -498,8 +498,8 @@ export default function TransactionForm() {
                       const useRate = formData.fromCurrency === "KRW" ? rateInfo?.mySellRate : rateInfo?.myBuyRate;
                       
                       return (
-                        <div key={denom.value} className={`border rounded-lg p-4 transition-all ${isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                          <div className="flex items-start justify-between mb-3">
+                        <div key={denom.value} className={`border rounded-lg p-3 md:p-4 transition-all ${isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-2 md:space-y-0 mb-3">
                             <div className="flex items-center space-x-3">
                               <Checkbox
                                 id={`denom-${denom.value}`}
@@ -522,9 +522,10 @@ export default function TransactionForm() {
                                   }
                                 }}
                                 data-testid={`checkbox-denom-${denom.value}`}
+                                className="w-5 h-5 md:w-4 md:h-4"
                               />
-                              <div>
-                                <Label htmlFor={`denom-${denom.value}`} className="text-base font-semibold">
+                              <div className="flex-1">
+                                <Label htmlFor={`denom-${denom.value}`} className="text-base md:text-sm font-semibold">
                                   {denom.label}
                                 </Label>
                                 {useRate && typeof useRate === 'number' && (
@@ -538,26 +539,28 @@ export default function TransactionForm() {
                           
                           {isSelected && (
                             <div className="bg-white p-3 rounded border border-green-200">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="1"
-                                  placeholder="수량"
-                                  value={formData.denominationAmounts[denom.value] || ""}
-                                  onChange={(e) => setFormData({
-                                    ...formData,
-                                    denominationAmounts: {
-                                      ...formData.denominationAmounts,
-                                      [denom.value]: e.target.value
-                                    }
-                                  })}
-                                  data-testid={`input-quantity-${denom.value}`}
-                                  className="w-24 text-center font-medium"
-                                />
-                                <span className="text-sm text-gray-600">장</span>
+                              <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 mb-2">
+                                <div className="flex items-center space-x-3">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    placeholder="수량"
+                                    value={formData.denominationAmounts[denom.value] || ""}
+                                    onChange={(e) => setFormData({
+                                      ...formData,
+                                      denominationAmounts: {
+                                        ...formData.denominationAmounts,
+                                        [denom.value]: e.target.value
+                                      }
+                                    })}
+                                    data-testid={`input-quantity-${denom.value}`}
+                                    className="w-20 md:w-24 text-center font-medium text-base md:text-sm"
+                                  />
+                                  <span className="text-sm text-gray-600">장</span>
+                                </div>
                                 {formData.denominationAmounts[denom.value] && (
-                                  <div className="text-sm font-bold text-blue-600 ml-auto">
+                                  <div className="text-sm md:text-xs font-bold text-blue-600">
                                     = {formatNumber(
                                       parseFloat(formData.denominationAmounts[denom.value]) * 
                                       getDenominationValue(formData.fromCurrency, denom.value)
@@ -566,12 +569,15 @@ export default function TransactionForm() {
                                 )}
                               </div>
                               {useRate && formData.denominationAmounts[denom.value] && (
-                                <div className="text-xs text-orange-600 font-medium">
+                                <div className="text-xs text-orange-600 font-medium mt-1">
                                   환전 예상: ≈ {formatNumber(
                                     parseFloat(formData.denominationAmounts[denom.value]) * 
                                     getDenominationValue(formData.fromCurrency, denom.value) * 
                                     useRate
                                   )} {formData.toCurrency}
+                                  <span className="ml-1 text-gray-500">
+                                    (환율: {useRate.toFixed(2)})
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -652,15 +658,15 @@ export default function TransactionForm() {
 
 
             {/* 금액 입력 */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>받는 금액 ({formData.fromCurrency})</Label>
+                <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
                 {formData.transactionType === "cash_exchange" ? (
-                  <div className="p-3 bg-green-50 border rounded-lg">
-                    <div className="text-lg font-semibold text-green-700">
+                  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg mt-2">
+                    <div className="text-xl font-bold text-green-700">
                       {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
                     </div>
-                    <div className="text-xs text-green-600 mt-1">
+                    <div className="text-sm text-green-600 mt-1">
                       권종별 총액 합계
                     </div>
                   </div>
@@ -675,34 +681,20 @@ export default function TransactionForm() {
                       handleAmountCalculation('fromAmount', e.target.value);
                     }}
                     data-testid="input-from-amount"
+                    className="mt-2 text-lg font-medium"
                   />
-                )}
-                {formData.fromAmount && formData.transactionType !== "cash_exchange" && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {formatNumber(formData.fromAmount)} {formData.fromCurrency}
-                  </div>
                 )}
               </div>
               <div>
-                <Label>주는 금액 ({formData.toCurrency})</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0"
-                  value={formData.toAmount}
-                  onChange={(e) => {
-                    setFormData({ ...formData, toAmount: e.target.value });
-                    handleAmountCalculation('toAmount', e.target.value);
-                  }}
-                  data-testid="input-to-amount"
-                />
-                {formData.toAmount && (
-                  <div className="text-xs text-gray-500 mt-1">
+                <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
+                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
+                  <div className="text-xl font-bold text-blue-700">
                     {formatNumber(formData.toAmount)} {formData.toCurrency}
                   </div>
-                )}
-                
-
+                  <div className="text-sm text-blue-600 mt-1">
+                    환전 지급 금액
+                  </div>
+                </div>
               </div>
             </div>
 
