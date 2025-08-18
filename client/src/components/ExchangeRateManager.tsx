@@ -681,54 +681,81 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
 
       {activeTab === "history" && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <TrendingUp className="w-5 h-5" />
-              환전상 시세 히스토리 ({formData.fromCurrency} → {formData.toCurrency})
+              <span className="hidden sm:inline">환전상 시세 히스토리</span>
+              <span className="sm:hidden">시세 히스토리</span>
+              <span className="text-sm font-normal text-gray-500">
+                ({formData.fromCurrency} → {formData.toCurrency})
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             {isLoadingHistory ? (
-              <div className="text-center py-8">로딩 중...</div>
+              <div className="text-center py-8 sm:py-12">
+                <div className="animate-pulse">로딩 중...</div>
+              </div>
             ) : !Array.isArray(rateHistory) || 
                  rateHistory.filter(history => history.fromCurrency === formData.fromCurrency).length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {formData.fromCurrency} → {formData.toCurrency} 히스토리가 없습니다.
+              <div className="text-center py-8 sm:py-12 text-gray-500">
+                <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <div className="text-base sm:text-lg font-medium mb-2">시세 히스토리가 없습니다</div>
+                <div className="text-sm text-gray-400">
+                  {formData.fromCurrency} → {formData.toCurrency} 환율을 먼저 저장해보세요
+                </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {Array.isArray(rateHistory) && 
                   rateHistory
                     .filter(history => history.fromCurrency === formData.fromCurrency)
                     .map((history: ExchangeRateHistory) => (
-                  <div key={history.id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
+                  <div key={history.id} className="p-4 border rounded-lg bg-white hover:shadow-sm transition-shadow">
+                    {/* 모바일 최적화 헤더 */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="font-semibold text-base">
                           {history.fromCurrency} → {history.toCurrency}
                         </span>
-                        {history.denomination && (
-                          <Badge variant="outline">{formatDenomination(history.denomination, history.fromCurrency)}</Badge>
-                        )}
-                        {renderChangePercentage(history.changePercentage)}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {history.denomination && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatDenomination(history.denomination, history.fromCurrency)}
+                            </Badge>
+                          )}
+                          {renderChangePercentage(history.changePercentage)}
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-500">
-                        {new Date(history.recordDate).toLocaleString("ko-KR")}
+                      <span className="text-xs text-gray-500 sm:text-right">
+                        {new Date(history.recordDate).toLocaleString("ko-KR", {
+                          month: "short",
+                          day: "numeric", 
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">금은방</span>
-                        <div className="font-medium">{formatRate(history.goldShopRate, history.fromCurrency)}</div>
+                    {/* 모바일 최적화 환율 정보 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                      <div className="flex justify-between sm:block">
+                        <span className="text-gray-500 text-sm">금은방 시세</span>
+                        <div className="font-semibold text-gray-800 sm:mt-1">
+                          {formatRate(history.goldShopRate, history.fromCurrency)}
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-gray-500">매입</span>
-                        <div className="font-medium text-green-600">{formatRate(history.myBuyRate, history.fromCurrency)}</div>
+                      <div className="flex justify-between sm:block">
+                        <span className="text-gray-500 text-sm">내 매입가</span>
+                        <div className="font-semibold text-green-600 sm:mt-1">
+                          {formatRate(history.myBuyRate, history.fromCurrency)}
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-gray-500">매도</span>
-                        <div className="font-medium text-red-600">{formatRate(history.mySellRate, history.fromCurrency)}</div>
+                      <div className="flex justify-between sm:block">
+                        <span className="text-gray-500 text-sm">내 매도가</span>
+                        <div className="font-semibold text-red-600 sm:mt-1">
+                          {formatRate(history.mySellRate, history.fromCurrency)}
+                        </div>
                       </div>
                     </div>
                   </div>
