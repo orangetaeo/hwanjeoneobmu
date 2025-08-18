@@ -861,7 +861,7 @@ export default function TransactionForm() {
                     console.log("VND difference:", difference);
                     console.log("Difference > 0:", difference > 0);
                     
-                    return difference > 0 ? (
+                    return difference > 1 ? (
                       <span className="text-sm text-orange-600 font-medium">
                         ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
                       </span>
@@ -871,7 +871,7 @@ export default function TransactionForm() {
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
                   <div className="text-xl font-bold text-blue-700">
                     {formData.toCurrency === "VND" ? 
-                      parseFloat(formData.toAmount).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
+                      Math.floor(parseFloat(formData.toAmount)).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
                       formatNumber(formData.toAmount, formData.toCurrency)
                     } {formData.toCurrency}
                   </div>
