@@ -18,10 +18,30 @@ interface CashChangeDetailModalProps {
 }
 
 export default function CashChangeDetailModal({ transaction, isOpen, onClose }: CashChangeDetailModalProps) {
-  if (!transaction || transaction.type !== 'cash_change') return null;
+  if (!transaction || (transaction.type !== 'cash_change' && transaction.type !== 'cash_exchange')) return null;
 
   const metadata = transaction.metadata as any;
-  const denominationChanges = metadata?.denominationChanges || {};
+  let denominationChanges = metadata?.denominationChanges || {};
+  
+  // cash_exchange 타입의 경우 권종별 변화 데이터를 생성
+  if (transaction.type === 'cash_exchange') {
+    const denominationAmounts = metadata?.denominationAmounts || {};
+    const vndBreakdown = metadata?.vndBreakdown || {};
+    
+    // fromAssetName에 해당하는 권종은 증가 (+)
+    Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+      if (amount && parseFloat(amount as string) > 0) {
+        denominationChanges[denom] = parseInt(amount as string);
+      }
+    });
+    
+    // vndBreakdown에 해당하는 권종은 감소 (-)
+    Object.entries(vndBreakdown).forEach(([denom, amount]) => {
+      if (amount && (amount as number) > 0) {
+        denominationChanges[denom] = -(amount as number);
+      }
+    });
+  }
   
   // 통화별 지폐 단위 정의
   const getCurrencyDenominations = (currency: string) => {
@@ -31,14 +51,31 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
       case 'USD':
         return ['100', '50', '20', '10', '5', '2', '1'];
       case 'VND':
-        return ['500000', '200000', '100000', '50000', '20000', '10000'];
+        return ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '2000', '1000'];
+      case 'MIXED': // 혼합된 경우 모든 권종
+        return ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '2000', '1000'];
       default:
         return [];
     }
   };
 
-  // 통화 결정 (자산 이름에서 추출)
+  // 통화 결정 (자산 이름에서 추출) - cash_exchange는 양쪽 통화 모두 고려
   const getCurrency = () => {
+    if (transaction.type === 'cash_exchange') {
+      // 권종 변화에서 통화를 판단
+      const hasKRWDenoms = Object.keys(denominationChanges).some(denom => 
+        ['1000', '5000', '10000', '50000'].includes(denom)
+      );
+      const hasVNDDenoms = Object.keys(denominationChanges).some(denom => 
+        ['1000', '2000', '5000', '10000', '20000', '50000', '100000', '200000', '500000'].includes(denom) && 
+        parseInt(denom) >= 10000
+      );
+      
+      if (hasKRWDenoms && hasVNDDenoms) return 'MIXED'; // 혼합
+      if (hasKRWDenoms) return 'KRW';
+      if (hasVNDDenoms) return 'VND';
+    }
+    
     if (transaction.toAssetName.includes('KRW') || transaction.toAssetName.includes('원')) return 'KRW';
     if (transaction.toAssetName.includes('USD') || transaction.toAssetName.includes('달러')) return 'USD';
     if (transaction.toAssetName.includes('VND') || transaction.toAssetName.includes('동')) return 'VND';
@@ -58,9 +95,19 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
     }
   };
 
-  // 지폐 이름
+  // 지폐 이름 - 혼합된 경우 권종 값으로 통화 판단
   const getDenominationName = (denomination: string, currency: string) => {
     const num = parseInt(denomination);
+    
+    if (currency === 'MIXED') {
+      // 권종 값으로 통화 판단
+      if (['1000', '5000', '10000', '50000'].includes(denomination)) {
+        return `${num.toLocaleString()}원권`;
+      } else {
+        return `${num.toLocaleString()}동권`;
+      }
+    }
+    
     switch (currency) {
       case 'KRW':
         return `${num.toLocaleString()}원권`;
@@ -131,10 +178,12 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Banknote size={20} />
-            현금 증감 상세 내역
+            {transaction.type === 'cash_exchange' ? '현금 환전 상세 내역' : '현금 증감 상세 내역'}
           </DialogTitle>
           <DialogDescription>
-            {transaction.toAssetName} - {date} {time}
+            {transaction.type === 'cash_exchange' 
+              ? `${transaction.fromAssetName} → ${transaction.toAssetName}` 
+              : transaction.toAssetName} - {date} {time}
           </DialogDescription>
         </DialogHeader>
 

@@ -13,7 +13,7 @@ export const users = pgTable("users", {
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
-  type: text("type").notNull(), // 'bank_to_exchange', 'exchange_purchase', 'exchange_transfer', 'p2p_trade'
+  type: text("type").notNull(), // 'bank_to_exchange', 'exchange_purchase', 'exchange_transfer', 'p2p_trade', 'cash_exchange', 'cash_change', 'exchange', 'transfer'
   fromAssetType: text("from_asset_type"), // 'bank', 'exchange', 'binance'
   fromAssetId: varchar("from_asset_id"),
   fromAssetName: text("from_asset_name").notNull(),
