@@ -634,9 +634,10 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
 
     if (existing.length > 0) {
-      // 기존 데이터를 히스토리로 백업
+      // 기존 데이터를 히스토리로 백업 (새로운 ID 생성)
+      const { id, createdAt, updatedAt, ...historyData } = existing[0];
       await this.createExchangeRateHistory({
-        ...existing[0],
+        ...historyData,
         recordDate: existing[0].updatedAt,
         changePercentage: rate.myBuyRate && existing[0].myBuyRate 
           ? ((parseFloat(rate.myBuyRate) - parseFloat(existing[0].myBuyRate)) / parseFloat(existing[0].myBuyRate) * 100).toString()
