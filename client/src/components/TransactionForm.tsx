@@ -843,35 +843,35 @@ export default function TransactionForm() {
                 )}
               </div>
               <div>
-                <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
-                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
-                  <div className="flex items-center gap-2">
-                    <div className="text-xl font-bold text-blue-700">
-                      {formatNumber(formData.toAmount, formData.toCurrency)} {formData.toCurrency}
-                    </div>
-                    {formData.toCurrency === "VND" && formData.toAmount && (() => {
-                      // 원본 계산 값을 찾기 위해 환율 적용 다시 계산
-                      const totalFromAmount = formData.transactionType === "cash_exchange" ? 
-                        calculateTotalFromAmount() : 
-                        parseFloat(formData.fromAmount || "0");
+                <div className="flex items-center gap-2">
+                  <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
+                  {formData.toCurrency === "VND" && formData.toAmount && (() => {
+                    // 원본 계산 값을 찾기 위해 환율 적용 다시 계산
+                    const totalFromAmount = formData.transactionType === "cash_exchange" ? 
+                      calculateTotalFromAmount() : 
+                      parseFloat(formData.fromAmount || "0");
+                    
+                    if (totalFromAmount > 0) {
+                      const rateValue = parseFloat(formData.exchangeRate || "0");
+                      const calculatedOriginal = totalFromAmount * rateValue;
+                      const flooredAmount = formatVNDWithFloor(calculatedOriginal);
+                      const difference = calculatedOriginal - flooredAmount;
                       
-                      if (totalFromAmount > 0) {
-                        const rateValue = parseFloat(formData.exchangeRate || "0");
-                        const calculatedOriginal = totalFromAmount * rateValue;
-                        const flooredAmount = formatVNDWithFloor(calculatedOriginal);
-                        const difference = calculatedOriginal - flooredAmount;
-                        
-                        return difference > 0 ? (
-                          <div className="text-sm text-orange-600 font-medium">
-                            ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
-                          </div>
-                        ) : null;
-                      }
-                      return null;
-                    })()}
+                      return difference > 0 ? (
+                        <span className="text-sm text-orange-600 font-medium">
+                          ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
+                        </span>
+                      ) : null;
+                    }
+                    return null;
+                  })()}
+                </div>
+                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
+                  <div className="text-xl font-bold text-blue-700">
+                    {formatNumber(formData.toAmount, formData.toCurrency)} {formData.toCurrency}
                   </div>
                   <div className="text-sm text-blue-600 mt-1">
-                    환전 지급 금액 (무조건 내림)
+                    환전 지급 금액
                   </div>
                 </div>
               </div>
