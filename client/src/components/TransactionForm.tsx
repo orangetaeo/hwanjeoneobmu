@@ -559,9 +559,10 @@ export default function TransactionForm() {
                       const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
                       
                       return (
-                        <div key={denom.value} className={`border rounded-lg p-3 md:p-4 transition-all ${isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                          <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-2 md:space-y-0 mb-3">
-                            <div className="flex items-center space-x-3">
+                        <div key={denom.value} className={`border rounded-xl p-4 transition-all shadow-sm ${isSelected ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300 hover:shadow-md'}`}>
+                          {/* 상단: 체크박스, 권종명, 매도시세 */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-4">
                               <Checkbox
                                 id={`denom-${denom.value}`}
                                 checked={isSelected}
@@ -583,35 +584,35 @@ export default function TransactionForm() {
                                   }
                                 }}
                                 data-testid={`checkbox-denom-${denom.value}`}
-                                className="w-5 h-5 md:w-4 md:h-4"
+                                className="w-5 h-5"
                               />
-                              <div className="flex-1">
-                                <Label htmlFor={`denom-${denom.value}`} className="text-base md:text-sm font-semibold">
-                                  {denom.label}
-                                </Label>
-                              </div>
+                              <Label htmlFor={`denom-${denom.value}`} className="text-lg font-semibold text-gray-800 cursor-pointer">
+                                {denom.label}
+                              </Label>
                             </div>
                             {useRate > 0 && (
-                              <div className="px-3 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[80px]">
+                              <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-center min-w-[100px]">
                                 <div className="text-xs text-red-600 font-medium">
                                   매도 시세
                                 </div>
-                                <div className="text-sm font-bold text-red-700">
+                                <div className="text-base font-bold text-red-700">
                                   {useRate.toFixed(2)}
                                 </div>
                               </div>
                             )}
                           </div>
                           
+                          {/* 하단: 수량 입력 및 계산 결과 */}
                           {isSelected && (
-                            <div className="bg-white p-3 rounded border border-green-200">
-                              <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 mb-2">
+                            <div className="bg-white p-4 rounded-lg border border-green-200 space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                                 <div className="flex items-center space-x-3">
+                                  <label className="text-sm font-medium text-gray-700 min-w-[40px]">수량:</label>
                                   <Input
                                     type="number"
                                     min="0"
                                     step="1"
-                                    placeholder="수량"
+                                    placeholder="0"
                                     value={formData.denominationAmounts[denom.value] || ""}
                                     onChange={(e) => setFormData({
                                       ...formData,
@@ -621,34 +622,40 @@ export default function TransactionForm() {
                                       }
                                     })}
                                     data-testid={`input-quantity-${denom.value}`}
-                                    className="w-20 md:w-24 text-center font-medium text-base md:text-sm"
+                                    className="w-32 h-12 text-center font-semibold text-lg border-2 border-gray-300 rounded-lg focus:border-green-500"
                                   />
-                                  <span className="text-sm text-gray-600">장</span>
+                                  <span className="text-base font-medium text-gray-600">장</span>
                                 </div>
                                 {formData.denominationAmounts[denom.value] && (
-                                  <div className="text-sm md:text-xs font-bold text-blue-600">
-                                    = {formatNumber(
-                                      parseFloat(formData.denominationAmounts[denom.value]) * 
-                                      getDenominationValue(formData.fromCurrency, denom.value)
-                                    )} {formData.fromCurrency}
+                                  <div className="flex-1 p-3 bg-blue-50 rounded-lg">
+                                    <div className="text-sm text-blue-600 font-medium mb-1">총 금액</div>
+                                    <div className="text-lg font-bold text-blue-700">
+                                      {formatNumber(
+                                        parseFloat(formData.denominationAmounts[denom.value]) * 
+                                        getDenominationValue(formData.fromCurrency, denom.value)
+                                      )} {formData.fromCurrency}
+                                    </div>
                                   </div>
                                 )}
                               </div>
                               {useRate > 0 && formData.denominationAmounts[denom.value] && (
-                                <div className="text-xs text-orange-600 font-medium mt-1">
-                                  환전 예상: ≈ {(() => {
-                                    const calculatedAmount = parseFloat(formData.denominationAmounts[denom.value]) * 
-                                      getDenominationValue(formData.fromCurrency, denom.value) * 
-                                      useRate;
-                                    // VND의 경우 무조건 내림 적용
-                                    const finalAmount = formData.toCurrency === "VND" ? 
-                                      formatVNDWithFloor(calculatedAmount) : 
-                                      Math.floor(calculatedAmount);
-                                    return finalAmount.toLocaleString();
-                                  })()} {formData.toCurrency}
-                                  <span className="ml-1 text-gray-500">
-                                    (환율: {useRate.toFixed(2)})
-                                  </span>
+                                <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                  <div className="text-sm text-orange-600 font-medium mb-1">환전 예상</div>
+                                  <div className="text-lg font-bold text-orange-700">
+                                    ≈ {(() => {
+                                      const calculatedAmount = parseFloat(formData.denominationAmounts[denom.value]) * 
+                                        getDenominationValue(formData.fromCurrency, denom.value) * 
+                                        useRate;
+                                      // VND의 경우 무조건 내림 적용
+                                      const finalAmount = formData.toCurrency === "VND" ? 
+                                        formatVNDWithFloor(calculatedAmount) : 
+                                        Math.floor(calculatedAmount);
+                                      return finalAmount.toLocaleString();
+                                    })()} {formData.toCurrency}
+                                  </div>
+                                  <div className="text-sm text-orange-600 mt-1">
+                                    환율: {useRate.toFixed(2)}
+                                  </div>
                                 </div>
                               )}
                             </div>
