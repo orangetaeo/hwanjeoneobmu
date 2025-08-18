@@ -430,8 +430,8 @@ export default function TransactionForm() {
 
   // VND 천 단위 무조건 내림 함수 (환전상 지급 규칙)
   const formatVNDWithFloor = (amount: number) => {
-    // 천 단위에서 무조건 내림 처리
-    return Math.floor(amount / 1000) * 1000;
+    // 10,000원 단위에서 무조건 내림 처리 (천 단위 3자리 버림)
+    return Math.floor(amount / 10000) * 10000;
   };
 
   // 숫자 포맷팅 함수 (통화별 처리)
@@ -871,7 +871,7 @@ export default function TransactionForm() {
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
                   <div className="text-xl font-bold text-blue-700">
                     {formData.toCurrency === "VND" ? 
-                      (Math.floor(parseFloat(formData.toAmount) / 1000) * 1000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
+                      (Math.floor(parseFloat(formData.toAmount) / 10000) * 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
                       formatNumber(formData.toAmount, formData.toCurrency)
                     } {formData.toCurrency}
                   </div>
