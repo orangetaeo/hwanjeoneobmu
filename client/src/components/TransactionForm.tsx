@@ -494,7 +494,7 @@ export default function TransactionForm() {
                     {CURRENCY_DENOMINATIONS[formData.fromCurrency as keyof typeof CURRENCY_DENOMINATIONS]?.map((denom) => {
                       const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom.value);
                       const isSelected = formData.fromDenominations.includes(denom.value);
-                      const useRate = formData.fromCurrency === "KRW" ? rateInfo?.mySellRate : rateInfo?.myBuyRate;
+                      const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
                       
                       return (
                         <div key={denom.value} className={`border rounded-lg p-3 md:p-4 transition-all ${isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
@@ -529,7 +529,7 @@ export default function TransactionForm() {
                                 </Label>
                               </div>
                             </div>
-                            {useRate && typeof useRate === 'number' && (
+                            {useRate > 0 && (
                               <div className="px-3 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[80px]">
                                 <div className="text-xs text-red-600 font-medium">
                                   매도 시세
