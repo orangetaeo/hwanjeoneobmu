@@ -49,17 +49,21 @@ export default function CashTransactionHistory({
 
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
-    // cash_change 타입 거래이거나 현금 관련 거래 필터링
-    const isCashChangeTransaction = transaction.type === 'cash_change';
-    const fromAssetMatches = transaction.fromAssetName?.includes(cashAsset.currency) && 
-                           (transaction.fromAssetName?.includes('현금') || transaction.fromAssetName?.includes('증가'));
-    const toAssetMatches = transaction.toAssetName?.includes(cashAsset.currency) && 
-                         (transaction.toAssetName?.includes('현금') || transaction.toAssetName?.includes('감소'));
+    // cash_change 또는 cash_exchange 타입 거래 필터링
+    const isCashTransaction = transaction.type === 'cash_change' || transaction.type === 'cash_exchange';
+    
+    // 현금 자산명이 정확히 일치하거나 통화가 일치하는 경우
+    const fromAssetMatches = transaction.fromAssetName === cashAsset.name || 
+                           (transaction.fromAssetName?.includes(cashAsset.currency) && 
+                           transaction.fromAssetName?.includes('현금'));
+    const toAssetMatches = transaction.toAssetName === cashAsset.name || 
+                         (transaction.toAssetName?.includes(cashAsset.currency) && 
+                         transaction.toAssetName?.includes('현금'));
     
     // 메타데이터에 해당 자산 ID가 있는지 확인
     const hasMatchingAssetId = transaction.metadata?.assetId === cashAsset.id;
     
-    return isCashChangeTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId);
+    return isCashTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId);
   });
 
   const filteredTransactions = cashTransactions
@@ -76,10 +80,23 @@ export default function CashTransactionHistory({
         (!startDate || transactionDate >= new Date(startDate)) &&
         (!endDate || transactionDate <= new Date(endDate + 'T23:59:59'));
       
-      // Type filter (increase/decrease)
-      const isDecrease = transaction.fromAssetName?.includes('현금') && 
-                        !transaction.fromAssetName?.includes('증가');
-      const isIncrease = !isDecrease;
+      // Type filter (increase/decrease) - cash_exchange 타입도 고려
+      let isDecrease = false;
+      let isIncrease = false;
+      
+      if (transaction.type === 'cash_exchange') {
+        // cash_exchange의 경우 fromAsset이면 증가(고객이 준 돈), toAsset이면 감소(고객에게 준 돈)
+        if (transaction.fromAssetName === cashAsset.name) {
+          isIncrease = true; // 고객이 준 돈
+        } else if (transaction.toAssetName === cashAsset.name) {
+          isDecrease = true; // 고객에게 준 돈
+        }
+      } else {
+        // cash_change의 경우 기존 로직 유지
+        isDecrease = transaction.fromAssetName?.includes('현금') && 
+                    !transaction.fromAssetName?.includes('증가');
+        isIncrease = !isDecrease;
+      }
       
       const matchesType = 
         typeFilter === 'all' ||
@@ -110,15 +127,30 @@ export default function CashTransactionHistory({
     .slice(0, displayCount); // 선택한 개수만 표시
 
   const getTransactionAmount = (transaction: Transaction) => {
-    // 현금 자산이 from인지 to인지에 따라 증가/감소 판단
-    const isDecrease = transaction.fromAssetName?.includes('현금') && 
-                      !transaction.fromAssetName?.includes('증가');
-    const isIncrease = transaction.toAssetName?.includes('현금') && 
-                      !transaction.toAssetName?.includes('감소');
+    let isDecrease = false;
+    let isIncrease = false;
+    let amount = 0;
     
-    // 증가인 경우와 감소인 경우에 따라 금액 결정
-    const amount = isIncrease ? transaction.toAmount : transaction.fromAmount;
-    return { amount, isDecrease: !isIncrease };
+    if (transaction.type === 'cash_exchange') {
+      // cash_exchange의 경우 fromAsset이면 증가, toAsset이면 감소
+      if (transaction.fromAssetName === cashAsset.name) {
+        isIncrease = true;
+        amount = parseFloat(transaction.fromAmount);
+      } else if (transaction.toAssetName === cashAsset.name) {
+        isDecrease = true;
+        amount = parseFloat(transaction.toAmount);
+      }
+    } else {
+      // cash_change의 경우 기존 로직 유지
+      isDecrease = transaction.fromAssetName?.includes('현금') && 
+                  !transaction.fromAssetName?.includes('증가');
+      isIncrease = transaction.toAssetName?.includes('현금') && 
+                  !transaction.toAssetName?.includes('감소');
+      
+      amount = isIncrease ? parseFloat(transaction.toAmount) : parseFloat(transaction.fromAmount);
+    }
+    
+    return { amount, isDecrease };
   };
 
   const getTransactionIcon = (isDecrease: boolean) => {
@@ -130,10 +162,18 @@ export default function CashTransactionHistory({
   };
 
   const getTransactionTypeText = (transaction: Transaction, isDecrease: boolean) => {
-    if (isDecrease) {
-      return '현금 감소';
+    if (transaction.type === 'cash_exchange') {
+      if (isDecrease) {
+        return '현금 환전 (지급)';
+      } else {
+        return '현금 환전 (수령)';
+      }
     } else {
-      return '현금 증가';
+      if (isDecrease) {
+        return '현금 감소';
+      } else {
+        return '현금 증가';
+      }
     }
   };
 
