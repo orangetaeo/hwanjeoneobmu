@@ -102,6 +102,27 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     }
   }, [formData.fromCurrency, exchangeRates]);
 
+  // 권종 변경 시 해당 권종의 기존 활성화 상태 가져오기
+  useEffect(() => {
+    if (Array.isArray(exchangeRates) && exchangeRates.length > 0 && formData.denomination) {
+      const existingRate = exchangeRates.find((rate: ExchangeRate) => 
+        rate.fromCurrency === formData.fromCurrency && 
+        rate.toCurrency === formData.toCurrency &&
+        rate.denomination === formData.denomination
+      );
+      
+      if (existingRate) {
+        setFormData(prev => ({
+          ...prev,
+          isActive: existingRate.isActive,
+          goldShopRate: existingRate.goldShopRate || "",
+          myBuyRate: existingRate.myBuyRate || "",
+          mySellRate: existingRate.mySellRate || ""
+        }));
+      }
+    }
+  }, [formData.denomination, formData.fromCurrency, formData.toCurrency, exchangeRates]);
+
   // 환전상 시세 히스토리 조회
   const { data: rateHistory = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: ["/api/exchange-rates/history"],
