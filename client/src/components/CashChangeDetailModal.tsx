@@ -27,12 +27,8 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   
   // cash_exchange 타입의 경우 현재 보고 있는 통화에 맞는 권종별 변화 데이터만 생성
   if ((transaction.type as string) === 'cash_exchange') {
-    console.log('Cash exchange transaction metadata:', metadata);
     const denominationAmounts = metadata?.denominationAmounts || {};
     const vndBreakdown = metadata?.vndBreakdown || {};
-    console.log('denominationAmounts:', denominationAmounts);
-    console.log('vndBreakdown:', vndBreakdown);
-    console.log('cashAsset.currency:', cashAsset.currency);
     
     // 현재 보고 있는 현금 자산의 통화에 따라 해당 권종만 표시
     if (cashAsset.currency === 'KRW') {
@@ -45,13 +41,17 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
     } else if (cashAsset.currency === 'VND') {
       // VND 현금 상세 페이지: vndBreakdown (VND 감소)
       if (Object.keys(vndBreakdown).length === 0) {
-        // vndBreakdown이 없는 경우, VND 거래 금액으로 임시 권종 생성
+        // vndBreakdown이 없는 경우, VND 거래 금액으로 권종 자동 계산
         const vndAmount = parseFloat(transaction.toAmount.toString());
-        console.log('VND amount from toAmount:', vndAmount);
-        denominationChanges['500000'] = -(Math.floor(vndAmount / 500000));
+        // 50만동권과 10만동권으로 분해
+        const count500k = Math.floor(vndAmount / 500000);
+        if (count500k > 0) {
+          denominationChanges['500000'] = -count500k;
+        }
         const remaining = vndAmount % 500000;
-        if (remaining >= 100000) {
-          denominationChanges['100000'] = -(Math.floor(remaining / 100000));
+        const count100k = Math.floor(remaining / 100000);
+        if (count100k > 0) {
+          denominationChanges['100000'] = -count100k;
         }
       } else {
         Object.entries(vndBreakdown).forEach(([denom, amount]) => {
