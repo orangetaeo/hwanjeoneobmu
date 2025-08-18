@@ -74,6 +74,17 @@ export default function TransactionForm() {
   // VND 권종별 분배 수정용 상태
   const [vndBreakdown, setVndBreakdown] = useState<Record<string, number>>({});
 
+  // 권종별 환율의 평균 계산
+  const calculateAverageExchangeRate = () => {
+    const totalFromAmount = calculateTotalFromAmount();
+    const totalToAmount = parseFloat(formData.toAmount);
+    
+    if (totalFromAmount > 0 && totalToAmount > 0) {
+      return totalToAmount / totalFromAmount;
+    }
+    return parseFloat(formData.exchangeRate) || 0;
+  };
+
   // VND 원본 계산값 저장 (내림 전)
   const [vndOriginalAmount, setVndOriginalAmount] = useState<number>(0);
 
@@ -929,7 +940,7 @@ export default function TransactionForm() {
                 <div className="space-y-1 text-sm">
                   <div>고객이 주는 금액: <span className="font-medium">{formatNumber(formData.fromAmount)} {formData.fromCurrency}</span></div>
                   <div>고객이 받는 금액: <span className="font-medium">{formatNumber(formData.toAmount)} {formData.toCurrency}</span></div>
-                  <div>적용 환율: <span className="font-medium">{formatNumber(formData.exchangeRate)}</span></div>
+                  <div>적용 환율: <span className="font-medium">{formatNumber(calculateAverageExchangeRate().toString())}</span> <span className="text-xs text-gray-500">(권종별 평균)</span></div>
                   {formData.customerName && (
                     <div>고객: <span className="font-medium">{formData.customerName}</span></div>
                   )}
