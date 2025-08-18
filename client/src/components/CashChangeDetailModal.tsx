@@ -1,4 +1,4 @@
-import { Transaction } from '@/types';
+import { Transaction } from '@shared/schema';
 import {
   Dialog,
   DialogContent,
@@ -18,13 +18,13 @@ interface CashChangeDetailModalProps {
 }
 
 export default function CashChangeDetailModal({ transaction, isOpen, onClose }: CashChangeDetailModalProps) {
-  if (!transaction || (transaction.type !== 'cash_change' && transaction.type !== 'cash_exchange')) return null;
+  if (!transaction || (transaction.type !== 'cash_change' && (transaction.type as string) !== 'cash_exchange')) return null;
 
   const metadata = transaction.metadata as any;
   let denominationChanges = metadata?.denominationChanges || {};
   
   // cash_exchange 타입의 경우 권종별 변화 데이터를 생성
-  if (transaction.type === 'cash_exchange') {
+  if ((transaction.type as string) === 'cash_exchange') {
     const denominationAmounts = metadata?.denominationAmounts || {};
     const vndBreakdown = metadata?.vndBreakdown || {};
     
@@ -61,7 +61,7 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
 
   // 통화 결정 (자산 이름에서 추출) - cash_exchange는 양쪽 통화 모두 고려
   const getCurrency = () => {
-    if (transaction.type === 'cash_exchange') {
+    if ((transaction.type as string) === 'cash_exchange') {
       // 권종 변화에서 통화를 판단
       const hasKRWDenoms = Object.keys(denominationChanges).some(denom => 
         ['1000', '5000', '10000', '50000'].includes(denom)
@@ -178,12 +178,12 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Banknote size={20} />
-            {transaction.type === 'cash_exchange' ? '현금 환전 상세 내역' : '현금 증감 상세 내역'}
+            {(transaction.type as string) === 'cash_exchange' ? '현금 환전 상세 내역' : '현금 증감 상세 내역'}
           </DialogTitle>
           <DialogDescription>
-            {transaction.type === 'cash_exchange' 
-              ? `${transaction.fromAssetName} → ${transaction.toAssetName}` 
-              : transaction.toAssetName} - {date} {time}
+            {(transaction.type as string) === 'cash_exchange' 
+              ? `${transaction.fromAssetName} → ${transaction.toAssetName}(현금환전 ${transaction.toAssetName?.includes(currency === 'MIXED' ? 'VND' : currency) ? '수령' : '지급'}) - ${date} ${time}` 
+              : `${transaction.toAssetName} - ${date} ${time}`}
           </DialogDescription>
         </DialogHeader>
 
