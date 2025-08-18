@@ -935,15 +935,51 @@ export default function TransactionForm() {
 
             {/* 거래 확인 */}
             {formData.fromAmount && formData.toAmount && formData.exchangeRate && (
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="font-medium mb-2">거래 확인</h3>
-                <div className="space-y-1 text-sm">
-                  <div>고객이 주는 금액: <span className="font-medium">{formatNumber(formData.fromAmount)} {formData.fromCurrency}</span></div>
-                  <div>고객이 받는 금액: <span className="font-medium">{formatNumber(formData.toAmount)} {formData.toCurrency}</span></div>
-                  <div>적용 환율: <span className="font-medium">{formatNumber(calculateAverageExchangeRate().toString())}</span> <span className="text-xs text-gray-500">(권종별 평균)</span></div>
-                  {formData.customerName && (
-                    <div>고객: <span className="font-medium">{formData.customerName}</span></div>
-                  )}
+              <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200 rounded-xl p-6 shadow-sm">
+                {/* 배경 장식 */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/30 to-transparent rounded-full transform translate-x-16 -translate-y-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100/40 to-transparent rounded-full transform -translate-x-12 translate-y-12"></div>
+                
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <Calculator className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-emerald-800">거래 확인</h3>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
+                      <span className="text-sm text-gray-600 font-medium">고객이 주는 금액</span>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-emerald-700">{formatNumber(formData.fromAmount)} {formData.fromCurrency}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
+                      <span className="text-sm text-gray-600 font-medium">고객이 받는 금액</span>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-teal-700">{formatNumber(formData.toAmount)} {formData.toCurrency}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
+                      <span className="text-sm text-gray-600 font-medium">적용 환율</span>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-cyan-700">{formatNumber(calculateAverageExchangeRate().toString())}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">(권종별 평균)</div>
+                      </div>
+                    </div>
+                    
+                    {formData.customerName && (
+                      <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
+                        <span className="text-sm text-gray-600 font-medium">고객</span>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-700">{formData.customerName}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
