@@ -131,9 +131,6 @@ export default function ExchangeRatesPage() {
       </div>
 
       <ExchangeRateManager
-        rates={exchangeRates}
-        onSave={handleSave}
-        onUpdate={handleUpdate}
         realTimeRates={realTimeRates}
       />
     </div>

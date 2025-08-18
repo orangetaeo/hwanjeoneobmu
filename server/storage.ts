@@ -46,9 +46,11 @@ export interface IStorage {
   updateUserSettings(userId: string, settings: Partial<InsertUserSettings>): Promise<UserSettings>;
   
   // Exchange Rates
-  createExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate>;
+  createExchangeRate(userId: string, rate: InsertExchangeRate): Promise<ExchangeRate>;
   getExchangeRates(userId: string): Promise<ExchangeRate[]>;
   updateExchangeRate(id: string, updates: Partial<InsertExchangeRate>): Promise<ExchangeRate | undefined>;
+  getExchangeRateHistory(userId: string): Promise<ExchangeRateHistory[]>;
+  getExchangeRateForTransaction(userId: string, fromCurrency: string, toCurrency: string, denomination: string, transactionType: 'buy' | 'sell'): Promise<{ rate: number; source: string } | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -611,6 +613,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Exchange Rates methods
+  async createExchangeRate(userId: string, rate: InsertExchangeRate): Promise<ExchangeRate> {
+    return await this.upsertExchangeRate({ ...rate, userId });
+  }
+
   // 현재 환전상 시세 관리 (UPSERT 방식)
   async upsertExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate> {
     // 동일한 통화쌍과 권종이 있는지 확인

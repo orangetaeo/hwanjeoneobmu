@@ -82,23 +82,17 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
   // 현재 환전상 시세 데이터 조회
   const { data: exchangeRates = [], isLoading: isLoadingRates } = useQuery({
     queryKey: ["/api/exchange-rates"],
-    queryFn: () => apiRequest("/api/exchange-rates")
   });
 
   // 환전상 시세 히스토리 조회
   const { data: rateHistory = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: ["/api/exchange-rates/history"],
-    queryFn: () => apiRequest("/api/exchange-rates/history"),
     enabled: activeTab === "history"
   });
 
   // 환전상 시세 저장/업데이트 mutation
   const saveMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/exchange-rates", {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" }
-    }),
+    mutationFn: (data: any) => apiRequest("/api/exchange-rates", "POST", data),
     onSuccess: () => {
       toast({
         title: "환전상 시세 저장 완료",
@@ -371,13 +365,13 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
             <CardContent>
               {isLoadingRates ? (
                 <div className="text-center py-8">로딩 중...</div>
-              ) : exchangeRates.length === 0 ? (
+              ) : !Array.isArray(exchangeRates) || exchangeRates.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   등록된 시세가 없습니다.
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {exchangeRates.map((rate: ExchangeRate) => (
+                  {Array.isArray(exchangeRates) && exchangeRates.map((rate: ExchangeRate) => (
                     <div key={rate.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -439,13 +433,13 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
           <CardContent>
             {isLoadingHistory ? (
               <div className="text-center py-8">로딩 중...</div>
-            ) : rateHistory.length === 0 ? (
+            ) : !Array.isArray(rateHistory) || rateHistory.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 시세 히스토리가 없습니다.
               </div>
             ) : (
               <div className="space-y-4">
-                {rateHistory.map((history: ExchangeRateHistory) => (
+                {Array.isArray(rateHistory) && rateHistory.map((history: ExchangeRateHistory) => (
                   <div key={history.id} className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">

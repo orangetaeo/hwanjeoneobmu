@@ -77,16 +77,16 @@ export default function TransactionForm() {
   // 자산 목록 조회
   const { data: assets = [], isLoading: isLoadingAssets } = useQuery({
     queryKey: ["/api/assets"],
-    queryFn: () => apiRequest("/api/assets")
   });
 
   // 환전상 시세 조회 (자동 환율 적용용)
   const fetchExchangeRate = async (fromCurrency: string, toCurrency: string, denomination: string, transactionType: 'buy' | 'sell') => {
     try {
-      const rate: ExchangeRate = await apiRequest(
+      const response = await fetch(
         `/api/exchange-rates/transaction?fromCurrency=${fromCurrency}&toCurrency=${toCurrency}&denomination=${denomination}&transactionType=${transactionType}`
       );
-      return rate;
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error("환율 조회 실패:", error);
       return null;
@@ -95,11 +95,7 @@ export default function TransactionForm() {
 
   // 거래 생성 mutation
   const createTransactionMutation = useMutation({
-    mutationFn: (transactionData: any) => apiRequest("/api/transactions", {
-      method: "POST",
-      body: JSON.stringify(transactionData),
-      headers: { "Content-Type": "application/json" }
-    }),
+    mutationFn: (transactionData: any) => apiRequest("/api/transactions", "POST", transactionData),
     onSuccess: () => {
       toast({
         title: "새거래 처리 완료",
@@ -201,7 +197,7 @@ export default function TransactionForm() {
 
   // 통화별 자산 필터링
   const getAssetsByCurrency = (currency: string) => {
-    return assets.filter((asset: Asset) => asset.currency === currency);
+    return Array.isArray(assets) ? assets.filter((asset: any) => asset.currency === currency) : [];
   };
 
   // 폼 제출 처리

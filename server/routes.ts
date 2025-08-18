@@ -236,7 +236,7 @@ router.post('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, re
     console.log('Exchange rate creation request:', dataWithUserId);
     const validatedData = insertExchangeRateSchema.parse(dataWithUserId);
     
-    const exchangeRate = await storage.createExchangeRate(validatedData);
+    const exchangeRate = await storage.createExchangeRate(req.user!.id, validatedData);
     res.json(exchangeRate);
   } catch (error) {
     console.error('Error creating exchange rate:', error);
@@ -264,6 +264,45 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: AuthenticatedReques
   } catch (error) {
     console.error('Error updating exchange rate:', error);
     res.status(500).json({ error: 'Failed to update exchange rate' });
+  }
+});
+
+// Exchange Rates History Route
+router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const history = await storage.getExchangeRateHistory(req.user!.id);
+    res.json(history);
+  } catch (error) {
+    console.error('Error fetching exchange rate history:', error);
+    res.status(500).json({ error: 'Failed to fetch exchange rate history' });
+  }
+});
+
+// Exchange Rate for Transaction Route
+router.get('/exchange-rates/transaction', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { fromCurrency, toCurrency, denomination, transactionType } = req.query;
+    
+    if (!fromCurrency || !toCurrency || !transactionType) {
+      return res.status(400).json({ error: 'Missing required query parameters' });
+    }
+
+    const rateData = await storage.getExchangeRateForTransaction(
+      req.user!.id,
+      fromCurrency as string,
+      toCurrency as string,
+      denomination as string,
+      transactionType as 'buy' | 'sell'
+    );
+
+    if (!rateData) {
+      return res.status(404).json({ error: 'No exchange rate found for the specified parameters' });
+    }
+
+    res.json(rateData);
+  } catch (error) {
+    console.error('Error fetching transaction exchange rate:', error);
+    res.status(500).json({ error: 'Failed to fetch transaction exchange rate' });
   }
 });
 
@@ -573,7 +612,7 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
     try {
       for (const rate of initialExchangeRates) {
         console.log('환율 생성 중:', rate);
-        await storage.createExchangeRate(rate);
+        await storage.createExchangeRate(userId, rate);
         console.log('환율 생성 완료');
       }
       console.log('환율 정보 생성 완료');
