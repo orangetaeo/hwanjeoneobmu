@@ -778,7 +778,7 @@ export class DatabaseStorage implements IStorage {
       const currentMetadata = fromAsset.metadata as any || {};
       const currentDenominations = currentMetadata.denominations || {};
       
-      // 권종별 수량 차감
+      // 권종별 수량 차감 (모든 통화에 적용)
       const updatedDenominations = { ...currentDenominations };
       for (const [denomination, amount] of Object.entries(denominationAmounts)) {
         if (amount && parseFloat(amount as string) > 0) {
@@ -786,7 +786,7 @@ export class DatabaseStorage implements IStorage {
           const deductQty = parseInt(amount as string);
           updatedDenominations[denomination] = Math.max(0, currentQty - deductQty);
           
-          console.log(`${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${deductQty}장 차감)`);
+          console.log(`출발 ${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${deductQty}장 차감)`);
         }
       }
       
@@ -806,22 +806,60 @@ export class DatabaseStorage implements IStorage {
       });
     }
     
-    // 도착 통화 자산 업데이트 (총액 증가)
+    // 도착 통화 자산 업데이트
     const toAsset = await this.getAssetByName(userId, transaction.toAssetName!, 'cash');
     if (toAsset) {
       const currentBalance = parseFloat(toAsset.balance || "0");
-      const newBalance = currentBalance + toAmount;
       
-      console.log('도착 자산 업데이트:', {
-        assetName: transaction.toAssetName,
-        currentBalance,
-        newBalance,
-        addedAmount: toAmount
-      });
-      
-      await this.updateAsset(userId, toAsset.id, {
-        balance: newBalance.toString()
-      });
+      // 도착 통화가 VND이고 권종별 분배가 있는 경우
+      if (transaction.toAssetName?.includes('VND') && metadata.vndBreakdown) {
+        // VND 권종별 추가
+        const currentMetadata = toAsset.metadata as any || {};
+        const currentDenominations = currentMetadata.denominations || {};
+        const updatedDenominations = { ...currentDenominations };
+        
+        for (const [denomination, amount] of Object.entries(metadata.vndBreakdown)) {
+          if (amount && (amount as number) > 0) {
+            const currentQty = updatedDenominations[denomination] || 0;
+            const addQty = amount as number;
+            updatedDenominations[denomination] = currentQty + addQty;
+            
+            console.log(`VND ${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${addQty}장 추가)`);
+          }
+        }
+        
+        const newBalance = currentBalance + toAmount;
+        
+        console.log('VND 도착 자산 권종별 업데이트:', {
+          assetName: transaction.toAssetName,
+          currentBalance,
+          newBalance,
+          denominationChanges: updatedDenominations
+        });
+        
+        await this.updateAsset(userId, toAsset.id, {
+          balance: newBalance.toString(),
+          metadata: {
+            ...currentMetadata,
+            denominations: updatedDenominations
+          }
+        });
+      } 
+      // 일반적인 경우 (총액만 증가)
+      else {
+        const newBalance = currentBalance + toAmount;
+        
+        console.log('도착 자산 업데이트:', {
+          assetName: transaction.toAssetName,
+          currentBalance,
+          newBalance,
+          addedAmount: toAmount
+        });
+        
+        await this.updateAsset(userId, toAsset.id, {
+          balance: newBalance.toString()
+        });
+      }
     }
     
     console.log('=== 현금 환전 자산 이동 완료 ===');
