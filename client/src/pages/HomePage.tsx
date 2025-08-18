@@ -1073,14 +1073,16 @@ export default function HomePage() {
               </Button>
               
               {currentView === 'dashboard' && <Home className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {currentView === 'new-transaction' && <Plus className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'assets' && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'exchange-operations' && <Coins className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'transactions' && <List className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'rates' && <TrendingUp className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'exchange-rates' && <DollarSign className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
-              {!['dashboard', 'assets', 'exchange-operations', 'transactions', 'rates', 'exchange-rates'].includes(currentView) && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {!['dashboard', 'new-transaction', 'assets', 'exchange-operations', 'transactions', 'rates', 'exchange-rates'].includes(currentView) && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               <h1 className="text-base lg:text-xl font-bold text-gray-900">
                 {currentView === 'dashboard' ? '대시보드' :
+                 currentView === 'new-transaction' ? '새거래' :
                  currentView === 'assets' ? '자산 관리' :
                  currentView === 'exchange-operations' ? '거래소 운영' :
                  currentView === 'transactions' ? '거래 내역' :
@@ -1134,6 +1136,17 @@ export default function HomePage() {
                   >
                     <Home className="w-5 h-5 mr-3" />
                     대시보드
+                  </Button>
+                </li>
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'new-transaction' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('new-transaction'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-new-transaction"
+                  >
+                    <Plus className="w-5 h-5 mr-3" />
+                    새거래
                   </Button>
                 </li>
                 <li>
@@ -1208,43 +1221,52 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 모바일 하단 네비게이션 - 주요 4개 메뉴만 */}
+      {/* 모바일 하단 네비게이션 - 주요 5개 메뉴 */}
       <nav className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-40">
-        <div className="flex justify-around items-center h-14 px-2">
+        <div className="flex justify-around items-center h-14 px-1">
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-1 p-1.5 min-w-0 ${currentView === 'dashboard' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('dashboard')}
             data-testid="mobile-nav-dashboard"
           >
-            <Home className="w-5 h-5" />
+            <Home className="w-4 h-4" />
             <span className="text-xs font-medium">대시보드</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'exchange-operations' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-1 p-1.5 min-w-0 ${currentView === 'new-transaction' ? 'text-primary' : 'text-gray-400'}`}
+            onClick={() => setCurrentView('new-transaction')}
+            data-testid="mobile-nav-new-transaction"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="text-xs font-medium">새거래</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={`flex flex-col items-center space-y-1 p-1.5 min-w-0 ${currentView === 'exchange-operations' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('exchange-operations')}
             data-testid="mobile-nav-exchange-operations"
           >
-            <Coins className="w-5 h-5" />
+            <Coins className="w-4 h-4" />
             <span className="text-xs font-medium">환전거래</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'exchange-rates' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-1 p-1.5 min-w-0 ${currentView === 'exchange-rates' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('exchange-rates')}
             data-testid="mobile-nav-exchange-rates"
           >
-            <DollarSign className="w-5 h-5" />
+            <DollarSign className="w-4 h-4" />
             <span className="text-xs font-medium">환전상 시세</span>
           </Button>
           <Button 
             variant="ghost" 
-            className={`flex flex-col items-center space-y-1 p-2 min-w-0 ${currentView === 'assets' ? 'text-primary' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-1 p-1.5 min-w-0 ${currentView === 'assets' ? 'text-primary' : 'text-gray-400'}`}
             onClick={() => setCurrentView('assets')}
             data-testid="mobile-nav-assets"
           >
-            <Wallet className="w-5 h-5" />
+            <Wallet className="w-4 h-4" />
             <span className="text-xs font-medium">자산관리</span>
           </Button>
         </div>
@@ -1261,6 +1283,7 @@ export default function HomePage() {
                   {/* 네비게이션 메뉴 항목들 */}
                   {[
                     { id: 'dashboard', label: '대시보드', icon: Home },
+                    { id: 'new-transaction', label: '새거래', icon: Plus },
                     { id: 'assets', label: '자산 관리', icon: Wallet },
                     { id: 'exchange-operations', label: '거래소 운영', icon: Coins },
                     { id: 'transactions', label: '거래 내역', icon: List },
@@ -1428,11 +1451,11 @@ export default function HomePage() {
                 {currentView === 'exchange-operations' && (
                   <ExchangeOperations />
                 )}
-                {currentView === 'transaction' && (
-                  <TransactionForm
+                {currentView === 'new-transaction' && (
+                  <AdvancedTransactionForm
                     allAssets={allAssetsForTransaction}
-                    onTransactionSuccess={() => setCurrentView('dashboard')}
-                    onOpenModal={handleOpenModal}
+                    onTransactionSuccess={handleAdvancedTransactionSuccess}
+                    onCancel={() => setCurrentView('dashboard')}
                   />
                 )}
                 {currentView === 'rates' && (
