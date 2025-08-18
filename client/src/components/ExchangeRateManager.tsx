@@ -221,23 +221,17 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     
     if (isNaN(num)) return "-";
     
-    console.log('formatRate:', { rate, currency, num }); // 디버깅용
-    
     // USD 시세는 정수로 표시
     if (currency === 'USD') {
-      const result = Math.round(num).toLocaleString('ko-KR');
-      console.log('USD 포맷 결과:', result);
-      return result;
+      return Math.round(num).toLocaleString('ko-KR');
     }
     
     // KRW는 소숫점 2자리로 제한하여 표시  
     if (currency === 'KRW') {
-      const result = num.toLocaleString('ko-KR', { 
+      return num.toLocaleString('ko-KR', { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
       });
-      console.log('KRW 포맷 결과:', result);
-      return result;
     }
     
     // 기타 통화는 소숫점 2자리까지
@@ -426,7 +420,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                   <Input
                     type="text"
                     placeholder={formData.fromCurrency === 'KRW' ? "예: 19.20" : "예: 26,100"}
-                    value={formatNumberInput(formData.goldShopRate)}
+                    value={formatNumberInput(formData.goldShopRate, formData.fromCurrency)}
                     onChange={(e) => {
                       let value = e.target.value.replace(/,/g, ''); // 콤마 제거
                       if (formData.fromCurrency === 'USD') {
@@ -457,7 +451,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Input
                       type="text"
                       placeholder={formData.fromCurrency === 'KRW' ? "예: 19.00" : "예: 26,000"}
-                      value={formatNumberInput(formData.myBuyRate)}
+                      value={formatNumberInput(formData.myBuyRate, formData.fromCurrency)}
                       onChange={(e) => {
                         let value = e.target.value.replace(/,/g, ''); // 콤마 제거
                         if (formData.fromCurrency === 'USD') {
@@ -485,7 +479,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Input
                       type="text"
                       placeholder={formData.fromCurrency === 'KRW' ? "예: 19.40" : "예: 26,200"}
-                      value={formatNumberInput(formData.mySellRate)}
+                      value={formatNumberInput(formData.mySellRate, formData.fromCurrency)}
                       onChange={(e) => {
                         let value = e.target.value.replace(/,/g, ''); // 콤마 제거
                         if (formData.fromCurrency === 'USD') {

@@ -17,8 +17,8 @@ export function addCommas(value: string): string {
   return Number(num).toLocaleString();
 }
 
-// 입력 필드용 숫자 포맷팅 (콤마 포함)
-export function formatNumberInput(value: string): string {
+// 입력 필드용 숫자 포맷팅 (통화별 규칙 적용)
+export function formatNumberInput(value: string, currency: string = 'VND'): string {
   if (!value) return '';
   
   // 입력 중인 소숫점은 그대로 보존
@@ -34,7 +34,16 @@ export function formatNumberInput(value: string): string {
   if (value.includes('.')) {
     const parts = value.split('.');
     const integerPart = parts[0];
-    const decimalPart = parts[1] || '';
+    let decimalPart = parts[1] || '';
+    
+    // 통화별 소숫점 제한
+    if (currency === 'KRW') {
+      // KRW는 소숫점 2자리까지만 허용
+      decimalPart = decimalPart.substring(0, 2);
+    } else if (currency === 'USD') {
+      // USD는 소숫점 입력 제한 (정수만 허용)
+      return formatNumberInput(integerPart, currency);
+    }
     
     if (integerPart && !isNaN(Number(integerPart))) {
       const formattedInteger = Number(integerPart).toLocaleString();
