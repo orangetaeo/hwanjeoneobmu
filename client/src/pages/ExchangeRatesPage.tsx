@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import ExchangeRateManager from '@/components/ExchangeRateManager';
 import { ExchangeRate, InsertExchangeRate } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Home } from 'lucide-react';
 
 export default function ExchangeRatesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // 환율 데이터 조회
   const { data: exchangeRates = [], isLoading } = useQuery({
@@ -126,17 +130,51 @@ export default function ExchangeRatesPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">환율/시세 관리</h1>
-        <p className="text-gray-600 mt-1">
-          금은방 시세 기반 환전상 관리 시스템 - 일일 시세 업데이트 및 급변상황 대응
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* 네비게이션 헤더 */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLocation('/')}
+                className="flex items-center space-x-2 hover:bg-gray-100"
+                data-testid="back-to-home"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>돌아가기</span>
+              </Button>
+              <div className="h-6 w-px bg-gray-300"></div>
+              <h1 className="text-xl font-semibold text-gray-900">환전상 시세 관리</h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation('/')}
+              className="flex items-center space-x-2"
+              data-testid="home-button"
+            >
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">홈</span>
+            </Button>
+          </div>
+        </div>
+      </header>
 
-      <ExchangeRateManager
-        realTimeRates={realTimeRates}
-      />
+      {/* 메인 콘텐츠 */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <p className="text-gray-600">
+            금은방 시세 기반 환전상 관리 시스템 - 일일 시세 업데이트 및 급변상황 대응
+          </p>
+        </div>
+
+        <ExchangeRateManager
+          realTimeRates={realTimeRates}
+        />
+      </main>
     </div>
   );
 }
