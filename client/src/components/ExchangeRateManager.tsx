@@ -196,6 +196,56 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     );
   };
 
+  // 권종 표시 포맷 함수
+  const formatDenomination = (denomination: string | null) => {
+    if (!denomination) return "";
+    
+    // "100" -> "$100", "20_10" -> "$20,10", "5_2_1" -> "$5,2,1"
+    return "$" + denomination.replace(/_/g, ',');
+  };
+
+  // 권종별 정렬 우선순위 (고액권이 위에)
+  const getDenominationValue = (denomination: string | null) => {
+    if (!denomination) return 0;
+    
+    // 첫 번째 숫자를 기준으로 정렬 (100, 20, 5 순)
+    const firstNumber = parseInt(denomination.split('_')[0]);
+    return firstNumber || 0;
+  };
+
+  // 시세 활성화/비활성화 토글 mutation
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string, isActive: boolean }) => {
+      const response = await fetch(`/api/exchange-rates/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isActive: isActive.toString() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("시세 상태 변경에 실패했습니다.");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "시세 상태 변경 완료",
+        description: "시세 활성화 상태가 변경되었습니다.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/exchange-rates"] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "상태 변경 실패",
+        description: error.message || "시세 상태 변경에 실패했습니다.",
+      });
+    }
+  });
+
   return (
     <div className="space-y-6">
       {/* 헤더 */}
@@ -354,22 +404,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                   />
                 </div>
 
-                {/* 시세 활성화 */}
-                <div>
-                  <Label>시세 활성화</Label>
-                  <Select 
-                    value={formData.isActive} 
-                    onValueChange={(value) => setFormData({ ...formData, isActive: value })}
-                  >
-                    <SelectTrigger data-testid="select-is-active">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">활성화</SelectItem>
-                      <SelectItem value="false">비활성화</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
 
                 <Button 
                   type="submit" 
@@ -400,15 +435,24 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {Array.isArray(exchangeRates) && exchangeRates.map((rate: ExchangeRate) => (
-                    <div key={rate.id} className="p-4 border rounded-lg">
+                  {Array.isArray(exchangeRates) && 
+                    exchangeRates
+                      .sort((a, b) => getDenominationValue(b.denomination) - getDenominationValue(a.denomination))
+                      .map((rate: ExchangeRate) => (
+                    <div 
+                      key={rate.id} 
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        rate.isActive === "false" ? "bg-gray-50 border-gray-300" : "bg-white border-gray-200 hover:border-blue-300"
+                      }`}
+                      onClick={() => toggleMutation.mutate({ id: rate.id, isActive: rate.isActive !== "true" })}
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">
                             {rate.fromCurrency} → {rate.toCurrency}
                           </span>
                           {rate.denomination && (
-                            <Badge variant="outline">{rate.denomination}</Badge>
+                            <Badge variant="outline">{formatDenomination(rate.denomination)}</Badge>
                           )}
                           {rate.isActive === "false" && (
                             <Badge variant="destructive">
