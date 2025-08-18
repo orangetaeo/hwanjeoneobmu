@@ -302,7 +302,7 @@ export default function TransactionForm() {
       const total = calculateTotalFromAmount();
       setFormData(prev => ({ ...prev, fromAmount: total.toString() }));
       
-      // 권종별 매도 시세 합계로 정확한 금액 계산
+      // 권종별 매도 시세 합계로 정확한 금액 계산 (소수점 보존)
       const calculatedToAmount = formData.fromDenominations.reduce((totalAmount, denomValue) => {
         const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
         if (amount <= 0) return totalAmount;
@@ -310,16 +310,20 @@ export default function TransactionForm() {
         const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
         const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
         const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
-        return totalAmount + (totalValue * rate);
+        const calculatedValue = totalValue * rate;
+        console.log(`계산: ${totalValue} * ${rate} = ${calculatedValue}`);
+        return totalAmount + calculatedValue;
       }, 0);
       
       if (calculatedToAmount > 0) {
         // VND의 경우 원본값 저장하고 무조건 내림 적용
         if (formData.toCurrency === "VND") {
           console.log("Setting VND original amount:", calculatedToAmount);
+          console.log("VND original has decimal:", calculatedToAmount % 1 !== 0);
           setVndOriginalAmount(calculatedToAmount);
           const finalAmount = formatVNDWithFloor(calculatedToAmount);
           console.log("VND floored amount:", finalAmount);
+          console.log("Difference:", calculatedToAmount - finalAmount);
           
           setFormData(prev => ({ 
             ...prev, 
@@ -851,9 +855,11 @@ export default function TransactionForm() {
                   <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
                   {formData.toCurrency === "VND" && vndOriginalAmount > 0 && (() => {
                     console.log("VND original amount in display:", vndOriginalAmount);
+                    console.log("VND original has decimal in display:", vndOriginalAmount % 1 !== 0);
                     const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
                     const difference = vndOriginalAmount - flooredAmount;
                     console.log("VND difference:", difference);
+                    console.log("Difference > 0:", difference > 0);
                     
                     return difference > 0 ? (
                       <span className="text-sm text-orange-600 font-medium">
