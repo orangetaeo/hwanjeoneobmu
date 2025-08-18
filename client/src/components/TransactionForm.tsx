@@ -321,9 +321,17 @@ export default function TransactionForm() {
 
   // 권종별 금액이 변경될 때 총액 업데이트 및 환율 자동 설정
   useEffect(() => {
-    if (formData.transactionType === "cash_exchange" && Object.keys(formData.denominationAmounts).length > 0) {
+    if (formData.transactionType === "cash_exchange") {
       const total = calculateTotalFromAmount();
       setFormData(prev => ({ ...prev, fromAmount: total.toString() }));
+      
+      // 입력된 수량이 없으면 VND 분배도 초기화
+      if (Object.keys(formData.denominationAmounts).length === 0 || total === 0) {
+        setVndBreakdown({});
+        setVndOriginalAmount(0);
+        setFormData(prev => ({ ...prev, toAmount: "0" }));
+        return;
+      }
       
       // 권종별 매도 시세 합계로 정확한 금액 계산 (소수점 보존)
       const calculatedToAmount = formData.fromDenominations.reduce((totalAmount, denomValue) => {
@@ -366,6 +374,11 @@ export default function TransactionForm() {
             exchangeRate: (finalAmount / total).toString()
           }));
         }
+      } else {
+        // 계산된 금액이 0이면 모든 것을 초기화
+        setVndBreakdown({});
+        setVndOriginalAmount(0);
+        setFormData(prev => ({ ...prev, toAmount: "0" }));
       }
     }
   }, [formData.denominationAmounts, formData.transactionType, formData.fromDenominations]);
@@ -579,17 +592,13 @@ export default function TransactionForm() {
                           className={`border rounded-lg p-2 transition-all shadow-sm cursor-pointer ${isSelected ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300 hover:shadow-md'}`}
                           onClick={() => {
                             if (isSelected) {
+                              // 카드를 접을 때는 데이터를 유지하고 선택만 해제
                               const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
-                              // 선택 해제시 해당 권종의 수량도 초기화
-                              const newDenominationAmounts = { ...formData.denominationAmounts };
-                              delete newDenominationAmounts[denom.value];
-                              
                               setFormData({
                                 ...formData,
-                                fromDenominations: newDenominations,
-                                denominationAmounts: newDenominationAmounts
+                                fromDenominations: newDenominations
                               });
-                              console.log(`권종 선택 해제: ${denom.value}, 수량 초기화됨`);
+                              console.log(`권종 접기: ${denom.value}, 데이터 유지됨`);
                             } else {
                               setFormData({
                                 ...formData,
