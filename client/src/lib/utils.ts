@@ -21,25 +21,34 @@ export function addCommas(value: string): string {
 export function formatNumberInput(value: string): string {
   if (!value) return '';
   
-  // 소숫점과 숫자만 허용하고 콤마는 제거
-  const cleanValue = value.replace(/[^0-9.]/g, '');
+  // 입력 중인 소숫점은 그대로 보존
+  if (value.endsWith('.')) {
+    const integerPart = value.slice(0, -1);
+    if (integerPart && !isNaN(Number(integerPart))) {
+      return Number(integerPart).toLocaleString() + '.';
+    }
+    return value;
+  }
   
-  // 빈 문자열이거나 유효하지 않은 숫자면 원본 반환
-  if (!cleanValue) return '';
-  
-  // 소숫점이 포함된 경우 정수 부분만 콤마 적용
-  if (cleanValue.includes('.')) {
-    const parts = cleanValue.split('.');
+  // 소숫점이 포함된 경우
+  if (value.includes('.')) {
+    const parts = value.split('.');
     const integerPart = parts[0];
     const decimalPart = parts[1] || '';
     
-    // 정수 부분에 콤마 추가
-    const formattedInteger = integerPart ? Number(integerPart).toLocaleString() : '';
-    return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+    if (integerPart && !isNaN(Number(integerPart))) {
+      const formattedInteger = Number(integerPart).toLocaleString();
+      return decimalPart ? `${formattedInteger}.${decimalPart}` : `${formattedInteger}.`;
+    }
+    return value;
   }
   
-  // 소숫점이 없으면 기존 방식
-  return Number(cleanValue).toLocaleString();
+  // 정수만 있는 경우
+  if (!isNaN(Number(value)) && value !== '') {
+    return Number(value).toLocaleString();
+  }
+  
+  return value;
 }
 
 export function formatCurrency(amount: number | string, currency: string = 'KRW'): string {

@@ -402,10 +402,17 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                   <Label>금은방 시세 (참고용)</Label>
                   <Input
                     type="text"
-                    placeholder="예: 26,100"
-                    value={formatNumberInput(formData.goldShopRate)}
+                    placeholder={formData.fromCurrency === 'KRW' ? "예: 19.20" : "예: 26100"}
+                    value={formData.goldShopRate}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9.]/g, '');
+                      let value;
+                      if (formData.fromCurrency === 'USD') {
+                        // USD는 정수만 허용
+                        value = e.target.value.replace(/[^0-9,]/g, '');
+                      } else {
+                        // KRW는 소숫점 허용
+                        value = e.target.value.replace(/[^0-9.,]/g, '');
+                      }
                       setFormData({ ...formData, goldShopRate: value });
                     }}
                     data-testid="input-gold-shop-rate"
@@ -418,10 +425,17 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Label>내 매입가 (고객 → 나)</Label>
                     <Input
                       type="text"
-                      placeholder="예: 26,000"
-                      value={formatNumberInput(formData.myBuyRate)}
+                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.00" : "예: 26000"}
+                      value={formData.myBuyRate}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        let value;
+                        if (formData.fromCurrency === 'USD') {
+                          // USD는 정수만 허용
+                          value = e.target.value.replace(/[^0-9,]/g, '');
+                        } else {
+                          // KRW는 소숫점 허용
+                          value = e.target.value.replace(/[^0-9.,]/g, '');
+                        }
                         setFormData({ ...formData, myBuyRate: value });
                       }}
                       data-testid="input-my-buy-rate"
@@ -431,10 +445,17 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Label>내 매도가 (나 → 고객)</Label>
                     <Input
                       type="text"
-                      placeholder="예: 26,200"
-                      value={formatNumberInput(formData.mySellRate)}
+                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.40" : "예: 26200"}
+                      value={formData.mySellRate}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        let value;
+                        if (formData.fromCurrency === 'USD') {
+                          // USD는 정수만 허용
+                          value = e.target.value.replace(/[^0-9,]/g, '');
+                        } else {
+                          // KRW는 소숫점 허용
+                          value = e.target.value.replace(/[^0-9.,]/g, '');
+                        }
                         setFormData({ ...formData, mySellRate: value });
                       }}
                       data-testid="input-my-sell-rate"
