@@ -778,7 +778,7 @@ export default function TransactionForm() {
                         const denomComposition = vndCashAsset?.metadata?.denominations || {};
                         const availableCount = denomComposition[denom.toString()] || 0;
                         
-                        if (count > 0 || Object.keys(vndBreakdown).length > 0) {
+                        if (count > 0) {
                           return (
                             <div key={denom} className="bg-white p-3 rounded border border-orange-200">
                               <div className="flex items-center justify-between">
