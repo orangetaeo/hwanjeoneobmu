@@ -73,6 +73,9 @@ export default function TransactionForm() {
   // VND 권종별 분배 수정용 상태
   const [vndBreakdown, setVndBreakdown] = useState<Record<string, number>>({});
 
+  // VND 원본 계산값 저장 (내림 전)
+  const [vndOriginalAmount, setVndOriginalAmount] = useState<number>(0);
+
   const [calculatedData, setCalculatedData] = useState({
     exchangeRate: 0,
     rateSource: "",
@@ -311,21 +314,27 @@ export default function TransactionForm() {
       }, 0);
       
       if (calculatedToAmount > 0) {
-        // VND의 경우 무조건 내림 적용
-        const finalAmount = formData.toCurrency === "VND" ? 
-          formatVNDWithFloor(calculatedToAmount) : 
-          Math.floor(calculatedToAmount);
-          
-        setFormData(prev => ({ 
-          ...prev, 
-          toAmount: finalAmount.toString(),
-          exchangeRate: (finalAmount / total).toString()
-        }));
-        
-        // VND인 경우 권종별 분배도 업데이트
+        // VND의 경우 원본값 저장하고 무조건 내림 적용
         if (formData.toCurrency === "VND") {
+          setVndOriginalAmount(calculatedToAmount);
+          const finalAmount = formatVNDWithFloor(calculatedToAmount);
+          
+          setFormData(prev => ({ 
+            ...prev, 
+            toAmount: finalAmount.toString(),
+            exchangeRate: (finalAmount / total).toString()
+          }));
+          
+          // VND인 경우 권종별 분배도 업데이트
           const breakdown = calculateVNDBreakdown(finalAmount);
           setVndBreakdown(breakdown);
+        } else {
+          const finalAmount = Math.floor(calculatedToAmount);
+          setFormData(prev => ({ 
+            ...prev, 
+            toAmount: finalAmount.toString(),
+            exchangeRate: (finalAmount / total).toString()
+          }));
         }
       }
     }
@@ -376,17 +385,9 @@ export default function TransactionForm() {
 
     // VND 내림으로 인한 수익 계산
     let floorProfit = 0;
-    if (formData.toCurrency === "VND") {
-      const totalFromAmount = formData.transactionType === "cash_exchange" ? 
-        calculateTotalFromAmount() : 
-        parseFloat(formData.fromAmount || "0");
-      
-      if (totalFromAmount > 0) {
-        const rateValue = parseFloat(formData.exchangeRate || "0");
-        const calculatedOriginal = totalFromAmount * rateValue;
-        const flooredAmount = formatVNDWithFloor(calculatedOriginal);
-        floorProfit = calculatedOriginal - flooredAmount;
-      }
+    if (formData.toCurrency === "VND" && vndOriginalAmount > 0) {
+      const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
+      floorProfit = vndOriginalAmount - flooredAmount;
     }
 
     // 거래 데이터 구성
@@ -845,25 +846,15 @@ export default function TransactionForm() {
               <div>
                 <div className="flex items-center gap-2">
                   <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
-                  {formData.toCurrency === "VND" && formData.toAmount && (() => {
-                    // 원본 계산 값을 찾기 위해 환율 적용 다시 계산
-                    const totalFromAmount = formData.transactionType === "cash_exchange" ? 
-                      calculateTotalFromAmount() : 
-                      parseFloat(formData.fromAmount || "0");
+                  {formData.toCurrency === "VND" && vndOriginalAmount > 0 && (() => {
+                    const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
+                    const difference = vndOriginalAmount - flooredAmount;
                     
-                    if (totalFromAmount > 0) {
-                      const rateValue = parseFloat(formData.exchangeRate || "0");
-                      const calculatedOriginal = totalFromAmount * rateValue;
-                      const flooredAmount = formatVNDWithFloor(calculatedOriginal);
-                      const difference = calculatedOriginal - flooredAmount;
-                      
-                      return difference > 0 ? (
-                        <span className="text-sm text-orange-600 font-medium">
-                          ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
-                        </span>
-                      ) : null;
-                    }
-                    return null;
+                    return difference > 0 ? (
+                      <span className="text-sm text-orange-600 font-medium">
+                        ⚠️ 차이: {Math.floor(difference).toLocaleString()} VND
+                      </span>
+                    ) : null;
                   })()}
                 </div>
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
