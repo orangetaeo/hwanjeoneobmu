@@ -176,13 +176,12 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
   const getExchangeTypeText = (transaction: Transaction) => {
     if ((transaction.type as string) !== 'cash_exchange') return '';
     
-    // 비즈니스 규칙:
-    // - KRW 받음 = KRW 현금 환전 수령
-    // - VND 줌 = VND 현금 환전 지급
-    if (transaction.toAssetName.includes('KRW')) {
-      return 'KRW 현금 환전 수령'; // KRW를 받음
-    } else if (transaction.toAssetName.includes('VND')) {
-      return 'VND 현금 환전 지급'; // VND를 줌
+    // 정확한 비즈니스 규칙 적용:
+    // KRW→VND 거래에서: KRW 증가 = "수령", VND 증가 = "지급"
+    if (transaction.toAssetName && transaction.toAssetName.includes('KRW')) {
+      return 'KRW 현금 환전 수령'; // KRW 증가는 수령
+    } else if (transaction.toAssetName && transaction.toAssetName.includes('VND')) {
+      return 'VND 현금 환전 지급'; // VND 증가는 지급
     }
     
     return '현금환전';
