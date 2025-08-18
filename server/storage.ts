@@ -812,12 +812,37 @@ export class DatabaseStorage implements IStorage {
       const currentBalance = parseFloat(toAsset.balance || "0");
       
       // 도착 통화가 VND이고 VND 권종별 분배가 있는 경우 - VND 차감 처리
-      if (transaction.toAssetName?.includes('VND') && metadata.vndBreakdown) {
+      if (transaction.toAssetName?.includes('VND') && (metadata.vndBreakdown || Object.keys(denominationAmounts).length > 0)) {
         const currentMetadata = toAsset.metadata as any || {};
         const currentDenominations = currentMetadata.denominations || {};
         const updatedDenominations = { ...currentDenominations };
         
-        for (const [denomination, amount] of Object.entries(metadata.vndBreakdown)) {
+        // vndBreakdown이 있으면 사용하고, 없으면 현재 거래의 VND 총액을 기준으로 적절한 권종 추출
+        const vndDenominationData = metadata.vndBreakdown || {};
+        
+        // vndBreakdown이 없는 경우 현재 거래의 VND 금액에서 큰 권종부터 차감
+        if (!metadata.vndBreakdown && transaction.toAssetName?.includes('VND')) {
+          const vndAmount = parseFloat(transaction.toAmount);
+          let remainingAmount = vndAmount;
+          
+          // VND 권종을 큰 것부터 작은 것 순으로 정렬
+          const vndDenominations = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '2000', '1000'];
+          
+          for (const denomination of vndDenominations) {
+            const denomValue = parseFloat(denomination);
+            const availableQty = updatedDenominations[denomination] || 0;
+            
+            if (availableQty > 0 && remainingAmount >= denomValue) {
+              const neededQty = Math.min(Math.floor(remainingAmount / denomValue), availableQty);
+              if (neededQty > 0) {
+                vndDenominationData[denomination] = neededQty;
+                remainingAmount -= neededQty * denomValue;
+              }
+            }
+          }
+        }
+        
+        for (const [denomination, amount] of Object.entries(vndDenominationData)) {
           if (amount && (amount as number) > 0) {
             const currentQty = updatedDenominations[denomination] || 0;
             const deductQty = amount as number;
