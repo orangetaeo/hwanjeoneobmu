@@ -53,6 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **Automated Test Data**: Standardized test data sets for consistent development and testing.
 - **VND Floor Profit System**: Automatic calculation and storage of profit from VND amount floor operations, with visual indicators showing difference amounts and separate profit tracking in transaction metadata.
 - **Enhanced Denomination Input System**: Click-to-activate card interface with data persistence, integer-only input validation with automatic comma formatting, collapsed card data preview showing quantity and total amount, and one-click data reset functionality via checkbox interaction.
+- **Cash Exchange Transaction Display System**: Comprehensive transaction labeling system with proper Korean terminology distinguishing between receipt ("수령") and payment ("지급") operations. KRW cash increases display as "KRW 현금 환전 수령" and VND cash increases display as "VND 현금 환전 지급", with consistent formatting across transaction history lists and detail modals including timestamp information.
 
 ## UI/UX Decisions
 - **Dashboard Layout**: 3-column responsive design with distinct sections for KRW, foreign currency, and crypto assets.
