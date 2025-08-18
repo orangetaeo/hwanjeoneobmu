@@ -70,6 +70,9 @@ export default function TransactionForm() {
     toAssetId: ""
   });
 
+  // VND 권종별 분배 수정용 상태
+  const [vndBreakdown, setVndBreakdown] = useState<Record<string, number>>({});
+
   const [calculatedData, setCalculatedData] = useState({
     exchangeRate: 0,
     rateSource: "",
@@ -271,6 +274,26 @@ export default function TransactionForm() {
     return breakdown;
   };
 
+  // VND 권종별 분배에서 총액 계산
+  const calculateTotalFromVNDBreakdown = (breakdown: Record<string, number>) => {
+    return Object.entries(breakdown).reduce((total, [denom, count]) => {
+      return total + (parseInt(denom) * count);
+    }, 0);
+  };
+
+  // VND 권종별 분배 수정 핸들러
+  const handleVNDBreakdownChange = (denomination: string, newCount: number) => {
+    const updatedBreakdown = {
+      ...vndBreakdown,
+      [denomination]: Math.max(0, newCount)
+    };
+    setVndBreakdown(updatedBreakdown);
+    
+    // 총액 재계산 및 formData 업데이트
+    const newTotal = calculateTotalFromVNDBreakdown(updatedBreakdown);
+    setFormData(prev => ({ ...prev, toAmount: newTotal.toString() }));
+  };
+
   // 권종별 금액이 변경될 때 총액 업데이트 및 환율 자동 설정
   useEffect(() => {
     if (formData.transactionType === "cash_exchange" && Object.keys(formData.denominationAmounts).length > 0) {
@@ -294,6 +317,12 @@ export default function TransactionForm() {
               exchangeRate: newExchangeRate,
               toAmount: calculatedToAmount
             }));
+            
+            // VND인 경우 권종별 분배도 업데이트
+            if (formData.toCurrency === "VND") {
+              const breakdown = calculateVNDBreakdown(Math.floor(total * useRate));
+              setVndBreakdown(breakdown);
+            }
           }
         }
       }
@@ -462,16 +491,19 @@ export default function TransactionForm() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {CURRENCY_DENOMINATIONS[formData.fromCurrency as keyof typeof CURRENCY_DENOMINATIONS]?.map((denom) => {
                       const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom.value);
+                      const isSelected = formData.fromDenominations.includes(denom.value);
+                      const useRate = formData.fromCurrency === "KRW" ? rateInfo?.mySellRate : rateInfo?.myBuyRate;
+                      
                       return (
-                        <div key={denom.value} className="space-y-2">
+                        <div key={denom.value} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-3">
                               <Checkbox
                                 id={`denom-${denom.value}`}
-                                checked={formData.fromDenominations.includes(denom.value)}
+                                checked={isSelected}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
                                     setFormData({
@@ -491,61 +523,47 @@ export default function TransactionForm() {
                                 }}
                                 data-testid={`checkbox-denom-${denom.value}`}
                               />
-                              <Label htmlFor={`denom-${denom.value}`} className="text-sm">
+                              <Label htmlFor={`denom-${denom.value}`} className="text-sm font-medium">
                                 {denom.label}
                               </Label>
                             </div>
-                            {rateInfo && (
-                              <div className="text-right text-xs">
-                                <div className="text-blue-600 font-medium">
-                                  매입: {formatRate(rateInfo.myBuyRate, formData.toCurrency)}
+                            {useRate && (
+                              <div className="text-right">
+                                <div className="text-sm font-medium text-green-600">
+                                  {(useRate || 0).toFixed(2)}
                                 </div>
-                                <div className="text-red-600 font-medium">
-                                  매도: {formatRate(rateInfo.mySellRate, formData.toCurrency)}
-                                </div>
-                                <div className="text-gray-500">
-                                  금은방: {formatRate(rateInfo.goldShopRate, formData.toCurrency)}
+                                <div className="text-xs text-gray-500">
+                                  {formData.fromCurrency === "KRW" ? "매도가" : "매입가"}
                                 </div>
                               </div>
                             )}
                           </div>
-                          {formData.fromDenominations.includes(denom.value) && (
-                            <div className="ml-6 space-y-2">
-                              <div className="flex items-center space-x-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="1"
-                                  placeholder="수량"
-                                  value={formData.denominationAmounts[denom.value] || ""}
-                                  onChange={(e) => setFormData({
-                                    ...formData,
-                                    denominationAmounts: {
-                                      ...formData.denominationAmounts,
-                                      [denom.value]: e.target.value
-                                    }
-                                  })}
-                                  data-testid={`input-quantity-${denom.value}`}
-                                  className="w-20"
-                                />
-                                <span className="text-sm text-gray-600">장</span>
-                                {formData.denominationAmounts[denom.value] && (
-                                  <div className="text-sm font-medium text-blue-600">
-                                    = {formatNumber(
-                                      parseFloat(formData.denominationAmounts[denom.value]) * 
-                                      getDenominationValue(formData.fromCurrency, denom.value)
-                                    )} {formData.fromCurrency}
-                                  </div>
-                                )}
-                              </div>
-                              {rateInfo && formData.denominationAmounts[denom.value] && (
-                                <div className="text-xs text-gray-600 ml-2">
-                                  환전 예상: ≈ {formatRate(
+                          
+                          {isSelected && (
+                            <div className="mt-3 flex items-center space-x-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="1"
+                                placeholder="수량"
+                                value={formData.denominationAmounts[denom.value] || ""}
+                                onChange={(e) => setFormData({
+                                  ...formData,
+                                  denominationAmounts: {
+                                    ...formData.denominationAmounts,
+                                    [denom.value]: e.target.value
+                                  }
+                                })}
+                                data-testid={`input-quantity-${denom.value}`}
+                                className="w-20 text-center"
+                              />
+                              <span className="text-sm text-gray-600">장</span>
+                              {formData.denominationAmounts[denom.value] && (
+                                <div className="text-sm font-medium text-blue-600 ml-auto">
+                                  {formatNumber(
                                     parseFloat(formData.denominationAmounts[denom.value]) * 
-                                    getDenominationValue(formData.fromCurrency, denom.value) * 
-                                    rateInfo.myBuyRate, 
-                                    formData.toCurrency
-                                  )} {formData.toCurrency}
+                                    getDenominationValue(formData.fromCurrency, denom.value)
+                                  )} {formData.fromCurrency}
                                 </div>
                               )}
                             </div>
@@ -574,24 +592,44 @@ export default function TransactionForm() {
                   </SelectContent>
                 </Select>
                 
-                {/* VND 권종별 분배 표시 */}
+                {/* VND 권종별 분배 표시 (수정 가능) */}
                 {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
                   <div className="mt-3 p-3 bg-orange-50 border rounded-lg">
-                    <div className="text-sm font-medium text-orange-700 mb-2">권종별 분배 (고액권 우선)</div>
-                    <div className="space-y-1 text-xs">
+                    <div className="text-sm font-medium text-orange-700 mb-3">권종별 분배 (고액권 우선)</div>
+                    <div className="space-y-2">
                       {[500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                        const breakdown = calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)));
-                        const count = breakdown[denom.toString()] || 0;
-                        if (count > 0) {
+                        // 수정된 분배가 있으면 사용, 없으면 자동 계산
+                        const autoBreakdown = calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)));
+                        const currentBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : autoBreakdown;
+                        const count = currentBreakdown[denom.toString()] || 0;
+                        
+                        if (count > 0 || Object.keys(vndBreakdown).length > 0) {
                           return (
-                            <div key={denom} className="flex justify-between">
-                              <span>{formatNumber(denom)} VND</span>
-                              <span className="font-medium text-orange-600">{count}장</span>
+                            <div key={denom} className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium">{formatNumber(denom)} VND</span>
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={count}
+                                  onChange={(e) => {
+                                    const newCount = parseInt(e.target.value) || 0;
+                                    handleVNDBreakdownChange(denom.toString(), newCount);
+                                  }}
+                                  className="w-16 h-8 text-center text-xs"
+                                  data-testid={`input-vnd-breakdown-${denom}`}
+                                />
+                                <span className="text-xs text-gray-600">장</span>
+                              </div>
                             </div>
                           );
                         }
                         return null;
                       })}
+                    </div>
+                    <div className="mt-2 text-xs text-orange-600">
+                      * 고객 요청에 따라 권종별 수량을 조정할 수 있습니다
                     </div>
                   </div>
                 )}
