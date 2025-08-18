@@ -254,13 +254,39 @@ export default function TransactionForm() {
     return 0;
   };
 
-  // 권종별 금액이 변경될 때 총액 업데이트
+  // VND 권종별 분배 계산 (고액권부터 우선 분배)
+  const calculateVNDBreakdown = (totalAmount: number) => {
+    const vndDenominations = [500000, 200000, 100000, 50000, 20000, 10000];
+    const breakdown: { [key: string]: number } = {};
+    let remaining = totalAmount;
+
+    for (const denom of vndDenominations) {
+      if (remaining >= denom) {
+        const count = Math.floor(remaining / denom);
+        breakdown[denom.toString()] = count;
+        remaining = remaining % denom;
+      }
+    }
+
+    return breakdown;
+  };
+
+  // 권종별 금액이 변경될 때 총액 업데이트 및 환율 자동 설정
   useEffect(() => {
     if (formData.transactionType === "cash_exchange" && Object.keys(formData.denominationAmounts).length > 0) {
       const total = calculateTotalFromAmount();
-      setFormData(prev => ({ ...prev, fromAmount: total }));
+      setFormData(prev => ({ ...prev, fromAmount: total.toString() }));
+      
+      // 첫 번째 선택된 권종의 매입 시세로 환율 자동 설정
+      const firstDenomination = formData.fromDenominations[0];
+      if (firstDenomination) {
+        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, firstDenomination);
+        if (rateInfo && rateInfo.myBuyRate) {
+          setFormData(prev => ({ ...prev, exchangeRate: rateInfo.myBuyRate.toString() }));
+        }
+      }
     }
-  }, [formData.denominationAmounts, formData.transactionType]);
+  }, [formData.denominationAmounts, formData.transactionType, formData.fromDenominations]);
 
   // 통화별 자산 필터링
   const getAssetsByCurrency = (currency: string) => {
@@ -626,6 +652,21 @@ export default function TransactionForm() {
                 {formData.toAmount && (
                   <div className="text-xs text-gray-500 mt-1">
                     {formatNumber(formData.toAmount)} {formData.toCurrency}
+                  </div>
+                )}
+                
+                {/* VND 권종별 분배 표시 */}
+                {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
+                  <div className="mt-3 p-3 bg-orange-50 border rounded-lg">
+                    <div className="text-sm font-medium text-orange-700 mb-2">권종별 분배 (고액권 우선)</div>
+                    <div className="space-y-1 text-xs">
+                      {Object.entries(calculateVNDBreakdown(parseFloat(formData.toAmount))).map(([denom, count]) => (
+                        <div key={denom} className="flex justify-between">
+                          <span>{formatNumber(parseInt(denom))} VND</span>
+                          <span className="font-medium">{count}장</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
