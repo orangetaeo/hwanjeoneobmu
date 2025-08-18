@@ -123,6 +123,12 @@ export class DatabaseStorage implements IStorage {
         // P2P 거래: USDT 감소, VND 현금 증가
         await this.moveAssetsP2PTrade(userId, transaction.fromAssetName!, transaction.toAssetName!, fromAmount, toAmount, fees);
         break;
+
+      case 'cash_exchange':
+        console.log('현금 환전 자산 이동 처리');
+        // 현금 환전: fromCurrency 현금 감소, toCurrency 현금 증가 (권종별 분배 포함)
+        await this.moveAssetsCashExchange(userId, transaction);
+        break;
         
       default:
         console.log('알 수 없는 거래 타입:', transaction.type);
@@ -747,6 +753,78 @@ export class DatabaseStorage implements IStorage {
       rate,
       source: `${fromCurrency}-${toCurrency} ${denomination || ''} ${transactionType} rate`
     };
+  }
+
+  // 현금 환전 자산 이동 처리
+  private async moveAssetsCashExchange(userId: string, transaction: InsertTransaction | Transaction) {
+    console.log('=== 현금 환전 자산 이동 시작 ===');
+    
+    const fromAmount = parseFloat(transaction.fromAmount);
+    const toAmount = parseFloat(transaction.toAmount);
+    
+    // 메타데이터에서 권종별 수량 정보 추출
+    const metadata = transaction.metadata as any;
+    const denominationAmounts = metadata?.denominationAmounts || {};
+    
+    console.log('권종별 수량 정보:', denominationAmounts);
+    
+    // 출발 통화 자산 업데이트 (권종별 차감)
+    const fromAsset = await this.getAssetByName(userId, transaction.fromAssetName!, 'cash');
+    if (fromAsset) {
+      const currentBalance = parseFloat(fromAsset.balance || "0");
+      const newBalance = Math.max(0, currentBalance - fromAmount);
+      
+      // 기존 권종별 정보 가져오기
+      const currentMetadata = fromAsset.metadata as any || {};
+      const currentDenominations = currentMetadata.denominations || {};
+      
+      // 권종별 수량 차감
+      const updatedDenominations = { ...currentDenominations };
+      for (const [denomination, amount] of Object.entries(denominationAmounts)) {
+        if (amount && parseFloat(amount as string) > 0) {
+          const currentQty = updatedDenominations[denomination] || 0;
+          const deductQty = parseInt(amount as string);
+          updatedDenominations[denomination] = Math.max(0, currentQty - deductQty);
+          
+          console.log(`${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${deductQty}장 차감)`);
+        }
+      }
+      
+      console.log('출발 자산 업데이트:', {
+        assetName: transaction.fromAssetName,
+        currentBalance,
+        newBalance,
+        denominationChanges: updatedDenominations
+      });
+      
+      await this.updateAsset(userId, fromAsset.id, {
+        balance: newBalance.toString(),
+        metadata: {
+          ...currentMetadata,
+          denominations: updatedDenominations
+        }
+      });
+    }
+    
+    // 도착 통화 자산 업데이트 (총액 증가)
+    const toAsset = await this.getAssetByName(userId, transaction.toAssetName!, 'cash');
+    if (toAsset) {
+      const currentBalance = parseFloat(toAsset.balance || "0");
+      const newBalance = currentBalance + toAmount;
+      
+      console.log('도착 자산 업데이트:', {
+        assetName: transaction.toAssetName,
+        currentBalance,
+        newBalance,
+        addedAmount: toAmount
+      });
+      
+      await this.updateAsset(userId, toAsset.id, {
+        balance: newBalance.toString()
+      });
+    }
+    
+    console.log('=== 현금 환전 자산 이동 완료 ===');
   }
 }
 
