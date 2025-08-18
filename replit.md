@@ -60,105 +60,14 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Optimization**: Reduced header height, compact navigation, optimized text/icon sizes, and responsive padding for mobile landscape mode.
 - **Dynamic Elements**: Dynamic page titles and visual indicators.
 - **Currency Ordering**: KRW assets prioritized in display.
+- **UI Component Unification**: Standardized all form elements to use shadcn/ui components for design consistency.
 
-# Recent Changes (2025-08-18)
-
-- **Complete Exchange Rate System Rebuild**: Implemented comprehensive new exchange rate management system with advanced features
-  - Database schema: Added exchangeRates and exchangeRateHistory tables with proper relationships and change tracking
-  - UPSERT functionality: Smart update system that automatically backs up old rates to history before updating current rates
-  - Change percentage tracking: Automatic calculation of rate changes with visual indicators
-  - Advanced validation: Buy rate vs sell rate validation, required field checks, and error handling
-  - Currency denomination support: Full USD/KRW denomination handling with proper labels and selection
-  - History management: Complete audit trail of all rate changes with date tracking and filtering capabilities
-  - API endpoints: /api/exchange-rates (CRUD), /api/exchange-rates/history (analytics), /api/exchange-rates/transaction (for new transactions)
-  - Professional UI: Tabbed interface with current rates and history views, proper loading states, and data validation
-
-- **Enhanced Transaction System Integration**: Rebuilt TransactionForm to leverage new exchange rate system
-  - Auto-rate fetching: "자동 환율 적용" button connects to exchange rate system for real-time rate application
-  - Smart transaction logic: Determines buy/sell based on currency direction (VND sell = customer selling VND to us)
-  - Customer information capture: Required fields for cash exchanges including name and phone number
-  - Denomination-aware: Full integration with currency denomination system for accurate rate selection
-  - Real-time calculation: Automatic amount calculation when rate or amount changes
-  - Professional validation: Complete form validation with clear error messages and user guidance
-  - Transaction metadata: Stores exchange rate source, auto-calculation flags, and denomination information
-
-# Recent Changes (2025-08-18)
-- **Duplicate Asset Validation System**: Fully implemented and tested comprehensive duplicate checking and prevention features
-  - Bank accounts (Korean/Vietnamese): Alert users when identical accounts exist (same bank name, account holder, and account number - excluding balance comparison)
-  - Exchange assets: Automatically update existing entries when same exchange+coin combination is found, merging quantities with user notification
-  - Binance assets: Automatically merge quantities when same coin is added multiple times with user notification
-  - Network transfers: Automatically merge received coins with existing assets of same type and currency
-  - Form validation uses proper asset name matching patterns: "BankName (AccountHolder)" for banks, "ExchangeName" for exchanges, "Binance CoinName" for Binance
-  - Smart duplicate handling reduces data redundancy while maintaining data integrity with clear user feedback
-  - Fixed critical balance calculation bug: now correctly adds new quantity to existing balance instead of overwriting
-  - Resolved data synchronization issue: NetworkTransfer and BithumbTrading components now properly display updated asset quantities through React Query cache invalidation
-- **Enhanced Exchange Asset Duplicate Detection**: Refined duplicate validation logic for exchange assets
-  - Fixed exchange name matching to check both metadata.exchange field and name parsing ("Bithumb USDT" → "Bithumb")
-  - Added comprehensive debugging logs for duplicate validation process
-  - Corrected asset creation/update logic to only update when real database asset ID is found
-  - Eliminated false duplicates by distinguishing between temporary form IDs and actual database IDs
-  - System now correctly merges duplicate exchange assets instead of creating separate entries
-- **Button Loading States**: Added loading functionality to prevent duplicate clicks and improve user experience
-  - All asset add buttons in AssetManager show "처리중..." loading state during operations
-  - Form submit buttons disabled and show loading text during submission process
-  - Duplicate click prevention through loading state management across entire asset management system
-  - Enhanced form submission with comprehensive error handling and validation logic
-- **Complete Icon System Unification**: Replaced ALL colorful emojis and flags with monochrome Lucide icons for cleaner, more professional appearance
-  - Dashboard: Globe icons for currencies, Building for banks, Coins for exchanges, Bitcoin for crypto section
-  - AssetManager: Banknote for cash, Building for banks, Coins for exchanges
-  - ExchangeOperations: Coins for Bithumb trading, ArrowRightLeft for network transfers, TrendingUp for P2P trading
-  - BithumbTrading: Coins icon for API status, History icon for transaction list
-  - NetworkTransfer: ArrowRightLeft for transfers, Send/History for tabs
-  - BinanceP2P: TrendingUp for P2P trading, History for transaction history
-  - ExchangeRateManager: Globe icons for real-time rates, Banknote for gold shop rates, DollarSign for form sections
-  - TypeScript: Fixed all type safety issues and removed unused emoji functions
-  - Achieved complete visual consistency with navigation bar design language throughout entire application
-- **Mobile Navigation UX Enhancement**: Complete redesign of mobile navigation system for improved accessibility
-  - Added hamburger menu button to mobile header for full menu access
-  - Implemented sliding sidebar navigation with all menu items including settings
-  - Simplified bottom navigation to 4 core functions: 대시보드, 환전거래, 환전상 시세, 자산관리
-  - Enhanced mobile user experience with proper menu hierarchy and reduced screen clutter
-  - All navigation features now properly accessible on mobile devices with intuitive interaction patterns
-- **UI Component System Unification**: Standardized all form elements to use shadcn/ui components
-  - ExchangeRateManager: Replaced HTML select elements with shadcn/ui Select components
-  - Added consistent placeholder text and improved user experience
-  - Achieved complete design consistency across all form elements throughout the application
-  - Fixed realTimeRates props connection for proper real-time exchange rate display
-- **Exchange Rate Management Feature Validation**: Confirmed full functionality of gold shop rate management
-  - Input, save, update, and display features all working correctly
-  - Real-time exchange rate information properly displayed
-  - Form validation and error handling functioning as expected
-- **Binance P2P VND Account Configuration Fix**: Resolved critical account search logic issue
-  - Fixed VND account detection to use 우리은행 김학태 계좌 exclusively for P2P transactions
-  - Updated account search logic to check metadata.accountHolder field instead of name field
-  - Corrected existing P2P transaction records to point to correct 우리은행 account ID
-  - Added comprehensive logging for VND account detection debugging
-  - Confirmed proper VND amount calculation and display functionality
-- **Network Transfer Fee Logic Fix**: Resolved USDT network transfer double fee deduction issue
-  - Fixed fromAmount calculation to properly deduct (transfer amount + network fee) from source
-  - Corrected toAmount to only add transfer amount to destination (without fee deduction)
-  - Updated transaction history display to show accurate arrival amounts
-  - Improved transaction metadata for better tracking of gross/net amounts
-- **Toast Notification Auto-Dismiss**: Implemented 1-second auto-dismiss for all toast notifications
-  - Changed TOAST_REMOVE_DELAY from 1,000,000ms to 1,000ms for better UX
-  - All success and error messages now automatically disappear after 1 second
-  - Applies to network transfers, P2P trades, asset management, and all other operations
-- **Exchange Trading Interface Simplification**: Removed unnecessary transaction processing displays
-  - Eliminated API connection status indicators and loading spinners
-  - Removed processing state messages and data source descriptions
-  - Streamlined Bithumb trading interface to focus on core information only
-  - Clean user experience without technical processing details
-- **Mobile-Optimized Transaction History**: Enhanced network transfer and P2P trading history for mobile devices
-  - Desktop: Maintains original table layout for detailed information
-  - Mobile: Card-based layout with hierarchical information display for both network transfers and Binance P2P trades
-  - Improved readability with emphasized transaction amounts and organized metadata
-  - Touch-friendly design with proper spacing, visual hierarchy, and optimized management buttons
-  - Status indicators and action buttons properly adapted for mobile interaction
-- **Exchange Operations UI Cleanup**: Simplified exchange operations interface by removing visual process indicators
-  - Removed 3-step trading process visualization (KRW → USDT, Bithumb → Binance, USDT → VND)
-  - Cleaned up ExchangeOperations.tsx to focus on core functionality without process flow diagrams
-  - Maintained header, tab navigation, and all operational features while removing decorative process cards
-  - Streamlined user experience by eliminating redundant visual process explanations
+## Core Implementations
+- **Exchange Rate Management**: Comprehensive system with database schemas for current and historical rates, UPSERT functionality, change percentage tracking, advanced validation, and currency denomination support.
+- **Transaction System Integration**: Rebuilt TransactionForm leveraging the exchange rate system for auto-rate fetching, smart transaction logic, customer information capture, denomination awareness, real-time calculation, and professional validation.
+- **Duplicate Asset Validation**: Comprehensive checking and prevention for bank accounts, exchange assets, and Binance assets, including merging quantities and user notifications.
+- **Unified Icon System**: Replaced all colorful emojis and flags with monochrome Lucide icons for a consistent and professional appearance across the application.
+- **Mobile Navigation Enhancement**: Redesigned mobile navigation with a hamburger menu, sliding sidebar, and simplified bottom navigation for improved accessibility.
 
 # External Dependencies
 
