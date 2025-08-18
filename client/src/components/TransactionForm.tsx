@@ -612,9 +612,7 @@ export default function TransactionForm() {
                                 <div className="flex items-center space-x-3">
                                   <label className="text-sm font-medium text-gray-700 min-w-[40px]">수량:</label>
                                   <Input
-                                    type="number"
-                                    min="0"
-                                    step="1"
+                                    type="text"
                                     placeholder="0"
                                     value={formData.denominationAmounts[denom.value] ? 
                                       parseInt(formData.denominationAmounts[denom.value]).toLocaleString() : ""}
@@ -624,17 +622,25 @@ export default function TransactionForm() {
                                       const cleanValue = value.replace(/[^0-9,]/g, '');
                                       // 콤마를 제거한 순수 숫자값 저장
                                       const numericValue = cleanValue.replace(/,/g, '');
-                                      setFormData({
-                                        ...formData,
-                                        denominationAmounts: {
-                                          ...formData.denominationAmounts,
-                                          [denom.value]: numericValue
-                                        }
-                                      });
+                                      
+                                      // 빈 값이 아닐 때만 업데이트
+                                      if (numericValue === '' || !isNaN(parseInt(numericValue))) {
+                                        setFormData({
+                                          ...formData,
+                                          denominationAmounts: {
+                                            ...formData.denominationAmounts,
+                                            [denom.value]: numericValue
+                                          }
+                                        });
+                                      }
                                     }}
                                     onKeyDown={(e) => {
-                                      // 소수점, 마이너스, e, E 등 문자 입력 방지 (콤마는 허용)
-                                      if (['.', '-', '+', 'e', 'E'].includes(e.key)) {
+                                      // 숫자, 백스페이스, 삭제, 탭, 화살표 키, 콤마만 허용
+                                      const allowedKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+                                      const isNumber = /^[0-9]$/.test(e.key);
+                                      const isComma = e.key === ',';
+                                      
+                                      if (!isNumber && !isComma && !allowedKeys.includes(e.key)) {
                                         e.preventDefault();
                                       }
                                     }}
