@@ -299,30 +299,28 @@ export default function TransactionForm() {
       const total = calculateTotalFromAmount();
       setFormData(prev => ({ ...prev, fromAmount: total.toString() }));
       
-      // 첫 번째 선택된 권종의 적절한 시세로 환율 자동 설정
-      const firstDenomination = formData.fromDenominations[0];
-      if (firstDenomination) {
-        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, firstDenomination);
-        if (rateInfo) {
-          // KRW → 외화: 매도가 사용 (환전소가 외화를 매도)
-          // 외화 → KRW: 매입가 사용 (환전소가 외화를 매입)
-          const useRate = formData.fromCurrency === "KRW" ? rateInfo.mySellRate : rateInfo.myBuyRate;
-          
-          if (useRate) {
-            const newExchangeRate = useRate.toString();
-            const calculatedToAmount = (total * useRate).toString();
-            setFormData(prev => ({ 
-              ...prev, 
-              exchangeRate: newExchangeRate,
-              toAmount: calculatedToAmount
-            }));
-            
-            // VND인 경우 권종별 분배도 업데이트
-            if (formData.toCurrency === "VND") {
-              const breakdown = calculateVNDBreakdown(Math.floor(total * useRate));
-              setVndBreakdown(breakdown);
-            }
-          }
+      // 권종별 매도 시세 합계로 정확한 금액 계산
+      const calculatedToAmount = formData.fromDenominations.reduce((totalAmount, denomValue) => {
+        const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
+        if (amount <= 0) return totalAmount;
+        
+        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
+        const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+        const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
+        return totalAmount + (totalValue * rate);
+      }, 0);
+      
+      if (calculatedToAmount > 0) {
+        setFormData(prev => ({ 
+          ...prev, 
+          toAmount: Math.floor(calculatedToAmount).toString(),
+          exchangeRate: (calculatedToAmount / total).toString()
+        }));
+        
+        // VND인 경우 권종별 분배도 업데이트
+        if (formData.toCurrency === "VND") {
+          const breakdown = calculateVNDBreakdown(Math.floor(calculatedToAmount));
+          setVndBreakdown(breakdown);
         }
       }
     }
@@ -347,16 +345,7 @@ export default function TransactionForm() {
       return;
     }
 
-    // 고객 정보 검증
-    if ((formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account") && 
-        (!formData.customerName || !formData.customerPhone)) {
-      toast({
-        variant: "destructive",
-        title: "고객 정보 필요",
-        description: "고객명과 연락처를 입력하세요.",
-      });
-      return;
-    }
+    // 고객 정보는 선택사항이므로 검증 제거
 
     // 거래 데이터 구성
     const transactionData = {
