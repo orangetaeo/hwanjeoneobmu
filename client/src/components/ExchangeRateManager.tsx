@@ -189,18 +189,49 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
       return;
     }
 
-    // 매입가 > 매도가 검증
-    if (formData.myBuyRate && formData.mySellRate) {
-      const buyRate = parseFloat(removeCommas(formData.myBuyRate));
-      const sellRate = parseFloat(removeCommas(formData.mySellRate));
-      if (buyRate > sellRate) {
-        toast({
-          variant: "destructive",
-          title: "시세 오류",
-          description: "매입가가 매도가보다 높습니다.",
-        });
-        return;
-      }
+    // 권종 필수 검증 - USD와 KRW의 경우 권종이 필수
+    if ((formData.fromCurrency === 'USD' || formData.fromCurrency === 'KRW') && !formData.denomination) {
+      toast({
+        variant: "destructive",
+        title: "입력 오류",
+        description: `${formData.fromCurrency} 환율은 권종을 반드시 선택해야 합니다.`,
+      });
+      return;
+    }
+
+    // 필수 시세 입력 검증
+    if (!formData.goldShopRate || !formData.myBuyRate || !formData.mySellRate) {
+      toast({
+        variant: "destructive",
+        title: "입력 오류",
+        description: "금은방 시세, 매입가, 매도가를 모두 입력하세요.",
+      });
+      return;
+    }
+
+    // 시세 논리 검증
+    const goldShopRate = parseFloat(removeCommas(formData.goldShopRate));
+    const buyRate = parseFloat(removeCommas(formData.myBuyRate));
+    const sellRate = parseFloat(removeCommas(formData.mySellRate));
+
+    // 1. 내 매입가 < 내 매도가 
+    if (buyRate >= sellRate) {
+      toast({
+        variant: "destructive",
+        title: "시세 오류",
+        description: "내 매입가는 내 매도가보다 낮아야 합니다.",
+      });
+      return;
+    }
+
+    // 2. 내 매도가 <= 금은방 시세 (금은방 시세가 가장 높아야 함)
+    if (sellRate > goldShopRate) {
+      toast({
+        variant: "destructive",
+        title: "시세 오류", 
+        description: "내 매도가는 금은방 시세보다 높을 수 없습니다.",
+      });
+      return;
     }
 
     // 데이터 저장 시 콤마 제거
@@ -396,7 +427,12 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
 
                 {/* 권종 선택 */}
                 <div>
-                  <Label>권종</Label>
+                  <Label>
+                    권종 
+                    {(formData.fromCurrency === 'USD' || formData.fromCurrency === 'KRW') && 
+                      <span className="text-red-500 ml-1">*</span>
+                    }
+                  </Label>
                   <Select 
                     value={formData.denomination} 
                     onValueChange={(value) => setFormData({ ...formData, denomination: value })}
@@ -416,7 +452,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
 
                 {/* 금은방 시세 */}
                 <div>
-                  <Label>금은방 시세 (참고용)</Label>
+                  <Label>금은방 시세 (참고용) <span className="text-red-500">*</span></Label>
                   <Input
                     type="text"
                     placeholder={formData.fromCurrency === 'KRW' ? "예: 19.20" : "예: 26,100"}
@@ -447,7 +483,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                 {/* 매입/매도 시세 */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>내 매입가 (고객 → 나)</Label>
+                    <Label>내 매입가 (고객 → 나) <span className="text-red-500">*</span></Label>
                     <Input
                       type="text"
                       placeholder={formData.fromCurrency === 'KRW' ? "예: 19.00" : "예: 26,000"}
@@ -475,7 +511,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     />
                   </div>
                   <div>
-                    <Label>내 매도가 (나 → 고객)</Label>
+                    <Label>내 매도가 (나 → 고객) <span className="text-red-500">*</span></Label>
                     <Input
                       type="text"
                       placeholder={formData.fromCurrency === 'KRW' ? "예: 19.40" : "예: 26,200"}
