@@ -793,12 +793,7 @@ export default function TransactionForm() {
                           {Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString()} VND
                         </span>
                       </div>
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-xs font-medium text-orange-700">예상 지급:</span>
-                        <span className="text-sm font-bold text-orange-800">
-                          {formatVNDWithFloor(parseFloat(formData.toAmount)).toLocaleString()} VND
-                        </span>
-                      </div>
+
                       {Math.abs(
                         Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
                         formatVNDWithFloor(parseFloat(formData.toAmount))
