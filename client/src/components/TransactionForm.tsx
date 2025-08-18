@@ -622,15 +622,15 @@ export default function TransactionForm() {
                                 {/* 접힌 상태에서 데이터 표시 */}
                                 {!isSelected && hasData && (
                                   <div className="text-sm text-gray-600 mt-1">
-                                    <span className="font-medium">
-                                      {parseInt(formData.denominationAmounts[denom.value]).toLocaleString()}장
-                                    </span>
-                                    <span className="mx-2">•</span>
                                     <span className="font-bold text-blue-600">
                                       {formatNumber(
                                         parseFloat(formData.denominationAmounts[denom.value]) * 
                                         getDenominationValue(formData.fromCurrency, denom.value)
                                       )} {formData.fromCurrency}
+                                    </span>
+                                    <span className="mx-2">•</span>
+                                    <span className="font-medium">
+                                      {parseInt(formData.denominationAmounts[denom.value]).toLocaleString()}장
                                     </span>
                                   </div>
                                 )}
