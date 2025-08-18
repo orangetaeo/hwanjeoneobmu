@@ -52,6 +52,7 @@ Preferred communication style: Simple, everyday language.
 - **Dynamic Rendering**: Conditional rendering based on currency for specific denominations (e.g., KRW banknotes).
 - **Automated Test Data**: Standardized test data sets for consistent development and testing.
 - **VND Floor Profit System**: Automatic calculation and storage of profit from VND amount floor operations, with visual indicators showing difference amounts and separate profit tracking in transaction metadata.
+- **Enhanced Denomination Input System**: Click-to-activate card interface with data persistence, integer-only input validation with automatic comma formatting, collapsed card data preview showing quantity and total amount, and one-click data reset functionality via checkbox interaction.
 
 ## UI/UX Decisions
 - **Dashboard Layout**: 3-column responsive design with distinct sections for KRW, foreign currency, and crypto assets.
