@@ -230,9 +230,9 @@ export default function TransactionForm() {
   const getDenominationRate = (fromCurrency: string, toCurrency: string, denomination: string) => {
     if (!Array.isArray(exchangeRates)) return null;
     
-    // KRW 1천원권의 경우 5/1천원권 매도 시세 사용
+    // KRW 5천원권과 1천원권의 경우 5/1천원권 매도 시세 사용
     let searchDenomination = denomination;
-    if (fromCurrency === "KRW" && denomination === "1000") {
+    if (fromCurrency === "KRW" && (denomination === "5000" || denomination === "1000")) {
       searchDenomination = "5000_1000";
     }
     
