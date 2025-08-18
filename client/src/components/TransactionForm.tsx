@@ -497,6 +497,15 @@ export default function TransactionForm() {
                       const isSelected = formData.fromDenominations.includes(denom.value);
                       const useRate = formData.fromCurrency === "KRW" ? rateInfo?.mySellRate : rateInfo?.myBuyRate;
                       
+                      // 디버깅용 로그
+                      console.log('Denomination rate info:', {
+                        fromCurrency: formData.fromCurrency,
+                        toCurrency: formData.toCurrency,
+                        denomination: denom.value,
+                        rateInfo,
+                        useRate
+                      });
+                      
                       return (
                         <div key={denom.value} className={`border rounded-lg p-3 md:p-4 transition-all ${isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}>
                           <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-2 md:space-y-0 mb-3">
