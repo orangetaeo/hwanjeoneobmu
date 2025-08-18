@@ -56,6 +56,10 @@ export default function RateManager({ realTimeRates, cryptoRates, isFetchingRate
 
   const filteredHistory = useMemo(() => {
     const history = view === 'transaction' ? transactionRateHistory : goldsmithRateHistory;
+    // history가 배열인지 확인
+    if (!Array.isArray(history)) {
+      return [];
+    }
     return history.filter((item: any) => {
       const itemDate = new Date(item.timestamp);
       if (appliedFilters.startDate && itemDate < new Date(appliedFilters.startDate)) return false;
@@ -76,12 +80,9 @@ export default function RateManager({ realTimeRates, cryptoRates, isFetchingRate
     
     const loadRateData = async () => {
       try {
-        const ratesResponse = await fetch('/api/rates');
-        if (ratesResponse.ok) {
-          const rates = await ratesResponse.json();
-          setTransactionRateHistory(rates);
-          setGoldsmithRateHistory(rates);
-        }
+        // 환율 히스토리는 별도 API에서 가져와야 함 (현재는 빈 배열로 초기화)
+        setTransactionRateHistory([]);
+        setGoldsmithRateHistory([]);
       } catch (error) {
         console.error('Failed to load rate data:', error);
       }
