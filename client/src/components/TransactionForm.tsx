@@ -105,7 +105,7 @@ export default function TransactionForm() {
 
   // 거래 생성 mutation
   const createTransactionMutation = useMutation({
-    mutationFn: (transactionData: any) => apiRequest("/api/transactions", "POST", transactionData),
+    mutationFn: (transactionData: any) => apiRequest("POST", "/api/transactions", transactionData),
     onSuccess: () => {
       toast({
         title: "새거래 처리 완료",
@@ -471,8 +471,8 @@ export default function TransactionForm() {
               </div>
             </div>
 
-            {/* 권종 선택 */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* 권종 선택 - 모바일 최적화 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <Label>받는 권종</Label>
                 {formData.transactionType === "bank_transfer" || formData.transactionType === "foreign_to_account" ? (
@@ -591,6 +591,45 @@ export default function TransactionForm() {
                     })}
                   </div>
                 )}
+                
+                {/* 매도 시세 합계 확인 */}
+                {formData.fromDenominations.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 border rounded-lg">
+                    <div className="text-sm font-medium text-blue-700 mb-2">매도 시세 합계 확인</div>
+                    <div className="space-y-1 text-sm">
+                      {formData.fromDenominations.map((denomValue) => {
+                        const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
+                        if (amount <= 0) return null;
+                        
+                        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
+                        const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                        const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
+                        const exchangedAmount = Math.floor(totalValue * rate);
+                        
+                        return (
+                          <div key={denomValue} className="flex justify-between text-xs">
+                            <span>{CURRENCY_DENOMINATIONS[formData.fromCurrency as keyof typeof CURRENCY_DENOMINATIONS]?.find(d => d.value === denomValue)?.label} × {amount}장</span>
+                            <span className="font-medium">{exchangedAmount.toLocaleString()} {formData.toCurrency}</span>
+                          </div>
+                        );
+                      })}
+                      <div className="border-t pt-1 mt-2 flex justify-between font-bold text-blue-800">
+                        <span>합계</span>
+                        <span>{Math.floor(
+                          formData.fromDenominations.reduce((total, denomValue) => {
+                            const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
+                            if (amount <= 0) return total;
+                            
+                            const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
+                            const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                            const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
+                            return total + (totalValue * rate);
+                          }, 0)
+                        ).toLocaleString()} {formData.toCurrency}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 
@@ -654,7 +693,35 @@ export default function TransactionForm() {
                         return null;
                       })}
                     </div>
-                    <div className="mt-3 text-xs text-orange-600">
+                    
+                    {/* 권종별 분배 총액 확인 */}
+                    <div className="mt-3 p-2 bg-white border border-orange-300 rounded">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium text-orange-700">분배 총액:</span>
+                        <span className="text-sm font-bold text-orange-800">
+                          {Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString()} VND
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs font-medium text-orange-700">예상 지급:</span>
+                        <span className="text-sm font-bold text-orange-800">
+                          {Math.floor(parseFloat(formData.toAmount)).toLocaleString()} VND
+                        </span>
+                      </div>
+                      {Math.abs(
+                        Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
+                        Math.floor(parseFloat(formData.toAmount))
+                      ) > 0 && (
+                        <div className="mt-1 text-xs text-red-600 font-medium">
+                          ⚠️ 차이: {Math.abs(
+                            Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
+                            Math.floor(parseFloat(formData.toAmount))
+                          ).toLocaleString()} VND
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-2 text-xs text-orange-600">
                       💡 고객 요청에 따라 권종별 수량을 조정할 수 있습니다
                     </div>
                   </div>
@@ -705,19 +772,19 @@ export default function TransactionForm() {
               </div>
             </div>
 
-            {/* 고객 정보 */}
+            {/* 고객 정보 (선택사항) */}
             {(formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account") && (
               <div className="p-4 bg-yellow-50 rounded-lg space-y-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  <Label>고객 정보</Label>
+                  <Label>고객 정보 (선택사항)</Label>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>고객명</Label>
                     <Input
-                      placeholder="고객 이름"
+                      placeholder="고객 이름 (선택사항)"
                       value={formData.customerName}
                       onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                       data-testid="input-customer-name"
@@ -726,7 +793,7 @@ export default function TransactionForm() {
                   <div>
                     <Label>연락처</Label>
                     <Input
-                      placeholder="휴대폰 번호"
+                      placeholder="휴대폰 번호 (선택사항)"
                       value={formData.customerPhone}
                       onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
                       data-testid="input-customer-phone"
