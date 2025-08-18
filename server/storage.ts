@@ -4,6 +4,7 @@ import {
   rates, 
   userSettings,
   exchangeRates,
+  exchangeRateHistory,
   type InsertTransaction, 
   type Transaction, 
   type InsertAsset, 
@@ -13,7 +14,9 @@ import {
   type UserSettings,
   type InsertUserSettings,
   type ExchangeRate,
-  type InsertExchangeRate
+  type InsertExchangeRate,
+  type ExchangeRateHistory,
+  type InsertExchangeRateHistory
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -608,12 +611,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Exchange Rates methods
-  async createExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate> {
-    const [result] = await db
-      .insert(exchangeRates)
-      .values(rate)
-      .returning();
-    return result;
+  // 현재 환전상 시세 관리 (UPSERT 방식)
+  async upsertExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate> {
+    // 동일한 통화쌍과 권종이 있는지 확인
+    const existing = await db
+      .select()
+      .from(exchangeRates)
+      .where(
+        and(
+          eq(exchangeRates.userId, rate.userId),
+          eq(exchangeRates.fromCurrency, rate.fromCurrency),
+          eq(exchangeRates.toCurrency, rate.toCurrency),
+          eq(exchangeRates.denomination, rate.denomination || '')
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      // 기존 데이터를 히스토리로 백업
+      await this.createExchangeRateHistory({
+        ...existing[0],
+        recordDate: existing[0].updatedAt,
+        changePercentage: rate.myBuyRate && existing[0].myBuyRate 
+          ? ((parseFloat(rate.myBuyRate) - parseFloat(existing[0].myBuyRate)) / parseFloat(existing[0].myBuyRate) * 100).toString()
+          : "0"
+      });
+
+      // 기존 레코드 업데이트
+      const [result] = await db
+        .update(exchangeRates)
+        .set({ ...rate, updatedAt: new Date() })
+        .where(eq(exchangeRates.id, existing[0].id))
+        .returning();
+      return result;
+    } else {
+      // 새 레코드 생성
+      const [result] = await db
+        .insert(exchangeRates)
+        .values(rate)
+        .returning();
+      return result;
+    }
   }
 
   async getExchangeRates(userId: string): Promise<ExchangeRate[]> {
@@ -632,6 +670,76 @@ export class DatabaseStorage implements IStorage {
       .where(eq(exchangeRates.id, id))
       .returning();
     return result || undefined;
+  }
+
+  // 환전상 시세 이력 관리
+  async createExchangeRateHistory(history: InsertExchangeRateHistory): Promise<ExchangeRateHistory> {
+    const [result] = await db
+      .insert(exchangeRateHistory)
+      .values(history)
+      .returning();
+    return result;
+  }
+
+  async getExchangeRateHistory(userId: string, filters?: {
+    fromCurrency?: string;
+    toCurrency?: string;
+    denomination?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<ExchangeRateHistory[]> {
+    let query = db
+      .select()
+      .from(exchangeRateHistory)
+      .where(eq(exchangeRateHistory.userId, userId));
+
+    if (filters?.fromCurrency) {
+      query = query.where(eq(exchangeRateHistory.fromCurrency, filters.fromCurrency));
+    }
+    if (filters?.toCurrency) {
+      query = query.where(eq(exchangeRateHistory.toCurrency, filters.toCurrency));
+    }
+    if (filters?.denomination) {
+      query = query.where(eq(exchangeRateHistory.denomination, filters.denomination));
+    }
+
+    const result = await query.orderBy(desc(exchangeRateHistory.recordDate));
+    return result;
+  }
+
+  // 새거래용 환율 조회 (현재 시세에서 자동 선택)
+  async getExchangeRateForTransaction(
+    userId: string, 
+    fromCurrency: string, 
+    toCurrency: string, 
+    denomination?: string,
+    transactionType: 'buy' | 'sell' = 'buy'
+  ): Promise<{ rate: number; source: string } | null> {
+    const rateRecord = await db
+      .select()
+      .from(exchangeRates)
+      .where(
+        and(
+          eq(exchangeRates.userId, userId),
+          eq(exchangeRates.fromCurrency, fromCurrency),
+          eq(exchangeRates.toCurrency, toCurrency),
+          eq(exchangeRates.denomination, denomination || ''),
+          eq(exchangeRates.isActive, 'true')
+        )
+      )
+      .limit(1);
+
+    if (rateRecord.length === 0) return null;
+
+    const record = rateRecord[0];
+    const rate = transactionType === 'buy' 
+      ? parseFloat(record.myBuyRate || '0')
+      : parseFloat(record.mySellRate || '0');
+
+    return {
+      rate,
+      source: `${fromCurrency}-${toCurrency} ${denomination || ''} ${transactionType} rate`
+    };
   }
 }
 

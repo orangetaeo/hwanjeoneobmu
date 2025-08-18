@@ -62,6 +62,27 @@ Preferred communication style: Simple, everyday language.
 - **Currency Ordering**: KRW assets prioritized in display.
 
 # Recent Changes (2025-08-18)
+
+- **Complete Exchange Rate System Rebuild**: Implemented comprehensive new exchange rate management system with advanced features
+  - Database schema: Added exchangeRates and exchangeRateHistory tables with proper relationships and change tracking
+  - UPSERT functionality: Smart update system that automatically backs up old rates to history before updating current rates
+  - Change percentage tracking: Automatic calculation of rate changes with visual indicators
+  - Advanced validation: Buy rate vs sell rate validation, required field checks, and error handling
+  - Currency denomination support: Full USD/KRW denomination handling with proper labels and selection
+  - History management: Complete audit trail of all rate changes with date tracking and filtering capabilities
+  - API endpoints: /api/exchange-rates (CRUD), /api/exchange-rates/history (analytics), /api/exchange-rates/transaction (for new transactions)
+  - Professional UI: Tabbed interface with current rates and history views, proper loading states, and data validation
+
+- **Enhanced Transaction System Integration**: Rebuilt TransactionForm to leverage new exchange rate system
+  - Auto-rate fetching: "자동 환율 적용" button connects to exchange rate system for real-time rate application
+  - Smart transaction logic: Determines buy/sell based on currency direction (VND sell = customer selling VND to us)
+  - Customer information capture: Required fields for cash exchanges including name and phone number
+  - Denomination-aware: Full integration with currency denomination system for accurate rate selection
+  - Real-time calculation: Automatic amount calculation when rate or amount changes
+  - Professional validation: Complete form validation with clear error messages and user guidance
+  - Transaction metadata: Stores exchange rate source, auto-calculation flags, and denomination information
+
+# Recent Changes (2025-08-18)
 - **Duplicate Asset Validation System**: Fully implemented and tested comprehensive duplicate checking and prevention features
   - Bank accounts (Korean/Vietnamese): Alert users when identical accounts exist (same bank name, account holder, and account number - excluding balance comparison)
   - Exchange assets: Automatically update existing entries when same exchange+coin combination is found, merging quantities with user notification

@@ -57,7 +57,7 @@ export const rates = pgTable("rates", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
-// 금은방 시세 및 환전상 요율 관리 테이블
+// 현재 운영 중인 환전상 시세 테이블 (1개 레코드 유지)
 export const exchangeRates = pgTable("exchange_rates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
@@ -65,11 +65,28 @@ export const exchangeRates = pgTable("exchange_rates", {
   toCurrency: text("to_currency").notNull(), // 'VND'
   denomination: text("denomination"), // '100', '50', '20_10', '5_2_1', '50000', '10000', '5000_1000' 등
   goldShopRate: decimal("gold_shop_rate", { precision: 18, scale: 8 }), // 금은방 시세 (참고용)
-  myBuyRate: decimal("my_buy_rate", { precision: 18, scale: 8 }), // 내가 사는 가격
-  mySellRate: decimal("my_sell_rate", { precision: 18, scale: 8 }), // 내가 파는 가격
+  myBuyRate: decimal("my_buy_rate", { precision: 18, scale: 8 }), // 내가 사는 가격 (고객이 나에게 팔 때)
+  mySellRate: decimal("my_sell_rate", { precision: 18, scale: 8 }), // 내가 파는 가격 (고객이 나에게서 살 때)
   isActive: text("is_active").default("true"), // 'true', 'false'
   memo: text("memo"), // 급변상황 메모
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// 환전상 시세 이력 테이블 (분석용)
+export const exchangeRateHistory = pgTable("exchange_rate_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  fromCurrency: text("from_currency").notNull(),
+  toCurrency: text("to_currency").notNull(),
+  denomination: text("denomination"),
+  goldShopRate: decimal("gold_shop_rate", { precision: 18, scale: 8 }),
+  myBuyRate: decimal("my_buy_rate", { precision: 18, scale: 8 }),
+  mySellRate: decimal("my_sell_rate", { precision: 18, scale: 8 }),
+  isActive: text("is_active").default("true"),
+  memo: text("memo"),
+  changePercentage: decimal("change_percentage", { precision: 5, scale: 2 }), // 전일 대비 변동률
+  recordDate: timestamp("record_date").notNull(), // 해당 시세가 적용된 날짜
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -106,6 +123,17 @@ export const insertRateSchema = createInsertSchema(rates).omit({
   timestamp: true,
 });
 
+export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertExchangeRateHistorySchema = createInsertSchema(exchangeRateHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({
   id: true,
   createdAt: true,
@@ -120,14 +148,11 @@ export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
 export type Rate = typeof rates.$inferSelect;
 export type InsertRate = z.infer<typeof insertRateSchema>;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;
+export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
+export type ExchangeRateHistory = typeof exchangeRateHistory.$inferSelect;
+export type InsertExchangeRateHistory = z.infer<typeof insertExchangeRateHistorySchema>;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
 
-export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
 
-export type ExchangeRate = typeof exchangeRates.$inferSelect;
-export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
-import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema, transactions, assets, rates, exchangeRates, userSettings } from '@shared/schema';
+import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema, insertExchangeRateHistorySchema, transactions, assets, rates, exchangeRates, userSettings } from '@shared/schema';
 import { bithumbApi } from './bithumbApi';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
@@ -709,6 +709,95 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
       error: '테스트 데이터 초기화에 실패했습니다.', 
       details: error instanceof Error ? error.message : 'Unknown error' 
     });
+  }
+});
+
+// 새거래용 환율 조회 API
+router.get('/exchange-rates/transaction', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { fromCurrency, toCurrency, denomination, transactionType } = req.query;
+    
+    if (!fromCurrency || !toCurrency) {
+      return res.status(400).json({ error: 'fromCurrency and toCurrency are required' });
+    }
+
+    const rate = await storage.getExchangeRateForTransaction(
+      req.user!.id,
+      fromCurrency as string,
+      toCurrency as string,
+      denomination as string,
+      (transactionType as 'buy' | 'sell') || 'buy'
+    );
+
+    if (!rate) {
+      return res.status(404).json({ error: 'Exchange rate not found' });
+    }
+
+    res.json(rate);
+  } catch (error) {
+    console.error('Error fetching transaction exchange rate:', error);
+    res.status(500).json({ error: 'Failed to fetch exchange rate' });
+  }
+});
+
+// 환전상 시세 목록 조회 API
+router.get('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const rates = await storage.getExchangeRates(req.user!.id);
+    res.json(rates);
+  } catch (error) {
+    console.error('Error fetching exchange rates:', error);
+    res.status(500).json({ error: 'Failed to fetch exchange rates' });
+  }
+});
+
+// 환전상 시세 저장/업데이트 API (UPSERT)
+router.post('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const validatedData = insertExchangeRateSchema.parse({
+      ...req.body,
+      userId: req.user!.id
+    });
+
+    // 매입가 > 매도가 검증
+    if (validatedData.myBuyRate && validatedData.mySellRate) {
+      const buyRate = parseFloat(validatedData.myBuyRate);
+      const sellRate = parseFloat(validatedData.mySellRate);
+      if (buyRate > sellRate) {
+        return res.status(400).json({ 
+          error: '매입가가 매도가보다 높습니다. 올바른 시세를 입력하세요.' 
+        });
+      }
+    }
+
+    const rate = await storage.upsertExchangeRate(validatedData);
+    res.json(rate);
+  } catch (error) {
+    console.error('Error saving exchange rate:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data format', details: error.errors });
+    }
+    res.status(500).json({ error: 'Failed to save exchange rate' });
+  }
+});
+
+// 환전상 시세 이력 조회 API
+router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { fromCurrency, toCurrency, denomination, startDate, endDate } = req.query;
+    
+    const filters: any = {};
+    if (fromCurrency) filters.fromCurrency = fromCurrency as string;
+    if (toCurrency) filters.toCurrency = toCurrency as string;
+    if (denomination) filters.denomination = denomination as string;
+    if (startDate) filters.startDate = new Date(startDate as string);
+    if (endDate) filters.endDate = new Date(endDate as string);
+
+    const history = await storage.getExchangeRateHistory(req.user!.id, filters);
+    res.json(history);
+  } catch (error) {
+    console.error('Error fetching exchange rate history:', error);
+    res.status(500).json({ error: 'Failed to fetch exchange rate history' });
   }
 });
 
