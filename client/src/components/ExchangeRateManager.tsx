@@ -527,13 +527,14 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                         </div>
                       </div>
                       
-                      {rate.memo && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                          {rate.memo}
-                        </div>
-                      )}
-                      
-                      <div className="mt-3 flex justify-end">
+                      <div className="mt-3 flex justify-between items-center">
+                        {rate.memo && (
+                          <div className="flex-1 mr-3">
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded truncate block max-w-[200px]" title={rate.memo}>
+                              {rate.memo.length > 15 ? `${rate.memo.substring(0, 15)}...` : rate.memo}
+                            </span>
+                          </div>
+                        )}
                         <Button
                           size="sm"
                           variant={rate.isActive === "true" ? "destructive" : "default"}
@@ -542,7 +543,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                             isActive: rate.isActive !== "true" 
                           })}
                           disabled={toggleMutation.isPending && toggleMutation.variables?.id === rate.id}
-                          className="text-xs px-3 py-1"
+                          className="text-xs px-3 py-1 flex-shrink-0"
                         >
                           {(toggleMutation.isPending && toggleMutation.variables?.id === rate.id) ? "처리중..." : 
                            rate.isActive === "true" ? "비활성화" : "활성화"}
