@@ -409,16 +409,16 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                   <Label>금은방 시세 (참고용)</Label>
                   <Input
                     type="text"
-                    placeholder={formData.fromCurrency === 'KRW' ? "예: 19.20" : "예: 26100"}
-                    value={formData.goldShopRate}
+                    placeholder={formData.fromCurrency === 'KRW' ? "예: 19.20" : "예: 26,100"}
+                    value={formatNumberInput(formData.goldShopRate)}
                     onChange={(e) => {
-                      let value = e.target.value;
+                      let value = e.target.value.replace(/,/g, ''); // 콤마 제거
                       if (formData.fromCurrency === 'USD') {
-                        // USD는 정수만 허용, 콤마 포함
-                        value = value.replace(/[^0-9,]/g, '');
+                        // USD는 정수만 허용
+                        value = value.replace(/[^0-9]/g, '');
                       } else {
-                        // KRW는 소숫점 2자리까지 허용, 콤마 포함
-                        value = value.replace(/[^0-9.,]/g, '');
+                        // KRW는 소숫점 2자리까지 허용
+                        value = value.replace(/[^0-9.]/g, '');
                         
                         // 소숫점 2자리 제한
                         if (value.includes('.')) {
@@ -440,16 +440,16 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Label>내 매입가 (고객 → 나)</Label>
                     <Input
                       type="text"
-                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.00" : "예: 26000"}
-                      value={formData.myBuyRate}
+                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.00" : "예: 26,000"}
+                      value={formatNumberInput(formData.myBuyRate)}
                       onChange={(e) => {
-                        let value = e.target.value;
+                        let value = e.target.value.replace(/,/g, ''); // 콤마 제거
                         if (formData.fromCurrency === 'USD') {
-                          // USD는 정수만 허용, 콤마 포함
-                          value = value.replace(/[^0-9,]/g, '');
+                          // USD는 정수만 허용
+                          value = value.replace(/[^0-9]/g, '');
                         } else {
-                          // KRW는 소숫점 2자리까지 허용, 콤마 포함
-                          value = value.replace(/[^0-9.,]/g, '');
+                          // KRW는 소숫점 2자리까지 허용
+                          value = value.replace(/[^0-9.]/g, '');
                           
                           // 소숫점 2자리 제한
                           if (value.includes('.')) {
@@ -468,16 +468,16 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Label>내 매도가 (나 → 고객)</Label>
                     <Input
                       type="text"
-                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.40" : "예: 26200"}
-                      value={formData.mySellRate}
+                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.40" : "예: 26,200"}
+                      value={formatNumberInput(formData.mySellRate)}
                       onChange={(e) => {
-                        let value = e.target.value;
+                        let value = e.target.value.replace(/,/g, ''); // 콤마 제거
                         if (formData.fromCurrency === 'USD') {
-                          // USD는 정수만 허용, 콤마 포함
-                          value = value.replace(/[^0-9,]/g, '');
+                          // USD는 정수만 허용
+                          value = value.replace(/[^0-9]/g, '');
                         } else {
-                          // KRW는 소숫점 2자리까지 허용, 콤마 포함
-                          value = value.replace(/[^0-9.,]/g, '');
+                          // KRW는 소숫점 2자리까지 허용
+                          value = value.replace(/[^0-9.]/g, '');
                           
                           // 소숫점 2자리 제한
                           if (value.includes('.')) {
