@@ -764,16 +764,73 @@ export default function TransactionForm() {
 
 
             {/* VND 권종별 분배 표시 - 받은 권종 바로 아래, 모바일 최적화 */}
-            {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
-              <div className="mt-4 p-3 sm:p-4 bg-orange-50 border border-orange-200 rounded-lg shadow-sm">
+            {formData.toCurrency === "VND" && (
+              (() => {
+                // 권종 접기와 완전히 독립적인 VND 총액 계산
+                const totalVNDAmount = formData.transactionType === "cash_exchange" 
+                  ? (() => {
+                      // 현금환전의 경우 모든 권종의 원시 데이터에서 직접 계산
+                      const allDenominations = formData.fromCurrency === "KRW" 
+                        ? [{ value: "50000" }, { value: "10000" }, { value: "5000" }, { value: "1000" }]
+                        : formData.fromCurrency === "VND" 
+                        ? [{ value: "500000" }, { value: "200000" }, { value: "100000" }, { value: "50000" }, { value: "20000" }, { value: "10000" }]
+                        : [{ value: "100" }, { value: "50" }, { value: "20" }, { value: "10" }, { value: "5" }, { value: "1" }];
+                      
+                      let totalAmount = 0;
+                      
+                      allDenominations.forEach((denom: any) => {
+                        const amount = parseFloat(formData.denominationAmounts[denom.value] || "0");
+                        if (amount > 0) {
+                          const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom.value);
+                          if (rate && rate.sellRate > 0) {
+                            const calculatedAmount = amount * getDenominationValue(formData.fromCurrency, denom.value) * rate.sellRate;
+                            totalAmount += calculatedAmount;
+                          }
+                        }
+                      });
+                      
+                      return Math.floor(totalAmount);
+                    })()
+                  : parseFloat(formData.toAmount || "0");
+                
+                return totalVNDAmount > 0;
+              })() && (
+                <div className="mt-4 p-3 sm:p-4 bg-orange-50 border border-orange-200 rounded-lg shadow-sm">
                 <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
                   <span className="mr-2">💰</span>
                   권종별 분배 (고액권 우선)
                 </div>
                 <div className="space-y-2 sm:space-y-3">
                   {[500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                    // 항상 전체 toAmount 기준으로 자동 계산 (권종 접기와 무관)
-                    const autoBreakdown = calculateVNDBreakdown(Math.floor(parseFloat(formData.toAmount)));
+                    // 권종 접기와 완전히 독립적인 VND 총액 계산
+                    const totalVNDAmount = formData.transactionType === "cash_exchange" 
+                      ? (() => {
+                          // 현금환전의 경우 모든 권종의 원시 데이터에서 직접 계산
+                          const allDenominations = formData.fromCurrency === "KRW" 
+                            ? [{ value: "50000" }, { value: "10000" }, { value: "5000" }, { value: "1000" }]
+                            : formData.fromCurrency === "VND" 
+                            ? [{ value: "500000" }, { value: "200000" }, { value: "100000" }, { value: "50000" }, { value: "20000" }, { value: "10000" }]
+                            : [{ value: "100" }, { value: "50" }, { value: "20" }, { value: "10" }, { value: "5" }, { value: "1" }];
+                          
+                          let totalAmount = 0;
+                          
+                          allDenominations.forEach((denomInfo: any) => {
+                            const amount = parseFloat(formData.denominationAmounts[denomInfo.value] || "0");
+                            if (amount > 0) {
+                              const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomInfo.value);
+                              if (rate && rate.sellRate > 0) {
+                                const calculatedAmount = amount * getDenominationValue(formData.fromCurrency, denomInfo.value) * rate.sellRate;
+                                totalAmount += calculatedAmount;
+                              }
+                            }
+                          });
+                          
+                          return Math.floor(totalAmount);
+                        })()
+                      : parseFloat(formData.toAmount || "0");
+                    
+                    // VND 분배 계산 (권종 접기와 무관)
+                    const autoBreakdown = calculateVNDBreakdown(totalVNDAmount);
                     const currentBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : autoBreakdown;
                     const count = currentBreakdown[denom.toString()] || 0;
                     
@@ -832,27 +889,83 @@ export default function TransactionForm() {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                     <span className="text-xs font-medium text-orange-700">분배 총액:</span>
                     <span className="text-sm font-bold text-orange-800">
-                      {Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString()} VND
+                      {(() => {
+                        // 권종 접기와 완전히 독립적인 VND 총액 계산
+                        const totalVNDAmount = formData.transactionType === "cash_exchange" 
+                          ? (() => {
+                              const allDenominations = formData.fromCurrency === "KRW" 
+                                ? [{ value: "50000" }, { value: "10000" }, { value: "5000" }, { value: "1000" }]
+                                : formData.fromCurrency === "VND" 
+                                ? [{ value: "500000" }, { value: "200000" }, { value: "100000" }, { value: "50000" }, { value: "20000" }, { value: "10000" }]
+                                : [{ value: "100" }, { value: "50" }, { value: "20" }, { value: "10" }, { value: "5" }, { value: "1" }];
+                              
+                              let totalAmount = 0;
+                              
+                              allDenominations.forEach((denomInfo: any) => {
+                                const amount = parseFloat(formData.denominationAmounts[denomInfo.value] || "0");
+                                if (amount > 0) {
+                                  const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomInfo.value);
+                                  if (rate && rate.sellRate > 0) {
+                                    const calculatedAmount = amount * getDenominationValue(formData.fromCurrency, denomInfo.value) * rate.sellRate;
+                                    totalAmount += calculatedAmount;
+                                  }
+                                }
+                              });
+                              
+                              return Math.floor(totalAmount);
+                            })()
+                          : parseFloat(formData.toAmount || "0");
+                        
+                        const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(totalVNDAmount);
+                        return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
+                      })()} VND
                     </span>
                   </div>
 
-                  {Math.abs(
-                    Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
-                    formatVNDWithFloor(parseFloat(formData.toAmount))
-                  ) > 0 && (
-                    <div className="mt-1 text-xs text-red-600 font-medium">
-                      ⚠️ 차이: {Math.abs(
-                        Object.entries(Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(formatVNDWithFloor(parseFloat(formData.toAmount)))).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0) - 
-                        formatVNDWithFloor(parseFloat(formData.toAmount))
-                      ).toLocaleString()} VND
-                    </div>
-                  )}
+                  {(() => {
+                    // 권종 접기와 완전히 독립적인 VND 총액 계산
+                    const totalVNDAmount = formData.transactionType === "cash_exchange" 
+                      ? (() => {
+                          const allDenominations = formData.fromCurrency === "KRW" 
+                            ? [{ value: "50000" }, { value: "10000" }, { value: "5000" }, { value: "1000" }]
+                            : formData.fromCurrency === "VND" 
+                            ? [{ value: "500000" }, { value: "200000" }, { value: "100000" }, { value: "50000" }, { value: "20000" }, { value: "10000" }]
+                            : [{ value: "100" }, { value: "50" }, { value: "20" }, { value: "10" }, { value: "5" }, { value: "1" }];
+                          
+                          let totalAmount = 0;
+                          
+                          allDenominations.forEach((denomInfo: any) => {
+                            const amount = parseFloat(formData.denominationAmounts[denomInfo.value] || "0");
+                            if (amount > 0) {
+                              const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomInfo.value);
+                              if (rate && rate.sellRate > 0) {
+                                const calculatedAmount = amount * getDenominationValue(formData.fromCurrency, denomInfo.value) * rate.sellRate;
+                                totalAmount += calculatedAmount;
+                              }
+                            }
+                          });
+                          
+                          return Math.floor(totalAmount);
+                        })()
+                      : parseFloat(formData.toAmount || "0");
+                    
+                    const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(totalVNDAmount);
+                    const breakdownTotal = Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0);
+                    const difference = Math.abs(breakdownTotal - totalVNDAmount);
+                    
+                    return difference > 0 ? (
+                      <div className="mt-1 text-xs text-red-600 font-medium">
+                        ⚠️ 차이: {difference.toLocaleString()} VND
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
                 
                 <div className="mt-2 text-xs text-orange-600 text-center sm:text-left">
                   💡 고객 요청에 따라 권종별 수량을 조정할 수 있습니다
                 </div>
-              </div>
+                </div>
+              )
             )}
 
             {/* 금액 입력 */}
