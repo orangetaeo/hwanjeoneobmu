@@ -20,7 +20,7 @@ export default function ExchangeOperations() {
           <h1 className="text-xl sm:text-2xl font-bold">거래소 운영</h1>
         </div>
         <Badge variant="outline" className="text-xs sm:text-sm self-start sm:self-center">
-          KRW → USDT → VND 프로세스
+          빗썸 → 네트워크 → 바이낸스 프로세스
         </Badge>
       </div>
 
