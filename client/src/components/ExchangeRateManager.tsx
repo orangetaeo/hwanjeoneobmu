@@ -196,12 +196,23 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     );
   };
 
-  // 권종 표시 포맷 함수
-  const formatDenomination = (denomination: string | null) => {
+  // 권종 표시 포맷 함수 (통화별 기호 적용)
+  const formatDenomination = (denomination: string | null, fromCurrency: string) => {
     if (!denomination) return "";
     
-    // "100" -> "$100", "20_10" -> "$20,10", "5_2_1" -> "$5,2,1"
-    return "$" + denomination.replace(/_/g, ',');
+    const symbol = fromCurrency === 'KRW' ? '₩' : '$';
+    const formattedDenom = denomination.replace(/_/g, ',');
+    
+    // KRW는 천단위 콤마 적용
+    if (fromCurrency === 'KRW') {
+      const numbers = formattedDenom.split(',').map(num => {
+        const parsed = parseInt(num);
+        return parsed >= 1000 ? parsed.toLocaleString('ko-KR') : num;
+      });
+      return symbol + numbers.join(',');
+    }
+    
+    return symbol + formattedDenom;
   };
 
   // 권종별 정렬 우선순위 (고액권이 위에)
@@ -423,20 +434,22 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="w-5 h-5" />
-                현재 운영 중인 시세
+                현재 운영 중인 시세 ({formData.fromCurrency} → {formData.toCurrency})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingRates ? (
                 <div className="text-center py-8">로딩 중...</div>
-              ) : !Array.isArray(exchangeRates) || exchangeRates.length === 0 ? (
+              ) : !Array.isArray(exchangeRates) || 
+                   exchangeRates.filter(rate => rate.fromCurrency === formData.fromCurrency).length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  등록된 시세가 없습니다.
+                  {formData.fromCurrency} → {formData.toCurrency} 시세가 없습니다.
                 </div>
               ) : (
                 <div className="space-y-4">
                   {Array.isArray(exchangeRates) && 
                     exchangeRates
+                      .filter(rate => rate.fromCurrency === formData.fromCurrency)
                       .sort((a, b) => getDenominationValue(b.denomination) - getDenominationValue(a.denomination))
                       .map((rate: ExchangeRate) => (
                     <div 
@@ -452,7 +465,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                             {rate.fromCurrency} → {rate.toCurrency}
                           </span>
                           {rate.denomination && (
-                            <Badge variant="outline">{formatDenomination(rate.denomination)}</Badge>
+                            <Badge variant="outline">{formatDenomination(rate.denomination, rate.fromCurrency)}</Badge>
                           )}
                           {rate.isActive === "false" && (
                             <Badge variant="destructive">
@@ -500,19 +513,23 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              환전상 시세 히스토리
+              환전상 시세 히스토리 ({formData.fromCurrency} → {formData.toCurrency})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoadingHistory ? (
               <div className="text-center py-8">로딩 중...</div>
-            ) : !Array.isArray(rateHistory) || rateHistory.length === 0 ? (
+            ) : !Array.isArray(rateHistory) || 
+                 rateHistory.filter(history => history.fromCurrency === formData.fromCurrency).length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                시세 히스토리가 없습니다.
+                {formData.fromCurrency} → {formData.toCurrency} 히스토리가 없습니다.
               </div>
             ) : (
               <div className="space-y-4">
-                {Array.isArray(rateHistory) && rateHistory.map((history: ExchangeRateHistory) => (
+                {Array.isArray(rateHistory) && 
+                  rateHistory
+                    .filter(history => history.fromCurrency === formData.fromCurrency)
+                    .map((history: ExchangeRateHistory) => (
                   <div key={history.id} className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -520,7 +537,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                           {history.fromCurrency} → {history.toCurrency}
                         </span>
                         {history.denomination && (
-                          <Badge variant="outline">{history.denomination}</Badge>
+                          <Badge variant="outline">{formatDenomination(history.denomination, history.fromCurrency)}</Badge>
                         )}
                         {renderChangePercentage(history.changePercentage)}
                       </div>
