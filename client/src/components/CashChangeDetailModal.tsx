@@ -1,4 +1,4 @@
-import { Transaction } from '@shared/schema';
+import { Transaction, CashAsset } from '@shared/schema';
 import {
   Dialog,
   DialogContent,
@@ -15,32 +15,36 @@ interface CashChangeDetailModalProps {
   transaction: Transaction | null;
   isOpen: boolean;
   onClose: () => void;
+  cashAsset: CashAsset;
 }
 
-export default function CashChangeDetailModal({ transaction, isOpen, onClose }: CashChangeDetailModalProps) {
+export default function CashChangeDetailModal({ transaction, isOpen, onClose, cashAsset }: CashChangeDetailModalProps) {
   if (!transaction || (transaction.type !== 'cash_change' && (transaction.type as string) !== 'cash_exchange')) return null;
 
   const metadata = transaction.metadata as any;
   let denominationChanges = metadata?.denominationChanges || {};
   
-  // cash_exchange 타입의 경우 권종별 변화 데이터를 생성
+  // cash_exchange 타입의 경우 현재 보고 있는 통화에 맞는 권종별 변화 데이터만 생성
   if ((transaction.type as string) === 'cash_exchange') {
     const denominationAmounts = metadata?.denominationAmounts || {};
     const vndBreakdown = metadata?.vndBreakdown || {};
     
-    // fromAssetName에 해당하는 권종은 증가 (+)
-    Object.entries(denominationAmounts).forEach(([denom, amount]) => {
-      if (amount && parseFloat(amount as string) > 0) {
-        denominationChanges[denom] = parseInt(amount as string);
-      }
-    });
-    
-    // vndBreakdown에 해당하는 권종은 감소 (-)
-    Object.entries(vndBreakdown).forEach(([denom, amount]) => {
-      if (amount && (amount as number) > 0) {
-        denominationChanges[denom] = -(amount as number);
-      }
-    });
+    // 현재 보고 있는 현금 자산의 통화에 따라 해당 권종만 표시
+    if (cashAsset.currency === 'KRW') {
+      // KRW 현금 상세 페이지: denominationAmounts (KRW 증가)
+      Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+        if (amount && parseFloat(amount as string) > 0) {
+          denominationChanges[denom] = parseInt(amount as string); // KRW 증가
+        }
+      });
+    } else if (cashAsset.currency === 'VND') {
+      // VND 현금 상세 페이지: vndBreakdown (VND 감소)
+      Object.entries(vndBreakdown).forEach(([denom, amount]) => {
+        if (amount && (amount as number) > 0) {
+          denominationChanges[denom] = -(amount as number); // VND 감소
+        }
+      });
+    }
   }
   
   // 통화별 지폐 단위 정의
@@ -59,27 +63,9 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose }: 
     }
   };
 
-  // 통화 결정 (자산 이름에서 추출) - cash_exchange는 양쪽 통화 모두 고려
+  // 통화 결정 - 전달받은 cashAsset의 통화 사용
   const getCurrency = () => {
-    if ((transaction.type as string) === 'cash_exchange') {
-      // 권종 변화에서 통화를 판단
-      const hasKRWDenoms = Object.keys(denominationChanges).some(denom => 
-        ['1000', '5000', '10000', '50000'].includes(denom)
-      );
-      const hasVNDDenoms = Object.keys(denominationChanges).some(denom => 
-        ['1000', '2000', '5000', '10000', '20000', '50000', '100000', '200000', '500000'].includes(denom) && 
-        parseInt(denom) >= 10000
-      );
-      
-      if (hasKRWDenoms && hasVNDDenoms) return 'MIXED'; // 혼합
-      if (hasKRWDenoms) return 'KRW';
-      if (hasVNDDenoms) return 'VND';
-    }
-    
-    if (transaction.toAssetName.includes('KRW') || transaction.toAssetName.includes('원')) return 'KRW';
-    if (transaction.toAssetName.includes('USD') || transaction.toAssetName.includes('달러')) return 'USD';
-    if (transaction.toAssetName.includes('VND') || transaction.toAssetName.includes('동')) return 'VND';
-    return 'KRW'; // 기본값
+    return cashAsset.currency; // 현재 보고 있는 현금 자산의 통화
   };
 
   const currency = getCurrency();

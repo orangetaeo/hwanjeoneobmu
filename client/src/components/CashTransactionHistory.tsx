@@ -420,6 +420,7 @@ export default function CashTransactionHistory({
           setIsCashDetailModalOpen(false);
           setSelectedTransaction(null);
         }}
+        cashAsset={cashAsset}
       />
     </Dialog>
   );
