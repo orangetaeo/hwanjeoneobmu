@@ -81,6 +81,11 @@ export default function TransactionForm() {
     queryKey: ["/api/assets"],
   });
 
+  // 환율 목록 조회
+  const { data: exchangeRates = [], isLoading: isLoadingRates } = useQuery({
+    queryKey: ["/api/exchange-rates"],
+  });
+
   // 환전상 시세 조회 (자동 환율 적용용)
   const fetchExchangeRate = async (fromCurrency: string, toCurrency: string, denomination: string, transactionType: 'buy' | 'sell') => {
     try {
@@ -211,6 +216,27 @@ export default function TransactionForm() {
       }
     });
     return total.toFixed(2);
+  };
+
+  // 특정 권종의 환율 정보 조회
+  const getDenominationRate = (fromCurrency: string, toCurrency: string, denomination: string) => {
+    if (!Array.isArray(exchangeRates)) return null;
+    
+    return exchangeRates.find((rate: any) => 
+      rate.fromCurrency === fromCurrency && 
+      rate.toCurrency === toCurrency && 
+      rate.denomination === denomination &&
+      rate.isActive
+    );
+  };
+
+  // 환율 포맷팅 함수
+  const formatRate = (rate: number, currency: string) => {
+    if (currency === "KRW") {
+      return rate.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+    } else {
+      return rate.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+    }
   };
 
   // 권종별 금액이 변경될 때 총액 업데이트
@@ -384,54 +410,82 @@ export default function TransactionForm() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {CURRENCY_DENOMINATIONS[formData.fromCurrency as keyof typeof CURRENCY_DENOMINATIONS]?.map((denom) => (
-                      <div key={denom.value} className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`denom-${denom.value}`}
-                            checked={formData.fromDenominations.includes(denom.value)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFormData({
+                    {CURRENCY_DENOMINATIONS[formData.fromCurrency as keyof typeof CURRENCY_DENOMINATIONS]?.map((denom) => {
+                      const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom.value);
+                      return (
+                        <div key={denom.value} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`denom-${denom.value}`}
+                                checked={formData.fromDenominations.includes(denom.value)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setFormData({
+                                      ...formData,
+                                      fromDenominations: [...formData.fromDenominations, denom.value]
+                                    });
+                                  } else {
+                                    const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
+                                    const newAmounts = { ...formData.denominationAmounts };
+                                    delete newAmounts[denom.value];
+                                    setFormData({
+                                      ...formData,
+                                      fromDenominations: newDenominations,
+                                      denominationAmounts: newAmounts
+                                    });
+                                  }
+                                }}
+                                data-testid={`checkbox-denom-${denom.value}`}
+                              />
+                              <Label htmlFor={`denom-${denom.value}`} className="text-sm">
+                                {denom.label}
+                              </Label>
+                            </div>
+                            {rateInfo && (
+                              <div className="text-right text-xs">
+                                <div className="text-blue-600 font-medium">
+                                  매입: {formatRate(rateInfo.myBuyRate, formData.toCurrency)}
+                                </div>
+                                <div className="text-red-600 font-medium">
+                                  매도: {formatRate(rateInfo.mySellRate, formData.toCurrency)}
+                                </div>
+                                <div className="text-gray-500">
+                                  금은방: {formatRate(rateInfo.goldShopRate, formData.toCurrency)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {formData.fromDenominations.includes(denom.value) && (
+                            <div className="ml-6 flex items-center space-x-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="금액"
+                                value={formData.denominationAmounts[denom.value] || ""}
+                                onChange={(e) => setFormData({
                                   ...formData,
-                                  fromDenominations: [...formData.fromDenominations, denom.value]
-                                });
-                              } else {
-                                const newDenominations = formData.fromDenominations.filter(d => d !== denom.value);
-                                const newAmounts = { ...formData.denominationAmounts };
-                                delete newAmounts[denom.value];
-                                setFormData({
-                                  ...formData,
-                                  fromDenominations: newDenominations,
-                                  denominationAmounts: newAmounts
-                                });
-                              }
-                            }}
-                            data-testid={`checkbox-denom-${denom.value}`}
-                          />
-                          <Label htmlFor={`denom-${denom.value}`} className="text-sm">
-                            {denom.label}
-                          </Label>
+                                  denominationAmounts: {
+                                    ...formData.denominationAmounts,
+                                    [denom.value]: e.target.value
+                                  }
+                                })}
+                                data-testid={`input-amount-${denom.value}`}
+                                className="w-32"
+                              />
+                              {rateInfo && formData.denominationAmounts[denom.value] && (
+                                <div className="text-xs text-gray-600">
+                                  ≈ {formatRate(
+                                    parseFloat(formData.denominationAmounts[denom.value]) * rateInfo.myBuyRate, 
+                                    formData.toCurrency
+                                  )} {formData.toCurrency}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        {formData.fromDenominations.includes(denom.value) && (
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="금액"
-                            value={formData.denominationAmounts[denom.value] || ""}
-                            onChange={(e) => setFormData({
-                              ...formData,
-                              denominationAmounts: {
-                                ...formData.denominationAmounts,
-                                [denom.value]: e.target.value
-                              }
-                            })}
-                            data-testid={`input-amount-${denom.value}`}
-                            className="ml-6 w-32"
-                          />
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
