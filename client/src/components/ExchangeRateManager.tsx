@@ -712,22 +712,20 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     .filter(history => history.fromCurrency === formData.fromCurrency)
                     .map((history: ExchangeRateHistory) => (
                   <div key={history.id} className="p-4 border rounded-lg bg-white hover:shadow-sm transition-shadow">
-                    {/* 모바일 최적화 헤더 */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <span className="font-semibold text-base">
+                    {/* 모바일 최적화 헤더 - 한 줄 배치 */}
+                    <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className="font-semibold text-base whitespace-nowrap">
                           {history.fromCurrency} → {history.toCurrency}
                         </span>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {history.denomination && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatDenomination(history.denomination, history.fromCurrency)}
-                            </Badge>
-                          )}
-                          {renderChangePercentage(history.changePercentage)}
-                        </div>
+                        {history.denomination && (
+                          <Badge variant="outline" className="text-xs whitespace-nowrap">
+                            {formatDenomination(history.denomination, history.fromCurrency)}
+                          </Badge>
+                        )}
+                        {renderChangePercentage(history.changePercentage)}
                       </div>
-                      <span className="text-xs text-gray-500 sm:text-right">
+                      <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
                         {new Date(history.recordDate).toLocaleString("ko-KR", {
                           month: "short",
                           day: "numeric", 
