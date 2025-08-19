@@ -959,11 +959,23 @@ export default function TransactionForm() {
                                                 const actualReduction = Math.min(maxReduction, currentCount);
                                                 
                                                 if (actualReduction > 0) {
-                                                  updatedBreakdown[d.toString()] = currentCount - actualReduction;
+                                                  const newCount = currentCount - actualReduction;
+                                                  updatedBreakdown[d.toString()] = newCount;
                                                   excessAmount -= actualReduction * d;
-                                                  console.log(`자동 조정: ${d} VND ${currentCount} → ${currentCount - actualReduction} (${actualReduction}장 감소)`);
+                                                  console.log(`자동 조정: ${d} VND ${currentCount} → ${newCount} (${actualReduction}장 감소), 남은 초과량: ${excessAmount}`);
                                                   
-                                                  // 정확한 조정을 위해 중단
+                                                  // 아직 초과량이 남아있고 현재 권종에서 더 감소 가능한 경우 계속
+                                                  if (excessAmount > 0 && newCount > 0 && d <= excessAmount) {
+                                                    // 남은 초과량도 이 권종에서 처리 가능한지 확인
+                                                    const additionalReduction = Math.min(Math.floor(excessAmount / d), newCount);
+                                                    if (additionalReduction > 0) {
+                                                      updatedBreakdown[d.toString()] = newCount - additionalReduction;
+                                                      excessAmount -= additionalReduction * d;
+                                                      console.log(`추가 조정: ${d} VND ${newCount} → ${newCount - additionalReduction} (${additionalReduction}장 더 감소), 남은 초과량: ${excessAmount}`);
+                                                    }
+                                                  }
+                                                  
+                                                  // 초과량이 완전히 해결되면 중단
                                                   if (excessAmount === 0) break;
                                                 }
                                               }
