@@ -839,9 +839,13 @@ export default function TransactionForm() {
                           const suggestions = {};
                           if (difference > 0) {
                             let remainingDiff = difference;
-                            // 큰 권종부터 작은 권종 순으로 채우기
-                            [500000, 200000, 100000, 50000, 20000, 10000].forEach(denom => {
-                              if (remainingDiff >= denom) {
+                            // 현재 수정된 권종을 제외하고 작은 권종부터 채우기 (더 실용적)
+                            [200000, 100000, 50000, 20000, 10000, 500000].forEach(denom => {
+                              const currentCount = formData.vndBreakdown[denom.toString()] || 0;
+                              const defaultCount = fixedBreakdown[denom.toString()] || 0;
+                              
+                              // 기본값보다 적게 설정된 권종은 건드리지 않음
+                              if (currentCount >= defaultCount && remainingDiff >= denom) {
                                 const suggestedCount = Math.floor(remainingDiff / denom);
                                 if (suggestedCount > 0) {
                                   suggestions[denom.toString()] = suggestedCount;
@@ -870,7 +874,8 @@ export default function TransactionForm() {
                           const denomComposition = vndCashAsset?.metadata?.denominations || {};
                           const availableCount = denomComposition[denom.toString()] || 0;
                           
-                          if (defaultCount > 0 || currentCount > 0) {
+                          // 모든 권종을 기본으로 표기
+                          if (true) {
                             return (
                               <div key={denom} className="bg-white p-3 rounded border border-orange-200">
                                 <div className="flex items-center justify-between gap-3">
