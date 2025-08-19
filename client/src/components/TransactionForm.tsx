@@ -429,7 +429,8 @@ export default function TransactionForm() {
       if (vndCashAsset?.metadata?.denominations) {
         const denomComposition = vndCashAsset.metadata.denominations;
         for (const [denom, requiredCount] of Object.entries(vndBreakdown)) {
-          const availableCount = denomComposition[denom] || 0;
+          const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+          const availableCount = denomComposition[denomKey] || 0;
           if (requiredCount > availableCount) {
             toast({
               variant: "destructive",
@@ -866,7 +867,8 @@ export default function TransactionForm() {
                           
                           denominations.forEach(denom => {
                             const currentCount = formData.vndBreakdown[denom.toString()] || 0;
-                            const availableCount = denomComposition[denom.toString()] || 0;
+                            const denomKey = denom.toLocaleString(); // 쉼표 포함 형태로 변환
+                            const availableCount = denomComposition[denomKey] || 0;
                             const usableCount = availableCount - currentCount;
                             
                             if (usableCount > 0 && remainingAmount >= denom) {
@@ -897,7 +899,10 @@ export default function TransactionForm() {
                           ) : null;
                           
                           const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                          const availableCount = denomComposition[denom.toString()] || 0;
+                          
+                          // 권종 키 형태 확인 (쉼표 포함된 형태로 저장되어 있음)
+                          const denomKey = denom.toLocaleString();  // 숫자를 "500,000" 형태로 변환
+                          const availableCount = denomComposition[denomKey] || 0;
                           
                           // 모든 권종을 기본으로 표기
                           if (true) {
@@ -1559,7 +1564,8 @@ export default function TransactionForm() {
                   // 보유량 부족 여부 확인
                   const hasShortage = Object.entries(actualBreakdown).some(([denom, count]) => {
                     const requiredCount = parseInt(count.toString());
-                    const availableCount = denomComposition[denom] || 0;
+                    const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+                    const availableCount = denomComposition[denomKey] || 0;
                     return requiredCount > availableCount;
                   });
 
