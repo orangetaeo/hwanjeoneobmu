@@ -2,6 +2,15 @@
 
 This is a full-stack asset management and exchange tracking application designed to help users manage various financial assets including cash, bank accounts, and cryptocurrency holdings, while also tracking exchange transactions. The application provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
+## Recent Major Updates (January 2025)
+
+### VND Exchange Transaction System Enhancements
+- **Complete Auto-Adjustment System**: Fixed Math.ceil() based precise excess calculation for VND denomination distribution (500,000 VND now correctly adjusts from 19→16 instead of 19→17)
+- **Smart Inventory Management**: Real-time validation preventing quantity inputs exceeding available stock with automatic caps
+- **Transaction Amount Verification**: Comprehensive final validation comparing actual VND distribution totals against expected exchange amounts with detailed error messages
+- **Enhanced Transaction Confirmation**: Added detailed VND denomination breakdown in transaction confirmation section showing individual quantities, subtotals, and total distribution
+- **Preserved User Input Logic**: System maintains user input denominations during auto-adjustment while intelligently rebalancing other denominations
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
