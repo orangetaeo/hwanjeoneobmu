@@ -20,6 +20,7 @@ This is a full-stack asset management and exchange tracking application designed
 - **Calculation Independence Fix**: Fixed denomination fold/unfold UI state affecting calculations by using Object.entries(denominationAmounts) instead of fromDenominations array
 - **Amount Validation Accuracy**: Corrected VND amount mismatch validation to use vndOriginalAmount or formatVNDWithFloor values for precise error checking
 - **UI Layout Improvement**: Relocated amount display sections (받는 금액/주는 금액) above denomination selection for better user workflow and more intuitive interface design
+- **Mobile VND Distribution Enhancement**: Improved VND denomination input interface with larger touch-friendly input fields (16×40px → 20×48px), expanded +0 button sizes, right-aligned layout for input elements, and increased card padding for better mobile usability
 
 # User Preferences
 
