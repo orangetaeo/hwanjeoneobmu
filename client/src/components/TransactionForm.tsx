@@ -1269,11 +1269,51 @@ export default function TransactionForm() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
-                      <span className="text-sm text-gray-600 font-medium">고객이 받는 금액</span>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-teal-700">{formatNumber(formData.toAmount)} {formData.toCurrency}</div>
+                    <div className="p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-600 font-medium">고객이 받는 금액</span>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-teal-700">{formatNumber(formData.toAmount)} {formData.toCurrency}</div>
+                        </div>
                       </div>
+                      
+                      {/* VND 권종별 분배 상세 */}
+                      {formData.toCurrency === "VND" && formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-200/50">
+                          <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
+                          <div className="space-y-1">
+                            {Object.entries(formData.vndBreakdown)
+                              .filter(([denom, count]) => parseInt(count.toString()) > 0)
+                              .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                              .map(([denom, count]) => {
+                                const denomValue = parseInt(denom);
+                                const denomCount = parseInt(count.toString());
+                                const subtotal = denomValue * denomCount;
+                                return (
+                                  <div key={denom} className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-600">
+                                      {formatNumber(denomValue.toString())} VND × {denomCount}장
+                                    </span>
+                                    <span className="text-gray-700 font-medium">
+                                      {formatNumber(subtotal.toString())} VND
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center justify-between text-xs">
+                            <span className="text-gray-600 font-medium">총 분배 금액:</span>
+                            <span className="text-teal-700 font-bold">
+                              {formatNumber(
+                                Object.entries(formData.vndBreakdown)
+                                  .reduce((total, [denom, count]) => {
+                                    return total + (parseInt(denom) * parseInt(count.toString()));
+                                  }, 0).toString()
+                              )} VND
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
