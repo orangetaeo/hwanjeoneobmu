@@ -820,26 +820,33 @@ export default function TransactionForm() {
                           }
                           
                           // 현재 총액과 목표 총액 계산
-                          const currentTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => 
-                            total + (parseInt(denom) * parseInt(count.toString())), 0
-                          );
+                          const currentTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
+                            const denomValue = parseInt(denom);
+                            const denomCount = parseInt(count.toString());
+                            return total + (denomValue * denomCount);
+                          }, 0);
                           
-                          const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => 
-                            total + (parseInt(denom) * parseInt(count.toString())), 0
-                          );
+                          const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
+                            const denomValue = parseInt(denom);
+                            const denomCount = parseInt(count.toString());
+                            return total + (denomValue * denomCount);
+                          }, 0);
                           
                           const difference = targetTotal - currentTotal;
+                          console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "차이:", difference);
                           
                           // 부족한 금액을 권종별로 분배하는 제안
                           const suggestions = {};
                           if (difference > 0) {
                             let remainingDiff = difference;
+                            // 큰 권종부터 작은 권종 순으로 채우기
                             [500000, 200000, 100000, 50000, 20000, 10000].forEach(denom => {
-                              if (remainingDiff > 0 && remainingDiff >= denom) {
+                              if (remainingDiff >= denom) {
                                 const suggestedCount = Math.floor(remainingDiff / denom);
                                 if (suggestedCount > 0) {
                                   suggestions[denom.toString()] = suggestedCount;
                                   remainingDiff -= suggestedCount * denom;
+                                  console.log(`${denom} VND: ${suggestedCount}장 제안, 남은 차이: ${remainingDiff}`);
                                 }
                               }
                             });
