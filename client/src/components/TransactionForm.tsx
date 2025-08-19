@@ -88,6 +88,8 @@ export default function TransactionForm() {
   // KRW 권종별 분배 수정용 상태
   const [krwBreakdown, setKrwBreakdown] = useState<Record<string, number>>({});
 
+
+
   // 권종별 환율의 평균 계산
   const calculateAverageExchangeRate = () => {
     const totalFromAmount = calculateTotalFromAmount();
@@ -315,21 +317,43 @@ export default function TransactionForm() {
     return 0;
   };
 
-  // VND 권종별 분배 계산 (고액권부터 우선 분배)
-  const calculateVNDBreakdown = (totalAmount: number) => {
+  // VND 권종별 분배 계산 (고액권부터 우선 분배, 보유 장수 고려)
+  const calculateVNDBreakdown = (totalAmount: number, ignoreInventory: boolean = false) => {
     const vndDenominations = [500000, 200000, 100000, 50000, 20000, 10000];
     const breakdown: { [key: string]: number } = {};
     let remaining = totalAmount;
 
     console.log(`VND 분배 계산 시작: ${totalAmount.toLocaleString()} VND`);
 
+    // VND 현금 자산에서 권종별 보유 장수 조회
+    const vndCashAsset = assets?.find((asset: any) => 
+      asset.name === "VND 현금" && asset.currency === "VND"
+    );
+
     for (const denom of vndDenominations) {
       if (remaining >= denom) {
-        const count = Math.floor(remaining / denom);
-        if (count > 0) {
-          breakdown[denom.toString()] = count;
-          remaining = remaining % denom;
-          console.log(`${denom.toLocaleString()} VND: ${count}장, 남은 금액: ${remaining.toLocaleString()}`);
+        const idealCount = Math.floor(remaining / denom);
+        
+        if (ignoreInventory) {
+          // 재고 무시하고 이상적인 분배 계산
+          if (idealCount > 0) {
+            breakdown[denom.toString()] = idealCount;
+            remaining -= idealCount * denom;
+            console.log(`${denom.toLocaleString()} VND: ${idealCount}장 (재고 무시), 남은 금액: ${remaining.toLocaleString()}`);
+          }
+        } else {
+          // 보유 장수 제한 적용 (권종 키 형식 맞춤)
+          const denomKey = `${parseInt(denom).toLocaleString()}`;
+          const availableCount = vndCashAsset?.metadata?.denominations?.[denomKey] || 0;
+          const actualCount = Math.min(idealCount, availableCount);
+          
+          if (actualCount > 0) {
+            breakdown[denom.toString()] = actualCount;
+            remaining -= actualCount * denom;
+            console.log(`${denom.toLocaleString()} VND: 이상값 ${idealCount}장, 보유량 ${availableCount}장, 실제 ${actualCount}장, 남은 금액: ${remaining.toLocaleString()}`);
+          } else if (idealCount > 0) {
+            console.log(`${denom.toLocaleString()} VND: 필요 ${idealCount}장, 보유량 ${availableCount}장 부족으로 건너뜀`);
+          }
         }
       }
     }
@@ -1491,6 +1515,173 @@ export default function TransactionForm() {
                               {difference > 0 && (
                                 <div className="text-xs text-red-600 mt-1">
                                   💡 KRW 현금 보유량을 확인하세요
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* KRW→VND 환전 시 VND 권종별 분배 */}
+              {formData.fromCurrency === "KRW" && formData.toCurrency === "VND" && parseFloat(formData.toAmount) > 0 && (
+                <div>
+                  <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
+                  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                    <div className="space-y-3">
+                      {(() => {
+                        // 환전 금액으로부터 VND 분배 계산 (무조건 내림 적용)
+                        const targetVNDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
+                        
+                        // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
+                        let displayBreakdown;
+                        if (Object.keys(vndBreakdown).length > 0) {
+                          displayBreakdown = vndBreakdown;
+                        } else {
+                          // 실제 보유량 기반 분배를 우선 시도
+                          const realBreakdown = calculateVNDBreakdown(targetVNDAmount, false);
+                          if (Object.keys(realBreakdown).length > 0) {
+                            displayBreakdown = realBreakdown;
+                          } else {
+                            // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
+                            displayBreakdown = calculateVNDBreakdown(targetVNDAmount, true);
+                          }
+                        }
+                        
+                        return Object.entries(displayBreakdown)
+                          .filter(([denom, count]) => count > 0)
+                          .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                          .map(([denom, count]) => {
+                          const denomValue = parseInt(denom);
+                          const subtotal = denomValue * count;
+                          return (
+                            <div key={denom} className="bg-white p-3 rounded border border-green-200">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="text-sm sm:text-base font-medium text-gray-900">
+                                    {formatNumber(denomValue)} VND
+                                  </div>
+                                  <div className="text-xs sm:text-sm text-gray-500">
+                                    {count}장 × {formatNumber(denomValue)} = {formatNumber(subtotal)} VND
+                                  </div>
+                                  {(() => {
+                                    // VND 현금 자산에서 해당 권종의 보유 장수 조회
+                                    const vndCashAsset = assets?.find((asset: any) => 
+                                      asset.name === "VND 현금" && asset.currency === "VND"
+                                    );
+                                    if (vndCashAsset?.metadata?.denominations) {
+                                      const denomKey = `${parseInt(denom).toLocaleString()}`;
+                                      const availableCount = vndCashAsset.metadata.denominations[denomKey] || 0;
+                                      const remainingCount = Math.max(0, availableCount - count);
+                                      return (
+                                        <div className="text-xs text-green-600 mt-1">
+                                          보유: {availableCount}장 - 사용량: {count}장 = 남은량: {remainingCount}장
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Input
+                                    type="text"
+                                    value={count.toString()}
+                                    className="w-16 sm:w-20 h-10 sm:h-12 text-sm sm:text-base text-center font-medium"
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      if (value === '' || /^\d+$/.test(value)) {
+                                        const newCount = value === '' ? 0 : parseInt(value);
+                                        
+                                        // 보유 장수 제한 검증
+                                        const vndCashAsset = assets?.find((asset: any) => 
+                                          asset.name === "VND 현금" && asset.currency === "VND"
+                                        );
+                                        const denomKey = `${parseInt(denom).toLocaleString()}`;
+                                        const availableCount = vndCashAsset?.metadata?.denominations?.[denomKey] || 0;
+                                        
+                                        if (newCount > availableCount) {
+                                          console.log(`VND ${denom} 권종: 입력값 ${newCount}장이 보유량 ${availableCount}장을 초과하여 ${availableCount}장으로 제한됨`);
+                                          handleVNDBreakdownChange(denom, availableCount);
+                                        } else {
+                                          handleVNDBreakdownChange(denom, newCount);
+                                        }
+                                      }
+                                    }}
+                                    data-testid={`input-vnd-${denom}`}
+                                  />
+                                  <span className="text-sm sm:text-base text-gray-600 font-medium">장</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                    
+                    <div className="mt-3 pt-2 border-t border-green-200">
+                      <div className="text-xs sm:text-sm font-medium text-green-700">
+                        총 분배액: <span className="text-sm sm:text-lg font-bold">
+                          {(() => {
+                            const targetVNDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
+                            
+                            let displayBreakdown;
+                            if (Object.keys(vndBreakdown).length > 0) {
+                              displayBreakdown = vndBreakdown;
+                            } else {
+                              const realBreakdown = calculateVNDBreakdown(targetVNDAmount, false);
+                              if (Object.keys(realBreakdown).length > 0) {
+                                displayBreakdown = realBreakdown;
+                              } else {
+                                displayBreakdown = calculateVNDBreakdown(targetVNDAmount, true);
+                              }
+                            }
+                            
+                            return Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
+                              total + (parseInt(denom) * count), 0
+                            ).toLocaleString();
+                          })()} VND
+                        </span>
+                      </div>
+                      
+                      {(() => {
+                        const targetVNDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
+                        
+                        let displayBreakdown;
+                        if (Object.keys(vndBreakdown).length > 0) {
+                          displayBreakdown = vndBreakdown;
+                        } else {
+                          const realBreakdown = calculateVNDBreakdown(targetVNDAmount, false);
+                          if (Object.keys(realBreakdown).length > 0) {
+                            displayBreakdown = realBreakdown;
+                          } else {
+                            displayBreakdown = calculateVNDBreakdown(targetVNDAmount, true);
+                          }
+                        }
+                        
+                        const actualVNDTotal = Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
+                          total + (parseInt(denom) * count), 0
+                        );
+                        const expectedVNDTotal = targetVNDAmount;
+                        
+                        if (actualVNDTotal !== expectedVNDTotal && expectedVNDTotal > 0) {
+                          const difference = expectedVNDTotal - actualVNDTotal;
+                          return (
+                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                              <div className="text-xs text-red-600">
+                                ⚠️ 분배액과 환전액이 일치하지 않습니다
+                              </div>
+                              <div className="text-xs text-red-700 mt-1">
+                                환전 예상 금액: {expectedVNDTotal.toLocaleString()} VND<br/>
+                                실제 분배 금액: {actualVNDTotal.toLocaleString()} VND<br/>
+                                차이: {Math.abs(difference).toLocaleString()} VND {difference > 0 ? '부족' : '초과'}
+                              </div>
+                              {difference > 0 && (
+                                <div className="text-xs text-red-600 mt-1">
+                                  💡 VND 현금 보유량을 확인하세요
                                 </div>
                               )}
                             </div>
