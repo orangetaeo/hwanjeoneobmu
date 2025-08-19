@@ -822,17 +822,22 @@ export default function TransactionForm() {
                           // 현재 총 매도시세와 목표 총 매도시세 계산
                           const currentTotalSellValue = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
                             const denomCount = parseInt(count.toString());
-                            const sellRate = getDenominationRate("VND", "KRW", denom)?.mySellRate || "0";
+                            // VND → KRW 매도시세: KRW → VND 환율의 매도시세 사용
+                            const rateData = getDenominationRate("KRW", "VND", denom);
+                            const sellRate = rateData?.mySellRate ? (1 / parseFloat(rateData.mySellRate)) : 0;
                             const denomValue = parseInt(denom);
-                            const sellValue = denomValue * parseFloat(sellRate);
+                            const sellValue = denomValue * sellRate;
+                            console.log(`${denom} VND 매도시세 계산: ${denomValue} * ${sellRate} = ${sellValue}`);
                             return total + (sellValue * denomCount);
                           }, 0);
                           
                           const targetTotalSellValue = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomCount = parseInt(count.toString());
-                            const sellRate = getDenominationRate("VND", "KRW", denom)?.mySellRate || "0";
+                            // VND → KRW 매도시세: KRW → VND 환율의 매도시세 사용
+                            const rateData = getDenominationRate("KRW", "VND", denom);
+                            const sellRate = rateData?.mySellRate ? (1 / parseFloat(rateData.mySellRate)) : 0;
                             const denomValue = parseInt(denom);
-                            const sellValue = denomValue * parseFloat(sellRate);
+                            const sellValue = denomValue * sellRate;
                             return total + (sellValue * denomCount);
                           }, 0);
                           
@@ -889,10 +894,12 @@ export default function TransactionForm() {
                             
                             for (let i = 0; i < denominations.length; i++) {
                               const denom = denominations[i];
-                              const sellRate = getDenominationRate("VND", "KRW", denom.toString())?.mySellRate || "0";
-                              const denomSellValue = denom * parseFloat(sellRate);
+                              // VND → KRW 매도시세: KRW → VND 환율의 매도시세 사용
+                              const rateData = getDenominationRate("KRW", "VND", denom.toString());
+                              const sellRate = rateData?.mySellRate ? (1 / parseFloat(rateData.mySellRate)) : 0;
+                              const denomSellValue = denom * sellRate;
                               
-                              if (remainingSellValue >= denomSellValue) {
+                              if (remainingSellValue >= denomSellValue && sellRate > 0) {
                                 const currentCount = formData.vndBreakdown[denom.toString()] || 0;
                                 
                                 // 이미 기본값 복원 추천이 있는 권종은 건너뛰기
@@ -908,7 +915,7 @@ export default function TransactionForm() {
                                 const availableCount = denomComposition[denom.toString()] || 0;
                                 const usableCount = availableCount - currentCount;
                                 
-                                // 매도시세 기준으로 가능한 만큼 추천
+                                // 매도시세 기준으로 가능한 만큼 추천 (보유 수량 제한)
                                 const maxPossible = Math.floor(remainingSellValue / denomSellValue);
                                 const suggestedCount = Math.min(maxPossible, usableCount);
                                 
@@ -917,7 +924,7 @@ export default function TransactionForm() {
                                   const existingSuggestion = suggestions[denom.toString()] || 0;
                                   suggestions[denom.toString()] = existingSuggestion + suggestedCount;
                                   remainingSellValue -= suggestedCount * denomSellValue;
-                                  console.log(`${denom} VND: 부족매도시세 보충 +${suggestedCount}장, 남은 매도시세: ${remainingSellValue}`);
+                                  console.log(`${denom} VND: 부족매도시세 보충 +${suggestedCount}장 (보유: ${availableCount}장), 남은 매도시세: ${remainingSellValue}`);
                                 }
                               }
                             }
