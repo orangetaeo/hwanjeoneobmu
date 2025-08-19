@@ -357,6 +357,9 @@ export default function TransactionForm() {
     const krwCashAsset = assets?.find(asset => 
       asset.name === "KRW 현금" && asset.currency === "KRW"
     );
+    
+    console.log("KRW 현금 자산:", krwCashAsset);
+    console.log("KRW 권종별 보유량:", krwCashAsset?.metadata?.denominations);
 
     for (const denom of krwDenominations) {
       if (remaining >= denom) {
@@ -371,7 +374,7 @@ export default function TransactionForm() {
           }
         } else {
           // 보유 장수 제한 적용
-          const availableCount = krwCashAsset?.denominations?.[denom.toString()] || 0;
+          const availableCount = krwCashAsset?.metadata?.denominations?.[denom.toString()] || 0;
           const actualCount = Math.min(idealCount, availableCount);
           
           if (actualCount > 0) {
