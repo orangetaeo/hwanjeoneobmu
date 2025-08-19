@@ -917,8 +917,15 @@ export default function TransactionForm() {
                                         
                                         // 숫자만 허용
                                         if (value === '' || /^\d+$/.test(value)) {
-                                          const newCount = value === '' ? 0 : parseInt(value);
-                                          console.log(`유효한 입력: ${denom} VND = ${newCount}장`);
+                                          let newCount = value === '' ? 0 : parseInt(value);
+                                          
+                                          // 보유량 초과 검증
+                                          if (newCount > availableCount) {
+                                            console.log(`보유량 초과: ${newCount} > ${availableCount}, ${availableCount}로 제한`);
+                                            newCount = availableCount;
+                                          }
+                                          
+                                          console.log(`유효한 입력: ${denom} VND = ${newCount}장 (보유: ${availableCount}장)`);
                                           
                                           // 기본 분배를 먼저 포함한 새로운 분배로 업데이트
                                           const updatedBreakdown = {
