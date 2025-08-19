@@ -967,6 +967,7 @@ export default function TransactionForm() {
                                             }
                                           }
                                           
+                                          console.log('최종 분배 저장:', updatedBreakdown);
                                           setFormData({
                                             ...formData,
                                             vndBreakdown: updatedBreakdown
