@@ -1381,9 +1381,10 @@ export default function TransactionForm() {
                                   </div>
                                   {(() => {
                                     // KRW 현금 자산에서 해당 권종의 보유 장수 조회
-                                    const krwCashAsset = assets?.find(asset => 
+                                    const krwCashAsset = assets?.find?.(asset => 
                                       asset.name === "KRW 현금" && asset.currency === "KRW"
                                     );
+                                    console.log(`권종 ${denom} 보유량 조회:`, krwCashAsset?.metadata?.denominations);
                                     if (krwCashAsset?.metadata?.denominations) {
                                       const availableCount = krwCashAsset.metadata.denominations[denom] || 0;
                                       const remainingCount = Math.max(0, availableCount - count);
@@ -1393,7 +1394,11 @@ export default function TransactionForm() {
                                         </div>
                                       );
                                     }
-                                    return null;
+                                    return (
+                                      <div className="text-xs text-red-600 mt-1">
+                                        보유량 정보 없음
+                                      </div>
+                                    );
                                   })()}
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
