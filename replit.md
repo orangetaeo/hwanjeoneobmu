@@ -11,6 +11,12 @@ This is a full-stack asset management and exchange tracking application designed
 - **Enhanced Transaction Confirmation**: Added detailed VND denomination breakdown in transaction confirmation section showing individual quantities, subtotals, and total distribution
 - **Preserved User Input Logic**: System maintains user input denominations during auto-adjustment while intelligently rebalancing other denominations
 
+### VND Amount Calculation Accuracy Fix (August 19, 2025)
+- **Fixed VND Distribution Calculation**: Resolved critical calculation error where VND breakdown used incorrect targetAmount (11,640,000 VND) instead of actual exchange amount (vndOriginalAmount: 11,630,000 VND)
+- **Unified Display Consistency**: All screen displays now show correct VND amount of 11,630,000 VND with proper denomination breakdown (500,000×23 + 100,000×1 + 20,000×1 + 10,000×1)
+- **Error Message Correction**: Fixed transaction validation error messages to display accurate "환전 예상 금액" matching actual exchange amounts
+- **Transaction Validation Enhancement**: Strengthened amount verification logic ensuring actual vs expected totals match exactly before allowing transaction completion
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
