@@ -879,6 +879,10 @@ export default function TransactionForm() {
                           return total + (parseInt(denom) * parseInt(count.toString()));
                         }, 0);
                         
+                        const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
+                          return total + (parseInt(denom) * parseInt(count.toString()));
+                        }, 0);
+                        
                         const shortfall = targetTotal - currentVndTotal;
                         const hasShortfall = shortfall > 0;
 
