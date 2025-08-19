@@ -687,10 +687,9 @@ export default function TransactionForm() {
                           {isSelected && (
                             <div className="bg-white p-3 rounded-lg border border-green-200 space-y-2">
                               <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                                <div className="flex flex-col space-y-2">
-                                  <div className="flex items-center space-x-3">
-                                    <label className="text-sm font-medium text-gray-700 min-w-[40px]">수량:</label>
-                                    <Input
+                                <div className="flex items-center space-x-3">
+                                  <label className="text-sm font-medium text-gray-700 min-w-[40px]">수량:</label>
+                                  <Input
                                     type="text"
                                     placeholder="0"
                                     value={formData.denominationAmounts[denom.value] ? 
@@ -700,31 +699,10 @@ export default function TransactionForm() {
                                       // 콤마와 숫자만 허용
                                       const cleanValue = value.replace(/[^0-9,]/g, '');
                                       // 콤마를 제거한 순수 숫자값 저장
-                                      let numericValue = cleanValue.replace(/,/g, '');
+                                      const numericValue = cleanValue.replace(/,/g, '');
                                       
                                       // 빈 값이 아닐 때만 업데이트
                                       if (numericValue === '' || !isNaN(parseInt(numericValue))) {
-                                        // 보유 수량 검증 추가
-                                        if (numericValue !== '') {
-                                          const inputCount = parseInt(numericValue);
-                                          
-                                          // 현금 자산에서 해당 권종의 보유 수량 확인
-                                          const cashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                                            asset.name === `${formData.fromCurrency} 현금` && 
-                                            asset.currency === formData.fromCurrency && 
-                                            asset.type === "cash"
-                                          ) : null;
-                                          
-                                          if (cashAsset?.metadata?.denominations) {
-                                            const availableCount = cashAsset.metadata.denominations[denom.value] || 0;
-                                            
-                                            if (inputCount > availableCount) {
-                                              console.log(`보유량 초과: ${denom.value} ${formData.fromCurrency} - 입력: ${inputCount}, 보유: ${availableCount}, ${availableCount}로 제한`);
-                                              numericValue = availableCount.toString();
-                                            }
-                                          }
-                                        }
-                                        
                                         setFormData({
                                           ...formData,
                                           denominationAmounts: {
@@ -749,24 +727,6 @@ export default function TransactionForm() {
                                     className="w-32 h-12 text-center font-semibold text-lg border-2 border-gray-300 rounded-lg focus:border-green-500"
                                   />
                                   <span className="text-base font-medium text-gray-600">장</span>
-                                  </div>
-                                  
-                                  {/* 보유 수량 표시 */}
-                                  {(() => {
-                                    const cashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                                      asset.name === `${formData.fromCurrency} 현금` && 
-                                      asset.currency === formData.fromCurrency && 
-                                      asset.type === "cash"
-                                    ) : null;
-                                    
-                                    const availableCount = cashAsset?.metadata?.denominations?.[denom.value] || 0;
-                                    
-                                    return (
-                                      <div className="text-xs text-gray-500 ml-[72px]">
-                                        보유: {availableCount.toLocaleString()}장
-                                      </div>
-                                    );
-                                  })()}
                                 </div>
                                 {formData.denominationAmounts[denom.value] && (
                                   <div className="flex-1 p-3 bg-blue-50 rounded-lg">
@@ -913,6 +873,18 @@ export default function TransactionForm() {
                         };
                         
                         const suggestions = calculateSuggestions();
+                        
+                        // 부족분 계산 및 안내
+                        const currentVndTotal = Object.entries(formData.vndBreakdown || {}).reduce((total, [denom, count]) => {
+                          return total + (parseInt(denom) * parseInt(count.toString()));
+                        }, 0);
+                        
+                        const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
+                          return total + (parseInt(denom) * parseInt(count.toString()));
+                        }, 0);
+                        
+                        const shortfall = targetTotal - currentVndTotal;
+                        const hasShortfall = shortfall > 0;
 
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const defaultCount = fixedBreakdown[denom.toString()] || 0;
@@ -1045,6 +1017,43 @@ export default function TransactionForm() {
                                             }
                                           }
                                           
+                                          // 최종 검증 및 보정
+                                          const finalTotal = Object.entries(updatedBreakdown).reduce((total, [d, count]) => {
+                                            return total + (parseInt(d) * parseInt(count.toString()));
+                                          }, 0);
+                                          
+                                          if (finalTotal !== targetTotal) {
+                                            const difference = targetTotal - finalTotal;
+                                            console.log(`최종 검증: 목표 ${targetTotal}, 현재 ${finalTotal}, 차액 ${difference}`);
+                                            
+                                            if (difference > 0) {
+                                              // 부족분이 있으면 가장 작은 권종으로 보정
+                                              const smallDenoms = [10000, 20000, 50000, 100000, 200000, 500000];
+                                              for (const smallDenom of smallDenoms) {
+                                                if (difference >= smallDenom) {
+                                                  const addCount = Math.floor(difference / smallDenom);
+                                                  const currentCount = updatedBreakdown[smallDenom.toString()] || 0;
+                                                  updatedBreakdown[smallDenom.toString()] = currentCount + addCount;
+                                                  console.log(`부족분 보정: ${smallDenom} VND에 ${addCount}장 추가`);
+                                                  break;
+                                                }
+                                              }
+                                            } else if (difference < 0) {
+                                              // 초과분이 있으면 큰 권종부터 감소
+                                              const excessAmount = Math.abs(difference);
+                                              const largeDenoms = [500000, 200000, 100000, 50000, 20000, 10000];
+                                              for (const largeDenom of largeDenoms) {
+                                                const currentCount = updatedBreakdown[largeDenom.toString()] || 0;
+                                                const canReduce = Math.min(Math.floor(excessAmount / largeDenom), currentCount);
+                                                if (canReduce > 0) {
+                                                  updatedBreakdown[largeDenom.toString()] = currentCount - canReduce;
+                                                  console.log(`초과분 보정: ${largeDenom} VND에서 ${canReduce}장 감소`);
+                                                  break;
+                                                }
+                                              }
+                                            }
+                                          }
+
                                           console.log('최종 분배 저장:', updatedBreakdown);
                                           setFormData({
                                             ...formData,
@@ -1056,11 +1065,13 @@ export default function TransactionForm() {
                                       data-testid={`input-vnd-${denom}`}
                                     />
                                     <span className="text-sm text-gray-600">장</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (suggestedCount > 0) {
-                                          const newCount = currentCount + suggestedCount;
+                                    {/* 추천 버튼 또는 부족분 해결 버튼 */}
+                                    {hasShortfall && shortfall >= denom && availableCount > currentCount ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const addCount = Math.min(Math.floor(shortfall / denom), availableCount - currentCount);
+                                          const newCount = currentCount + addCount;
                                           setFormData({
                                             ...formData,
                                             vndBreakdown: {
@@ -1068,26 +1079,46 @@ export default function TransactionForm() {
                                               [denom.toString()]: newCount
                                             }
                                           });
-                                        } else {
-                                          // +0 버튼 클릭 시 입력 칸을 0으로 설정
-                                          setFormData({
-                                            ...formData,
-                                            vndBreakdown: {
-                                              ...formData.vndBreakdown,
-                                              [denom.toString()]: 0
-                                            }
-                                          });
-                                        }
-                                      }}
-                                      className={`text-xs px-2 py-1 rounded transition-colors ${
-                                        suggestedCount > 0 
-                                          ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer" 
-                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
-                                      }`}
-                                      title={suggestedCount > 0 ? "추천값 적용" : "추천 없음 (클릭 가능)"}
-                                    >
-                                      +{suggestedCount}
-                                    </button>
+                                        }}
+                                        className="text-xs px-2 py-1 rounded transition-colors bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer animate-pulse"
+                                        title={`부족분 ${formatNumber(shortfall.toString())} VND를 ${denom.toLocaleString()} VND로 추가`}
+                                      >
+                                        +{Math.min(Math.floor(shortfall / denom), availableCount - currentCount)}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (suggestedCount > 0) {
+                                            const newCount = currentCount + suggestedCount;
+                                            setFormData({
+                                              ...formData,
+                                              vndBreakdown: {
+                                                ...formData.vndBreakdown,
+                                                [denom.toString()]: newCount
+                                              }
+                                            });
+                                          } else {
+                                            // +0 버튼 클릭 시 입력 칸을 0으로 설정
+                                            setFormData({
+                                              ...formData,
+                                              vndBreakdown: {
+                                                ...formData.vndBreakdown,
+                                                [denom.toString()]: 0
+                                              }
+                                            });
+                                          }
+                                        }}
+                                        className={`text-xs px-2 py-1 rounded transition-colors ${
+                                          suggestedCount > 0 
+                                            ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer" 
+                                            : "bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
+                                        }`}
+                                        title={suggestedCount > 0 ? "추천값 적용" : "추천 없음 (클릭 가능)"}
+                                      >
+                                        +{suggestedCount}
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                                 {defaultCount !== currentCount && (
