@@ -791,7 +791,15 @@ export default function TransactionForm() {
                           return total;
                         }, 0);
 
-                        const targetAmount = parseFloat(formData.toAmount) || 0;
+                        // denominationAmounts에서 직접 환전될 VND 금액 계산
+                        const targetAmount = totalFromDenominations > 0 ? (() => {
+                          const rate = formData.fromCurrency === "KRW" ? 
+                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                          const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                          return formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
+                        })() : (parseFloat(formData.toAmount) || 0);
+                        
                         const fixedBreakdown = calculateVNDBreakdown(targetAmount);
                         
                         // 권종 데이터가 없으면 안내 메시지 표시
