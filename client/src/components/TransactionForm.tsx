@@ -39,6 +39,14 @@ const CURRENCY_DENOMINATIONS = {
     { value: "10000", label: "1만원" },
     { value: "5000", label: "5천원" },
     { value: "1000", label: "1천원" }
+  ],
+  VND: [
+    { value: "500000", label: "50만동" },
+    { value: "200000", label: "20만동" },
+    { value: "100000", label: "10만동" },
+    { value: "50000", label: "5만동" },
+    { value: "20000", label: "2만동" },
+    { value: "10000", label: "1만동" }
   ]
 };
 
@@ -745,7 +753,7 @@ export default function TransactionForm() {
             {/* 권종 선택 - 모바일 최적화 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
-                <Label>받는 권종</Label>
+                <Label>받는 권종 ({formData.fromCurrency})</Label>
                 {formData.transactionType === "bank_transfer" || formData.transactionType === "foreign_to_account" ? (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <Input
