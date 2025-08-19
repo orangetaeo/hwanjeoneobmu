@@ -63,17 +63,31 @@ export class DatabaseStorage implements IStorage {
       userId
     };
     
-    // confirmed 상태인 경우에만 자산 이동 처리
-    if (transactionData.status === 'confirmed') {
-      await this.handleAssetMovement(userId, transaction);
-    }
+    let createdTransaction: Transaction | null = null;
     
-    // 거래 기록 생성
-    const [result] = await db
-      .insert(transactions)
-      .values(transactionData)
-      .returning();
-    return result;
+    try {
+      // 거래 기록 먼저 생성
+      const [result] = await db
+        .insert(transactions)
+        .values(transactionData)
+        .returning();
+      createdTransaction = result;
+      
+      // confirmed 상태인 경우에만 자산 이동 처리
+      if (transactionData.status === 'confirmed') {
+        await this.handleAssetMovement(userId, transaction);
+      }
+      
+      return createdTransaction;
+    } catch (error) {
+      // 자산 이동 중 오류 발생시 거래를 취소 상태로 변경
+      if (createdTransaction) {
+        console.error('자산 이동 중 오류 발생. 거래 취소 처리:', error);
+        await this.updateTransactionStatus(userId, createdTransaction.id, 'cancelled');
+        throw error;
+      }
+      throw error;
+    }
   }
 
   public async handleAssetMovement(userId: string, transaction: InsertTransaction | Transaction) {
@@ -767,6 +781,22 @@ export class DatabaseStorage implements IStorage {
     const denominationAmounts = metadata?.denominationAmounts || {};
     
     console.log('권종별 수량 정보:', denominationAmounts);
+
+    // KRW 현금 환전인 경우 보유량 사전 검증
+    if (transaction.toAssetName?.includes('KRW')) {
+      const toAsset = await this.getAssetByName(userId, transaction.toAssetName, 'cash');
+      if (toAsset) {
+        const currentBalance = parseFloat(toAsset.balance || "0");
+        console.log(`KRW 보유량 검증: 필요 ${toAmount} KRW, 보유 ${currentBalance} KRW`);
+        
+        if (currentBalance < toAmount) {
+          const shortage = toAmount - currentBalance;
+          throw new Error(`KRW 현금이 부족합니다. 필요: ${toAmount.toLocaleString()} KRW, 보유: ${currentBalance.toLocaleString()} KRW (부족: ${shortage.toLocaleString()} KRW)`);
+        }
+      } else {
+        throw new Error('KRW 현금 자산을 찾을 수 없습니다.');
+      }
+    }
     
     // 출발 통화 자산 업데이트 (고객이 준 돈 - 권종별 증가)
     const fromAsset = await this.getAssetByName(userId, transaction.fromAssetName!, 'cash');
