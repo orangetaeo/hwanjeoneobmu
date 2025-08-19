@@ -345,9 +345,9 @@ export default function TransactionForm() {
         return;
       }
       
-      // 권종별 매매 시세 합계로 정확한 금액 계산 (소수점 보존)
-      const calculatedToAmount = formData.fromDenominations.reduce((totalAmount, denomValue) => {
-        const amount = parseFloat(formData.denominationAmounts[denomValue] || "0");
+      // 권종별 매매 시세 합계로 정확한 금액 계산 (접기/펴기와 무관하게 모든 데이터 포함)
+      const calculatedToAmount = Object.entries(formData.denominationAmounts || {}).reduce((totalAmount, [denomValue, amountStr]) => {
+        const amount = parseFloat(amountStr || "0");
         if (amount <= 0) return totalAmount;
         
         const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
