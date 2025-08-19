@@ -1427,7 +1427,8 @@ export default function TransactionForm() {
                 const shortageItems = [];
                 Object.entries(actualBreakdown).forEach(([denom, count]) => {
                   const requiredCount = parseInt(count.toString());
-                  const availableCount = denomComposition[denom] || 0;
+                  const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+                  const availableCount = denomComposition[denomKey] || 0;
                   if (requiredCount > availableCount) {
                     const shortage = requiredCount - availableCount;
                     shortageItems.push({
@@ -1560,6 +1561,10 @@ export default function TransactionForm() {
                     asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                   ) : null;
                   const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                  
+                  console.log("VND 현금 자산 정보:", vndCashAsset);
+                  console.log("권종 구성 전체:", denomComposition);
+                  console.log("실제 분배:", actualBreakdown);
 
                   // 보유량 부족 여부 확인
                   const hasShortage = Object.entries(actualBreakdown).some(([denom, count]) => {
@@ -1573,30 +1578,29 @@ export default function TransactionForm() {
                     return true;
                   }
 
-                  // VND 권종 분배 금액 검증 (사용자가 수정한 경우에만)
-                  if (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) {
-                    // 실제 분배 총액 계산
-                    const actualTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
-                      const denomValue = parseInt(denom);
-                      const denomCount = parseInt(count.toString());
-                      return total + (denomValue * denomCount);
-                    }, 0);
+                  // VND 권종 분배 금액 검증
+                  // 실제 분배 총액 계산
+                  const actualTotal = Object.entries(actualBreakdown).reduce((total, [denom, count]) => {
+                    const denomValue = parseInt(denom);
+                    const denomCount = parseInt(count.toString());
+                    return total + (denomValue * denomCount);
+                  }, 0);
 
-                    let expectedTotal = 0;
-                    if (totalFromDenominations > 0) {
-                      const rate = formData.fromCurrency === "KRW" ? 
-                        getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
-                        getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                      const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                      expectedTotal = formatVNDWithFloor(calculatedAmount);
-                    } else {
-                      expectedTotal = parseFloat(formData.toAmount) || 0;
-                    }
+                  let expectedTotal = 0;
+                  if (totalFromDenominations > 0) {
+                    const rate = formData.fromCurrency === "KRW" ? 
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                    const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                    expectedTotal = formatVNDWithFloor(calculatedAmount);
+                  } else {
+                    expectedTotal = parseFloat(formData.toAmount) || 0;
+                  }
 
-                    // 금액이 일치하지 않으면 비활성화
-                    if (Math.abs(actualTotal - expectedTotal) > 0) {
-                      return true;
-                    }
+                  // 금액이 일치하지 않으면 비활성화
+                  if (Math.abs(actualTotal - expectedTotal) > 0) {
+                    console.log("금액 불일치로 거래 차단:", actualTotal, "vs", expectedTotal);
+                    return true;
                   }
                 }
 
