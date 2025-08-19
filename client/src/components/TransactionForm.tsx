@@ -591,6 +591,70 @@ export default function TransactionForm() {
               </div>
             </div>
 
+            {/* 금액 입력 - 권종 선택 위로 이동 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
+                {formData.transactionType === "cash_exchange" ? (
+                  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg mt-2">
+                    <div className="text-xl font-bold text-green-700">
+                      {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
+                    </div>
+                    <div className="text-sm text-green-600 mt-1">
+                      권종별 총액 합계
+                    </div>
+                  </div>
+                ) : (
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0"
+                    value={formData.fromAmount}
+                    onChange={(e) => {
+                      setFormData({ ...formData, fromAmount: e.target.value });
+                      handleAmountCalculation('fromAmount', e.target.value);
+                    }}
+                    data-testid="input-from-amount"
+                    className="mt-2 text-lg font-medium"
+                  />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
+                  {formData.toCurrency === "VND" && vndOriginalAmount > 0 && (() => {
+                    const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
+                    const difference = vndOriginalAmount - flooredAmount;
+                    
+                    return difference > 0 ? (
+                      <span className="text-sm text-orange-600 font-medium">
+                        ⚠️ 차이: {difference.toLocaleString()} VND
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
+                  <div className="text-xl font-bold text-blue-700">
+                    {(() => {
+                      if (formData.transactionType === "cash_exchange" && formData.toCurrency === "VND" && vndOriginalAmount > 0) {
+                        // 실제 환전금액 사용 (무조건 내림 적용)
+                        const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
+                        return flooredAmount.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+                      }
+                      
+                      // 기본 동작
+                      return formData.toCurrency === "VND" ? 
+                        (Math.floor(parseFloat(formData.toAmount) / 10000) * 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
+                        formatNumber(formData.toAmount, formData.toCurrency);
+                    })()} {formData.toCurrency}
+                  </div>
+                  <div className="text-sm text-blue-600 mt-1">
+                    환전 지급 금액
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* 권종 선택 - 모바일 최적화 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
@@ -1146,69 +1210,7 @@ export default function TransactionForm() {
 
 
 
-            {/* 금액 입력 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
-                {formData.transactionType === "cash_exchange" ? (
-                  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg mt-2">
-                    <div className="text-xl font-bold text-green-700">
-                      {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
-                    </div>
-                    <div className="text-sm text-green-600 mt-1">
-                      권종별 총액 합계
-                    </div>
-                  </div>
-                ) : (
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0"
-                    value={formData.fromAmount}
-                    onChange={(e) => {
-                      setFormData({ ...formData, fromAmount: e.target.value });
-                      handleAmountCalculation('fromAmount', e.target.value);
-                    }}
-                    data-testid="input-from-amount"
-                    className="mt-2 text-lg font-medium"
-                  />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
-                  {formData.toCurrency === "VND" && vndOriginalAmount > 0 && (() => {
-                    const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
-                    const difference = vndOriginalAmount - flooredAmount;
-                    
-                    return difference > 0 ? (
-                      <span className="text-sm text-orange-600 font-medium">
-                        ⚠️ 차이: {difference.toLocaleString()} VND
-                      </span>
-                    ) : null;
-                  })()}
-                </div>
-                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
-                  <div className="text-xl font-bold text-blue-700">
-                    {(() => {
-                      if (formData.transactionType === "cash_exchange" && formData.toCurrency === "VND" && vndOriginalAmount > 0) {
-                        // 실제 환전금액 사용 (무조건 내림 적용)
-                        const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
-                        return flooredAmount.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
-                      }
-                      
-                      // 기본 동작
-                      return formData.toCurrency === "VND" ? 
-                        (Math.floor(parseFloat(formData.toAmount) / 10000) * 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
-                        formatNumber(formData.toAmount, formData.toCurrency);
-                    })()} {formData.toCurrency}
-                  </div>
-                  <div className="text-sm text-blue-600 mt-1">
-                    환전 지급 금액
-                  </div>
-                </div>
-              </div>
-            </div>
+
 
             {/* 고객 정보 (선택사항) */}
             {(formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account") && (
