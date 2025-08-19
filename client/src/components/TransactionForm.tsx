@@ -837,9 +837,16 @@ export default function TransactionForm() {
                           
                           const suggestions = {};
                           
-                          // 총액이 이미 맞춰졌으면 추천을 표시하지 않음
-                          if (difference === 0) {
-                            console.log("총액이 이미 맞춰짐, 추천 없음");
+                          // 현재 분배가 기본 분배와 완전히 일치하면 추천을 표시하지 않음
+                          const isExactlyDefault = [500000, 200000, 100000, 50000, 20000, 10000].every(denom => {
+                            const defaultCount = fixedBreakdown[denom.toString()] || 0;
+                            const currentCount = formData.vndBreakdown[denom.toString()] !== undefined ? 
+                              formData.vndBreakdown[denom.toString()] : defaultCount;
+                            return currentCount === defaultCount;
+                          });
+                          
+                          if (isExactlyDefault) {
+                            console.log("기본 분배와 완전히 일치, 추천 없음");
                             return suggestions;
                           }
                           
