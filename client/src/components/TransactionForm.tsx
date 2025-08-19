@@ -901,21 +901,34 @@ export default function TransactionForm() {
                             console.log("목표 금액 도달, 추천 없음");
                           }
                           
-                          // 4단계: formData를 조정된 값으로 업데이트 (사용자 입력값 유지하면서)
-                          setFormData(prev => ({
-                            ...prev,
-                            vndBreakdown: adjustedBreakdown
-                          }));
-                          
-                          return suggestions;
+                          return { suggestions, adjustedBreakdown };
                         };
                         
-                        const suggestions = calculateSuggestions();
+                        const result = calculateSuggestions();
+                        const suggestions = result.suggestions;
+                        const adjustedBreakdown = result.adjustedBreakdown;
+                        
+                        // 자동 조정이 필요한 경우에만 업데이트 (무한 루프 방지)
+                        React.useEffect(() => {
+                          const needsAdjustment = Object.keys(adjustedBreakdown).some(denom => {
+                            const current = formData.vndBreakdown?.[denom] || 0;
+                            const adjusted = adjustedBreakdown[denom] || 0;
+                            return current !== adjusted;
+                          });
+                          
+                          if (needsAdjustment) {
+                            setFormData(prev => ({
+                              ...prev,
+                              vndBreakdown: adjustedBreakdown
+                            }));
+                          }
+                        }, [JSON.stringify(adjustedBreakdown)]);
 
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const defaultCount = fixedBreakdown[denom.toString()] || 0;
-                          const currentCount = formData.vndBreakdown?.[denom.toString()] !== undefined ? 
-                            formData.vndBreakdown[denom.toString()] : defaultCount;
+                          const currentCount = adjustedBreakdown?.[denom.toString()] !== undefined ? 
+                            adjustedBreakdown[denom.toString()] : (formData.vndBreakdown?.[denom.toString()] !== undefined ? 
+                            formData.vndBreakdown[denom.toString()] : defaultCount);
                           const suggestedCount = suggestions[denom.toString()] || 0;
                         
                           const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
