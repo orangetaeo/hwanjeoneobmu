@@ -814,7 +814,6 @@ export default function TransactionForm() {
                         })() : (parseFloat(formData.toAmount) || 0);
                         
                         // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
-                        console.log("분배 계산 호출 (권종별):", { vndOriginalAmount, targetAmount, useOriginal: vndOriginalAmount > 0 });
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
                         // 권종 데이터가 없으면 안내 메시지 표시
@@ -1110,7 +1109,8 @@ export default function TransactionForm() {
                               return formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
                             })() : (parseFloat(formData.toAmount) || 0);
                             
-                            const breakdown = calculateVNDBreakdown(targetAmount);
+                            // 실제 환전금액 기준으로 분배 계산
+                            const breakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                             return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
                           })()} VND
                         </span>
@@ -1172,12 +1172,8 @@ export default function TransactionForm() {
                 <div className="flex items-center gap-2">
                   <Label className="text-base font-medium">주는 금액 ({formData.toCurrency})</Label>
                   {formData.toCurrency === "VND" && vndOriginalAmount > 0 && (() => {
-                    console.log("VND original amount in display:", vndOriginalAmount);
-                    console.log("VND original has decimal in display:", vndOriginalAmount % 1 !== 0);
                     const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
                     const difference = vndOriginalAmount - flooredAmount;
-                    console.log("VND difference:", difference);
-                    console.log("Difference > 0:", difference > 0);
                     
                     return difference > 0 ? (
                       <span className="text-sm text-orange-600 font-medium">
@@ -1189,24 +1185,10 @@ export default function TransactionForm() {
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
                   <div className="text-xl font-bold text-blue-700">
                     {(() => {
-                      if (formData.transactionType === "cash_exchange" && formData.toCurrency === "VND") {
-                        // 권종별 총액에서 계산된 VND 금액 사용 (접기/펴기와 무관)
-                        const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
-                          if (amount && parseFloat(amount) > 0) {
-                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                            return total + (parseFloat(amount) * denomValue);
-                          }
-                          return total;
-                        }, 0);
-
-                        if (totalFromDenominations > 0) {
-                          const rate = formData.fromCurrency === "KRW" ? 
-                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
-                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                          const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                          const flooredAmount = formatVNDWithFloor(calculatedAmount);
-                          return (Math.floor(flooredAmount / 10000) * 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 });
-                        }
+                      if (formData.transactionType === "cash_exchange" && formData.toCurrency === "VND" && vndOriginalAmount > 0) {
+                        // 실제 환전금액 사용 (무조건 내림 적용)
+                        const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
+                        return flooredAmount.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
                       }
                       
                       // 기본 동작
@@ -1356,7 +1338,7 @@ export default function TransactionForm() {
                               <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center justify-between text-xs">
                                 <span className="text-gray-600 font-medium">총 분배 금액:</span>
                                 <span className="text-teal-700 font-bold">
-                                  {formatNumber(targetAmount.toString())} VND
+                                  {formatNumber((vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount).toString())} VND
                                 </span>
                               </div>
                             </div>
@@ -1567,9 +1549,7 @@ export default function TransactionForm() {
                   ) : null;
                   const denomComposition = vndCashAsset?.metadata?.denominations || {};
                   
-                  console.log("VND 현금 자산 정보:", vndCashAsset);
-                  console.log("권종 구성 전체:", denomComposition);
-                  console.log("실제 분배:", actualBreakdown);
+
 
                   // 보유량 부족 여부 확인
                   const hasShortage = Object.entries(actualBreakdown).some(([denom, count]) => {
@@ -1605,15 +1585,7 @@ export default function TransactionForm() {
                   })();
 
                   // 금액이 일치하지 않으면 비활성화
-                  console.log("거래 차단 검증:", {
-                    actualTotal,
-                    expectedTotal,
-                    vndOriginalAmount,
-                    difference: Math.abs(actualTotal - expectedTotal)
-                  });
-                  
                   if (Math.abs(actualTotal - expectedTotal) > 0) {
-                    console.log("금액 불일치로 거래 차단:", actualTotal, "vs", expectedTotal);
                     return true;
                   }
                 }
