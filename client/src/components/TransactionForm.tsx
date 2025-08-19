@@ -777,110 +777,10 @@ export default function TransactionForm() {
 
 
 
-            {/* VND 권종별 분배 표시 - 권종 접기와 관계없이 항상 표시 */}
-            {formData.toCurrency === "VND" && calculateTotalFromAmount() > 0 && (
-              <div className="mt-4 lg:mt-0">
-                <div className="p-3 sm:p-4 bg-orange-50 border border-orange-200 rounded-lg shadow-sm">
-                <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
-                  <span className="mr-2">💰</span>
-                  권종별 분배 (고액권 우선)
-                </div>
-                <div className="space-y-2 sm:space-y-3">
-                  {(() => {
-                    // VND 분배는 toAmount 기준으로 계산하여 정확성 보장
-                    const targetAmount = parseFloat(formData.toAmount) || 0;
-                    const fixedBreakdown = calculateVNDBreakdown(targetAmount);
-                    
-                    return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                      const count = fixedBreakdown[denom.toString()] || 0;
-                    
-                    // VND 현금 자산의 지폐 구성에서 실제 보유 수량 가져오기
-                    const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                      asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                    ) : null;
-                    
-                    // 지폐 구성에서 해당 권종의 실제 보유 수량
-                    const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                    const availableCount = denomComposition[denom.toString()] || 0;
-                    
-                    if (count > 0) {
-                      return (
-                        <div key={denom} className="bg-white p-2 sm:p-3 rounded border border-orange-200">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">
-                                {formatNumber(denom)} VND
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                보유: {formatNumber(availableCount)}장
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-end space-x-2">
-                              <Input
-                                type="number"
-                                min="0"
-                                max={availableCount}
-                                step="1"
-                                value={count}
-                                onChange={(e) => {
-                                  const newCount = parseInt(e.target.value) || 0;
-                                  handleVNDBreakdownChange(denom.toString(), newCount);
-                                }}
-                                className="w-16 h-8 text-center text-sm font-medium"
-                                data-testid={`input-vnd-breakdown-${denom}`}
-                              />
-                              <span className="text-sm text-gray-600 min-w-[20px]">장</span>
-                            </div>
-                          </div>
-                          {count > availableCount && (
-                            <div className="mt-1 text-xs text-red-600">
-                              ⚠️ 보유 수량 부족 (부족: {count - availableCount}장)
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                    });
-                  })()}
-                </div>
-                
-                {/* 권종별 분배 총액 확인 - 모바일 최적화 */}
-                <div className="mt-3 p-2 bg-white border border-orange-300 rounded">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                    <span className="text-xs font-medium text-orange-700">분배 총액:</span>
-                    <span className="text-sm font-bold text-orange-800">
-                      {(() => {
-                        const targetAmount = parseFloat(formData.toAmount) || 0;
-                        const breakdown = calculateVNDBreakdown(targetAmount);
-                        return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
-                      })()} VND
-                    </span>
-                  </div>
 
-                  {(() => {
-                    const targetAmount = parseFloat(formData.toAmount) || 0;
-                    const breakdown = calculateVNDBreakdown(targetAmount);
-                    const breakdownTotal = Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0);
-                    const difference = Math.abs(breakdownTotal - targetAmount);
-                    
-                    return difference > 0 ? (
-                      <div className="mt-1 text-xs text-red-600 font-medium">
-                        ⚠️ 차이: {difference.toLocaleString()} VND
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-                
-                <div className="mt-2 text-xs text-orange-600 text-center sm:text-left">
-                  💡 고객 요청에 따라 권종별 수량을 조정할 수 있습니다
-                </div>
-                </div>
-              </div>
-            )}
 
             {/* 금액 입력 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div>
                 <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
                 {formData.transactionType === "cash_exchange" ? (
@@ -937,6 +837,67 @@ export default function TransactionForm() {
                   </div>
                 </div>
               </div>
+
+              {/* VND 권종별 분배 - 주는 금액 옆으로 이동 */}
+              {formData.toCurrency === "VND" && calculateTotalFromAmount() > 0 && (
+                <div>
+                  <Label className="text-base font-medium">권종별 분배</Label>
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2 max-h-80 overflow-y-auto">
+                    <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
+                      <span className="mr-2">💰</span>
+                      고액권 우선
+                    </div>
+                    <div className="space-y-2">
+                      {(() => {
+                        // VND 분배는 toAmount 기준으로 계산하여 정확성 보장
+                        const targetAmount = parseFloat(formData.toAmount) || 0;
+                        const fixedBreakdown = calculateVNDBreakdown(targetAmount);
+                        
+                        return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
+                          const count = fixedBreakdown[denom.toString()] || 0;
+                        
+                          // VND 현금 자산의 지폐 구성에서 실제 보유 수량 가져오기
+                          const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                            asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                          ) : null;
+                          
+                          // 지폐 구성에서 해당 권종의 실제 보유 수량
+                          const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                          const availableCount = denomComposition[denom.toString()] || 0;
+                          
+                          if (count > 0) {
+                            return (
+                              <div key={denom} className="bg-white p-2 rounded border border-orange-200">
+                                <div className="flex flex-col gap-1">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {formatNumber(denom)} VND × {count}장
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    보유: {formatNumber(availableCount)}장
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }).filter(Boolean);
+                      })()}
+                    </div>
+                    
+                    <div className="mt-3 pt-2 border-t border-orange-200">
+                      <div className="text-sm font-medium text-orange-700">
+                        총 분배액: <span className="text-lg">
+                          {(() => {
+                            const targetAmount = parseFloat(formData.toAmount) || 0;
+                            const breakdown = calculateVNDBreakdown(targetAmount);
+                            return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
+                          })()} VND
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 고객 정보 (선택사항) */}
