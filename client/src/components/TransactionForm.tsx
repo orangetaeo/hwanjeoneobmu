@@ -1013,25 +1013,28 @@ export default function TransactionForm() {
                                       data-testid={`input-vnd-${denom}`}
                                     />
                                     <span className="text-sm text-gray-600">장</span>
-                                    {suggestedCount > 0 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newCount = currentCount + suggestedCount;
-                                          setFormData({
-                                            ...formData,
-                                            vndBreakdown: {
-                                              ...formData.vndBreakdown,
-                                              [denom.toString()]: newCount
-                                            }
-                                          });
-                                        }}
-                                        className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200"
-                                        title="추천값 적용"
-                                      >
-                                        +{suggestedCount}
-                                      </button>
-                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newCount = currentCount + suggestedCount;
+                                        setFormData({
+                                          ...formData,
+                                          vndBreakdown: {
+                                            ...formData.vndBreakdown,
+                                            [denom.toString()]: newCount
+                                          }
+                                        });
+                                      }}
+                                      className={`text-xs px-2 py-1 rounded ${
+                                        suggestedCount > 0 
+                                          ? "bg-green-100 text-green-700 hover:bg-green-200" 
+                                          : "bg-gray-100 text-gray-500 cursor-default"
+                                      }`}
+                                      title={suggestedCount > 0 ? "추천값 적용" : "추천 없음"}
+                                      disabled={suggestedCount === 0}
+                                    >
+                                      +{suggestedCount}
+                                    </button>
                                   </div>
                                 </div>
                                 {defaultCount !== currentCount && (
