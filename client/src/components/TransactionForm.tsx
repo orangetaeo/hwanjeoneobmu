@@ -962,6 +962,9 @@ export default function TransactionForm() {
                                                   updatedBreakdown[d.toString()] = currentCount - actualReduction;
                                                   excessAmount -= actualReduction * d;
                                                   console.log(`자동 조정: ${d} VND ${currentCount} → ${currentCount - actualReduction} (${actualReduction}장 감소)`);
+                                                  
+                                                  // 정확한 조정을 위해 중단
+                                                  if (excessAmount === 0) break;
                                                 }
                                               }
                                             }
