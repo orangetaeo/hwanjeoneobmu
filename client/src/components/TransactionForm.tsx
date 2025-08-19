@@ -1338,12 +1338,6 @@ export default function TransactionForm() {
                                     );
                                   })}
                               </div>
-                              <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center justify-between text-xs">
-                                <span className="text-gray-600 font-medium">총 분배 금액:</span>
-                                <span className="text-teal-700 font-bold">
-                                  {formatNumber((vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount).toString())} VND
-                                </span>
-                              </div>
                             </div>
                           );
                         }
