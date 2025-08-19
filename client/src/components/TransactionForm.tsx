@@ -346,7 +346,7 @@ export default function TransactionForm() {
   };
 
   // KRW 권종별 분배 계산 (고액권부터 우선 분배, 보유 장수 고려)
-  const calculateKRWBreakdown = (totalAmount: number) => {
+  const calculateKRWBreakdown = (totalAmount: number, ignoreInventory: boolean = false) => {
     const krwDenominations = [50000, 10000, 5000, 1000];
     const breakdown: { [key: string]: number } = {};
     let remaining = totalAmount;
@@ -362,16 +362,25 @@ export default function TransactionForm() {
       if (remaining >= denom) {
         const idealCount = Math.floor(remaining / denom);
         
-        // 보유 장수 제한 적용
-        const availableCount = krwCashAsset?.denominations?.[denom.toString()] || 0;
-        const actualCount = Math.min(idealCount, availableCount);
-        
-        if (actualCount > 0) {
-          breakdown[denom.toString()] = actualCount;
-          remaining -= actualCount * denom;
-          console.log(`${denom.toLocaleString()} KRW: 이상값 ${idealCount}장, 보유량 ${availableCount}장, 실제 ${actualCount}장, 남은 금액: ${remaining.toLocaleString()}`);
-        } else if (idealCount > 0) {
-          console.log(`${denom.toLocaleString()} KRW: 필요 ${idealCount}장, 보유량 ${availableCount}장 부족으로 건너뜀`);
+        if (ignoreInventory) {
+          // 재고 무시하고 이상적인 분배 계산
+          if (idealCount > 0) {
+            breakdown[denom.toString()] = idealCount;
+            remaining -= idealCount * denom;
+            console.log(`${denom.toLocaleString()} KRW: ${idealCount}장 (재고 무시), 남은 금액: ${remaining.toLocaleString()}`);
+          }
+        } else {
+          // 보유 장수 제한 적용
+          const availableCount = krwCashAsset?.denominations?.[denom.toString()] || 0;
+          const actualCount = Math.min(idealCount, availableCount);
+          
+          if (actualCount > 0) {
+            breakdown[denom.toString()] = actualCount;
+            remaining -= actualCount * denom;
+            console.log(`${denom.toLocaleString()} KRW: 이상값 ${idealCount}장, 보유량 ${availableCount}장, 실제 ${actualCount}장, 남은 금액: ${remaining.toLocaleString()}`);
+          } else if (idealCount > 0) {
+            console.log(`${denom.toLocaleString()} KRW: 필요 ${idealCount}장, 보유량 ${availableCount}장 부족으로 건너뜀`);
+          }
         }
       }
     }
@@ -1336,8 +1345,16 @@ export default function TransactionForm() {
                       {(() => {
                         // 환전 금액으로부터 KRW 분배 계산
                         const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
-                        const calculatedBreakdown = calculateKRWBreakdown(targetKRWAmount);
-                        const displayBreakdown = Object.keys(krwBreakdown).length > 0 ? krwBreakdown : calculatedBreakdown;
+                        
+                        // 사용자 수정값이 있으면 그것을 사용, 없으면 이상적인 분배 계산
+                        let displayBreakdown;
+                        if (Object.keys(krwBreakdown).length > 0) {
+                          displayBreakdown = krwBreakdown;
+                        } else {
+                          // 재고를 무시한 이상적인 분배 우선 표시
+                          const idealBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                          displayBreakdown = Object.keys(idealBreakdown).length > 0 ? idealBreakdown : calculateKRWBreakdown(targetKRWAmount, false);
+                        }
                         
                         return Object.entries(displayBreakdown)
                           .filter(([denom, count]) => count > 0)
@@ -1412,8 +1429,14 @@ export default function TransactionForm() {
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
                             const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
-                            const calculatedBreakdown = calculateKRWBreakdown(targetKRWAmount);
-                            const displayBreakdown = Object.keys(krwBreakdown).length > 0 ? krwBreakdown : calculatedBreakdown;
+                            
+                            let displayBreakdown;
+                            if (Object.keys(krwBreakdown).length > 0) {
+                              displayBreakdown = krwBreakdown;
+                            } else {
+                              const idealBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                              displayBreakdown = Object.keys(idealBreakdown).length > 0 ? idealBreakdown : calculateKRWBreakdown(targetKRWAmount, false);
+                            }
                             
                             return Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
                               total + (parseInt(denom) * count), 0
@@ -1424,8 +1447,14 @@ export default function TransactionForm() {
                       
                       {(() => {
                         const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
-                        const calculatedBreakdown = calculateKRWBreakdown(targetKRWAmount);
-                        const displayBreakdown = Object.keys(krwBreakdown).length > 0 ? krwBreakdown : calculatedBreakdown;
+                        
+                        let displayBreakdown;
+                        if (Object.keys(krwBreakdown).length > 0) {
+                          displayBreakdown = krwBreakdown;
+                        } else {
+                          const idealBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                          displayBreakdown = Object.keys(idealBreakdown).length > 0 ? idealBreakdown : calculateKRWBreakdown(targetKRWAmount, false);
+                        }
                         
                         const actualKRWTotal = Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
                           total + (parseInt(denom) * count), 0
