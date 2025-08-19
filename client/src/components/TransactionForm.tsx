@@ -87,6 +87,9 @@ export default function TransactionForm() {
 
   // KRW 권종별 분배 수정용 상태
   const [krwBreakdown, setKrwBreakdown] = useState<Record<string, number>>({});
+  
+  // USD 권종별 분배 수정용 상태
+  const [usdBreakdown, setUsdBreakdown] = useState<Record<string, number>>({});
 
   // 권종별 환율의 평균 계산
   const calculateAverageExchangeRate = () => {
@@ -398,6 +401,57 @@ export default function TransactionForm() {
     }, 0);
   };
 
+  // USD 권종별 분배 계산 (고액권부터 우선 분배, 보유 장수 고려)
+  const calculateUSDBreakdown = (totalAmount: number, ignoreInventory: boolean = false) => {
+    const usdDenominations = [100, 50, 20, 10, 5, 2, 1];
+    const breakdown: { [key: string]: number } = {};
+    let remaining = totalAmount;
+
+    console.log(`USD 분배 계산 시작: ${totalAmount.toLocaleString()} USD`);
+
+    // USD 현금 자산에서 권종별 보유 장수 조회
+    const usdCashAsset = assets?.find((asset: any) => 
+      asset.name === "USD 현금" && asset.currency === "USD"
+    );
+
+    for (const denom of usdDenominations) {
+      if (remaining >= denom) {
+        const idealCount = Math.floor(remaining / denom);
+        
+        if (ignoreInventory) {
+          // 재고 무시하고 이상적인 분배 계산
+          if (idealCount > 0) {
+            breakdown[denom.toString()] = idealCount;
+            remaining -= idealCount * denom;
+            console.log(`${denom} USD: ${idealCount}장 (재고 무시), 남은 금액: ${remaining.toLocaleString()}`);
+          }
+        } else {
+          // 보유 장수 제한 적용
+          const availableCount = usdCashAsset?.metadata?.denominations?.[denom.toString()] || 0;
+          const actualCount = Math.min(idealCount, availableCount);
+          
+          if (actualCount > 0) {
+            breakdown[denom.toString()] = actualCount;
+            remaining -= actualCount * denom;
+            console.log(`${denom} USD: 이상값 ${idealCount}장, 보유량 ${availableCount}장, 실제 ${actualCount}장, 남은 금액: ${remaining.toLocaleString()}`);
+          } else if (idealCount > 0) {
+            console.log(`${denom} USD: 필요 ${idealCount}장, 보유량 ${availableCount}장 부족으로 건너뜀`);
+          }
+        }
+      }
+    }
+
+    console.log("USD 분배 결과:", breakdown);
+    return breakdown;
+  };
+
+  // USD 권종별 분배에서 총액 계산
+  const calculateTotalFromUSDBreakdown = (breakdown: Record<string, number>) => {
+    return Object.entries(breakdown).reduce((total, [denom, count]) => {
+      return total + (parseInt(denom) * count);
+    }, 0);
+  };
+
   // VND 권종별 분배 수정 핸들러
   const handleVNDBreakdownChange = (denomination: string, newCount: number) => {
     const updatedBreakdown = {
@@ -421,6 +475,19 @@ export default function TransactionForm() {
     
     // 총액 재계산 및 formData 업데이트
     const newTotal = calculateTotalFromKRWBreakdown(updatedBreakdown);
+    setFormData(prev => ({ ...prev, toAmount: newTotal.toString() }));
+  };
+
+  // USD 권종별 분배 수정 핸들러
+  const handleUSDBreakdownChange = (denomination: string, newCount: number) => {
+    const updatedBreakdown = {
+      ...usdBreakdown,
+      [denomination]: Math.max(0, newCount)
+    };
+    setUsdBreakdown(updatedBreakdown);
+    
+    // 총액 재계산 및 formData 업데이트
+    const newTotal = calculateTotalFromUSDBreakdown(updatedBreakdown);
     setFormData(prev => ({ ...prev, toAmount: newTotal.toString() }));
   };
 
@@ -498,6 +565,21 @@ export default function TransactionForm() {
           // KRW 분배 계산 및 설정
           const breakdown = calculateKRWBreakdown(finalAmount);
           setKrwBreakdown(breakdown);
+        } else if (formData.toCurrency === "USD") {
+          setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
+          // USD는 소수점 2자리까지 허용
+          const finalAmount = Math.floor(calculatedToAmount * 100) / 100;
+          console.log(`USD 소수점 2자리: ${calculatedToAmount} → ${finalAmount}`);
+          setFormData(prev => ({ 
+            ...prev, 
+            toAmount: finalAmount.toString(),
+            exchangeRate: (finalAmount / total).toString()
+          }));
+          
+          // USD 분배 계산 및 설정 (정수 부분만)
+          const integerAmount = Math.floor(finalAmount);
+          const breakdown = calculateUSDBreakdown(integerAmount);
+          setUsdBreakdown(breakdown);
         } else {
           setVndOriginalAmount(0); // 다른 통화는 0으로 리셋
           const finalAmount = Math.floor(calculatedToAmount);
@@ -511,6 +593,7 @@ export default function TransactionForm() {
         // 계산된 금액이 0이면 모든 것을 초기화
         setVndBreakdown({});
         setKrwBreakdown({});
+        setUsdBreakdown({});
         setVndOriginalAmount(0);
         setVndBaseAmount(0);
         setFormData(prev => ({ ...prev, toAmount: "0" }));
@@ -1499,6 +1582,118 @@ export default function TransactionForm() {
                 </div>
               )}
 
+              {/* USD 권종별 분배 (VND → USD 거래시) */}
+              {formData.toCurrency === "USD" && formData.fromCurrency === "VND" && parseFloat(formData.toAmount || "0") > 0 && (
+                <div>
+                  <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
+                  <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                    <div className="space-y-3">
+                      {(() => {
+                        // 환전 금액으로부터 USD 분배 계산 (정수 부분만)
+                        const targetUSDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
+                        
+                        // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
+                        let displayBreakdown;
+                        if (Object.keys(usdBreakdown).length > 0) {
+                          displayBreakdown = usdBreakdown;
+                        } else {
+                          // 실제 보유량 기반 분배를 우선 시도
+                          const realBreakdown = calculateUSDBreakdown(targetUSDAmount, false);
+                          if (Object.keys(realBreakdown).length > 0) {
+                            displayBreakdown = realBreakdown;
+                          } else {
+                            // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
+                            displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
+                          }
+                        }
+                        
+                        return Object.entries(displayBreakdown)
+                          .filter(([denom, count]) => count > 0)
+                          .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                          .map(([denom, count]) => {
+                          const denomValue = parseInt(denom);
+                          const subtotal = denomValue * count;
+                          return (
+                            <div key={denom} className="bg-white p-3 rounded border border-green-200">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="text-sm sm:text-base font-medium text-gray-900">
+                                    ${denomValue}
+                                  </div>
+                                  <div className="text-xs sm:text-sm text-gray-500">
+                                    {count}장 × ${denomValue} = ${subtotal}
+                                  </div>
+                                  {(() => {
+                                    // USD 현금 자산에서 해당 권종의 보유 장수 조회
+                                    const usdCashAsset = assets?.find?.((asset: any) => 
+                                      asset.name === "USD 현금" && asset.currency === "USD"
+                                    );
+                                    const availableCount = usdCashAsset?.metadata?.denominations?.[denom] || 0;
+                                    const isInsufficient = count > availableCount;
+                                    
+                                    return (
+                                      <div className="text-xs text-gray-400">
+                                        보유: {availableCount}장 
+                                        {isInsufficient && (
+                                          <span className="text-red-500 ml-1">
+                                            (부족: {count - availableCount}장)
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={displayBreakdown[denom] || 0}
+                                    onChange={(e) => {
+                                      const newCount = parseInt(e.target.value) || 0;
+                                      handleUSDBreakdownChange(denom, newCount);
+                                    }}
+                                    className="w-16 h-8 text-xs text-center px-1"
+                                  />
+                                  <span className="text-xs text-gray-500">장</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                      
+                      {/* USD 분배 총액 검증 */}
+                      {(() => {
+                        const expectedUSDTotal = Math.floor(parseFloat(formData.toAmount) || 0);
+                        const actualUSDTotal = calculateTotalFromUSDBreakdown(usdBreakdown);
+                        
+                        if (actualUSDTotal !== expectedUSDTotal && expectedUSDTotal > 0) {
+                          const difference = expectedUSDTotal - actualUSDTotal;
+                          return (
+                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                              <div className="text-xs text-red-600">
+                                ⚠️ 분배액과 환전액이 일치하지 않습니다
+                              </div>
+                              <div className="text-xs text-red-700 mt-1">
+                                환전 예상 금액: ${expectedUSDTotal}<br/>
+                                실제 분배 금액: ${actualUSDTotal}<br/>
+                                차이: ${Math.abs(difference)} {difference > 0 ? '부족' : '초과'}
+                              </div>
+                              {difference > 0 && (
+                                <div className="text-xs text-red-600 mt-1">
+                                  💡 USD 현금 보유량을 확인하세요
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
 
 
@@ -1669,6 +1864,40 @@ export default function TransactionForm() {
                                         </span>
                                         <span className="text-gray-700 font-medium">
                                           {formatNumber(subtotal.toString())} KRW
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      
+                      {/* USD 권종별 분배 상세 */}
+                      {formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0 && (() => {
+                        // USD 분배가 있는 경우에만 표시
+                        const hasBreakdown = Object.entries(usdBreakdown).some(([denom, count]) => count > 0);
+                        
+                        if (hasBreakdown) {
+                          return (
+                            <div className="mt-2 pt-2 border-t border-gray-200/50">
+                              <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
+                              <div className="space-y-1">
+                                {Object.entries(usdBreakdown)
+                                  .filter(([denom, count]) => count > 0)
+                                  .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                                  .map(([denom, count]) => {
+                                    const denomValue = parseInt(denom);
+                                    const subtotal = denomValue * count;
+                                    return (
+                                      <div key={denom} className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-600">
+                                          ${denomValue} × {count}장
+                                        </span>
+                                        <span className="text-gray-700 font-medium">
+                                          ${subtotal}
                                         </span>
                                       </div>
                                     );
