@@ -835,6 +835,11 @@ export default function TransactionForm() {
                                     </div>
                                     <div className="text-xs text-gray-500">
                                       보유: {formatNumber(availableCount)}장
+                                      {currentCount > 0 && (
+                                        <span className="text-blue-600 ml-1">
+                                          -{currentCount}장 = {availableCount - currentCount}장
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
