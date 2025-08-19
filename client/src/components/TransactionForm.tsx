@@ -835,26 +835,38 @@ export default function TransactionForm() {
                           const difference = targetTotal - currentTotal;
                           console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "차이:", difference);
                           
-                          // 부족한 금액을 권종별로 분배하는 제안
+                          // 각 권종별로 추천값 계산 (보유 수량 고려)
                           const suggestions = {};
-                          if (difference > 0) {
-                            let remainingDiff = difference;
-                            // 현재 수정된 권종을 제외하고 작은 권종부터 채우기 (더 실용적)
-                            [200000, 100000, 50000, 20000, 10000, 500000].forEach(denom => {
-                              const currentCount = formData.vndBreakdown[denom.toString()] || 0;
-                              const defaultCount = fixedBreakdown[denom.toString()] || 0;
+                          
+                          // 각 권종별로 계산
+                          [500000, 200000, 100000, 50000, 20000, 10000].forEach(denom => {
+                            const defaultCount = fixedBreakdown[denom.toString()] || 0;
+                            const currentCount = formData.vndBreakdown[denom.toString()] !== undefined ? 
+                              formData.vndBreakdown[denom.toString()] : defaultCount;
+                            
+                            // 기본값과 현재값의 차이
+                            const countDifference = defaultCount - currentCount;
+                            
+                            if (countDifference > 0) {
+                              // 보유 수량 확인
+                              const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                                asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                              ) : null;
+                              const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                              const availableCount = denomComposition[denom.toString()] || 0;
                               
-                              // 기본값보다 적게 설정된 권종은 건드리지 않음
-                              if (currentCount >= defaultCount && remainingDiff >= denom) {
-                                const suggestedCount = Math.floor(remainingDiff / denom);
-                                if (suggestedCount > 0) {
-                                  suggestions[denom.toString()] = suggestedCount;
-                                  remainingDiff -= suggestedCount * denom;
-                                  console.log(`${denom} VND: ${suggestedCount}장 제안, 남은 차이: ${remainingDiff}`);
-                                }
+                              // 현재 사용중인 수량을 제외한 사용 가능한 수량
+                              const usableCount = availableCount - currentCount;
+                              
+                              // 필요한 수량과 사용 가능한 수량 중 작은 값
+                              const suggestedCount = Math.min(countDifference, usableCount);
+                              
+                              if (suggestedCount > 0) {
+                                suggestions[denom.toString()] = suggestedCount;
+                                console.log(`${denom} VND: 기본 ${defaultCount}장, 현재 ${currentCount}장, 차이 ${countDifference}장, 보유 ${availableCount}장, 사용가능 ${usableCount}장, 제안 ${suggestedCount}장`);
                               }
-                            });
-                          }
+                            }
+                          });
                           
                           return suggestions;
                         };
