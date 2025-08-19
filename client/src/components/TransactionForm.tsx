@@ -964,21 +964,29 @@ export default function TransactionForm() {
                                                   const reducedAmount = actualReduction * d;
                                                   console.log(`자동 조정: ${d} VND ${currentCount} → ${newCount} (${actualReduction}장 감소, ${reducedAmount} VND 감소)`);
                                                   
-                                                  // 감소량이 초과량보다 크면 다른 권종에서 보충
+                                                  // 감소량이 초과량보다 크면 기본 분배에서 부족분을 추가
                                                   if (reducedAmount > excessAmount) {
                                                     const shortfall = reducedAmount - excessAmount;
-                                                    console.log(`보충 필요: ${shortfall} VND`);
+                                                    console.log(`부족분 발생: ${shortfall} VND - 기본 분배에서 추가 필요`);
                                                     
-                                                    // 작은 권종부터 보충
-                                                    const reversedDenoms = [...denominations].reverse();
-                                                    for (const fillDenom of reversedDenoms) {
-                                                      if (fillDenom >= d || shortfall <= 0) continue;
-                                                      if (shortfall >= fillDenom) {
-                                                        const addCount = Math.floor(shortfall / fillDenom);
-                                                        const currentFillCount = updatedBreakdown[fillDenom.toString()] || 0;
-                                                        updatedBreakdown[fillDenom.toString()] = currentFillCount + addCount;
-                                                        console.log(`보충 조정: ${fillDenom} VND ${currentFillCount} → ${currentFillCount + addCount} (+${addCount}장)`);
-                                                        break;
+                                                    // 기본 분배를 다시 계산해서 부족분 추가
+                                                    const remainingAmount = shortfall;
+                                                    const smallerDenominations = [200000, 100000, 50000, 20000, 10000];
+                                                    
+                                                    for (const fillDenom of smallerDenominations) {
+                                                      if (fillDenom >= d || remainingAmount <= 0) continue;
+                                                      
+                                                      if (remainingAmount >= fillDenom) {
+                                                        const addCount = Math.floor(remainingAmount / fillDenom);
+                                                        if (addCount > 0) {
+                                                          const currentFillCount = updatedBreakdown[fillDenom.toString()] || 0;
+                                                          updatedBreakdown[fillDenom.toString()] = currentFillCount + addCount;
+                                                          const addedAmount = addCount * fillDenom;
+                                                          console.log(`부족분 보충: ${fillDenom} VND ${currentFillCount} → ${currentFillCount + addCount} (+${addCount}장, ${addedAmount} VND)`);
+                                                          
+                                                          // 정확히 부족분만큼만 추가
+                                                          if (addedAmount >= remainingAmount) break;
+                                                        }
                                                       }
                                                     }
                                                   }
