@@ -358,8 +358,7 @@ export default function TransactionForm() {
       asset.name === "KRW 현금" && asset.currency === "KRW"
     );
     
-    console.log("KRW 현금 자산:", krwCashAsset);
-    console.log("KRW 권종별 보유량:", krwCashAsset?.metadata?.denominations);
+
 
     for (const denom of krwDenominations) {
       if (remaining >= denom) {
@@ -1349,14 +1348,19 @@ export default function TransactionForm() {
                         // 환전 금액으로부터 KRW 분배 계산
                         const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
                         
-                        // 사용자 수정값이 있으면 그것을 사용, 없으면 이상적인 분배 계산
+                        // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
                         let displayBreakdown;
                         if (Object.keys(krwBreakdown).length > 0) {
                           displayBreakdown = krwBreakdown;
                         } else {
-                          // 재고를 무시한 이상적인 분배 우선 표시
-                          const idealBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
-                          displayBreakdown = Object.keys(idealBreakdown).length > 0 ? idealBreakdown : calculateKRWBreakdown(targetKRWAmount, false);
+                          // 실제 보유량 기반 분배를 우선 시도
+                          const realBreakdown = calculateKRWBreakdown(targetKRWAmount, false);
+                          if (Object.keys(realBreakdown).length > 0) {
+                            displayBreakdown = realBreakdown;
+                          } else {
+                            // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
+                            displayBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                          }
                         }
                         
                         return Object.entries(displayBreakdown)
@@ -1380,8 +1384,8 @@ export default function TransactionForm() {
                                     const krwCashAsset = assets?.find(asset => 
                                       asset.name === "KRW 현금" && asset.currency === "KRW"
                                     );
-                                    if (krwCashAsset?.denominations) {
-                                      const availableCount = krwCashAsset.denominations[denom] || 0;
+                                    if (krwCashAsset?.metadata?.denominations) {
+                                      const availableCount = krwCashAsset.metadata.denominations[denom] || 0;
                                       const remainingCount = Math.max(0, availableCount - count);
                                       return (
                                         <div className="text-xs text-blue-600 mt-1">
@@ -1406,7 +1410,7 @@ export default function TransactionForm() {
                                         const krwCashAsset = assets?.find(asset => 
                                           asset.name === "KRW 현금" && asset.currency === "KRW"
                                         );
-                                        const availableCount = krwCashAsset?.denominations?.[denom] || 0;
+                                        const availableCount = krwCashAsset?.metadata?.denominations?.[denom] || 0;
                                         
                                         if (newCount > availableCount) {
                                           console.log(`KRW ${denom} 권종: 입력값 ${newCount}장이 보유량 ${availableCount}장을 초과하여 ${availableCount}장으로 제한됨`);
@@ -1437,8 +1441,12 @@ export default function TransactionForm() {
                             if (Object.keys(krwBreakdown).length > 0) {
                               displayBreakdown = krwBreakdown;
                             } else {
-                              const idealBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
-                              displayBreakdown = Object.keys(idealBreakdown).length > 0 ? idealBreakdown : calculateKRWBreakdown(targetKRWAmount, false);
+                              const realBreakdown = calculateKRWBreakdown(targetKRWAmount, false);
+                              if (Object.keys(realBreakdown).length > 0) {
+                                displayBreakdown = realBreakdown;
+                              } else {
+                                displayBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                              }
                             }
                             
                             return Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
@@ -1455,8 +1463,12 @@ export default function TransactionForm() {
                         if (Object.keys(krwBreakdown).length > 0) {
                           displayBreakdown = krwBreakdown;
                         } else {
-                          const idealBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
-                          displayBreakdown = Object.keys(idealBreakdown).length > 0 ? idealBreakdown : calculateKRWBreakdown(targetKRWAmount, false);
+                          const realBreakdown = calculateKRWBreakdown(targetKRWAmount, false);
+                          if (Object.keys(realBreakdown).length > 0) {
+                            displayBreakdown = realBreakdown;
+                          } else {
+                            displayBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                          }
                         }
                         
                         const actualKRWTotal = Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
