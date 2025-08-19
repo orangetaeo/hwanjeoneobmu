@@ -813,10 +813,48 @@ export default function TransactionForm() {
                           );
                         }
 
+                        // 수정된 분배와 기본 분배의 차이 계산
+                        const calculateSuggestions = () => {
+                          if (!formData.vndBreakdown || Object.keys(formData.vndBreakdown).length === 0) {
+                            return {};
+                          }
+                          
+                          // 현재 총액과 목표 총액 계산
+                          const currentTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => 
+                            total + (parseInt(denom) * parseInt(count.toString())), 0
+                          );
+                          
+                          const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => 
+                            total + (parseInt(denom) * parseInt(count.toString())), 0
+                          );
+                          
+                          const difference = targetTotal - currentTotal;
+                          
+                          // 부족한 금액을 권종별로 분배하는 제안
+                          const suggestions = {};
+                          if (difference > 0) {
+                            let remainingDiff = difference;
+                            [500000, 200000, 100000, 50000, 20000, 10000].forEach(denom => {
+                              if (remainingDiff > 0 && remainingDiff >= denom) {
+                                const suggestedCount = Math.floor(remainingDiff / denom);
+                                if (suggestedCount > 0) {
+                                  suggestions[denom.toString()] = suggestedCount;
+                                  remainingDiff -= suggestedCount * denom;
+                                }
+                              }
+                            });
+                          }
+                          
+                          return suggestions;
+                        };
+                        
+                        const suggestions = calculateSuggestions();
+
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const defaultCount = fixedBreakdown[denom.toString()] || 0;
                           const currentCount = formData.vndBreakdown?.[denom.toString()] !== undefined ? 
                             formData.vndBreakdown[denom.toString()] : defaultCount;
+                          const suggestedCount = suggestions[denom.toString()] || 0;
                         
                           const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
                             asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
@@ -866,6 +904,25 @@ export default function TransactionForm() {
                                       data-testid={`input-vnd-${denom}`}
                                     />
                                     <span className="text-sm text-gray-600">장</span>
+                                    {suggestedCount > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newCount = currentCount + suggestedCount;
+                                          setFormData({
+                                            ...formData,
+                                            vndBreakdown: {
+                                              ...formData.vndBreakdown,
+                                              [denom.toString()]: newCount
+                                            }
+                                          });
+                                        }}
+                                        className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200"
+                                        title="추천값 적용"
+                                      >
+                                        +{suggestedCount}
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                                 {defaultCount !== currentCount && (
