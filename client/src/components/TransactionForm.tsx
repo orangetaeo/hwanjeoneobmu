@@ -97,9 +97,11 @@ export default function TransactionForm() {
     isAutoCalculated: false
   });
 
-  // 자산 목록 조회
-  const { data: assets = [], isLoading: isLoadingAssets } = useQuery({
+  // 자산 목록 조회 (실시간 새로고침)
+  const { data: assets = [], isLoading: isLoadingAssets, refetch: refetchAssets } = useQuery({
     queryKey: ["/api/assets"],
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000, // 10초마다 자동 새로고침
   });
 
   // 환율 목록 조회
@@ -504,7 +506,17 @@ export default function TransactionForm() {
       <div className="flex items-center gap-3">
         <Calculator className="w-6 h-6 text-green-600" />
         <h2 className="text-2xl font-bold">새거래</h2>
-        <Badge variant="outline" className="ml-auto">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetchAssets()}
+          disabled={isLoadingAssets}
+          className="ml-auto mr-2"
+        >
+          <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingAssets ? 'animate-spin' : ''}`} />
+          자산 새로고침
+        </Button>
+        <Badge variant="outline">
           고객 대면 거래 시스템
         </Badge>
       </div>
