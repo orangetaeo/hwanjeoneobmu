@@ -845,11 +845,7 @@ export default function TransactionForm() {
                     <div className="mt-3 pt-2 border-t border-orange-200">
                       <div className="text-sm font-medium text-orange-700">
                         총 분배액: <span className="text-lg">
-                          {(() => {
-                            // 동일한 targetAmount 사용하여 일관성 보장
-                            const breakdown = calculateVNDBreakdown(targetAmount);
-                            return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
-                          })()} VND
+                          {Object.entries(fixedBreakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString()} VND
                         </span>
                       </div>
                     </div>
