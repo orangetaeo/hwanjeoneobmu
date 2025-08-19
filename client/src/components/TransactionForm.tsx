@@ -873,6 +873,14 @@ export default function TransactionForm() {
                         };
                         
                         const suggestions = calculateSuggestions();
+                        
+                        // 부족분 계산 및 안내
+                        const currentVndTotal = Object.entries(formData.vndBreakdown || {}).reduce((total, [denom, count]) => {
+                          return total + (parseInt(denom) * parseInt(count.toString()));
+                        }, 0);
+                        
+                        const shortfall = targetTotal - currentVndTotal;
+                        const hasShortfall = shortfall > 0;
 
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const defaultCount = fixedBreakdown[denom.toString()] || 0;
@@ -1053,11 +1061,13 @@ export default function TransactionForm() {
                                       data-testid={`input-vnd-${denom}`}
                                     />
                                     <span className="text-sm text-gray-600">장</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (suggestedCount > 0) {
-                                          const newCount = currentCount + suggestedCount;
+                                    {/* 추천 버튼 또는 부족분 해결 버튼 */}
+                                    {hasShortfall && shortfall >= denom && availableCount > currentCount ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const addCount = Math.min(Math.floor(shortfall / denom), availableCount - currentCount);
+                                          const newCount = currentCount + addCount;
                                           setFormData({
                                             ...formData,
                                             vndBreakdown: {
@@ -1065,26 +1075,46 @@ export default function TransactionForm() {
                                               [denom.toString()]: newCount
                                             }
                                           });
-                                        } else {
-                                          // +0 버튼 클릭 시 입력 칸을 0으로 설정
-                                          setFormData({
-                                            ...formData,
-                                            vndBreakdown: {
-                                              ...formData.vndBreakdown,
-                                              [denom.toString()]: 0
-                                            }
-                                          });
-                                        }
-                                      }}
-                                      className={`text-xs px-2 py-1 rounded transition-colors ${
-                                        suggestedCount > 0 
-                                          ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer" 
-                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
-                                      }`}
-                                      title={suggestedCount > 0 ? "추천값 적용" : "추천 없음 (클릭 가능)"}
-                                    >
-                                      +{suggestedCount}
-                                    </button>
+                                        }}
+                                        className="text-xs px-2 py-1 rounded transition-colors bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer animate-pulse"
+                                        title={`부족분 ${formatNumber(shortfall.toString())} VND를 ${denom.toLocaleString()} VND로 추가`}
+                                      >
+                                        +{Math.min(Math.floor(shortfall / denom), availableCount - currentCount)}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (suggestedCount > 0) {
+                                            const newCount = currentCount + suggestedCount;
+                                            setFormData({
+                                              ...formData,
+                                              vndBreakdown: {
+                                                ...formData.vndBreakdown,
+                                                [denom.toString()]: newCount
+                                              }
+                                            });
+                                          } else {
+                                            // +0 버튼 클릭 시 입력 칸을 0으로 설정
+                                            setFormData({
+                                              ...formData,
+                                              vndBreakdown: {
+                                                ...formData.vndBreakdown,
+                                                [denom.toString()]: 0
+                                              }
+                                            });
+                                          }
+                                        }}
+                                        className={`text-xs px-2 py-1 rounded transition-colors ${
+                                          suggestedCount > 0 
+                                            ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer" 
+                                            : "bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
+                                        }`}
+                                        title={suggestedCount > 0 ? "추천값 적용" : "추천 없음 (클릭 가능)"}
+                                      >
+                                        +{suggestedCount}
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                                 {defaultCount !== currentCount && (
