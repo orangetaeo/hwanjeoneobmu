@@ -936,16 +936,17 @@ export default function TransactionForm() {
                                             let excessAmount = currentTotal - targetTotal;
                                             const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
                                             
-                                            // 사용자가 방금 입력한 권종은 제외하고 다른 권종들부터 감소
+                                            console.log(`목표 초과 감지: 현재 ${currentTotal}, 목표 ${targetTotal}, 초과량 ${excessAmount}`);
+                                            
+                                            // 사용자가 방금 입력한 권종은 제외하고 큰 권종부터 감소
                                             for (const d of denominations) {
                                               if (d === denom || excessAmount <= 0) continue; // 현재 입력 권종은 제외
                                               
                                               const currentCount = updatedBreakdown[d.toString()] || 0;
-                                              const defaultCount = fixedBreakdown[d.toString()] || 0;
                                               
-                                              if (currentCount > defaultCount) {
+                                              if (currentCount > 0) { // 0보다 큰 경우 감소 가능
                                                 const maxReduction = Math.floor(excessAmount / d);
-                                                const actualReduction = Math.min(maxReduction, currentCount - defaultCount);
+                                                const actualReduction = Math.min(maxReduction, currentCount);
                                                 
                                                 if (actualReduction > 0) {
                                                   updatedBreakdown[d.toString()] = currentCount - actualReduction;
