@@ -866,8 +866,32 @@ export default function TransactionForm() {
                           if (difference > 0) {
                             let remainingAmount = difference;
                             
-                            // 200,000 VND부터 채우기 (작은 권종 우선)
-                            [200000, 100000, 50000, 20000, 10000].forEach(denom => {
+                            // 200,000 VND는 정확히 5장만 (1,000,000 VND ÷ 200,000 = 5장)
+                            if (remainingAmount >= 200000) {
+                              const currentCount = formData.vndBreakdown["200000"] || 0;
+                              const needed = Math.floor(remainingAmount / 200000);
+                              const exactNeeded = Math.min(needed, 5); // 정확히 5장만
+                              
+                              // 보유 수량 확인
+                              const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                                asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                              ) : null;
+                              const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                              const availableCount = denomComposition["200000"] || 0;
+                              const usableCount = availableCount - currentCount;
+                              
+                              const suggestedCount = Math.min(exactNeeded, usableCount);
+                              
+                              if (suggestedCount > 0) {
+                                const existingSuggestion = suggestions["200000"] || 0;
+                                suggestions["200000"] = existingSuggestion + suggestedCount;
+                                remainingAmount -= suggestedCount * 200000;
+                                console.log(`200000 VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
+                              }
+                            }
+                            
+                            // 나머지 권종들
+                            [100000, 50000, 20000, 10000].forEach(denom => {
                               if (remainingAmount >= denom) {
                                 const currentCount = formData.vndBreakdown[denom.toString()] || 0;
                                 const maxPossible = Math.floor(remainingAmount / denom);
