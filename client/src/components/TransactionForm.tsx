@@ -813,18 +813,35 @@ export default function TransactionForm() {
                           );
                         }
 
-                        // 동적 추천 시스템: 자동 조정 + 남은 금액 최적 분배
+                        // 동적 추천 시스템: 현재 상황에서 남은 금액을 최적 분배
                         const calculateSuggestions = () => {
                           if (!formData.vndBreakdown || Object.keys(formData.vndBreakdown).length === 0) {
                             return {};
                           }
                           
-                          // 목표 총액 계산
+                          // 현재 총액과 목표 총액 계산
+                          const currentTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
+                            const denomValue = parseInt(denom);
+                            const denomCount = parseInt(count.toString());
+                            return total + (denomValue * denomCount);
+                          }, 0);
+                          
                           const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = parseInt(count.toString());
                             return total + (denomValue * denomCount);
                           }, 0);
+                          
+                          const remainingAmount = targetTotal - currentTotal;
+                          console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "남은 금액:", remainingAmount);
+                          
+                          const suggestions = {};
+                          
+                          // 목표 금액에 도달했으면 추천 없음
+                          if (remainingAmount <= 0) {
+                            console.log("목표 금액 도달, 추천 없음");
+                            return suggestions;
+                          }
                           
                           // VND 현금 보유 상황 확인
                           const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -832,103 +849,35 @@ export default function TransactionForm() {
                           ) : null;
                           const denomComposition = vndCashAsset?.metadata?.denominations || {};
                           
-                          // 1단계: 목표 초과 시 자동 조정된 분배 계산
-                          const adjustedBreakdown = { ...formData.vndBreakdown };
+                          // 각 권종별로 남은 금액을 분배하는 방법들을 계산
                           const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
                           
-                          // 현재 총액 계산
-                          let currentTotal = Object.entries(adjustedBreakdown).reduce((total, [denom, count]) => {
-                            const denomValue = parseInt(denom);
-                            const denomCount = parseInt(count.toString());
-                            return total + (denomValue * denomCount);
-                          }, 0);
-                          
-                          // 목표 초과 시 큰 권종부터 자동 감소
-                          if (currentTotal > targetTotal) {
-                            let excessAmount = currentTotal - targetTotal;
-                            console.log("목표 초과, 자동 조정 시작:", excessAmount);
+                          denominations.forEach(denom => {
+                            const currentCount = formData.vndBreakdown[denom.toString()] || 0;
+                            const availableCount = denomComposition[denom.toString()] || 0;
+                            const usableCount = availableCount - currentCount;
                             
-                            for (const denom of denominations) {
-                              if (excessAmount <= 0) break;
+                            if (usableCount > 0 && remainingAmount >= denom) {
+                              // 이 권종으로 남은 금액을 얼마나 채울 수 있는지 계산
+                              const maxPossible = Math.floor(remainingAmount / denom);
+                              const suggestedCount = Math.min(maxPossible, usableCount);
                               
-                              const currentCount = adjustedBreakdown[denom.toString()] || 0;
-                              const defaultCount = fixedBreakdown[denom.toString()] || 0;
-                              
-                              // 기본값보다 많이 설정된 경우만 감소
-                              if (currentCount > defaultCount) {
-                                const maxReduction = Math.floor(excessAmount / denom);
-                                const actualReduction = Math.min(maxReduction, currentCount - defaultCount);
-                                
-                                if (actualReduction > 0) {
-                                  adjustedBreakdown[denom.toString()] = currentCount - actualReduction;
-                                  excessAmount -= actualReduction * denom;
-                                  console.log(`${denom} VND: ${currentCount} → ${currentCount - actualReduction} (${actualReduction}장 감소)`);
-                                }
+                              if (suggestedCount > 0) {
+                                suggestions[denom.toString()] = suggestedCount;
+                                console.log(`${denom} VND: ${remainingAmount} 중 ${suggestedCount}장으로 ${suggestedCount * denom} 분배 가능`);
                               }
                             }
-                          }
-                          
-                          // 2단계: 조정된 분배로 현재 총액 재계산
-                          const adjustedTotal = Object.entries(adjustedBreakdown).reduce((total, [denom, count]) => {
-                            const denomValue = parseInt(denom);
-                            const denomCount = parseInt(count.toString());
-                            return total + (denomValue * denomCount);
-                          }, 0);
-                          
-                          const remainingAmount = targetTotal - adjustedTotal;
-                          console.log("목표 총액:", targetTotal, "조정된 총액:", adjustedTotal, "남은 금액:", remainingAmount);
-                          
-                          const suggestions = {};
-                          
-                          // 3단계: 남은 금액에 대한 동적 추천 계산
-                          if (remainingAmount > 0) {
-                            denominations.forEach(denom => {
-                              const adjustedCount = adjustedBreakdown[denom.toString()] || 0;
-                              const availableCount = denomComposition[denom.toString()] || 0;
-                              const usableCount = availableCount - adjustedCount;
-                              
-                              if (usableCount > 0 && remainingAmount >= denom) {
-                                const maxPossible = Math.floor(remainingAmount / denom);
-                                const suggestedCount = Math.min(maxPossible, usableCount);
-                                
-                                if (suggestedCount > 0) {
-                                  suggestions[denom.toString()] = suggestedCount;
-                                  console.log(`${denom} VND: ${remainingAmount} 중 ${suggestedCount}장으로 ${suggestedCount * denom} 분배 가능`);
-                                }
-                              }
-                            });
-                          } else {
-                            console.log("목표 금액 도달, 추천 없음");
-                          }
-                          
-                          return { suggestions, adjustedBreakdown };
-                        };
-                        
-                        const result = calculateSuggestions();
-                        const suggestions = result.suggestions;
-                        const adjustedBreakdown = result.adjustedBreakdown;
-                        
-                        // 자동 조정이 필요한 경우에만 업데이트 (무한 루프 방지)
-                        React.useEffect(() => {
-                          const needsAdjustment = Object.keys(adjustedBreakdown).some(denom => {
-                            const current = formData.vndBreakdown?.[denom] || 0;
-                            const adjusted = adjustedBreakdown[denom] || 0;
-                            return current !== adjusted;
                           });
                           
-                          if (needsAdjustment) {
-                            setFormData(prev => ({
-                              ...prev,
-                              vndBreakdown: adjustedBreakdown
-                            }));
-                          }
-                        }, [JSON.stringify(adjustedBreakdown)]);
+                          return suggestions;
+                        };
+                        
+                        const suggestions = calculateSuggestions();
 
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const defaultCount = fixedBreakdown[denom.toString()] || 0;
-                          const currentCount = adjustedBreakdown?.[denom.toString()] !== undefined ? 
-                            adjustedBreakdown[denom.toString()] : (formData.vndBreakdown?.[denom.toString()] !== undefined ? 
-                            formData.vndBreakdown[denom.toString()] : defaultCount);
+                          const currentCount = formData.vndBreakdown?.[denom.toString()] !== undefined ? 
+                            formData.vndBreakdown[denom.toString()] : defaultCount;
                           const suggestedCount = suggestions[denom.toString()] || 0;
                         
                           const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -967,12 +916,49 @@ export default function TransactionForm() {
                                         // 숫자만 허용
                                         if (value === '' || /^\d+$/.test(value)) {
                                           const newCount = value === '' ? 0 : parseInt(value);
+                                          
+                                          // 새로운 분배로 업데이트
+                                          const updatedBreakdown = {
+                                            ...formData.vndBreakdown,
+                                            [denom.toString()]: newCount
+                                          };
+                                          
+                                          // 목표 초과 시 자동 조정
+                                          const targetTotal = Object.entries(fixedBreakdown).reduce((total, [d, count]) => {
+                                            return total + (parseInt(d) * parseInt(count.toString()));
+                                          }, 0);
+                                          
+                                          const currentTotal = Object.entries(updatedBreakdown).reduce((total, [d, count]) => {
+                                            return total + (parseInt(d) * parseInt(count.toString()));
+                                          }, 0);
+                                          
+                                          if (currentTotal > targetTotal) {
+                                            let excessAmount = currentTotal - targetTotal;
+                                            const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
+                                            
+                                            // 사용자가 방금 입력한 권종은 제외하고 다른 권종들부터 감소
+                                            for (const d of denominations) {
+                                              if (d === denom || excessAmount <= 0) continue; // 현재 입력 권종은 제외
+                                              
+                                              const currentCount = updatedBreakdown[d.toString()] || 0;
+                                              const defaultCount = fixedBreakdown[d.toString()] || 0;
+                                              
+                                              if (currentCount > defaultCount) {
+                                                const maxReduction = Math.floor(excessAmount / d);
+                                                const actualReduction = Math.min(maxReduction, currentCount - defaultCount);
+                                                
+                                                if (actualReduction > 0) {
+                                                  updatedBreakdown[d.toString()] = currentCount - actualReduction;
+                                                  excessAmount -= actualReduction * d;
+                                                  console.log(`자동 조정: ${d} VND ${currentCount} → ${currentCount - actualReduction} (${actualReduction}장 감소)`);
+                                                }
+                                              }
+                                            }
+                                          }
+                                          
                                           setFormData({
                                             ...formData,
-                                            vndBreakdown: {
-                                              ...formData.vndBreakdown,
-                                              [denom.toString()]: newCount
-                                            }
+                                            vndBreakdown: updatedBreakdown
                                           });
                                         }
                                       }}
