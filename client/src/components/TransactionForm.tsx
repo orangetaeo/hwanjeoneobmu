@@ -819,21 +819,25 @@ export default function TransactionForm() {
                             return {};
                           }
                           
-                          // 현재 총액과 목표 총액 계산
-                          const currentTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
-                            const denomValue = parseInt(denom);
+                          // 현재 총 매도시세와 목표 총 매도시세 계산
+                          const currentTotalSellValue = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
                             const denomCount = parseInt(count.toString());
-                            return total + (denomValue * denomCount);
+                            const sellRate = getDenominationRate("VND", "KRW", denom)?.mySellRate || "0";
+                            const denomValue = parseInt(denom);
+                            const sellValue = denomValue * parseFloat(sellRate);
+                            return total + (sellValue * denomCount);
                           }, 0);
                           
-                          const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
-                            const denomValue = parseInt(denom);
+                          const targetTotalSellValue = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomCount = parseInt(count.toString());
-                            return total + (denomValue * denomCount);
+                            const sellRate = getDenominationRate("VND", "KRW", denom)?.mySellRate || "0";
+                            const denomValue = parseInt(denom);
+                            const sellValue = denomValue * parseFloat(sellRate);
+                            return total + (sellValue * denomCount);
                           }, 0);
                           
-                          const difference = targetTotal - currentTotal;
-                          console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "차이:", difference);
+                          const difference = targetTotalSellValue - currentTotalSellValue;
+                          console.log("목표 총 매도시세:", targetTotalSellValue, "현재 총 매도시세:", currentTotalSellValue, "차이:", difference);
                           
                           const suggestions = {};
                           
@@ -876,16 +880,19 @@ export default function TransactionForm() {
                             }
                           });
                           
-                          // 2. 부족한 금액을 다른 권종으로 채우는 추천
+                          // 2. 부족한 매도시세를 다른 권종으로 채우는 추천
                           if (difference > 0) {
-                            let remainingAmount = difference;
+                            let remainingSellValue = difference;
                             
                             // 고액권부터 순서대로 처리
                             const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
                             
                             for (let i = 0; i < denominations.length; i++) {
                               const denom = denominations[i];
-                              if (remainingAmount >= denom) {
+                              const sellRate = getDenominationRate("VND", "KRW", denom.toString())?.mySellRate || "0";
+                              const denomSellValue = denom * parseFloat(sellRate);
+                              
+                              if (remainingSellValue >= denomSellValue) {
                                 const currentCount = formData.vndBreakdown[denom.toString()] || 0;
                                 
                                 // 이미 기본값 복원 추천이 있는 권종은 건너뛰기
@@ -901,16 +908,16 @@ export default function TransactionForm() {
                                 const availableCount = denomComposition[denom.toString()] || 0;
                                 const usableCount = availableCount - currentCount;
                                 
-                                // 일반적인 경우: 가능한 만큼 추천
-                                const maxPossible = Math.floor(remainingAmount / denom);
+                                // 매도시세 기준으로 가능한 만큼 추천
+                                const maxPossible = Math.floor(remainingSellValue / denomSellValue);
                                 const suggestedCount = Math.min(maxPossible, usableCount);
                                 
                                 if (suggestedCount > 0) {
                                   // 기존 추천과 합치기
                                   const existingSuggestion = suggestions[denom.toString()] || 0;
                                   suggestions[denom.toString()] = existingSuggestion + suggestedCount;
-                                  remainingAmount -= suggestedCount * denom;
-                                  console.log(`${denom} VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
+                                  remainingSellValue -= suggestedCount * denomSellValue;
+                                  console.log(`${denom} VND: 부족매도시세 보충 +${suggestedCount}장, 남은 매도시세: ${remainingSellValue}`);
                                 }
                               }
                             }
