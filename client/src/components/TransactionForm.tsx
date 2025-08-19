@@ -450,6 +450,12 @@ export default function TransactionForm() {
       floorProfit = vndOriginalAmount - flooredAmount;
     }
 
+    // VND 거래의 경우 실제 계산된 금액을 toAmount로 설정
+    let actualToAmount = formData.toAmount;
+    if (formData.toCurrency === "VND" && vndOriginalAmount > 0) {
+      actualToAmount = vndOriginalAmount.toString();
+    }
+
     // 거래 데이터 구성
     const transactionData = {
       type: formData.transactionType,
@@ -460,7 +466,7 @@ export default function TransactionForm() {
       toAssetId: formData.toAssetId,
       toAssetName: `${formData.toCurrency} 현금`,
       fromAmount: formData.fromAmount,
-      toAmount: formData.toAmount,
+      toAmount: actualToAmount,
       rate: formData.exchangeRate,
       fees: "0",
       profit: floorProfit.toString(),
@@ -470,10 +476,13 @@ export default function TransactionForm() {
         customerPhone: formData.customerPhone,
         fromDenominations: formData.fromDenominations,
         denominationAmounts: formData.denominationAmounts,
+        vndBreakdown: formData.vndBreakdown || {}, // VND 권종별 분배 정보
         toDenomination: formData.toDenomination,
         exchangeRateSource: calculatedData.rateSource,
         isAutoCalculated: calculatedData.isAutoCalculated,
-        floorProfit: floorProfit // VND 내림으로 인한 수익
+        floorProfit: floorProfit, // VND 내림으로 인한 수익
+        vndOriginalAmount: vndOriginalAmount > 0 ? vndOriginalAmount : null, // 실제 VND 환전 금액
+        calculatedVndAmount: vndOriginalAmount > 0 ? vndOriginalAmount : null // 계산된 VND 금액
       },
       status: "confirmed"
     };
@@ -1274,7 +1283,30 @@ export default function TransactionForm() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600 font-medium">고객이 받는 금액</span>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-teal-700">{formatNumber(formData.toAmount)} {formData.toCurrency}</div>
+                          <div className="text-lg font-bold text-teal-700">
+                            {(() => {
+                              // VND 거래의 경우 실제 계산된 금액 표시
+                              if (formData.toCurrency === "VND") {
+                                const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                                  if (amount && parseFloat(amount) > 0) {
+                                    const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                    return total + (parseFloat(amount) * denomValue);
+                                  }
+                                  return total;
+                                }, 0);
+
+                                if (totalFromDenominations > 0) {
+                                  const rate = formData.fromCurrency === "KRW" ? 
+                                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                                  const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                                  // 실제 환전금액 표시 (floor 적용 안함)
+                                  return `${formatNumber(calculatedAmount.toString())} ${formData.toCurrency}`;
+                                }
+                              }
+                              return `${formatNumber(formData.toAmount)} ${formData.toCurrency}`;
+                            })()}
+                          </div>
                         </div>
                       </div>
                       
