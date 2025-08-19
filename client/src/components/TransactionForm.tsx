@@ -772,17 +772,7 @@ export default function TransactionForm() {
               </div>
 
               {/* VND 권종별 분배 - 받는 권종 오른쪽에 배치 */}
-              {formData.toCurrency === "VND" && (() => {
-                // denominationData에서 직접 총액 계산 (접기/펴기와 무관)
-                const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
-                  if (amount && parseFloat(amount) > 0) {
-                    const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                    return total + (parseFloat(amount) * denomValue);
-                  }
-                  return total;
-                }, 0);
-                return totalFromDenominations > 0;
-              })() && (
+              {formData.toCurrency === "VND" && (
                 <div>
                   <Label className="text-base font-medium">권종별 분배</Label>
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2 max-h-80 overflow-y-auto">
@@ -792,9 +782,29 @@ export default function TransactionForm() {
                     </div>
                     <div className="space-y-2">
                       {(() => {
+                        // denominationData에서 직접 총액 계산 (접기/펴기와 무관)
+                        const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                          if (amount && parseFloat(amount) > 0) {
+                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                            return total + (parseFloat(amount) * denomValue);
+                          }
+                          return total;
+                        }, 0);
+
                         const targetAmount = parseFloat(formData.toAmount) || 0;
                         const fixedBreakdown = calculateVNDBreakdown(targetAmount);
                         
+                        // 권종 데이터가 없으면 안내 메시지 표시
+                        if (totalFromDenominations === 0) {
+                          return (
+                            <div className="bg-white p-4 rounded border border-orange-200 text-center">
+                              <div className="text-sm text-gray-500">
+                                받는 권종을 선택하면 권종별 분배가 표시됩니다
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const count = fixedBreakdown[denom.toString()] || 0;
                         
