@@ -775,7 +775,7 @@ export default function TransactionForm() {
               {formData.toCurrency === "VND" && (
                 <div>
                   <Label className="text-base font-medium">권종별 분배</Label>
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2 max-h-80 overflow-y-auto">
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2">
                     <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
                       <span className="mr-2">💰</span>
                       고액권 우선
