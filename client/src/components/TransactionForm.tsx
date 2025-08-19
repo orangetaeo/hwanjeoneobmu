@@ -1328,15 +1328,21 @@ export default function TransactionForm() {
               )}
               
               {/* KRW 권종별 분배 섹션 - VND→KRW 환전용 */}
-              {formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0 && (
+              {formData.toCurrency === "KRW" && formData.fromCurrency === "VND" && parseFloat(formData.toAmount || "0") > 0 && (
                 <div>
                   <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
                   <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
                     <div className="space-y-3">
-                      {Object.entries(krwBreakdown)
-                        .filter(([denom, count]) => count > 0)
-                        .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                        .map(([denom, count]) => {
+                      {(() => {
+                        // 환전 금액으로부터 KRW 분배 계산
+                        const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
+                        const calculatedBreakdown = calculateKRWBreakdown(targetKRWAmount);
+                        const displayBreakdown = Object.keys(krwBreakdown).length > 0 ? krwBreakdown : calculatedBreakdown;
+                        
+                        return Object.entries(displayBreakdown)
+                          .filter(([denom, count]) => count > 0)
+                          .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                          .map(([denom, count]) => {
                           const denomValue = parseInt(denom);
                           const subtotal = denomValue * count;
                           return (
@@ -1397,23 +1403,34 @@ export default function TransactionForm() {
                               </div>
                             </div>
                           );
-                        })}
+                        });
+                      })()}
                     </div>
                     
                     <div className="mt-3 pt-2 border-t border-blue-200">
                       <div className="text-xs sm:text-sm font-medium text-blue-700">
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
-                          {Object.entries(krwBreakdown).reduce((total, [denom, count]) => 
-                            total + (parseInt(denom) * count), 0
-                          ).toLocaleString()} KRW
+                          {(() => {
+                            const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
+                            const calculatedBreakdown = calculateKRWBreakdown(targetKRWAmount);
+                            const displayBreakdown = Object.keys(krwBreakdown).length > 0 ? krwBreakdown : calculatedBreakdown;
+                            
+                            return Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
+                              total + (parseInt(denom) * count), 0
+                            ).toLocaleString();
+                          })()} KRW
                         </span>
                       </div>
                       
                       {(() => {
-                        const actualKRWTotal = Object.entries(krwBreakdown).reduce((total, [denom, count]) => 
+                        const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
+                        const calculatedBreakdown = calculateKRWBreakdown(targetKRWAmount);
+                        const displayBreakdown = Object.keys(krwBreakdown).length > 0 ? krwBreakdown : calculatedBreakdown;
+                        
+                        const actualKRWTotal = Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
                           total + (parseInt(denom) * count), 0
                         );
-                        const expectedKRWTotal = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
+                        const expectedKRWTotal = targetKRWAmount;
                         
                         if (actualKRWTotal !== expectedKRWTotal && expectedKRWTotal > 0) {
                           const difference = expectedKRWTotal - actualKRWTotal;
