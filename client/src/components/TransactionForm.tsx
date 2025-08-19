@@ -920,10 +920,11 @@ export default function TransactionForm() {
                                           const newCount = value === '' ? 0 : parseInt(value);
                                           console.log(`유효한 입력: ${denom} VND = ${newCount}장`);
                                           
-                                          // 새로운 분배로 업데이트
+                                          // 기본 분배를 먼저 포함한 새로운 분배로 업데이트
                                           const updatedBreakdown = {
-                                            ...formData.vndBreakdown,
-                                            [denom.toString()]: newCount
+                                            ...fixedBreakdown, // 기본값을 먼저 설정
+                                            ...formData.vndBreakdown, // 기존 수정값 적용
+                                            [denom.toString()]: newCount // 새로운 입력값 적용
                                           };
                                           
                                           console.log('업데이트된 분배:', updatedBreakdown);
