@@ -942,42 +942,48 @@ export default function TransactionForm() {
                                           console.log(`총액 비교: 현재 ${currentTotal}, 목표 ${targetTotal}`);
                                           
                                           if (currentTotal > targetTotal) {
-                                            let excessAmount = currentTotal - targetTotal;
-                                            const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
-                                            
+                                            const excessAmount = currentTotal - targetTotal;
                                             console.log(`목표 초과 감지: 현재 ${currentTotal}, 목표 ${targetTotal}, 초과량 ${excessAmount}`);
                                             
-                                            // 사용자가 방금 입력한 권종은 제외하고 큰 권종부터 감소
+                                            // 가장 큰 권종(사용자 입력 권종 제외)에서 초과량을 완전히 해결
+                                            const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
                                             for (const d of denominations) {
-                                              if (d === denom || excessAmount <= 0) continue; // 현재 입력 권종은 제외
+                                              if (d === denom) continue; // 현재 입력 권종은 제외
                                               
                                               const currentCount = updatedBreakdown[d.toString()] || 0;
                                               console.log(`${d} VND 확인: 현재 ${currentCount}장`);
                                               
-                                              if (currentCount > 0) { // 0보다 큰 경우 감소 가능
-                                                const maxReduction = Math.floor(excessAmount / d);
-                                                const actualReduction = Math.min(maxReduction, currentCount);
+                                              if (currentCount > 0) {
+                                                // 이 권종에서 초과량을 완전히 해결하기 위해 필요한 장수 계산
+                                                const neededReduction = Math.ceil(excessAmount / d);
+                                                const actualReduction = Math.min(neededReduction, currentCount);
                                                 
                                                 if (actualReduction > 0) {
                                                   const newCount = currentCount - actualReduction;
                                                   updatedBreakdown[d.toString()] = newCount;
-                                                  excessAmount -= actualReduction * d;
-                                                  console.log(`자동 조정: ${d} VND ${currentCount} → ${newCount} (${actualReduction}장 감소), 남은 초과량: ${excessAmount}`);
+                                                  const reducedAmount = actualReduction * d;
+                                                  console.log(`자동 조정: ${d} VND ${currentCount} → ${newCount} (${actualReduction}장 감소, ${reducedAmount} VND 감소)`);
                                                   
-                                                  // 아직 초과량이 남아있고 현재 권종에서 더 감소 가능한 경우 계속
-                                                  if (excessAmount > 0 && newCount > 0 && excessAmount >= d) {
-                                                    // 남은 초과량도 이 권종에서 처리 가능한지 확인
-                                                    const additionalReduction = Math.min(Math.floor(excessAmount / d), newCount);
-                                                    if (additionalReduction > 0) {
-                                                      const finalCount = newCount - additionalReduction;
-                                                      updatedBreakdown[d.toString()] = finalCount;
-                                                      excessAmount -= additionalReduction * d;
-                                                      console.log(`추가 조정: ${d} VND ${newCount} → ${finalCount} (${additionalReduction}장 더 감소), 남은 초과량: ${excessAmount}`);
+                                                  // 감소량이 초과량보다 크면 다른 권종에서 보충
+                                                  if (reducedAmount > excessAmount) {
+                                                    const shortfall = reducedAmount - excessAmount;
+                                                    console.log(`보충 필요: ${shortfall} VND`);
+                                                    
+                                                    // 작은 권종부터 보충
+                                                    const reversedDenoms = [...denominations].reverse();
+                                                    for (const fillDenom of reversedDenoms) {
+                                                      if (fillDenom >= d || shortfall <= 0) continue;
+                                                      if (shortfall >= fillDenom) {
+                                                        const addCount = Math.floor(shortfall / fillDenom);
+                                                        const currentFillCount = updatedBreakdown[fillDenom.toString()] || 0;
+                                                        updatedBreakdown[fillDenom.toString()] = currentFillCount + addCount;
+                                                        console.log(`보충 조정: ${fillDenom} VND ${currentFillCount} → ${currentFillCount + addCount} (+${addCount}장)`);
+                                                        break;
+                                                      }
                                                     }
                                                   }
                                                   
-                                                  // 초과량이 완전히 해결되면 중단
-                                                  if (excessAmount === 0) break;
+                                                  break; // 한 권종에서만 조정
                                                 }
                                               }
                                             }
