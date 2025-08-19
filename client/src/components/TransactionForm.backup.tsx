@@ -872,7 +872,6 @@ export default function TransactionForm() {
                 <div className="mt-2 text-xs text-orange-600 text-center sm:text-left">
                   💡 고객 요청에 따라 권종별 수량을 조정할 수 있습니다
                 </div>
-                </div>
               </div>
             )}
 
