@@ -969,12 +969,12 @@ export default function TransactionForm() {
                                                     const shortfall = reducedAmount - excessAmount;
                                                     console.log(`부족분 발생: ${shortfall} VND - 기본 분배에서 추가 필요`);
                                                     
-                                                    // 기본 분배를 다시 계산해서 부족분 추가
-                                                    const remainingAmount = shortfall;
+                                                    // 기본 분배를 다시 계산해서 부족분 추가 (사용자 입력 권종 제외)
+                                                    let remainingAmount = shortfall;
                                                     const smallerDenominations = [200000, 100000, 50000, 20000, 10000];
                                                     
                                                     for (const fillDenom of smallerDenominations) {
-                                                      if (fillDenom >= d || remainingAmount <= 0) continue;
+                                                      if (fillDenom >= d || fillDenom === denom || remainingAmount <= 0) continue;
                                                       
                                                       if (remainingAmount >= fillDenom) {
                                                         const addCount = Math.floor(remainingAmount / fillDenom);
@@ -982,10 +982,11 @@ export default function TransactionForm() {
                                                           const currentFillCount = updatedBreakdown[fillDenom.toString()] || 0;
                                                           updatedBreakdown[fillDenom.toString()] = currentFillCount + addCount;
                                                           const addedAmount = addCount * fillDenom;
-                                                          console.log(`부족분 보충: ${fillDenom} VND ${currentFillCount} → ${currentFillCount + addCount} (+${addCount}장, ${addedAmount} VND)`);
+                                                          remainingAmount -= addedAmount;
+                                                          console.log(`부족분 보충: ${fillDenom} VND ${currentFillCount} → ${currentFillCount + addCount} (+${addCount}장, ${addedAmount} VND), 남은 부족분: ${remainingAmount}`);
                                                           
-                                                          // 정확히 부족분만큼만 추가
-                                                          if (addedAmount >= remainingAmount) break;
+                                                          // 부족분이 해결되면 중단
+                                                          if (remainingAmount <= 0) break;
                                                         }
                                                       }
                                                     }
