@@ -1630,8 +1630,13 @@ export default function TransactionForm() {
                             <div key={denom} className="bg-white p-3 rounded border border-green-200">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex flex-col min-w-0 flex-1">
-                                  <div className="text-sm sm:text-base font-medium text-gray-900">
-                                    ${denomValue}
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-sm sm:text-base font-medium text-gray-900">
+                                      ${denomValue}
+                                    </div>
+                                    <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
+                                      매도시세: 26,000
+                                    </div>
                                   </div>
                                   <div className="text-xs sm:text-sm text-gray-500">
                                     {count}장 × ${denomValue} = ${subtotal}
