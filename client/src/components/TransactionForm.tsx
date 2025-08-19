@@ -965,13 +965,14 @@ export default function TransactionForm() {
                                                   console.log(`자동 조정: ${d} VND ${currentCount} → ${newCount} (${actualReduction}장 감소), 남은 초과량: ${excessAmount}`);
                                                   
                                                   // 아직 초과량이 남아있고 현재 권종에서 더 감소 가능한 경우 계속
-                                                  if (excessAmount > 0 && newCount > 0 && d <= excessAmount) {
+                                                  if (excessAmount > 0 && newCount > 0 && excessAmount >= d) {
                                                     // 남은 초과량도 이 권종에서 처리 가능한지 확인
                                                     const additionalReduction = Math.min(Math.floor(excessAmount / d), newCount);
                                                     if (additionalReduction > 0) {
-                                                      updatedBreakdown[d.toString()] = newCount - additionalReduction;
+                                                      const finalCount = newCount - additionalReduction;
+                                                      updatedBreakdown[d.toString()] = finalCount;
                                                       excessAmount -= additionalReduction * d;
-                                                      console.log(`추가 조정: ${d} VND ${newCount} → ${newCount - additionalReduction} (${additionalReduction}장 더 감소), 남은 초과량: ${excessAmount}`);
+                                                      console.log(`추가 조정: ${d} VND ${newCount} → ${finalCount} (${additionalReduction}장 더 감소), 남은 초과량: ${excessAmount}`);
                                                     }
                                                   }
                                                   
