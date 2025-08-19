@@ -16,6 +16,9 @@ This is a full-stack asset management and exchange tracking application designed
 - **Unified Display Consistency**: All screen displays now show correct VND amount of 11,630,000 VND with proper denomination breakdown (500,000×23 + 100,000×1 + 20,000×1 + 10,000×1)
 - **Error Message Correction**: Fixed transaction validation error messages to display accurate "환전 예상 금액" matching actual exchange amounts
 - **Transaction Validation Enhancement**: Strengthened amount verification logic ensuring actual vs expected totals match exactly before allowing transaction completion
+- **Mobile Responsive Design**: Completed mobile optimization for TransactionForm component with responsive layouts, touch-friendly input sizes, and proper text scaling for all screen sizes
+- **Calculation Independence Fix**: Fixed denomination fold/unfold UI state affecting calculations by using Object.entries(denominationAmounts) instead of fromDenominations array
+- **Amount Validation Accuracy**: Corrected VND amount mismatch validation to use vndOriginalAmount or formatVNDWithFloor values for precise error checking
 
 # User Preferences
 
