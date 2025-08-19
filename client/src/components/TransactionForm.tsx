@@ -778,7 +778,7 @@ export default function TransactionForm() {
 
 
             {/* VND 권종별 분배 표시 - 권종 접기와 관계없이 항상 표시 */}
-            {formData.toCurrency === "VND" && formData.toAmount && parseFloat(formData.toAmount) > 0 && (
+            {formData.toCurrency === "VND" && calculateTotalFromAmount() > 0 && (
               <div className="mt-4 lg:mt-0">
                 <div className="p-3 sm:p-4 bg-orange-50 border border-orange-200 rounded-lg shadow-sm">
                 <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
