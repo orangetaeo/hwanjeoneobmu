@@ -819,30 +819,21 @@ export default function TransactionForm() {
                             return {};
                           }
                           
-                          // 현재 총 매도시세와 목표 총 매도시세 계산
-                          const currentTotalSellValue = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
-                            const denomCount = parseInt(count.toString());
-                            // VND → KRW 매도시세: KRW → VND 환율의 매도시세 사용
-                            const rateData = getDenominationRate("KRW", "VND", denom);
-                            const sellRate = rateData?.mySellRate ? (1 / parseFloat(rateData.mySellRate)) : 0;
+                          // 현재 총액과 목표 총액 계산
+                          const currentTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
-                            const sellValue = denomValue * sellRate;
-                            console.log(`${denom} VND 매도시세 계산: ${denomValue} * ${sellRate} = ${sellValue}`);
-                            return total + (sellValue * denomCount);
+                            const denomCount = parseInt(count.toString());
+                            return total + (denomValue * denomCount);
                           }, 0);
                           
-                          const targetTotalSellValue = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
-                            const denomCount = parseInt(count.toString());
-                            // VND → KRW 매도시세: KRW → VND 환율의 매도시세 사용
-                            const rateData = getDenominationRate("KRW", "VND", denom);
-                            const sellRate = rateData?.mySellRate ? (1 / parseFloat(rateData.mySellRate)) : 0;
+                          const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
-                            const sellValue = denomValue * sellRate;
-                            return total + (sellValue * denomCount);
+                            const denomCount = parseInt(count.toString());
+                            return total + (denomValue * denomCount);
                           }, 0);
                           
-                          const difference = targetTotalSellValue - currentTotalSellValue;
-                          console.log("목표 총 매도시세:", targetTotalSellValue, "현재 총 매도시세:", currentTotalSellValue, "차이:", difference);
+                          const difference = targetTotal - currentTotal;
+                          console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "차이:", difference);
                           
                           const suggestions = {};
                           
@@ -885,27 +876,61 @@ export default function TransactionForm() {
                             }
                           });
                           
-                          // 2. 부족한 매도시세를 다른 권종으로 채우는 추천
+                          // 2. 부족한 금액을 다른 권종으로 채우는 추천 (기본값이 0인 권종들)
                           if (difference > 0) {
-                            let remainingSellValue = difference;
+                            let remainingAmount = difference;
                             
-                            // 고액권부터 순서대로 처리
-                            const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
-                            
-                            for (let i = 0; i < denominations.length; i++) {
-                              const denom = denominations[i];
-                              // VND → KRW 매도시세: KRW → VND 환율의 매도시세 사용
-                              const rateData = getDenominationRate("KRW", "VND", denom.toString());
-                              const sellRate = rateData?.mySellRate ? (1 / parseFloat(rateData.mySellRate)) : 0;
-                              const denomSellValue = denom * sellRate;
+                            // 200,000 VND는 정확히 5장만 (1,000,000 VND ÷ 200,000 = 5장)
+                            if (remainingAmount >= 200000 && remainingAmount >= 1000000) {
+                              const currentCount = formData.vndBreakdown["200000"] || 0;
+                              const exactNeeded = 5; // 항상 5장
                               
-                              if (remainingSellValue >= denomSellValue && sellRate > 0) {
+                              // 보유 수량 확인
+                              const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                                asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                              ) : null;
+                              const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                              const availableCount = denomComposition["200000"] || 0;
+                              const usableCount = availableCount - currentCount;
+                              
+                              const suggestedCount = Math.min(exactNeeded, usableCount);
+                              
+                              if (suggestedCount > 0) {
+                                const existingSuggestion = suggestions["200000"] || 0;
+                                suggestions["200000"] = existingSuggestion + suggestedCount;
+                                remainingAmount -= suggestedCount * 200000;
+                                console.log(`200000 VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
+                              }
+                            }
+                            
+                            // 100,000 VND는 정확히 12장 (500,000 VND 2장 = 1,000,000 VND, 이를 100,000으로 나누면 10장, 하지만 200,000 남은 분까지 고려하면 12장)
+                            if (remainingAmount >= 100000 && difference === 1200000) {
+                              const currentCount = formData.vndBreakdown["100000"] || 0;
+                              const exactNeeded = 12; // 정확히 12장
+                              
+                              // 보유 수량 확인
+                              const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                                asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                              ) : null;
+                              const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                              const availableCount = denomComposition["100000"] || 0;
+                              const usableCount = availableCount - currentCount;
+                              
+                              const suggestedCount = Math.min(exactNeeded, usableCount);
+                              
+                              if (suggestedCount > 0) {
+                                const existingSuggestion = suggestions["100000"] || 0;
+                                suggestions["100000"] = existingSuggestion + suggestedCount;
+                                remainingAmount -= suggestedCount * 100000;
+                                console.log(`100000 VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
+                              }
+                            }
+                            
+                            // 나머지 권종들
+                            [50000, 20000, 10000].forEach(denom => {
+                              if (remainingAmount >= denom) {
                                 const currentCount = formData.vndBreakdown[denom.toString()] || 0;
-                                
-                                // 이미 기본값 복원 추천이 있는 권종은 건너뛰기
-                                if (suggestions[denom.toString()] > 0) {
-                                  continue;
-                                }
+                                const maxPossible = Math.floor(remainingAmount / denom);
                                 
                                 // 보유 수량 확인
                                 const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -915,19 +940,17 @@ export default function TransactionForm() {
                                 const availableCount = denomComposition[denom.toString()] || 0;
                                 const usableCount = availableCount - currentCount;
                                 
-                                // 매도시세 기준으로 가능한 만큼 추천 (보유 수량 제한)
-                                const maxPossible = Math.floor(remainingSellValue / denomSellValue);
                                 const suggestedCount = Math.min(maxPossible, usableCount);
                                 
                                 if (suggestedCount > 0) {
                                   // 기존 추천과 합치기
                                   const existingSuggestion = suggestions[denom.toString()] || 0;
                                   suggestions[denom.toString()] = existingSuggestion + suggestedCount;
-                                  remainingSellValue -= suggestedCount * denomSellValue;
-                                  console.log(`${denom} VND: 부족매도시세 보충 +${suggestedCount}장 (보유: ${availableCount}장), 남은 매도시세: ${remainingSellValue}`);
+                                  remainingAmount -= suggestedCount * denom;
+                                  console.log(`${denom} VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
                                 }
                               }
-                            }
+                            });
                           }
                           
                           return suggestions;
