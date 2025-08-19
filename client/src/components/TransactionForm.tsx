@@ -976,13 +976,13 @@ export default function TransactionForm() {
                           // 모든 권종을 기본으로 표기
                           if (true) {
                             return (
-                              <div key={denom} className="bg-white p-2 sm:p-3 rounded border border-orange-200">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div key={denom} className="bg-white p-3 sm:p-4 rounded border border-orange-200">
+                                <div className="flex items-center justify-between gap-3">
                                   <div className="flex flex-col min-w-0 flex-1">
-                                    <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                    <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
                                       {formatNumber(denom)} VND
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs sm:text-sm text-gray-500">
                                       보유: {formatNumber(availableCount)}장
                                       {currentCount > 0 && (
                                         <span className={`ml-1 ${(availableCount - currentCount) < 0 ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
@@ -991,13 +991,13 @@ export default function TransactionForm() {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                                     <Input
                                       type="text"
                                       min="0"
                                       max={availableCount}
                                       value={currentCount.toString()}
-                                      className="w-12 sm:w-16 h-6 sm:h-8 text-xs sm:text-sm text-center"
+                                      className="w-16 sm:w-20 h-10 sm:h-12 text-sm sm:text-base text-center font-medium"
                                       onChange={(e) => {
                                         const value = e.target.value;
                                         console.log(`입력 감지: ${denom} VND에 "${value}" 입력`);
@@ -1101,10 +1101,10 @@ export default function TransactionForm() {
                                       }}
                                       data-testid={`input-vnd-${denom}`}
                                     />
-                                    <span className="text-xs sm:text-sm text-gray-600">장</span>
+                                    <span className="text-sm sm:text-base text-gray-600 font-medium">장</span>
                                     <button
                                       type="button"
-                                      className="px-1 sm:px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="px-3 sm:px-4 py-2 sm:py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-sm sm:text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                       disabled={suggestedCount === 0}
                                       onClick={() => {
                                         if (suggestedCount > 0) {
@@ -1127,11 +1127,6 @@ export default function TransactionForm() {
                                           });
                                         }
                                       }}
-                                      className={`text-xs px-2 py-1 rounded transition-colors ${
-                                        suggestedCount > 0 
-                                          ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer" 
-                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
-                                      }`}
                                       title={suggestedCount > 0 ? "추천값 적용" : "추천 없음 (클릭 가능)"}
                                     >
                                       +{suggestedCount}
