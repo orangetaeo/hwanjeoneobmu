@@ -575,8 +575,8 @@ export default function TransactionForm() {
             </div>
 
             {/* 권종 선택 - 모바일 최적화 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
                 <Label>받는 권종</Label>
                 {formData.transactionType === "bank_transfer" || formData.transactionType === "foreign_to_account" ? (
                   <div className="p-4 bg-gray-50 rounded-lg">
@@ -771,6 +771,64 @@ export default function TransactionForm() {
 
               </div>
 
+              {/* VND 권종별 분배 - 받는 권종 오른쪽에 배치 */}
+              {formData.toCurrency === "VND" && calculateTotalFromAmount() > 0 && (
+                <div>
+                  <Label className="text-base font-medium">권종별 분배</Label>
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2 max-h-80 overflow-y-auto">
+                    <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
+                      <span className="mr-2">💰</span>
+                      고액권 우선
+                    </div>
+                    <div className="space-y-2">
+                      {(() => {
+                        const targetAmount = parseFloat(formData.toAmount) || 0;
+                        const fixedBreakdown = calculateVNDBreakdown(targetAmount);
+                        
+                        return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
+                          const count = fixedBreakdown[denom.toString()] || 0;
+                        
+                          const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                            asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                          ) : null;
+                          
+                          const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                          const availableCount = denomComposition[denom.toString()] || 0;
+                          
+                          if (count > 0) {
+                            return (
+                              <div key={denom} className="bg-white p-2 rounded border border-orange-200">
+                                <div className="flex flex-col gap-1">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {formatNumber(denom)} VND × {count}장
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    보유: {formatNumber(availableCount)}장
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }).filter(Boolean);
+                      })()}
+                    </div>
+                    
+                    <div className="mt-3 pt-2 border-t border-orange-200">
+                      <div className="text-sm font-medium text-orange-700">
+                        총 분배액: <span className="text-lg">
+                          {(() => {
+                            const targetAmount = parseFloat(formData.toAmount) || 0;
+                            const breakdown = calculateVNDBreakdown(targetAmount);
+                            return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
+                          })()} VND
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
 
 
@@ -780,7 +838,7 @@ export default function TransactionForm() {
 
 
             {/* 금액 입력 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
                 {formData.transactionType === "cash_exchange" ? (
@@ -837,67 +895,6 @@ export default function TransactionForm() {
                   </div>
                 </div>
               </div>
-
-              {/* VND 권종별 분배 - 주는 금액 옆으로 이동 */}
-              {formData.toCurrency === "VND" && calculateTotalFromAmount() > 0 && (
-                <div>
-                  <Label className="text-base font-medium">권종별 분배</Label>
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2 max-h-80 overflow-y-auto">
-                    <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
-                      <span className="mr-2">💰</span>
-                      고액권 우선
-                    </div>
-                    <div className="space-y-2">
-                      {(() => {
-                        // VND 분배는 toAmount 기준으로 계산하여 정확성 보장
-                        const targetAmount = parseFloat(formData.toAmount) || 0;
-                        const fixedBreakdown = calculateVNDBreakdown(targetAmount);
-                        
-                        return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                          const count = fixedBreakdown[denom.toString()] || 0;
-                        
-                          // VND 현금 자산의 지폐 구성에서 실제 보유 수량 가져오기
-                          const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                            asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                          ) : null;
-                          
-                          // 지폐 구성에서 해당 권종의 실제 보유 수량
-                          const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                          const availableCount = denomComposition[denom.toString()] || 0;
-                          
-                          if (count > 0) {
-                            return (
-                              <div key={denom} className="bg-white p-2 rounded border border-orange-200">
-                                <div className="flex flex-col gap-1">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {formatNumber(denom)} VND × {count}장
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    보유: {formatNumber(availableCount)}장
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }).filter(Boolean);
-                      })()}
-                    </div>
-                    
-                    <div className="mt-3 pt-2 border-t border-orange-200">
-                      <div className="text-sm font-medium text-orange-700">
-                        총 분배액: <span className="text-lg">
-                          {(() => {
-                            const targetAmount = parseFloat(formData.toAmount) || 0;
-                            const breakdown = calculateVNDBreakdown(targetAmount);
-                            return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
-                          })()} VND
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* 고객 정보 (선택사항) */}
