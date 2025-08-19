@@ -421,8 +421,10 @@ export default function TransactionForm() {
         const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
         let rate = 0;
         if (formData.fromCurrency === "KRW") {
+          // KRW를 주는 경우: 내 매도가 사용
           rate = parseFloat(rateInfo?.mySellRate || "0");
-        } else if (formData.fromCurrency === "VND") {
+        } else if (formData.fromCurrency === "VND" || formData.fromCurrency === "USD") {
+          // VND나 USD를 받는 경우: 내 매입가 사용
           rate = parseFloat(rateInfo?.myBuyRate || "0");
         } else {
           rate = parseFloat(rateInfo?.myBuyRate || "0");
