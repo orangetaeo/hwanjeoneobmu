@@ -22,6 +22,7 @@ This is a full-stack asset management and exchange tracking application designed
 - **UI Layout Improvement**: Relocated amount display sections (받는 금액/주는 금액) above denomination selection for better user workflow and more intuitive interface design
 - **Mobile VND Distribution Enhancement**: Improved VND denomination input interface with larger touch-friendly input fields (16×40px → 20×48px), expanded +0 button sizes, right-aligned layout for input elements, and increased card padding for better mobile usability
 - **Exchange Rate Rules Implementation**: Established clear rate selection logic - VND→KRW and VND→USD exchanges use "내 매입가" (my buy rate), while KRW→VND exchanges use "내 매도가" (my sell rate) for accurate business calculations
+- **KRW 1000원 단위 내림 처리**: VND→KRW 환전 시 1000원 단위로 완전 내림 적용 (예: 10,200원 → 10,000원), 1000원 미만 지급 불가 정책 반영
 
 # User Preferences
 

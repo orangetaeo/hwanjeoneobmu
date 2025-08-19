@@ -460,9 +460,9 @@ export default function TransactionForm() {
           }
         } else if (formData.toCurrency === "KRW") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
-          // KRW는 100원 단위로 완전 내림 (예: 10,250원 → 10,200원)
-          const finalAmount = Math.floor(calculatedToAmount / 100) * 100;
-          console.log(`KRW 100원 단위 내림: ${calculatedToAmount} → ${finalAmount}`);
+          // KRW는 1000원 단위로 완전 내림 (예: 10,200원 → 10,000원)
+          const finalAmount = Math.floor(calculatedToAmount / 1000) * 1000;
+          console.log(`KRW 1000원 단위 내림: ${calculatedToAmount} → ${finalAmount}`);
           setFormData(prev => ({ 
             ...prev, 
             toAmount: finalAmount.toString(),
