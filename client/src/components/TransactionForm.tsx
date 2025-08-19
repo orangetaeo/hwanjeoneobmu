@@ -1005,6 +1005,43 @@ export default function TransactionForm() {
                                             }
                                           }
                                           
+                                          // 최종 검증 및 보정
+                                          const finalTotal = Object.entries(updatedBreakdown).reduce((total, [d, count]) => {
+                                            return total + (parseInt(d) * parseInt(count.toString()));
+                                          }, 0);
+                                          
+                                          if (finalTotal !== targetTotal) {
+                                            const difference = targetTotal - finalTotal;
+                                            console.log(`최종 검증: 목표 ${targetTotal}, 현재 ${finalTotal}, 차액 ${difference}`);
+                                            
+                                            if (difference > 0) {
+                                              // 부족분이 있으면 가장 작은 권종으로 보정
+                                              const smallDenoms = [10000, 20000, 50000, 100000, 200000, 500000];
+                                              for (const smallDenom of smallDenoms) {
+                                                if (difference >= smallDenom) {
+                                                  const addCount = Math.floor(difference / smallDenom);
+                                                  const currentCount = updatedBreakdown[smallDenom.toString()] || 0;
+                                                  updatedBreakdown[smallDenom.toString()] = currentCount + addCount;
+                                                  console.log(`부족분 보정: ${smallDenom} VND에 ${addCount}장 추가`);
+                                                  break;
+                                                }
+                                              }
+                                            } else if (difference < 0) {
+                                              // 초과분이 있으면 큰 권종부터 감소
+                                              const excessAmount = Math.abs(difference);
+                                              const largeDenoms = [500000, 200000, 100000, 50000, 20000, 10000];
+                                              for (const largeDenom of largeDenoms) {
+                                                const currentCount = updatedBreakdown[largeDenom.toString()] || 0;
+                                                const canReduce = Math.min(Math.floor(excessAmount / largeDenom), currentCount);
+                                                if (canReduce > 0) {
+                                                  updatedBreakdown[largeDenom.toString()] = currentCount - canReduce;
+                                                  console.log(`초과분 보정: ${largeDenom} VND에서 ${canReduce}장 감소`);
+                                                  break;
+                                                }
+                                              }
+                                            }
+                                          }
+
                                           console.log('최종 분배 저장:', updatedBreakdown);
                                           setFormData({
                                             ...formData,
