@@ -772,7 +772,7 @@ export default function TransactionForm() {
               </div>
 
               {/* VND 권종별 분배 - 받는 권종 오른쪽에 배치 */}
-              {formData.toCurrency === "VND" && calculateTotalFromAmount() > 0 && (
+              {formData.toCurrency === "VND" && Object.values(formData.denominationAmounts).some(amount => amount && parseFloat(amount) > 0) && (
                 <div>
                   <Label className="text-base font-medium">권종별 분배</Label>
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2 max-h-80 overflow-y-auto">
@@ -782,7 +782,27 @@ export default function TransactionForm() {
                     </div>
                     <div className="space-y-2">
                       {(() => {
-                        const targetAmount = parseFloat(formData.toAmount) || 0;
+                        // 실제 권종 데이터에서 총액 계산하여 일관성 보장
+                        const totalFromAmount = Object.entries(formData.denominationAmounts).reduce((total, [denomination, quantity]) => {
+                          const qty = parseFloat(quantity as string);
+                          if (!isNaN(qty) && qty > 0) {
+                            const denominationValue = getDenominationValue(formData.fromCurrency, denomination);
+                            return total + (qty * denominationValue);
+                          }
+                          return total;
+                        }, 0);
+                        
+                        // 환율을 적용한 VND 금액 계산
+                        let rate = parseFloat(formData.exchangeRate) || 0;
+                        
+                        // 환율이 없으면 기본 환율 정보에서 가져오기
+                        if (rate === 0 && totalFromAmount > 0) {
+                          const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000");
+                          rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                        }
+                        
+                        const calculatedVNDAmount = totalFromAmount * rate;
+                        const targetAmount = Math.floor(calculatedVNDAmount / 10000) * 10000;
                         const fixedBreakdown = calculateVNDBreakdown(targetAmount);
                         
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
@@ -818,9 +838,27 @@ export default function TransactionForm() {
                       <div className="text-sm font-medium text-orange-700">
                         총 분배액: <span className="text-lg">
                           {(() => {
-                            const targetAmount = parseFloat(formData.toAmount) || 0;
-                            const breakdown = calculateVNDBreakdown(targetAmount);
-                            return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
+                            // 같은 계산 로직 사용
+                            const totalFromAmount = Object.entries(formData.denominationAmounts).reduce((total, [denomination, quantity]) => {
+                              const qty = parseFloat(quantity as string);
+                              if (!isNaN(qty) && qty > 0) {
+                                const denominationValue = getDenominationValue(formData.fromCurrency, denomination);
+                                return total + (qty * denominationValue);
+                              }
+                              return total;
+                            }, 0);
+                            
+                            let rate = parseFloat(formData.exchangeRate) || 0;
+                            
+                            // 환율이 없으면 기본 환율 정보에서 가져오기
+                            if (rate === 0 && totalFromAmount > 0) {
+                              const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000");
+                              rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                            }
+                            
+                            const calculatedVNDAmount = totalFromAmount * rate;
+                            const targetAmount = Math.floor(calculatedVNDAmount / 10000) * 10000;
+                            return targetAmount.toLocaleString();
                           })()} VND
                         </span>
                       </div>
