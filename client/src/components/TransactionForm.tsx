@@ -1384,7 +1384,7 @@ export default function TransactionForm() {
                                     const krwCashAsset = assets?.find?.(asset => 
                                       asset.name === "KRW 현금" && asset.currency === "KRW"
                                     );
-                                    console.log(`권종 ${denom} 보유량 조회:`, krwCashAsset?.metadata?.denominations);
+
                                     if (krwCashAsset?.metadata?.denominations) {
                                       const availableCount = krwCashAsset.metadata.denominations[denom] || 0;
                                       const remainingCount = Math.max(0, availableCount - count);
