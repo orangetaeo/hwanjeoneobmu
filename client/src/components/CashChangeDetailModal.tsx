@@ -42,34 +42,16 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
       // VND 현금 상세 페이지: vndBreakdown (VND 감소)
       if (Object.keys(vndBreakdown).length === 0) {
         // vndBreakdown이 없는 경우, VND 거래 금액으로 권종 자동 계산
-        let vndAmount = parseFloat(transaction.toAmount.toString());
-        
-        // toAmount가 0이거나 유효하지 않은 경우 metadata에서 실제 VND 금액 확인
-        if (!vndAmount || vndAmount === 0) {
-          // metadata에서 vndOriginalAmount 또는 실제 계산된 VND 금액 찾기
-          vndAmount = metadata?.vndOriginalAmount || metadata?.calculatedVndAmount || 0;
-          
-          // 여전히 0이면 KRW에서 VND로 환전된 금액을 계산
-          if (!vndAmount && denominationAmounts && Object.keys(denominationAmounts).length > 0) {
-            const totalKrw = Object.entries(denominationAmounts).reduce((total, [denom, amount]) => {
-              return total + (parseFloat(amount as string) * parseInt(denom));
-            }, 0);
-            // 예상 환율로 VND 계산 (대략적인 계산)
-            vndAmount = totalKrw * 19.4; // KRW to VND 환율 적용
-          }
+        const vndAmount = parseFloat(transaction.toAmount.toString());
+        // 50만동권과 10만동권으로 분해
+        const count500k = Math.floor(vndAmount / 500000);
+        if (count500k > 0) {
+          denominationChanges['500000'] = -count500k;
         }
-        
-        if (vndAmount > 0) {
-          // 50만동권과 10만동권으로 분해
-          const count500k = Math.floor(vndAmount / 500000);
-          if (count500k > 0) {
-            denominationChanges['500000'] = -count500k;
-          }
-          const remaining = vndAmount % 500000;
-          const count100k = Math.floor(remaining / 100000);
-          if (count100k > 0) {
-            denominationChanges['100000'] = -count100k;
-          }
+        const remaining = vndAmount % 500000;
+        const count100k = Math.floor(remaining / 100000);
+        if (count100k > 0) {
+          denominationChanges['100000'] = -count100k;
         }
       } else {
         Object.entries(vndBreakdown).forEach(([denom, amount]) => {
