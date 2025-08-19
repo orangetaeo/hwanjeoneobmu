@@ -772,7 +772,17 @@ export default function TransactionForm() {
               </div>
 
               {/* VND 권종별 분배 - 받는 권종 오른쪽에 배치 */}
-              {formData.toCurrency === "VND" && calculateTotalFromAmount() > 0 && (
+              {formData.toCurrency === "VND" && (() => {
+                // denominationData에서 직접 총액 계산 (접기/펴기와 무관)
+                const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                  if (amount && parseFloat(amount) > 0) {
+                    const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                    return total + (parseFloat(amount) * denomValue);
+                  }
+                  return total;
+                }, 0);
+                return totalFromDenominations > 0;
+              })() && (
                 <div>
                   <Label className="text-base font-medium">권종별 분배</Label>
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2 max-h-80 overflow-y-auto">
