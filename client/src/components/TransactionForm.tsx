@@ -411,7 +411,15 @@ export default function TransactionForm() {
         if (amount <= 0) return totalAmount;
         
         const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denomValue);
-        const rate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+        let rate = 0;
+        if (formData.fromCurrency === "KRW") {
+          rate = parseFloat(rateInfo?.mySellRate || "0");
+        } else if (formData.fromCurrency === "VND") {
+          rate = parseFloat(rateInfo?.myBuyRate || "0");
+        } else {
+          rate = parseFloat(rateInfo?.myBuyRate || "0");
+        }
+        console.log(`환율 조회: ${formData.fromCurrency}→${formData.toCurrency}, 권종: ${denomValue}, 환율: ${rate}`);
         const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
         const calculatedValue = totalValue * rate;
         console.log(`계산: ${totalValue} * ${rate} = ${calculatedValue}`);
@@ -1287,6 +1295,64 @@ export default function TransactionForm() {
                           </button>
                         </div>
                       )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* KRW 권종별 분배 섹션 - VND→KRW 환전용 */}
+              {formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0 && (
+                <div>
+                  <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
+                  <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <div className="space-y-3">
+                      {Object.entries(krwBreakdown)
+                        .filter(([denom, count]) => count > 0)
+                        .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                        .map(([denom, count]) => {
+                          const denomValue = parseInt(denom);
+                          const subtotal = denomValue * count;
+                          return (
+                            <div key={denom} className="bg-white p-3 rounded border border-blue-200">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="text-sm sm:text-base font-medium text-gray-900">
+                                    {formatNumber(denomValue)} KRW
+                                  </div>
+                                  <div className="text-xs sm:text-sm text-gray-500">
+                                    {count}장 × {formatNumber(denomValue)} = {formatNumber(subtotal)} KRW
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Input
+                                    type="text"
+                                    value={count.toString()}
+                                    className="w-16 sm:w-20 h-10 sm:h-12 text-sm sm:text-base text-center font-medium"
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      if (value === '' || /^\d+$/.test(value)) {
+                                        const newCount = value === '' ? 0 : parseInt(value);
+                                        handleKRWBreakdownChange(denom, newCount);
+                                      }
+                                    }}
+                                    data-testid={`input-krw-${denom}`}
+                                  />
+                                  <span className="text-sm sm:text-base text-gray-600 font-medium">장</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    
+                    <div className="mt-3 pt-2 border-t border-blue-200">
+                      <div className="text-xs sm:text-sm font-medium text-blue-700">
+                        총 분배액: <span className="text-sm sm:text-lg font-bold">
+                          {Object.entries(krwBreakdown).reduce((total, [denom, count]) => 
+                            total + (parseInt(denom) * count), 0
+                          ).toLocaleString()} KRW
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
