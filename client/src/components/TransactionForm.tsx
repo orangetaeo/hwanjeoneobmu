@@ -813,7 +813,9 @@ export default function TransactionForm() {
                           return formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
                         })() : (parseFloat(formData.toAmount) || 0);
                         
-                        const fixedBreakdown = calculateVNDBreakdown(targetAmount);
+                        // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
+                        console.log("분배 계산 호출 (권종별):", { vndOriginalAmount, targetAmount, useOriginal: vndOriginalAmount > 0 });
+                        const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
                         // 권종 데이터가 없으면 안내 메시지 표시
                         if (totalFromDenominations === 0) {
@@ -1316,7 +1318,8 @@ export default function TransactionForm() {
                           targetAmount = parseFloat(formData.toAmount) || 0;
                         }
                         
-                        const fixedBreakdown = calculateVNDBreakdown(targetAmount);
+                        // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
+                        const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
                         // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
                         const actualBreakdown = (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) 
@@ -1410,7 +1413,8 @@ export default function TransactionForm() {
                   targetAmount = parseFloat(formData.toAmount) || 0;
                 }
                 
-                const fixedBreakdown = calculateVNDBreakdown(targetAmount);
+                // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
+                const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                 
                 // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
                 const actualBreakdown = (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) 
@@ -1549,7 +1553,8 @@ export default function TransactionForm() {
                     targetAmount = parseFloat(formData.toAmount) || 0;
                   }
                   
-                  const fixedBreakdown = calculateVNDBreakdown(targetAmount);
+                  // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
+                  const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                   
                   // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
                   const actualBreakdown = (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) 
@@ -1586,18 +1591,27 @@ export default function TransactionForm() {
                     return total + (denomValue * denomCount);
                   }, 0);
 
-                  let expectedTotal = 0;
-                  if (totalFromDenominations > 0) {
-                    const rate = formData.fromCurrency === "KRW" ? 
-                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
-                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                    const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                    expectedTotal = formatVNDWithFloor(calculatedAmount);
-                  } else {
-                    expectedTotal = parseFloat(formData.toAmount) || 0;
-                  }
+                  // 실제로 고객이 받을 금액 (vndOriginalAmount) 사용
+                  const expectedTotal = vndOriginalAmount > 0 ? vndOriginalAmount : (() => {
+                    if (totalFromDenominations > 0) {
+                      const rate = formData.fromCurrency === "KRW" ? 
+                        getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                        getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                      const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                      return formatVNDWithFloor(calculatedAmount);
+                    } else {
+                      return parseFloat(formData.toAmount) || 0;
+                    }
+                  })();
 
                   // 금액이 일치하지 않으면 비활성화
+                  console.log("거래 차단 검증:", {
+                    actualTotal,
+                    expectedTotal,
+                    vndOriginalAmount,
+                    difference: Math.abs(actualTotal - expectedTotal)
+                  });
+                  
                   if (Math.abs(actualTotal - expectedTotal) > 0) {
                     console.log("금액 불일치로 거래 차단:", actualTotal, "vs", expectedTotal);
                     return true;
