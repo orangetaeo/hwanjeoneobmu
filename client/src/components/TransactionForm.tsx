@@ -1468,27 +1468,26 @@ export default function TransactionForm() {
                   return total + (denomValue * denomCount);
                 }, 0);
 
-                // 환전 예상 금액 계산 - vndOriginalAmount 사용
-                const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
-                  if (amount && parseFloat(amount) > 0) {
-                    const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                    return total + (parseFloat(amount) * denomValue);
-                  }
-                  return total;
-                }, 0);
+                // 실제 환전금액은 vndOriginalAmount를 사용 (정확한 floor 적용 전 원본값)
+                const expectedTotal = vndOriginalAmount > 0 ? vndOriginalAmount : (() => {
+                  const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      return total + (parseFloat(amount) * denomValue);
+                    }
+                    return total;
+                  }, 0);
 
-                // 실제 환전금액 계산 (다른 곳에서 사용된 로직과 동일)
-                let expectedTotal = 0;
-                if (totalFromDenominations > 0) {
-                  const rate = formData.fromCurrency === "KRW" ? 
-                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
-                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                  const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                  // VND의 경우 원래 계산값을 그대로 사용 (floor 적용 안함)
-                  expectedTotal = formData.toCurrency === "VND" ? calculatedAmount : calculatedAmount;
-                } else {
-                  expectedTotal = parseFloat(formData.toAmount) || 0;
-                }
+                  if (totalFromDenominations > 0) {
+                    const rate = formData.fromCurrency === "KRW" ? 
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                    const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                    return formatVNDWithFloor(calculatedAmount); // 실제 환전될 금액 (floor 적용)
+                  } else {
+                    return parseFloat(formData.toAmount) || 0;
+                  }
+                })();
 
                 const amountMismatch = Math.abs(actualTotal - expectedTotal) > 0;
 
