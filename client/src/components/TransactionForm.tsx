@@ -77,6 +77,9 @@ export default function TransactionForm() {
   // VND 분배 기준 금액 (권종 접기와 독립적)
   const [vndBaseAmount, setVndBaseAmount] = useState<number>(0);
 
+  // KRW 권종별 분배 수정용 상태
+  const [krwBreakdown, setKrwBreakdown] = useState<Record<string, number>>({});
+
   // 권종별 환율의 평균 계산
   const calculateAverageExchangeRate = () => {
     const totalFromAmount = calculateTotalFromAmount();
@@ -156,6 +159,12 @@ export default function TransactionForm() {
         rateSource: "",
         isAutoCalculated: false
       });
+      
+      // 권종별 분배 초기화
+      setVndBreakdown({});
+      setKrwBreakdown({});
+      setVndOriginalAmount(0);
+      setVndBaseAmount(0);
     },
     onError: (error: any) => {
       console.error("거래 생성 오류:", error);
@@ -317,6 +326,36 @@ export default function TransactionForm() {
     }, 0);
   };
 
+  // KRW 권종별 분배 계산 (고액권부터 우선 분배)
+  const calculateKRWBreakdown = (totalAmount: number) => {
+    const krwDenominations = [50000, 10000, 5000, 1000];
+    const breakdown: { [key: string]: number } = {};
+    let remaining = totalAmount;
+
+    console.log(`KRW 분배 계산 시작: ${totalAmount.toLocaleString()} KRW`);
+
+    for (const denom of krwDenominations) {
+      if (remaining >= denom) {
+        const count = Math.floor(remaining / denom);
+        if (count > 0) {
+          breakdown[denom.toString()] = count;
+          remaining = remaining % denom;
+          console.log(`${denom.toLocaleString()} KRW: ${count}장, 남은 금액: ${remaining.toLocaleString()}`);
+        }
+      }
+    }
+
+    console.log("KRW 분배 결과:", breakdown);
+    return breakdown;
+  };
+
+  // KRW 권종별 분배에서 총액 계산
+  const calculateTotalFromKRWBreakdown = (breakdown: Record<string, number>) => {
+    return Object.entries(breakdown).reduce((total, [denom, count]) => {
+      return total + (parseInt(denom) * count);
+    }, 0);
+  };
+
   // VND 권종별 분배 수정 핸들러
   const handleVNDBreakdownChange = (denomination: string, newCount: number) => {
     const updatedBreakdown = {
@@ -327,6 +366,19 @@ export default function TransactionForm() {
     
     // 총액 재계산 및 formData 업데이트
     const newTotal = calculateTotalFromVNDBreakdown(updatedBreakdown);
+    setFormData(prev => ({ ...prev, toAmount: newTotal.toString() }));
+  };
+
+  // KRW 권종별 분배 수정 핸들러
+  const handleKRWBreakdownChange = (denomination: string, newCount: number) => {
+    const updatedBreakdown = {
+      ...krwBreakdown,
+      [denomination]: Math.max(0, newCount)
+    };
+    setKrwBreakdown(updatedBreakdown);
+    
+    // 총액 재계산 및 formData 업데이트
+    const newTotal = calculateTotalFromKRWBreakdown(updatedBreakdown);
     setFormData(prev => ({ ...prev, toAmount: newTotal.toString() }));
   };
 
@@ -380,6 +432,18 @@ export default function TransactionForm() {
             const breakdown = calculateVNDBreakdown(finalAmount);
             setVndBreakdown(breakdown);
           }
+        } else if (formData.toCurrency === "KRW") {
+          setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
+          const finalAmount = Math.floor(calculatedToAmount);
+          setFormData(prev => ({ 
+            ...prev, 
+            toAmount: finalAmount.toString(),
+            exchangeRate: (finalAmount / total).toString()
+          }));
+          
+          // KRW 분배 계산 및 설정
+          const breakdown = calculateKRWBreakdown(finalAmount);
+          setKrwBreakdown(breakdown);
         } else {
           setVndOriginalAmount(0); // 다른 통화는 0으로 리셋
           const finalAmount = Math.floor(calculatedToAmount);
@@ -392,6 +456,7 @@ export default function TransactionForm() {
       } else {
         // 계산된 금액이 0이면 모든 것을 초기화
         setVndBreakdown({});
+        setKrwBreakdown({});
         setVndOriginalAmount(0);
         setVndBaseAmount(0);
         setFormData(prev => ({ ...prev, toAmount: "0" }));
@@ -1355,6 +1420,40 @@ export default function TransactionForm() {
                                         </span>
                                         <span className="text-gray-700 font-medium">
                                           {formatNumber(subtotal.toString())} VND
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      
+                      {/* KRW 권종별 분배 상세 */}
+                      {formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0 && (() => {
+                        // KRW 분배가 있는 경우에만 표시
+                        const hasBreakdown = Object.entries(krwBreakdown).some(([denom, count]) => count > 0);
+                        
+                        if (hasBreakdown) {
+                          return (
+                            <div className="mt-2 pt-2 border-t border-gray-200/50">
+                              <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
+                              <div className="space-y-1">
+                                {Object.entries(krwBreakdown)
+                                  .filter(([denom, count]) => count > 0)
+                                  .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                                  .map(([denom, count]) => {
+                                    const denomValue = parseInt(denom);
+                                    const subtotal = denomValue * count;
+                                    return (
+                                      <div key={denom} className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-600">
+                                          {formatNumber(denomValue.toString())} KRW × {count}장
+                                        </span>
+                                        <span className="text-gray-700 font-medium">
+                                          {formatNumber(subtotal.toString())} KRW
                                         </span>
                                       </div>
                                     );
