@@ -687,9 +687,10 @@ export default function TransactionForm() {
                           {isSelected && (
                             <div className="bg-white p-3 rounded-lg border border-green-200 space-y-2">
                               <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                                <div className="flex items-center space-x-3">
-                                  <label className="text-sm font-medium text-gray-700 min-w-[40px]">수량:</label>
-                                  <Input
+                                <div className="flex flex-col space-y-2">
+                                  <div className="flex items-center space-x-3">
+                                    <label className="text-sm font-medium text-gray-700 min-w-[40px]">수량:</label>
+                                    <Input
                                     type="text"
                                     placeholder="0"
                                     value={formData.denominationAmounts[denom.value] ? 
@@ -699,10 +700,31 @@ export default function TransactionForm() {
                                       // 콤마와 숫자만 허용
                                       const cleanValue = value.replace(/[^0-9,]/g, '');
                                       // 콤마를 제거한 순수 숫자값 저장
-                                      const numericValue = cleanValue.replace(/,/g, '');
+                                      let numericValue = cleanValue.replace(/,/g, '');
                                       
                                       // 빈 값이 아닐 때만 업데이트
                                       if (numericValue === '' || !isNaN(parseInt(numericValue))) {
+                                        // 보유 수량 검증 추가
+                                        if (numericValue !== '') {
+                                          const inputCount = parseInt(numericValue);
+                                          
+                                          // 현금 자산에서 해당 권종의 보유 수량 확인
+                                          const cashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                                            asset.name === `${formData.fromCurrency} 현금` && 
+                                            asset.currency === formData.fromCurrency && 
+                                            asset.type === "cash"
+                                          ) : null;
+                                          
+                                          if (cashAsset?.metadata?.denominations) {
+                                            const availableCount = cashAsset.metadata.denominations[denom.value] || 0;
+                                            
+                                            if (inputCount > availableCount) {
+                                              console.log(`보유량 초과: ${denom.value} ${formData.fromCurrency} - 입력: ${inputCount}, 보유: ${availableCount}, ${availableCount}로 제한`);
+                                              numericValue = availableCount.toString();
+                                            }
+                                          }
+                                        }
+                                        
                                         setFormData({
                                           ...formData,
                                           denominationAmounts: {
@@ -727,6 +749,24 @@ export default function TransactionForm() {
                                     className="w-32 h-12 text-center font-semibold text-lg border-2 border-gray-300 rounded-lg focus:border-green-500"
                                   />
                                   <span className="text-base font-medium text-gray-600">장</span>
+                                  </div>
+                                  
+                                  {/* 보유 수량 표시 */}
+                                  {(() => {
+                                    const cashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                                      asset.name === `${formData.fromCurrency} 현금` && 
+                                      asset.currency === formData.fromCurrency && 
+                                      asset.type === "cash"
+                                    ) : null;
+                                    
+                                    const availableCount = cashAsset?.metadata?.denominations?.[denom.value] || 0;
+                                    
+                                    return (
+                                      <div className="text-xs text-gray-500 ml-[72px]">
+                                        보유: {availableCount.toLocaleString()}장
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                                 {formData.denominationAmounts[denom.value] && (
                                   <div className="flex-1 p-3 bg-blue-50 rounded-lg">
