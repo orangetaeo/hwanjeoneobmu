@@ -280,28 +280,17 @@ export default function TransactionForm() {
       searchDenomination = "500000";
     }
     
-    // VND→USD의 경우 USD→VND 환율을 역산하여 사용
+    // VND→USD의 경우 매도시세 26,000 직접 사용
     if (fromCurrency === "VND" && toCurrency === "USD") {
-      // USD→VND 환율 찾기 (100달러 기준)
-      const usdToVndRate = exchangeRates.find((rate: any) => 
-        rate.fromCurrency === "USD" && 
-        rate.toCurrency === "VND" && 
-        rate.denomination === "100"
-      );
+      console.log(`VND→USD 매도시세: 26,000 VND = 1 USD 사용`);
       
-      if (usdToVndRate) {
-        // USD→VND의 내 매입가를 역산하여 VND→USD 환율 계산
-        const vndToUsdRate = 1 / parseFloat(usdToVndRate.myBuyRate);
-        console.log(`VND→USD 환율 역산: USD→VND 내 매입가 ${usdToVndRate.myBuyRate} → VND→USD ${vndToUsdRate.toFixed(8)}`);
-        
-        return {
-          ...usdToVndRate,
-          fromCurrency: "VND",
-          toCurrency: "USD",
-          myBuyRate: vndToUsdRate.toFixed(8),
-          mySellRate: vndToUsdRate.toFixed(8) // 매입가와 동일하게 설정
-        };
-      }
+      return {
+        fromCurrency: "VND",
+        toCurrency: "USD",
+        denomination: "500000",
+        myBuyRate: (1 / 26000).toFixed(8), // 1 USD = 26,000 VND → 1 VND = 1/26000 USD
+        mySellRate: (1 / 26000).toFixed(8)
+      };
     }
     
     const rate = exchangeRates.find((rate: any) => 
