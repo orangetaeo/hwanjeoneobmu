@@ -814,7 +814,9 @@ export default function TransactionForm() {
                         }
 
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                          const count = fixedBreakdown[denom.toString()] || 0;
+                          const defaultCount = fixedBreakdown[denom.toString()] || 0;
+                          const currentCount = formData.vndBreakdown?.[denom.toString()] !== undefined ? 
+                            formData.vndBreakdown[denom.toString()] : defaultCount;
                         
                           const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
                             asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
@@ -823,17 +825,45 @@ export default function TransactionForm() {
                           const denomComposition = vndCashAsset?.metadata?.denominations || {};
                           const availableCount = denomComposition[denom.toString()] || 0;
                           
-                          if (count > 0) {
+                          if (defaultCount > 0 || currentCount > 0) {
                             return (
-                              <div key={denom} className="bg-white p-2 rounded border border-orange-200">
-                                <div className="flex flex-col gap-1">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {formatNumber(denom)} VND × {count}장
+                              <div key={denom} className="bg-white p-3 rounded border border-orange-200">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex flex-col">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {formatNumber(denom)} VND
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      보유: {formatNumber(availableCount)}장
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-gray-500">
-                                    보유: {formatNumber(availableCount)}장
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max={availableCount}
+                                      value={currentCount}
+                                      onChange={(e) => {
+                                        const newCount = parseInt(e.target.value) || 0;
+                                        setFormData({
+                                          ...formData,
+                                          vndBreakdown: {
+                                            ...formData.vndBreakdown,
+                                            [denom.toString()]: newCount
+                                          }
+                                        });
+                                      }}
+                                      className="w-16 h-8 text-center text-sm"
+                                      data-testid={`input-vnd-${denom}`}
+                                    />
+                                    <span className="text-sm text-gray-600">장</span>
                                   </div>
                                 </div>
+                                {defaultCount !== currentCount && (
+                                  <div className="mt-2 text-xs text-blue-600">
+                                    기본: {defaultCount}장 → 수정: {currentCount}장
+                                  </div>
+                                )}
                               </div>
                             );
                           }
@@ -846,7 +876,14 @@ export default function TransactionForm() {
                       <div className="text-sm font-medium text-orange-700">
                         총 분배액: <span className="text-lg">
                           {(() => {
-                            // denominationData에서 직접 총액 계산 (접기/펴기와 무관)
+                            // 수정된 VND 분배가 있으면 그것을 사용, 없으면 기본 계산값 사용
+                            if (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) {
+                              return Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => 
+                                total + (parseInt(denom) * parseInt(count.toString())), 0
+                              ).toLocaleString();
+                            }
+                            
+                            // 기본 계산
                             const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
                               if (amount && parseFloat(amount) > 0) {
                                 const denomValue = getDenominationValue(formData.fromCurrency, denom);
@@ -855,7 +892,6 @@ export default function TransactionForm() {
                               return total;
                             }, 0);
 
-                            // denominationAmounts에서 직접 환전될 VND 금액 계산
                             const targetAmount = totalFromDenominations > 0 ? (() => {
                               const rate = formData.fromCurrency === "KRW" ? 
                                 getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
@@ -869,6 +905,18 @@ export default function TransactionForm() {
                           })()} VND
                         </span>
                       </div>
+                      
+                      {formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0 && (
+                        <div className="mt-2">
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, vndBreakdown: {} })}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          >
+                            기본값으로 되돌리기
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
