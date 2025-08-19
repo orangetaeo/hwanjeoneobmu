@@ -839,19 +839,23 @@ export default function TransactionForm() {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Input
-                                      type="number"
+                                      type="text"
                                       min="0"
                                       max={availableCount}
-                                      value={currentCount}
+                                      value={currentCount.toString()}
                                       onChange={(e) => {
-                                        const newCount = parseInt(e.target.value) || 0;
-                                        setFormData({
-                                          ...formData,
-                                          vndBreakdown: {
-                                            ...formData.vndBreakdown,
-                                            [denom.toString()]: newCount
-                                          }
-                                        });
+                                        const value = e.target.value;
+                                        // 숫자만 허용
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                          const newCount = value === '' ? 0 : parseInt(value);
+                                          setFormData({
+                                            ...formData,
+                                            vndBreakdown: {
+                                              ...formData.vndBreakdown,
+                                              [denom.toString()]: newCount
+                                            }
+                                          });
+                                        }
                                       }}
                                       className="w-16 h-8 text-center text-sm"
                                       data-testid={`input-vnd-${denom}`}
