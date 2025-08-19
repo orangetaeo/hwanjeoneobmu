@@ -1025,6 +1025,15 @@ export default function TransactionForm() {
                                               [denom.toString()]: newCount
                                             }
                                           });
+                                        } else {
+                                          // +0 버튼 클릭 시 입력 칸을 0으로 설정
+                                          setFormData({
+                                            ...formData,
+                                            vndBreakdown: {
+                                              ...formData.vndBreakdown,
+                                              [denom.toString()]: 0
+                                            }
+                                          });
                                         }
                                       }}
                                       className={`text-xs px-2 py-1 rounded transition-colors ${
