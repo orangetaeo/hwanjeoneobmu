@@ -813,7 +813,7 @@ export default function TransactionForm() {
                           );
                         }
 
-                        // 수정된 분배와 기본 분배의 차이 계산
+                        // 동적 추천 시스템: 현재 상황에서 남은 금액을 최적 분배
                         const calculateSuggestions = () => {
                           if (!formData.vndBreakdown || Object.keys(formData.vndBreakdown).length === 0) {
                             return {};
@@ -832,126 +832,42 @@ export default function TransactionForm() {
                             return total + (denomValue * denomCount);
                           }, 0);
                           
-                          const difference = targetTotal - currentTotal;
-                          console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "차이:", difference);
+                          const remainingAmount = targetTotal - currentTotal;
+                          console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "남은 금액:", remainingAmount);
                           
                           const suggestions = {};
                           
-                          // 현재 분배가 기본 분배와 완전히 일치하면 추천을 표시하지 않음
-                          const isExactlyDefault = [500000, 200000, 100000, 50000, 20000, 10000].every(denom => {
-                            const defaultCount = fixedBreakdown[denom.toString()] || 0;
-                            const currentCount = formData.vndBreakdown[denom.toString()] !== undefined ? 
-                              formData.vndBreakdown[denom.toString()] : defaultCount;
-                            return currentCount === defaultCount;
-                          });
-                          
-                          if (isExactlyDefault) {
-                            console.log("기본 분배와 완전히 일치, 추천 없음");
+                          // 목표 금액에 도달했으면 추천 없음
+                          if (remainingAmount <= 0) {
+                            console.log("목표 금액 도달, 추천 없음");
                             return suggestions;
                           }
                           
-                          // 1. 기본값보다 적게 설정된 권종에 대한 직접 추천 (정확히 기본값이 아닌 경우만)
-                          [500000, 200000, 100000, 50000, 20000, 10000].forEach(denom => {
-                            const defaultCount = fixedBreakdown[denom.toString()] || 0;
-                            const currentCount = formData.vndBreakdown[denom.toString()] !== undefined ? 
-                              formData.vndBreakdown[denom.toString()] : defaultCount;
+                          // VND 현금 보유 상황 확인
+                          const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                            asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                          ) : null;
+                          const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                          
+                          // 각 권종별로 남은 금액을 분배하는 방법들을 계산
+                          const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
+                          
+                          denominations.forEach(denom => {
+                            const currentCount = formData.vndBreakdown[denom.toString()] || 0;
+                            const availableCount = denomComposition[denom.toString()] || 0;
+                            const usableCount = availableCount - currentCount;
                             
-                            // 기본값보다 적으면 추천 (기본값에 도달하면 추천하지 않음)
-                            if (currentCount < defaultCount) {
-                              const countDifference = defaultCount - currentCount;
-                              
-                              // 보유 수량 확인
-                              const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                                asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                              ) : null;
-                              const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                              const availableCount = denomComposition[denom.toString()] || 0;
-                              const usableCount = availableCount - currentCount;
-                              const suggestedCount = Math.min(countDifference, usableCount);
+                            if (usableCount > 0 && remainingAmount >= denom) {
+                              // 이 권종으로 남은 금액을 얼마나 채울 수 있는지 계산
+                              const maxPossible = Math.floor(remainingAmount / denom);
+                              const suggestedCount = Math.min(maxPossible, usableCount);
                               
                               if (suggestedCount > 0) {
                                 suggestions[denom.toString()] = suggestedCount;
-                                console.log(`${denom} VND: 기본값 복원 +${suggestedCount}장 (기본 ${defaultCount}장, 현재 ${currentCount}장)`);
+                                console.log(`${denom} VND: ${remainingAmount} 중 ${suggestedCount}장으로 ${suggestedCount * denom} 분배 가능`);
                               }
                             }
                           });
-                          
-                          // 2. 부족한 금액을 다른 권종으로 채우는 추천 (기본값이 0인 권종들)
-                          if (difference > 0) {
-                            let remainingAmount = difference;
-                            
-                            // 200,000 VND는 정확히 5장만 (1,000,000 VND ÷ 200,000 = 5장)
-                            if (remainingAmount >= 200000 && remainingAmount >= 1000000) {
-                              const currentCount = formData.vndBreakdown["200000"] || 0;
-                              const exactNeeded = 5; // 항상 5장
-                              
-                              // 보유 수량 확인
-                              const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                                asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                              ) : null;
-                              const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                              const availableCount = denomComposition["200000"] || 0;
-                              const usableCount = availableCount - currentCount;
-                              
-                              const suggestedCount = Math.min(exactNeeded, usableCount);
-                              
-                              if (suggestedCount > 0) {
-                                const existingSuggestion = suggestions["200000"] || 0;
-                                suggestions["200000"] = existingSuggestion + suggestedCount;
-                                remainingAmount -= suggestedCount * 200000;
-                                console.log(`200000 VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
-                              }
-                            }
-                            
-                            // 100,000 VND는 정확히 12장 (500,000 VND 2장 = 1,000,000 VND, 이를 100,000으로 나누면 10장, 하지만 200,000 남은 분까지 고려하면 12장)
-                            if (remainingAmount >= 100000 && difference === 1200000) {
-                              const currentCount = formData.vndBreakdown["100000"] || 0;
-                              const exactNeeded = 12; // 정확히 12장
-                              
-                              // 보유 수량 확인
-                              const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                                asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                              ) : null;
-                              const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                              const availableCount = denomComposition["100000"] || 0;
-                              const usableCount = availableCount - currentCount;
-                              
-                              const suggestedCount = Math.min(exactNeeded, usableCount);
-                              
-                              if (suggestedCount > 0) {
-                                const existingSuggestion = suggestions["100000"] || 0;
-                                suggestions["100000"] = existingSuggestion + suggestedCount;
-                                remainingAmount -= suggestedCount * 100000;
-                                console.log(`100000 VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
-                              }
-                            }
-                            
-                            // 나머지 권종들
-                            [50000, 20000, 10000].forEach(denom => {
-                              if (remainingAmount >= denom) {
-                                const currentCount = formData.vndBreakdown[denom.toString()] || 0;
-                                const maxPossible = Math.floor(remainingAmount / denom);
-                                
-                                // 보유 수량 확인
-                                const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                                  asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                                ) : null;
-                                const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                                const availableCount = denomComposition[denom.toString()] || 0;
-                                const usableCount = availableCount - currentCount;
-                                
-                                const suggestedCount = Math.min(maxPossible, usableCount);
-                                
-                                if (suggestedCount > 0) {
-                                  // 기존 추천과 합치기
-                                  const existingSuggestion = suggestions[denom.toString()] || 0;
-                                  suggestions[denom.toString()] = existingSuggestion + suggestedCount;
-                                  remainingAmount -= suggestedCount * denom;
-                                  console.log(`${denom} VND: 부족금액 보충 +${suggestedCount}장, 남은 금액: ${remainingAmount}`);
-                                }
-                              }
-                            });
-                          }
                           
                           return suggestions;
                         };
