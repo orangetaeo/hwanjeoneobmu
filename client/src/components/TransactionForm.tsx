@@ -354,7 +354,7 @@ export default function TransactionForm() {
     console.log(`KRW 분배 계산 시작: ${totalAmount.toLocaleString()} KRW`);
 
     // KRW 현금 자산에서 권종별 보유 장수 조회
-    const krwCashAsset = assets?.find(asset => 
+    const krwCashAsset = assets?.find((asset: any) => 
       asset.name === "KRW 현금" && asset.currency === "KRW"
     );
     
@@ -1038,20 +1038,20 @@ export default function TransactionForm() {
 
                         // 동적 추천 시스템: 현재 상황에서 남은 금액을 최적 분배
                         const calculateSuggestions = () => {
-                          if (!formData.vndBreakdown || Object.keys(formData.vndBreakdown).length === 0) {
+                          if (!vndBreakdown || Object.keys(vndBreakdown).length === 0) {
                             return {};
                           }
                           
                           // 현재 총액과 목표 총액 계산
-                          const currentTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
+                          const currentTotal = Object.entries(vndBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
-                            const denomCount = parseInt(count.toString());
+                            const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
                             return total + (denomValue * denomCount);
                           }, 0);
                           
                           const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
-                            const denomCount = parseInt(count.toString());
+                            const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
                             return total + (denomValue * denomCount);
                           }, 0);
                           
@@ -1234,10 +1234,7 @@ export default function TransactionForm() {
                                           }
                                           
                                           console.log('최종 분배 저장:', updatedBreakdown);
-                                          setFormData({
-                                            ...formData,
-                                            vndBreakdown: updatedBreakdown
-                                          });
+                                          setVndBreakdown(updatedBreakdown);
                                         }
                                       }}
                                       data-testid={`input-vnd-${denom}`}
@@ -1250,21 +1247,15 @@ export default function TransactionForm() {
                                       onClick={() => {
                                         if (suggestedCount > 0) {
                                           const newCount = currentCount + suggestedCount;
-                                          setFormData({
-                                            ...formData,
-                                            vndBreakdown: {
-                                              ...formData.vndBreakdown,
-                                              [denom.toString()]: newCount
-                                            }
+                                          setVndBreakdown({
+                                            ...vndBreakdown,
+                                            [denom.toString()]: newCount
                                           });
                                         } else {
                                           // +0 버튼 클릭 시 입력 칸을 0으로 설정
-                                          setFormData({
-                                            ...formData,
-                                            vndBreakdown: {
-                                              ...formData.vndBreakdown,
-                                              [denom.toString()]: 0
-                                            }
+                                          setVndBreakdown({
+                                            ...vndBreakdown,
+                                            [denom.toString()]: 0
                                           });
                                         }
                                       }}
@@ -1292,9 +1283,9 @@ export default function TransactionForm() {
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
                             // 수정된 VND 분배가 있으면 그것을 사용, 없으면 기본 계산값 사용
-                            if (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) {
-                              return Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => 
-                                total + (parseInt(denom) * parseInt(count.toString())), 0
+                            if (vndBreakdown && Object.keys(vndBreakdown).length > 0) {
+                              return Object.entries(vndBreakdown).reduce((total, [denom, count]) => 
+                                total + (parseInt(denom) * (typeof count === 'number' ? count : parseInt(count.toString()))), 0
                               ).toLocaleString();
                             }
                             
@@ -1381,7 +1372,7 @@ export default function TransactionForm() {
                                   </div>
                                   {(() => {
                                     // KRW 현금 자산에서 해당 권종의 보유 장수 조회
-                                    const krwCashAsset = assets?.find?.(asset => 
+                                    const krwCashAsset = assets?.find?.((asset: any) => 
                                       asset.name === "KRW 현금" && asset.currency === "KRW"
                                     );
 
@@ -1412,7 +1403,7 @@ export default function TransactionForm() {
                                         const newCount = value === '' ? 0 : parseInt(value);
                                         
                                         // 보유 장수 제한 검증
-                                        const krwCashAsset = assets?.find(asset => 
+                                        const krwCashAsset = assets?.find((asset: any) => 
                                           asset.name === "KRW 현금" && asset.currency === "KRW"
                                         );
                                         const availableCount = krwCashAsset?.metadata?.denominations?.[denom] || 0;
