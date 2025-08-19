@@ -850,12 +850,13 @@ export default function TransactionForm() {
                             return suggestions;
                           }
                           
-                          // 1. 기본값보다 적게 설정된 권종에 대한 직접 추천
+                          // 1. 기본값보다 적게 설정된 권종에 대한 직접 추천 (정확히 기본값이 아닌 경우만)
                           [500000, 200000, 100000, 50000, 20000, 10000].forEach(denom => {
                             const defaultCount = fixedBreakdown[denom.toString()] || 0;
                             const currentCount = formData.vndBreakdown[denom.toString()] !== undefined ? 
                               formData.vndBreakdown[denom.toString()] : defaultCount;
                             
+                            // 기본값보다 적으면 추천 (기본값에 도달하면 추천하지 않음)
                             if (currentCount < defaultCount) {
                               const countDifference = defaultCount - currentCount;
                               
