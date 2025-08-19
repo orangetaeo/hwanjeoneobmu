@@ -913,15 +913,21 @@ export default function TransactionForm() {
                                       value={currentCount.toString()}
                                       onChange={(e) => {
                                         const value = e.target.value;
+                                        console.log(`입력 감지: ${denom} VND에 "${value}" 입력`);
+                                        
                                         // 숫자만 허용
                                         if (value === '' || /^\d+$/.test(value)) {
                                           const newCount = value === '' ? 0 : parseInt(value);
+                                          console.log(`유효한 입력: ${denom} VND = ${newCount}장`);
                                           
                                           // 새로운 분배로 업데이트
                                           const updatedBreakdown = {
                                             ...formData.vndBreakdown,
                                             [denom.toString()]: newCount
                                           };
+                                          
+                                          console.log('업데이트된 분배:', updatedBreakdown);
+                                          console.log('기본 분배:', fixedBreakdown);
                                           
                                           // 목표 초과 시 자동 조정
                                           const targetTotal = Object.entries(fixedBreakdown).reduce((total, [d, count]) => {
@@ -931,6 +937,8 @@ export default function TransactionForm() {
                                           const currentTotal = Object.entries(updatedBreakdown).reduce((total, [d, count]) => {
                                             return total + (parseInt(d) * parseInt(count.toString()));
                                           }, 0);
+                                          
+                                          console.log(`총액 비교: 현재 ${currentTotal}, 목표 ${targetTotal}`);
                                           
                                           if (currentTotal > targetTotal) {
                                             let excessAmount = currentTotal - targetTotal;
@@ -943,6 +951,7 @@ export default function TransactionForm() {
                                               if (d === denom || excessAmount <= 0) continue; // 현재 입력 권종은 제외
                                               
                                               const currentCount = updatedBreakdown[d.toString()] || 0;
+                                              console.log(`${d} VND 확인: 현재 ${currentCount}장`);
                                               
                                               if (currentCount > 0) { // 0보다 큰 경우 감소 가능
                                                 const maxReduction = Math.floor(excessAmount / d);
