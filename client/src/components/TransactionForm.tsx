@@ -561,7 +561,18 @@ export default function TransactionForm() {
                 <Label>받는 통화 (From)</Label>
                 <Select 
                   value={formData.fromCurrency} 
-                  onValueChange={(value) => setFormData({ ...formData, fromCurrency: value, fromDenominations: [], denominationAmounts: {} })}
+                  onValueChange={(value) => {
+                    // KRW -> KRW 환전 방지
+                    if (value === "KRW" && formData.toCurrency === "KRW") {
+                      toast({
+                        title: "환전 불가",
+                        description: "같은 통화 간의 환전은 불가능합니다. 다른 통화를 선택해주세요.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setFormData({ ...formData, fromCurrency: value, fromDenominations: [], denominationAmounts: {} });
+                  }}
                 >
                   <SelectTrigger data-testid="select-from-currency">
                     <SelectValue placeholder="통화 선택" />
@@ -577,7 +588,18 @@ export default function TransactionForm() {
                 <Label>주는 통화 (To)</Label>
                 <Select 
                   value={formData.toCurrency} 
-                  onValueChange={(value) => setFormData({ ...formData, toCurrency: value, toDenomination: "" })}
+                  onValueChange={(value) => {
+                    // KRW -> KRW 환전 방지
+                    if (formData.fromCurrency === "KRW" && value === "KRW") {
+                      toast({
+                        title: "환전 불가",
+                        description: "같은 통화 간의 환전은 불가능합니다. 다른 통화를 선택해주세요.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setFormData({ ...formData, toCurrency: value, toDenomination: "" });
+                  }}
                 >
                   <SelectTrigger data-testid="select-to-currency">
                     <SelectValue placeholder="통화 선택" />
