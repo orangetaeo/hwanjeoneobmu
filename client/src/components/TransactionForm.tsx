@@ -837,6 +837,12 @@ export default function TransactionForm() {
                           
                           const suggestions = {};
                           
+                          // 총액이 이미 맞춰졌으면 추천을 표시하지 않음
+                          if (difference === 0) {
+                            console.log("총액이 이미 맞춰짐, 추천 없음");
+                            return suggestions;
+                          }
+                          
                           // 1. 기본값보다 적게 설정된 권종에 대한 직접 추천
                           [500000, 200000, 100000, 50000, 20000, 10000].forEach(denom => {
                             const defaultCount = fixedBreakdown[denom.toString()] || 0;
