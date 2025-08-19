@@ -930,10 +930,32 @@ export default function TransactionForm() {
                 </div>
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg mt-2">
                   <div className="text-xl font-bold text-blue-700">
-                    {formData.toCurrency === "VND" ? 
-                      (Math.floor(parseFloat(formData.toAmount) / 10000) * 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
-                      formatNumber(formData.toAmount, formData.toCurrency)
-                    } {formData.toCurrency}
+                    {(() => {
+                      if (formData.transactionType === "cash_exchange" && formData.toCurrency === "VND") {
+                        // 권종별 총액에서 계산된 VND 금액 사용 (접기/펴기와 무관)
+                        const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                          if (amount && parseFloat(amount) > 0) {
+                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                            return total + (parseFloat(amount) * denomValue);
+                          }
+                          return total;
+                        }, 0);
+
+                        if (totalFromDenominations > 0) {
+                          const rate = formData.fromCurrency === "KRW" ? 
+                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                          const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                          const flooredAmount = formatVNDWithFloor(calculatedAmount);
+                          return (Math.floor(flooredAmount / 10000) * 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+                        }
+                      }
+                      
+                      // 기본 동작
+                      return formData.toCurrency === "VND" ? 
+                        (Math.floor(parseFloat(formData.toAmount) / 10000) * 10000).toLocaleString('ko-KR', { maximumFractionDigits: 0 }) :
+                        formatNumber(formData.toAmount, formData.toCurrency);
+                    })()} {formData.toCurrency}
                   </div>
                   <div className="text-sm text-blue-600 mt-1">
                     환전 지급 금액
