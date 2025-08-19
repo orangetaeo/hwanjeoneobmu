@@ -1627,7 +1627,12 @@ export default function TransactionForm() {
                           const denomValue = parseInt(denom);
                           const subtotal = denomValue * count;
                           return (
-                            <div key={denom} className="bg-white p-3 rounded border border-green-200">
+                            <div key={denom} className="bg-white p-3 rounded border border-green-200 relative">
+                              {/* 매도시세 표시 */}
+                              <div className="absolute top-2 right-2 bg-red-100 text-red-700 px-2 py-1 rounded text-xs">
+                                매도시세: 26,000
+                              </div>
+                              
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex flex-col min-w-0 flex-1">
                                   <div className="text-sm sm:text-base font-medium text-gray-900">
