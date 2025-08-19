@@ -272,11 +272,19 @@ export default function TransactionForm() {
       searchDenomination = "5000_1000";
     }
     
-    return exchangeRates.find((rate: any) => 
+    // VND의 경우 모든 권종에 대해 50만동 환율 사용
+    if (fromCurrency === "VND") {
+      searchDenomination = "500000";
+    }
+    
+    const rate = exchangeRates.find((rate: any) => 
       rate.fromCurrency === fromCurrency && 
       rate.toCurrency === toCurrency && 
       rate.denomination === searchDenomination
     );
+    
+    console.log(`환율 검색: ${fromCurrency}→${toCurrency}, 원본권종: ${denomination}, 검색권종: ${searchDenomination}, 결과:`, rate);
+    return rate;
   };
 
   // 환율 포맷팅 함수
