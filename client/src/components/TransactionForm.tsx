@@ -1278,42 +1278,77 @@ export default function TransactionForm() {
                       </div>
                       
                       {/* VND 권종별 분배 상세 */}
-                      {formData.toCurrency === "VND" && formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-200/50">
-                          <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
-                          <div className="space-y-1">
-                            {Object.entries(formData.vndBreakdown)
-                              .filter(([denom, count]) => parseInt(count.toString()) > 0)
-                              .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                              .map(([denom, count]) => {
-                                const denomValue = parseInt(denom);
-                                const denomCount = parseInt(count.toString());
-                                const subtotal = denomValue * denomCount;
-                                return (
-                                  <div key={denom} className="flex items-center justify-between text-xs">
-                                    <span className="text-gray-600">
-                                      {formatNumber(denomValue.toString())} VND × {denomCount}장
-                                    </span>
-                                    <span className="text-gray-700 font-medium">
-                                      {formatNumber(subtotal.toString())} VND
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                          <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center justify-between text-xs">
-                            <span className="text-gray-600 font-medium">총 분배 금액:</span>
-                            <span className="text-teal-700 font-bold">
-                              {formatNumber(
-                                Object.entries(formData.vndBreakdown)
-                                  .reduce((total, [denom, count]) => {
-                                    return total + (parseInt(denom) * parseInt(count.toString()));
-                                  }, 0).toString()
-                              )} VND
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      {formData.toCurrency === "VND" && (() => {
+                        // 기본 분배 계산
+                        const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                          if (amount && parseFloat(amount) > 0) {
+                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                            return total + (parseFloat(amount) * denomValue);
+                          }
+                          return total;
+                        }, 0);
+
+                        let targetAmount = 0;
+                        if (totalFromDenominations > 0) {
+                          const rate = formData.fromCurrency === "KRW" ? 
+                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                          const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                          targetAmount = formatVNDWithFloor(calculatedAmount);
+                        } else {
+                          targetAmount = parseFloat(formData.toAmount) || 0;
+                        }
+                        
+                        const fixedBreakdown = calculateVNDBreakdown(targetAmount);
+                        
+                        // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
+                        const actualBreakdown = (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) 
+                          ? formData.vndBreakdown 
+                          : fixedBreakdown;
+
+                        // VND 분배가 있는 경우에만 표시
+                        const hasBreakdown = Object.entries(actualBreakdown).some(([denom, count]) => parseInt(count.toString()) > 0);
+                        
+                        if (hasBreakdown) {
+                          return (
+                            <div className="mt-2 pt-2 border-t border-gray-200/50">
+                              <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
+                              <div className="space-y-1">
+                                {Object.entries(actualBreakdown)
+                                  .filter(([denom, count]) => parseInt(count.toString()) > 0)
+                                  .sort(([a], [b]) => parseInt(b) - parseInt(a))
+                                  .map(([denom, count]) => {
+                                    const denomValue = parseInt(denom);
+                                    const denomCount = parseInt(count.toString());
+                                    const subtotal = denomValue * denomCount;
+                                    return (
+                                      <div key={denom} className="flex items-center justify-between text-xs">
+                                        <span className="text-gray-600">
+                                          {formatNumber(denomValue.toString())} VND × {denomCount}장
+                                        </span>
+                                        <span className="text-gray-700 font-medium">
+                                          {formatNumber(subtotal.toString())} VND
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center justify-between text-xs">
+                                <span className="text-gray-600 font-medium">총 분배 금액:</span>
+                                <span className="text-teal-700 font-bold">
+                                  {formatNumber(
+                                    Object.entries(actualBreakdown)
+                                      .reduce((total, [denom, count]) => {
+                                        return total + (parseInt(denom) * parseInt(count.toString()));
+                                      }, 0).toString()
+                                  )} VND
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     
                     <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
