@@ -345,7 +345,7 @@ export default function TransactionForm() {
     }, 0);
   };
 
-  // KRW 권종별 분배 계산 (고액권부터 우선 분배)
+  // KRW 권종별 분배 계산 (고액권부터 우선 분배, 보유 장수 고려)
   const calculateKRWBreakdown = (totalAmount: number) => {
     const krwDenominations = [50000, 10000, 5000, 1000];
     const breakdown: { [key: string]: number } = {};
@@ -353,13 +353,25 @@ export default function TransactionForm() {
 
     console.log(`KRW 분배 계산 시작: ${totalAmount.toLocaleString()} KRW`);
 
+    // KRW 현금 자산에서 권종별 보유 장수 조회
+    const krwCashAsset = assets?.find(asset => 
+      asset.name === "KRW 현금" && asset.currency === "KRW"
+    );
+
     for (const denom of krwDenominations) {
       if (remaining >= denom) {
-        const count = Math.floor(remaining / denom);
-        if (count > 0) {
-          breakdown[denom.toString()] = count;
-          remaining = remaining % denom;
-          console.log(`${denom.toLocaleString()} KRW: ${count}장, 남은 금액: ${remaining.toLocaleString()}`);
+        const idealCount = Math.floor(remaining / denom);
+        
+        // 보유 장수 제한 적용
+        const availableCount = krwCashAsset?.denominations?.[denom.toString()] || 0;
+        const actualCount = Math.min(idealCount, availableCount);
+        
+        if (actualCount > 0) {
+          breakdown[denom.toString()] = actualCount;
+          remaining -= actualCount * denom;
+          console.log(`${denom.toLocaleString()} KRW: 이상값 ${idealCount}장, 보유량 ${availableCount}장, 실제 ${actualCount}장, 남은 금액: ${remaining.toLocaleString()}`);
+        } else if (idealCount > 0) {
+          console.log(`${denom.toLocaleString()} KRW: 필요 ${idealCount}장, 보유량 ${availableCount}장 부족으로 건너뜀`);
         }
       }
     }
@@ -1337,6 +1349,22 @@ export default function TransactionForm() {
                                   <div className="text-xs sm:text-sm text-gray-500">
                                     {count}장 × {formatNumber(denomValue)} = {formatNumber(subtotal)} KRW
                                   </div>
+                                  {(() => {
+                                    // KRW 현금 자산에서 해당 권종의 보유 장수 조회
+                                    const krwCashAsset = assets?.find(asset => 
+                                      asset.name === "KRW 현금" && asset.currency === "KRW"
+                                    );
+                                    if (krwCashAsset?.denominations) {
+                                      const availableCount = krwCashAsset.denominations[denom] || 0;
+                                      const remainingCount = Math.max(0, availableCount - count);
+                                      return (
+                                        <div className="text-xs text-blue-600 mt-1">
+                                          보유: {availableCount}장 - 사용량: {count}장 = 남은량: {remainingCount}장
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   <Input
@@ -1347,7 +1375,19 @@ export default function TransactionForm() {
                                       const value = e.target.value;
                                       if (value === '' || /^\d+$/.test(value)) {
                                         const newCount = value === '' ? 0 : parseInt(value);
-                                        handleKRWBreakdownChange(denom, newCount);
+                                        
+                                        // 보유 장수 제한 검증
+                                        const krwCashAsset = assets?.find(asset => 
+                                          asset.name === "KRW 현금" && asset.currency === "KRW"
+                                        );
+                                        const availableCount = krwCashAsset?.denominations?.[denom] || 0;
+                                        
+                                        if (newCount > availableCount) {
+                                          console.log(`KRW ${denom} 권종: 입력값 ${newCount}장이 보유량 ${availableCount}장을 초과하여 ${availableCount}장으로 제한됨`);
+                                          handleKRWBreakdownChange(denom, availableCount);
+                                        } else {
+                                          handleKRWBreakdownChange(denom, newCount);
+                                        }
                                       }
                                     }}
                                     data-testid={`input-krw-${denom}`}
@@ -1368,6 +1408,35 @@ export default function TransactionForm() {
                           ).toLocaleString()} KRW
                         </span>
                       </div>
+                      
+                      {(() => {
+                        const actualKRWTotal = Object.entries(krwBreakdown).reduce((total, [denom, count]) => 
+                          total + (parseInt(denom) * count), 0
+                        );
+                        const expectedKRWTotal = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
+                        
+                        if (actualKRWTotal !== expectedKRWTotal && expectedKRWTotal > 0) {
+                          const difference = expectedKRWTotal - actualKRWTotal;
+                          return (
+                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                              <div className="text-xs text-red-600">
+                                ⚠️ 분배액과 환전액이 일치하지 않습니다
+                              </div>
+                              <div className="text-xs text-red-700 mt-1">
+                                환전 예상 금액: {expectedKRWTotal.toLocaleString()} KRW<br/>
+                                실제 분배 금액: {actualKRWTotal.toLocaleString()} KRW<br/>
+                                차이: {Math.abs(difference).toLocaleString()} KRW {difference > 0 ? '부족' : '초과'}
+                              </div>
+                              {difference > 0 && (
+                                <div className="text-xs text-red-600 mt-1">
+                                  💡 KRW 현금 보유량을 확인하세요
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 </div>
