@@ -575,8 +575,8 @@ export default function TransactionForm() {
             </div>
 
             {/* 권종 선택 - 모바일 최적화 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
                 <Label>받는 권종</Label>
                 {formData.transactionType === "bank_transfer" || formData.transactionType === "foreign_to_account" ? (
                   <div className="p-4 bg-gray-50 rounded-lg">
