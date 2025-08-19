@@ -787,8 +787,9 @@ export default function TransactionForm() {
                 </div>
                 <div className="space-y-2 sm:space-y-3">
                   {(() => {
-                    // VND 분배는 vndBaseAmount 기준으로 계산 (권종 접기와 완전히 독립)
-                    const fixedBreakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(vndBaseAmount);
+                    // VND 분배는 toAmount 기준으로 계산하여 정확성 보장
+                    const targetAmount = parseFloat(formData.toAmount) || 0;
+                    const fixedBreakdown = calculateVNDBreakdown(targetAmount);
                     
                     return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                       const count = fixedBreakdown[denom.toString()] || 0;
@@ -850,16 +851,18 @@ export default function TransactionForm() {
                     <span className="text-xs font-medium text-orange-700">분배 총액:</span>
                     <span className="text-sm font-bold text-orange-800">
                       {(() => {
-                        const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(vndBaseAmount);
+                        const targetAmount = parseFloat(formData.toAmount) || 0;
+                        const breakdown = calculateVNDBreakdown(targetAmount);
                         return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
                       })()} VND
                     </span>
                   </div>
 
                   {(() => {
-                    const breakdown = Object.keys(vndBreakdown).length > 0 ? vndBreakdown : calculateVNDBreakdown(vndBaseAmount);
+                    const targetAmount = parseFloat(formData.toAmount) || 0;
+                    const breakdown = calculateVNDBreakdown(targetAmount);
                     const breakdownTotal = Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0);
-                    const difference = Math.abs(breakdownTotal - vndBaseAmount);
+                    const difference = Math.abs(breakdownTotal - targetAmount);
                     
                     return difference > 0 ? (
                       <div className="mt-1 text-xs text-red-600 font-medium">
