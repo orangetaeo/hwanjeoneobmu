@@ -54,6 +54,7 @@ Preferred communication style: Simple, everyday language.
 - **VND Floor Profit System**: Automatic calculation and storage of profit from VND amount floor operations, with visual indicators showing difference amounts and separate profit tracking in transaction metadata.
 - **Enhanced Denomination Input System**: Click-to-activate card interface with data persistence, integer-only input validation with automatic comma formatting, collapsed card data preview showing quantity and total amount, and one-click data reset functionality via checkbox interaction.
 - **Cash Exchange Transaction Display System**: Comprehensive transaction labeling system with proper Korean terminology distinguishing between receipt ("수령") and payment ("지급") operations. KRW cash increases display as "KRW 현금 환전 수령" and VND cash increases display as "VND 현금 환전 지급", with consistent formatting across transaction history lists and detail modals including timestamp information.
+- **VND Denomination Distribution Management**: Complete editable VND denomination breakdown system allowing staff to modify distribution quantities per customer requirements, with real-time total amount updates, visual remaining balance calculations showing "보유: X장 -사용량 = 남은량" format, leading zero prevention in input fields, and reset to default functionality for efficient transaction processing.
 
 ## UI/UX Decisions
 - **Dashboard Layout**: 3-column responsive design with distinct sections for KRW, foreign currency, and crypto assets.
