@@ -806,13 +806,56 @@ export class DatabaseStorage implements IStorage {
       });
     }
     
-    // 도착 통화 자산 업데이트
+    // 도착 통화 자산 업데이트 (고객에게 준 돈)
     const toAsset = await this.getAssetByName(userId, transaction.toAssetName!, 'cash');
     if (toAsset) {
       const currentBalance = parseFloat(toAsset.balance || "0");
+      const newBalance = currentBalance - toAmount;  // 고객에게 준 돈이므로 차감
       
+      // KRW 현금의 경우 권종별 차감 처리
+      if (transaction.toAssetName?.includes('KRW')) {
+        const currentMetadata = toAsset.metadata as any || {};
+        const currentDenominations = currentMetadata.denominations || {};
+        const updatedDenominations = { ...currentDenominations };
+        
+        // KRW 권종별 차감 로직 (큰 권종부터 우선 차감)
+        let remainingAmount = toAmount;
+        const krwDenominations = [50000, 10000, 5000, 1000];
+        
+        console.log(`KRW 권종별 차감 시작: ${toAmount} KRW`);
+        console.log('현재 보유 권종:', currentDenominations);
+        
+        for (const denom of krwDenominations) {
+          const denomStr = denom.toString();
+          const availableQty = currentDenominations[denomStr] || 0;
+          const neededQty = Math.floor(remainingAmount / denom);
+          const useQty = Math.min(availableQty, neededQty);
+          
+          if (useQty > 0) {
+            updatedDenominations[denomStr] = availableQty - useQty;
+            remainingAmount -= useQty * denom;
+            console.log(`${denom}원권: ${availableQty}장 → ${updatedDenominations[denomStr]}장 (${useQty}장 차감)`);
+          }
+        }
+        
+        console.log('준 자산 업데이트 (고객에게 준 돈):', {
+          assetName: transaction.toAssetName,
+          currentBalance,
+          newBalance,
+          deductedAmount: toAmount,
+          denominationChanges: updatedDenominations
+        });
+        
+        await this.updateAsset(userId, toAsset.id, {
+          balance: newBalance.toString(),
+          metadata: {
+            ...currentMetadata,
+            denominations: updatedDenominations
+          }
+        });
+      }
       // 도착 통화가 VND이고 VND 권종별 분배가 있는 경우 - VND 차감 처리
-      if (transaction.toAssetName?.includes('VND') && (metadata.vndBreakdown || Object.keys(denominationAmounts).length > 0)) {
+      else if (transaction.toAssetName?.includes('VND') && (metadata.vndBreakdown || Object.keys(denominationAmounts).length > 0)) {
         const currentMetadata = toAsset.metadata as any || {};
         const currentDenominations = currentMetadata.denominations || {};
         const updatedDenominations = { ...currentDenominations };
