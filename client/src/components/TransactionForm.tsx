@@ -503,34 +503,38 @@ export default function TransactionForm() {
 
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <Calculator className="w-6 h-6 text-green-600" />
-        <h2 className="text-2xl font-bold">새거래</h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetchAssets()}
-          disabled={isLoadingAssets}
-          className="ml-auto mr-2"
-        >
-          <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingAssets ? 'animate-spin' : ''}`} />
-          자산 새로고침
-        </Button>
-        <Badge variant="outline">
-          고객 대면 거래 시스템
-        </Badge>
+      {/* 헤더 - 모바일 최적화 */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+          <h2 className="text-xl sm:text-2xl font-bold">새거래</h2>
+        </div>
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchAssets()}
+            disabled={isLoadingAssets}
+            className="flex-1 sm:flex-initial"
+          >
+            <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${isLoadingAssets ? 'animate-spin' : ''}`} />
+            <span className="text-xs sm:text-sm">자산 새로고침</span>
+          </Button>
+          <Badge variant="outline" className="text-xs sm:text-sm px-2 py-1">
+            고객 대면 거래
+          </Badge>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="w-5 h-5" />
+      <Card className="mx-2 sm:mx-0">
+        <CardHeader className="pb-4 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <ArrowRightLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             거래 정보 입력
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="px-3 sm:px-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* 거래 유형 선택 */}
             <div>
               <Label>거래 유형</Label>
@@ -635,11 +639,11 @@ export default function TransactionForm() {
                           }}
                           data-testid={`card-denom-${denom.value}`}
                         >
-                          {/* 상단: 권종명, 매도시세 */}
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-2">
+                          {/* 상단: 권종명, 매도시세 - 모바일 최적화 */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                            <div className="flex items-center space-x-2 flex-1">
                               <div 
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer ${(isSelected || hasData) ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer flex-shrink-0 ${(isSelected || hasData) ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   // 접힌 상태에서 체크박스 클릭 시 데이터 초기화
@@ -661,19 +665,19 @@ export default function TransactionForm() {
                                   </svg>
                                 )}
                               </div>
-                              <div className="flex-1">
-                                <div className="text-base font-semibold text-gray-800">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm sm:text-base font-semibold text-gray-800 truncate">
                                   {denom.label}
                                   {/* 접힌 상태에서 권종명 옆에 수량 표시 */}
                                   {!isSelected && hasData && (
-                                    <span className="ml-2 text-sm font-medium text-gray-600">
+                                    <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium text-gray-600">
                                       ({parseInt(formData.denominationAmounts[denom.value]).toLocaleString()}장)
                                     </span>
                                   )}
                                 </div>
                                 {/* 접힌 상태에서 권액 표시 */}
                                 {!isSelected && hasData && (
-                                  <div className="text-sm text-gray-600 mt-1">
+                                  <div className="text-xs sm:text-sm text-gray-600 mt-1">
                                     <span className="font-bold text-blue-600">
                                       {formatNumber(
                                         parseFloat(formData.denominationAmounts[denom.value]) * 
@@ -685,11 +689,11 @@ export default function TransactionForm() {
                               </div>
                             </div>
                             {useRate > 0 && (
-                              <div className="px-2 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[80px]">
+                              <div className="px-2 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[70px] sm:min-w-[80px] flex-shrink-0">
                                 <div className="text-xs text-red-600 font-medium">
                                   매매 시세
                                 </div>
-                                <div className="text-sm font-bold text-red-700">
+                                <div className="text-xs sm:text-sm font-bold text-red-700">
                                   {useRate.toFixed(2)}
                                 </div>
                               </div>
@@ -908,10 +912,10 @@ export default function TransactionForm() {
                           // 모든 권종을 기본으로 표기
                           if (true) {
                             return (
-                              <div key={denom} className="bg-white p-3 rounded border border-orange-200">
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="flex flex-col">
-                                    <div className="text-sm font-medium text-gray-900">
+                              <div key={denom} className="bg-white p-2 sm:p-3 rounded border border-orange-200">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                                       {formatNumber(denom)} VND
                                     </div>
                                     <div className="text-xs text-gray-500">
@@ -923,12 +927,13 @@ export default function TransactionForm() {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                     <Input
                                       type="text"
                                       min="0"
                                       max={availableCount}
                                       value={currentCount.toString()}
+                                      className="w-12 sm:w-16 h-6 sm:h-8 text-xs sm:text-sm text-center"
                                       onChange={(e) => {
                                         const value = e.target.value;
                                         console.log(`입력 감지: ${denom} VND에 "${value}" 입력`);
@@ -1030,12 +1035,13 @@ export default function TransactionForm() {
                                           });
                                         }
                                       }}
-                                      className="w-16 h-8 text-center text-sm"
                                       data-testid={`input-vnd-${denom}`}
                                     />
-                                    <span className="text-sm text-gray-600">장</span>
+                                    <span className="text-xs sm:text-sm text-gray-600">장</span>
                                     <button
                                       type="button"
+                                      className="px-1 sm:px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      disabled={suggestedCount === 0}
                                       onClick={() => {
                                         if (suggestedCount > 0) {
                                           const newCount = currentCount + suggestedCount;
@@ -1082,8 +1088,8 @@ export default function TransactionForm() {
                     </div>
                     
                     <div className="mt-3 pt-2 border-t border-orange-200">
-                      <div className="text-sm font-medium text-orange-700">
-                        총 분배액: <span className="text-lg">
+                      <div className="text-xs sm:text-sm font-medium text-orange-700">
+                        총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
                             // 수정된 VND 분배가 있으면 그것을 사용, 없으면 기본 계산값 사용
                             if (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) {
@@ -1510,7 +1516,7 @@ export default function TransactionForm() {
 
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full h-10 sm:h-12 text-sm sm:text-base font-medium" 
               disabled={(() => {
                 // 기존 비활성화 조건
                 if (createTransactionMutation.isPending) return true;
