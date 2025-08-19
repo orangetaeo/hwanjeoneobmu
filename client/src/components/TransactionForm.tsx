@@ -1016,22 +1016,23 @@ export default function TransactionForm() {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const newCount = currentCount + suggestedCount;
-                                        setFormData({
-                                          ...formData,
-                                          vndBreakdown: {
-                                            ...formData.vndBreakdown,
-                                            [denom.toString()]: newCount
-                                          }
-                                        });
+                                        if (suggestedCount > 0) {
+                                          const newCount = currentCount + suggestedCount;
+                                          setFormData({
+                                            ...formData,
+                                            vndBreakdown: {
+                                              ...formData.vndBreakdown,
+                                              [denom.toString()]: newCount
+                                            }
+                                          });
+                                        }
                                       }}
-                                      className={`text-xs px-2 py-1 rounded ${
+                                      className={`text-xs px-2 py-1 rounded transition-colors ${
                                         suggestedCount > 0 
-                                          ? "bg-green-100 text-green-700 hover:bg-green-200" 
-                                          : "bg-gray-100 text-gray-500 cursor-default"
+                                          ? "bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer" 
+                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
                                       }`}
-                                      title={suggestedCount > 0 ? "추천값 적용" : "추천 없음"}
-                                      disabled={suggestedCount === 0}
+                                      title={suggestedCount > 0 ? "추천값 적용" : "추천 없음 (클릭 가능)"}
                                     >
                                       +{suggestedCount}
                                     </button>
