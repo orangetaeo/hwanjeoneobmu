@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote, TrendingUp } from "lucide-react";
+import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote, TrendingUp, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Asset {
@@ -1299,10 +1299,105 @@ export default function TransactionForm() {
 
 
 
+            {/* 금액 불일치 경고 */}
+            {(() => {
+              // VND 권종 분배가 있는 경우에만 검증
+              if (formData.toCurrency === "VND" && formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) {
+                // 실제 분배 총액 계산
+                const actualTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
+                  const denomValue = parseInt(denom);
+                  const denomCount = parseInt(count.toString());
+                  return total + (denomValue * denomCount);
+                }, 0);
+
+                // 환전 예상 금액 계산
+                const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                  if (amount && parseFloat(amount) > 0) {
+                    const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                    return total + (parseFloat(amount) * denomValue);
+                  }
+                  return total;
+                }, 0);
+
+                let expectedTotal = 0;
+                if (totalFromDenominations > 0) {
+                  const rate = formData.fromCurrency === "KRW" ? 
+                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                  const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                  expectedTotal = formatVNDWithFloor(calculatedAmount);
+                } else {
+                  expectedTotal = parseFloat(formData.toAmount) || 0;
+                }
+
+                const amountMismatch = Math.abs(actualTotal - expectedTotal) > 0;
+
+                if (amountMismatch) {
+                  return (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-red-800 mb-2">
+                        <AlertCircle className="w-5 h-5" />
+                        <span className="font-semibold">금액 불일치 오류</span>
+                      </div>
+                      <div className="text-sm text-red-700 space-y-1">
+                        <div>• 환전 예상 금액: {formatNumber(expectedTotal.toString())} VND</div>
+                        <div>• 실제 분배 금액: {formatNumber(actualTotal.toString())} VND</div>
+                        <div>• 차이: {formatNumber(Math.abs(actualTotal - expectedTotal).toString())} VND</div>
+                      </div>
+                      <div className="text-xs text-red-600 mt-2">
+                        권종 분배를 조정하여 금액을 맞춘 후 거래를 진행하세요.
+                      </div>
+                    </div>
+                  );
+                }
+              }
+              return null;
+            })()}
+
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={createTransactionMutation.isPending}
+              disabled={(() => {
+                // 기존 비활성화 조건
+                if (createTransactionMutation.isPending) return true;
+
+                // VND 권종 분배 금액 검증
+                if (formData.toCurrency === "VND" && formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) {
+                  // 실제 분배 총액 계산
+                  const actualTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
+                    const denomValue = parseInt(denom);
+                    const denomCount = parseInt(count.toString());
+                    return total + (denomValue * denomCount);
+                  }, 0);
+
+                  // 환전 예상 금액 계산
+                  const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      return total + (parseFloat(amount) * denomValue);
+                    }
+                    return total;
+                  }, 0);
+
+                  let expectedTotal = 0;
+                  if (totalFromDenominations > 0) {
+                    const rate = formData.fromCurrency === "KRW" ? 
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                    const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                    expectedTotal = formatVNDWithFloor(calculatedAmount);
+                  } else {
+                    expectedTotal = parseFloat(formData.toAmount) || 0;
+                  }
+
+                  // 금액이 일치하지 않으면 비활성화
+                  if (Math.abs(actualTotal - expectedTotal) > 0) {
+                    return true;
+                  }
+                }
+
+                return false;
+              })()}
               data-testid="button-submit-transaction"
             >
               {createTransactionMutation.isPending ? "처리 중..." : "거래 확정"}
