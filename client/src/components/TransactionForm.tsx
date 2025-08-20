@@ -952,16 +952,15 @@ export default function TransactionForm() {
                 <Select 
                   value={formData.fromCurrency} 
                   onValueChange={(value) => {
-                    // 동일 통화 간 환전 방지
-                    if (value === formData.toCurrency && formData.toCurrency) {
-                      toast({
-                        title: "환전 불가",
-                        description: "같은 통화 간의 환전은 불가능합니다. 다른 통화를 선택해주세요.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    setFormData({ ...formData, fromCurrency: value, fromDenominations: [], denominationAmounts: {} });
+                    // 받는 통화가 변경되었을 때 주는 통화가 동일하면 초기화
+                    const newToCurrency = value === formData.toCurrency ? "" : formData.toCurrency;
+                    setFormData({ 
+                      ...formData, 
+                      fromCurrency: value, 
+                      toCurrency: newToCurrency,
+                      fromDenominations: [], 
+                      denominationAmounts: {} 
+                    });
                   }}
                 >
                   <SelectTrigger data-testid="select-from-currency">
@@ -979,15 +978,6 @@ export default function TransactionForm() {
                 <Select 
                   value={formData.toCurrency} 
                   onValueChange={(value) => {
-                    // 동일 통화 간 환전 방지
-                    if (formData.fromCurrency === value && formData.fromCurrency) {
-                      toast({
-                        title: "환전 불가",
-                        description: "같은 통화 간의 환전은 불가능합니다. 다른 통화를 선택해주세요.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
                     setFormData({ ...formData, toCurrency: value, toDenomination: "" });
                   }}
                 >
@@ -995,9 +985,14 @@ export default function TransactionForm() {
                     <SelectValue placeholder="통화 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="VND">VND (베트남 동)</SelectItem>
-                    <SelectItem value="KRW">KRW (한국 원)</SelectItem>
-                    <SelectItem value="USD">USD (미국 달러)</SelectItem>
+                    {/* 받는 통화와 동일한 통화 제외 */}
+                    {["VND", "KRW", "USD"].filter(currency => currency !== formData.fromCurrency).map(currency => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency === "VND" ? "VND (베트남 동)" : 
+                         currency === "KRW" ? "KRW (한국 원)" : 
+                         "USD (미국 달러)"}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
