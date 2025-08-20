@@ -60,12 +60,12 @@ export function formatNumberInput(value: string, currency: string = 'VND'): stri
   return value;
 }
 
-// VND 천 단위 내림 함수 (환전상 지급 규칙)
+// VND 천 단위 반올림 함수 (환전상 지급 규칙)
 export function floorVNDToThousand(amount: number): number {
-  return Math.floor(amount / 1000) * 1000;
+  return Math.round(amount / 1000) * 1000;
 }
 
-// VND 내림 처리 및 차이 계산용 함수
+// VND 반올림 처리 및 차이 계산용 함수
 export function formatVNDWithFloor(originalAmount: number): number {
   return floorVNDToThousand(originalAmount);
 }

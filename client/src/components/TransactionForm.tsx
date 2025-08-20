@@ -784,10 +784,10 @@ export default function TransactionForm() {
     createTransactionMutation.mutate(transactionData);
   };
 
-  // VND 천 단위 무조건 내림 함수 (환전상 지급 규칙)
+  // VND 천 단위 반올림 함수 (환전상 지급 규칙)
   const formatVNDWithFloor = (amount: number) => {
-    // 10,000원 단위에서 무조건 내림 처리 (천 단위 3자리 버림)
-    return Math.floor(amount / 10000) * 10000;
+    // 10,000원 단위에서 반올림 처리 (천 단위 3자리 반올림)
+    return Math.round(amount / 10000) * 10000;
   };
 
   // 숫자 포맷팅 함수 (통화별 처리)
