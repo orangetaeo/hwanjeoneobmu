@@ -201,6 +201,9 @@ export default function TransactionForm() {
         title: "새거래 처리 완료",
         description: "거래가 성공적으로 처리되었습니다.",
       });
+      // 강제 캐시 무효화 및 새로고침
+      queryClient.removeQueries({ queryKey: ["/api/transactions"] });
+      queryClient.removeQueries({ queryKey: ["/api/assets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       

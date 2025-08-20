@@ -53,7 +53,10 @@ export default function AdvancedTransactionForm({
       if (!response.ok) throw new Error('Failed to create transaction');
       return response.json();
     },
-    onSuccess: (transaction) => {
+    onSuccess: async (transaction) => {
+      // 강제 캐시 무효화 및 새로고침
+      queryClient.removeQueries({ queryKey: ['/api/transactions'] });
+      queryClient.removeQueries({ queryKey: ['/api/assets'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
       onTransactionSuccess(transaction);

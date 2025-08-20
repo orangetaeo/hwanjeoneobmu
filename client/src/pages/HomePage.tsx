@@ -107,6 +107,7 @@ export default function HomePage() {
     retryDelay: 1000,
     staleTime: 0,
     gcTime: 0,
+    cacheTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true
   });
