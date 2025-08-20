@@ -24,6 +24,8 @@ This is a full-stack asset management and exchange tracking application for mana
 - **거래내역 모바일 최적화 완성**: 수익금 강조 표시, 모바일 스크롤 오버플로우 해결, Badge 텍스트 짤림 방지, 카드 레이아웃 개선
 - **환율 표시 시스템 개선**: 매매시세 기준 환율 표시, 통화별 소숫점 규칙 적용 (USD/KRW: 정수, KRW/VND: 소수점 2자리, USD/VND: 정수)
 - **수익 표시 규칙 정리**: 수익 금액은 정수 표시 (Math.round), 수익률은 소수점 2자리 표시 (toFixed(2))
+- **수익 금액 디자인 강화**: 배경색, 테두리, 그림자 효과로 시각적 강조, 다크 모드 지원, 그라데이션 배경 적용
+- **실시간 데이터 갱신 시스템 완성**: 거래내역 10초마다 자동 갱신, 자산 데이터 15초마다 갱신, 윈도우 포커스 시 즉시 갱신
 
 # User Preferences
 

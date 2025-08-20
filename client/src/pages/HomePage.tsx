@@ -97,21 +97,30 @@ export default function HomePage() {
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000 // 15초마다 자산 데이터 새로고침
   });
   
-  const { data: transactionsData = [], isLoading: transactionsLoading, error: transactionsError } = useQuery({
+  const { data: transactionsData = [], isLoading: transactionsLoading, error: transactionsError, refetch: refetchTransactions } = useQuery({
     queryKey: ['/api/transactions'], 
     enabled: !authLoading && !!user,
     retry: 3,
-    retryDelay: 1000
+    retryDelay: 1000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000 // 10초마다 자동 새로고침
   });
   
-  const { data: exchangeRatesData = [], isLoading: exchangeRatesLoading, error: exchangeRatesError } = useQuery({
+  const { data: exchangeRatesData = [], isLoading: exchangeRatesLoading, error: exchangeRatesError, refetch: refetchExchangeRates } = useQuery({
     queryKey: ['/api/exchange-rates'],
     enabled: !authLoading && !!user,
     retry: 3,
-    retryDelay: 1000
+    retryDelay: 1000,
+    staleTime: 30000, // 환율은 30초 캐시
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   // 에러 처리
