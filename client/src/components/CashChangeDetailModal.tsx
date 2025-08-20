@@ -32,12 +32,38 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
     
     // 현재 보고 있는 현금 자산의 통화에 따라 해당 권종만 표시
     if (cashAsset.currency === 'KRW') {
-      // KRW 현금 상세 페이지: denominationAmounts (KRW 증가)
-      Object.entries(denominationAmounts).forEach(([denom, amount]) => {
-        if (amount && parseFloat(amount as string) > 0) {
-          denominationChanges[denom] = parseInt(amount as string); // KRW 증가
-        }
-      });
+      // KRW 현금 상세 페이지에서 환전 거래 처리
+      const isKrwIncrease = transaction.fromAssetName === cashAsset.name; // KRW가 fromAsset이면 증가
+      
+      if (isKrwIncrease) {
+        // KRW→다른통화: denominationAmounts는 KRW 권종 (KRW 증가)
+        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+          if (amount && parseFloat(amount as string) > 0) {
+            denominationChanges[denom] = parseInt(amount as string); // KRW 증가
+          }
+        });
+      } else {
+        // 다른통화→KRW: KRW 금액을 권종으로 분해해서 표시 (KRW 감소)
+        const krwAmount = parseFloat(transaction.toAmount.toString());
+        
+        // 104,000원 예시: 50,000원×2 + 4,000원
+        // 4,000원은 1,000원×4로 분해
+        const count50k = Math.floor(krwAmount / 50000);
+        const remaining50k = krwAmount % 50000;
+        
+        const count10k = Math.floor(remaining50k / 10000);
+        const remaining10k = remaining50k % 10000;
+        
+        const count5k = Math.floor(remaining10k / 5000);
+        const remaining5k = remaining10k % 5000;
+        
+        const count1k = Math.floor(remaining5k / 1000);
+        
+        if (count50k > 0) denominationChanges['50000'] = -count50k;
+        if (count10k > 0) denominationChanges['10000'] = -count10k;
+        if (count5k > 0) denominationChanges['5000'] = -count5k;
+        if (count1k > 0) denominationChanges['1000'] = -count1k;
+      }
     } else if (cashAsset.currency === 'VND') {
       // VND 현금 상세 페이지: 거래 유형에 따라 증가/감소 판단
       const isVndIncrease = transaction.fromAssetName === cashAsset.name; // VND가 fromAsset이면 증가
