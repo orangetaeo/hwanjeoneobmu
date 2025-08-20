@@ -1191,6 +1191,11 @@ export default function TransactionForm() {
                           }
                           return total;
                         }, 0);
+                        
+                        console.log("VND 분배 조건 체크:");
+                        console.log("formData.denominationAmounts:", formData.denominationAmounts);
+                        console.log("totalFromDenominations:", totalFromDenominations);
+                        console.log("formData.toCurrency:", formData.toCurrency);
 
                         // denominationAmounts에서 직접 환전될 VND 금액 계산
                         const targetAmount = totalFromDenominations > 0 ? (() => {
