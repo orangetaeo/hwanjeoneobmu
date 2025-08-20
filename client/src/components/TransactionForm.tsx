@@ -1649,12 +1649,8 @@ export default function TransactionForm() {
                                     </div>
                                     <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
                                       매도시세: {(() => {
-                                        // USD 권종에 따른 해당 환율 찾기
-                                        let searchDenom = "100"; // 기본값
-                                        if (denomValue >= 100) searchDenom = "100";
-                                        else if (denomValue >= 50) searchDenom = "50"; 
-                                        else if (denomValue >= 10) searchDenom = "20_10";
-                                        else searchDenom = "5_2_1";
+                                        // 모든 USD 권종에 100달러 환율 사용 (26,000 VND)
+                                        let searchDenom = "100";
                                         
                                         console.log(`USD 권종 ${denomValue} 매도시세 검색:`, {
                                           searchDenom,
