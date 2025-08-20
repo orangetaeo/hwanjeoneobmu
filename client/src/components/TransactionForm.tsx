@@ -1224,12 +1224,11 @@ export default function TransactionForm() {
 
                         // 동적 추천 시스템: 현재 상황에서 남은 금액을 최적 분배
                         const calculateSuggestions = () => {
-                          if (!vndBreakdown || Object.keys(vndBreakdown).length === 0) {
-                            return {};
-                          }
+                          // 현재 분배 상황 (수정값이 있으면 사용, 없으면 기본값 사용)
+                          const currentBreakdown = vndBreakdown && Object.keys(vndBreakdown).length > 0 ? vndBreakdown : fixedBreakdown;
                           
                           // 현재 총액과 목표 총액 계산
-                          const currentTotal = Object.entries(vndBreakdown).reduce((total, [denom, count]) => {
+                          const currentTotal = Object.entries(currentBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
                             return total + (denomValue * denomCount);
@@ -1264,7 +1263,7 @@ export default function TransactionForm() {
                           const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
                           
                           denominations.forEach(denom => {
-                            const currentCount = vndBreakdown[denom.toString()] || 0;
+                            const currentCount = currentBreakdown[denom.toString()] || 0;
                             const denomKey = denom.toString(); // 쉼표 없는 형태로 변환
                             const availableCount = denomComposition[denomKey] || 0;
                             const usableCount = availableCount - currentCount;
