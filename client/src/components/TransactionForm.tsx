@@ -1874,8 +1874,10 @@ export default function TransactionForm() {
                               
                               if (rate > 0) {
                                 const calculatedAmount = currentTotalFromDenominations * rate;
-                                totalAmount = Math.ceil(calculatedAmount);
-                                console.log(`VND→KRW 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.ceil = ${totalAmount} KRW`);
+                                // Math.ceil 후 1000원 단위로 반올림
+                                const ceilAmount = Math.ceil(calculatedAmount);
+                                totalAmount = Math.ceil(ceilAmount / 1000) * 1000;
+                                console.log(`VND→KRW 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.ceil = ${ceilAmount} → 1000원 반올림 = ${totalAmount} KRW`);
                               }
                             }
                             
