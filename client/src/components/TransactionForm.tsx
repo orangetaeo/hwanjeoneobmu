@@ -695,6 +695,25 @@ export default function TransactionForm() {
       
       if (usdCashAsset?.metadata?.denominations) {
         const denomComposition = usdCashAsset.metadata.denominations;
+        
+        // 1. 총 필요 USD 금액 계산
+        const totalRequiredUSD = Object.entries(usdBreakdown).reduce((sum, [denom, count]) => {
+          return sum + (parseFloat(denom) * (count as number));
+        }, 0);
+        
+        const availableUSD = parseFloat(usdCashAsset.balance.toString());
+        
+        // 2. 총액 검증
+        if (totalRequiredUSD > availableUSD) {
+          toast({
+            variant: "destructive",
+            title: "USD 보유량 부족",
+            description: `필요한 USD: $${totalRequiredUSD.toLocaleString()}, 보유 USD: $${availableUSD.toLocaleString()}`,
+          });
+          return;
+        }
+        
+        // 3. 권종별 수량 검증
         for (const [denom, requiredCount] of Object.entries(usdBreakdown)) {
           const availableCount = denomComposition[denom] || 0;
           if (requiredCount > availableCount) {
