@@ -1819,8 +1819,8 @@ export default function TransactionForm() {
                                             rate.denomination === searchDenom
                                           );
                                           
-                                          const sellRate = vndKrwRate?.myBuyRate ? parseFloat(vndKrwRate.myBuyRate) : 0.053;
-                                          return sellRate.toFixed(6);
+                                          // 환전상 시세에 입력된 원본 값 그대로 표시
+                                          return vndKrwRate?.myBuyRate || "0.053";
                                         })()}
                                       </div>
                                     </div>
