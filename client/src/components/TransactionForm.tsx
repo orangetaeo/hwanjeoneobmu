@@ -1765,9 +1765,9 @@ export default function TransactionForm() {
                               const rate = parseFloat(rateInfo?.myBuyRate || "0");
                               
                               if (rate > 0) {
-                                const calculatedAmount = currentTotalFromDenominations / rate;
+                                const calculatedAmount = currentTotalFromDenominations * rate;
                                 totalAmount = Math.ceil(calculatedAmount);
-                                console.log(`VND→KRW 계산: ${currentTotalFromDenominations} VND ÷ ${rate} = ${calculatedAmount} → Math.ceil = ${totalAmount} KRW`);
+                                console.log(`VND→KRW 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.ceil = ${totalAmount} KRW`);
                               }
                             }
                             
