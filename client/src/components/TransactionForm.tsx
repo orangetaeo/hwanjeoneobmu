@@ -1002,7 +1002,7 @@ export default function TransactionForm() {
                                 )}
                               </div>
                             </div>
-                            {useRate > 0 && (
+                            {useRate > 0 && !(formData.fromCurrency === "VND" && formData.toCurrency === "USD") && (
                               <div className="px-2 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[70px] sm:min-w-[80px] flex-shrink-0">
                                 <div className="text-xs text-red-600 font-medium">
                                   매매 시세
@@ -1071,7 +1071,7 @@ export default function TransactionForm() {
                                   </div>
                                 )}
                               </div>
-                              {useRate > 0 && formData.denominationAmounts[denom.value] && (
+                              {useRate > 0 && formData.denominationAmounts[denom.value] && !(formData.fromCurrency === "VND" && formData.toCurrency === "USD") && (
                                 <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                                   <div className="text-sm text-orange-600 font-medium mb-1">환전 예상</div>
                                   <div className="text-lg font-bold text-orange-700">
