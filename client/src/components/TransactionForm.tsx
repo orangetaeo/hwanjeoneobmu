@@ -994,6 +994,23 @@ export default function TransactionForm() {
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
                       const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
                       
+                      // 현금 자산에서 보유 수량 가져오기
+                      const cashAsset = Array.isArray(assets?.data) ? 
+                        assets.data.find(asset => asset.type === "cash" && asset.currency === formData.fromCurrency) : 
+                        undefined;
+                      
+                      // 권종 데이터에서 수량 찾기 (콤마 있는 형태와 없는 형태 모두 시도)
+                      let holdingQuantity = 0;
+                      if (cashAsset?.metadata?.denominations) {
+                        const denomKey1 = denom.value; // 예: "50000"
+                        const denomKey2 = parseInt(denom.value).toLocaleString(); // 예: "50,000"
+                        
+                        holdingQuantity = cashAsset.metadata.denominations[denomKey1] || 
+                          cashAsset.metadata.denominations[denomKey2] || 0;
+                          
+                        console.log(`권종 수량 조회: ${denom.value}, 키1: ${denomKey1}, 키2: ${denomKey2}, 결과: ${holdingQuantity}`, cashAsset.metadata.denominations);
+                      }
+                      
                       return (
                         <div 
                           key={denom.value} 
@@ -1052,6 +1069,10 @@ export default function TransactionForm() {
                                     </span>
                                   )}
                                 </div>
+                                {/* 보유 수량 표시 */}
+                                <div className="text-xs text-gray-500 mt-1">
+                                  보유: {holdingQuantity.toLocaleString()}장
+                                </div>
                                 {/* 접힌 상태에서 권액 표시 */}
                                 {!isSelected && hasData && (
                                   <div className="text-xs sm:text-sm text-gray-600 mt-1">
@@ -1094,13 +1115,24 @@ export default function TransactionForm() {
                                       
                                       // 빈 값이 아닐 때만 업데이트
                                       if (numericValue === '' || !isNaN(parseInt(numericValue))) {
-                                        setFormData({
-                                          ...formData,
-                                          denominationAmounts: {
-                                            ...formData.denominationAmounts,
-                                            [denom.value]: numericValue
-                                          }
-                                        });
+                                        // 보유 수량 초과 검증
+                                        const inputQuantity = parseInt(numericValue) || 0;
+                                        if (inputQuantity <= holdingQuantity) {
+                                          setFormData({
+                                            ...formData,
+                                            denominationAmounts: {
+                                              ...formData.denominationAmounts,
+                                              [denom.value]: numericValue
+                                            }
+                                          });
+                                        } else {
+                                          // 보유 수량 초과 시 토스트 메시지
+                                          toast({
+                                            variant: "destructive",
+                                            title: "수량 초과",
+                                            description: `보유 수량(${holdingQuantity.toLocaleString()}장)을 초과할 수 없습니다.`,
+                                          });
+                                        }
                                       }
                                     }}
                                     onKeyDown={(e) => {
@@ -1117,7 +1149,10 @@ export default function TransactionForm() {
                                     data-testid={`input-quantity-${denom.value}`}
                                     className="w-32 h-12 text-center font-semibold text-lg border-2 border-gray-300 rounded-lg focus:border-green-500"
                                   />
-                                  <span className="text-base font-medium text-gray-600">장</span>
+                                  <div className="flex flex-col items-center">
+                                    <span className="text-base font-medium text-gray-600">장</span>
+                                    <span className="text-xs text-gray-500">보유: {holdingQuantity.toLocaleString()}</span>
+                                  </div>
                                 </div>
                                 {formData.denominationAmounts[denom.value] && (
                                   <div className="flex-1 p-3 bg-blue-50 rounded-lg">
