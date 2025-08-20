@@ -1071,7 +1071,7 @@ export default function TransactionForm() {
                                 )}
                               </div>
                             </div>
-                            {useRate > 0 && (
+                            {(
                               (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") ||
                               (formData.fromCurrency === "USD" && formData.toCurrency === "VND")
                             ) && (
