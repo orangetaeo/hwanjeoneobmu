@@ -1850,11 +1850,7 @@ export default function TransactionForm() {
                         // 실제로 고객이 받을 금액을 기준으로 분배
                         const fixedBreakdown = calculateKRWBreakdown(targetAmount > 0 ? targetAmount : 0);
                         
-                        // USD→KRW 올림 처리인 경우 분배 자동 업데이트
-                        if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
-                          console.log("KRW 분배 자동 업데이트 - 올림 처리 금액 기준");
-                          setKrwBreakdown(fixedBreakdown);
-                        }
+                        // 분배 자동 업데이트는 useEffect에서 처리하므로 제거
                         
                         // KRW 현금 보유 상황 확인
                         const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
@@ -2083,21 +2079,8 @@ export default function TransactionForm() {
                 // 올림 처리된 금액을 기준으로 분배를 자동 업데이트
                 let displayBreakdown;
                 
-                // KRW→USD 올림 처리인 경우 분배 자동 업데이트
-                if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
-                  console.log("USD 분배 자동 업데이트 - 올림 처리 금액 기준");
-                  const realBreakdown = calculateUSDBreakdown(targetUSDAmount, false);
-                  if (Object.keys(realBreakdown).length > 0) {
-                    console.log("보유량 기반 USD 분배 성공:", realBreakdown);
-                    displayBreakdown = realBreakdown;
-                    // 올림 처리된 금액과 일치하도록 분배 자동 업데이트
-                    setUsdBreakdown(realBreakdown);
-                  } else {
-                    console.log("보유량 기반 USD 분배 실패, 이상적 분배 사용");
-                    displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
-                    setUsdBreakdown(displayBreakdown);
-                  }
-                } else if (Object.keys(usdBreakdown).length > 0) {
+                // 사용자 수정값이 있으면 그것을 사용
+                if (Object.keys(usdBreakdown).length > 0) {
                   console.log("기존 USD 분배 사용:", usdBreakdown);
                   displayBreakdown = usdBreakdown;
                 } else {
