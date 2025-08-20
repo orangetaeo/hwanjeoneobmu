@@ -3,6 +3,8 @@
 This is a full-stack asset management and exchange tracking application for managing various financial assets including cash, bank accounts, and cryptocurrency holdings, and tracking exchange transactions. It provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
 ## Recent Changes (August 20, 2025)
+- **확장된 계좌이체 시스템 완성**: 4가지 주요 계좌이체 패턴 완전 구현 (현금→KRW계좌, 현금→VND계좌, VND계좌→KRW계좌, KRW계좌→VND계좌)
+- **계좌 선택 UI 시스템**: 동적 계좌 선택 드롭다운과 잔액 표시 기능 구현
 - **매매시세 박스 시스템 완성**: 새거래 화면에서 권종별 매매시세 표시 기능 완전 구현
 - **URL 기반 라우팅 시스템**: /new-transaction 등 직접 URL 접근 지원
 - **환율 표시 규칙**: KRW→VND/USD→VND는 매매시세 박스 표시, VND→KRW는 숨김
@@ -15,6 +17,9 @@ This is a full-stack asset management and exchange tracking application for mana
 - **현금 증감 내역 표시 완전 수정**: 권종별 변동사항 우선 계산으로 실제 변동 금액 정확 표시 (-20,000, +20,000)
 - **중복 클릭 방지 시스템 완성**: 자산 수정 버튼 중복 클릭 방지 및 "처리중..." 로딩 상태 표시
 - **USD 환전 거래 상세 표시 완성**: 모든 통화(USD/VND/KRW) 환전 거래 상세 내역 정확한 권종별 표시
+- **백엔드 계좌이체 처리 시스템**: moveAssetsCashToKRWAccount, moveAssetsCashToVNDAccount, moveAssetsAccountToAccount 메서드 완성
+- **계좌 간 이체 로직**: VND↔KRW 계좌 간 직접 이체 기능과 환율 적용 시스템 완성
+- **다중 거래 타입 지원**: cash_to_krw_account, cash_to_vnd_account, vnd_account_to_krw_account, krw_account_to_vnd_account 완전 지원
 
 # User Preferences
 

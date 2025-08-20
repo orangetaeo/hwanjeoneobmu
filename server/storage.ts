@@ -150,6 +150,24 @@ export class DatabaseStorage implements IStorage {
         // 현금 → KRW 계좌: fromCurrency 현금 감소, KRW 계좌 증가
         await this.moveAssetsCashToKRWAccount(userId, transaction);
         break;
+
+      case 'cash_to_vnd_account':
+        console.log('현금 → VND 계좌이체 자산 이동 처리');
+        // 현금 → VND 계좌: fromCurrency 현금 증가, VND 계좌 증가
+        await this.moveAssetsCashToVNDAccount(userId, transaction);
+        break;
+
+      case 'vnd_account_to_krw_account':
+        console.log('VND 계좌 → KRW 계좌이체 자산 이동 처리');
+        // VND 계좌 → KRW 계좌: VND 계좌 감소, KRW 계좌 증가
+        await this.moveAssetsAccountToAccount(userId, transaction);
+        break;
+
+      case 'krw_account_to_vnd_account':
+        console.log('KRW 계좌 → VND 계좌이체 자산 이동 처리');
+        // KRW 계좌 → VND 계좌: KRW 계좌 감소, VND 계좌 증가
+        await this.moveAssetsAccountToAccount(userId, transaction);
+        break;
         
       default:
         console.log('알 수 없는 거래 타입:', transaction.type);
@@ -1166,6 +1184,123 @@ export class DatabaseStorage implements IStorage {
     }
     
     console.log('=== 현금 → KRW 계좌이체 자산 이동 완료 ===');
+  }
+
+  // 현금 → VND 계좌이체 자산 이동 처리
+  private async moveAssetsCashToVNDAccount(userId: string, transaction: InsertTransaction | Transaction) {
+    console.log('=== 현금 → VND 계좌이체 자산 이동 시작 ===');
+    
+    const fromAmount = parseFloat(transaction.fromAmount);
+    const toAmount = parseFloat(transaction.toAmount);
+    
+    // 메타데이터에서 권종별 수량 정보 추출
+    const metadata = transaction.metadata as any;
+    const denominationAmounts = metadata?.denominationAmounts || {};
+    
+    console.log('현금→VND계좌 자산 이동:', {
+      fromCurrency: transaction.fromCurrency,
+      toCurrency: transaction.toCurrency,
+      fromAmount,
+      toAmount,
+      denominationAmounts
+    });
+
+    // 1. 현금 자산 증가 (고객이 준 현금)
+    const fromAsset = await this.getAssetByName(userId, transaction.fromAssetName!, 'cash');
+    if (fromAsset) {
+      const currentBalance = parseFloat(fromAsset.balance || "0");
+      const newBalance = currentBalance + fromAmount;
+      
+      // 기존 권종별 정보 가져오기
+      const currentMetadata = fromAsset.metadata as any || {};
+      const currentDenominations = currentMetadata.denominations || {};
+      
+      // 권종별 수량 증가
+      const updatedDenominations = { ...currentDenominations };
+      for (const [denomination, amount] of Object.entries(denominationAmounts)) {
+        if (amount && parseFloat(amount as string) > 0) {
+          const currentQty = updatedDenominations[denomination] || 0;
+          const addQty = parseInt(amount as string);
+          updatedDenominations[denomination] = currentQty + addQty;
+          
+          console.log(`현금 권종 증가: ${denomination} ${currentQty} → ${updatedDenominations[denomination]} (+${addQty}장)`);
+        }
+      }
+      
+      await this.updateAsset(userId, fromAsset.id, {
+        balance: newBalance.toString(),
+        metadata: {
+          ...currentMetadata,
+          denominations: updatedDenominations
+        }
+      });
+      
+      console.log(`현금 자산 업데이트: ${transaction.fromAssetName} ${currentBalance} → ${newBalance}`);
+    }
+
+    // 2. VND 계좌 자산 증가
+    const toAsset = await this.getAssetByName(userId, transaction.toAssetName!, 'account');
+    if (toAsset) {
+      const currentBalance = parseFloat(toAsset.balance || "0");
+      const newBalance = currentBalance + toAmount;
+      
+      await this.updateAsset(userId, toAsset.id, {
+        balance: newBalance.toString()
+      });
+      
+      console.log(`VND 계좌 자산 업데이트: ${transaction.toAssetName} ${currentBalance} → ${newBalance}`);
+    } else {
+      console.warn(`VND 계좌 자산을 찾을 수 없습니다: ${transaction.toAssetName}`);
+    }
+    
+    console.log('=== 현금 → VND 계좌이체 자산 이동 완료 ===');
+  }
+
+  // 계좌 → 계좌 이체 자산 이동 처리
+  private async moveAssetsAccountToAccount(userId: string, transaction: InsertTransaction | Transaction) {
+    console.log('=== 계좌 → 계좌 이체 자산 이동 시작 ===');
+    
+    const fromAmount = parseFloat(transaction.fromAmount);
+    const toAmount = parseFloat(transaction.toAmount);
+    
+    console.log('계좌→계좌 자산 이동:', {
+      fromAssetName: transaction.fromAssetName,
+      toAssetName: transaction.toAssetName,
+      fromAmount,
+      toAmount
+    });
+
+    // 1. 출금 계좌 자산 감소
+    const fromAsset = await this.getAssetByName(userId, transaction.fromAssetName!, 'account');
+    if (fromAsset) {
+      const currentBalance = parseFloat(fromAsset.balance || "0");
+      const newBalance = Math.max(0, currentBalance - fromAmount);
+      
+      await this.updateAsset(userId, fromAsset.id, {
+        balance: newBalance.toString()
+      });
+      
+      console.log(`출금 계좌 자산 업데이트: ${transaction.fromAssetName} ${currentBalance} → ${newBalance}`);
+    } else {
+      console.warn(`출금 계좌 자산을 찾을 수 없습니다: ${transaction.fromAssetName}`);
+    }
+
+    // 2. 입금 계좌 자산 증가
+    const toAsset = await this.getAssetByName(userId, transaction.toAssetName!, 'account');
+    if (toAsset) {
+      const currentBalance = parseFloat(toAsset.balance || "0");
+      const newBalance = currentBalance + toAmount;
+      
+      await this.updateAsset(userId, toAsset.id, {
+        balance: newBalance.toString()
+      });
+      
+      console.log(`입금 계좌 자산 업데이트: ${transaction.toAssetName} ${currentBalance} → ${newBalance}`);
+    } else {
+      console.warn(`입금 계좌 자산을 찾을 수 없습니다: ${transaction.toAssetName}`);
+    }
+    
+    console.log('=== 계좌 → 계좌 이체 자산 이동 완료 ===');
   }
 }
 

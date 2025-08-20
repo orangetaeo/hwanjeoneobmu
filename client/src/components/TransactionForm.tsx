@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote, TrendingUp, AlertCircle } from "lucide-react";
+import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Asset {
@@ -54,7 +54,9 @@ const CURRENCY_DENOMINATIONS = {
 const TRANSACTION_TYPES = [
   { value: "cash_exchange", label: "현금 환전", icon: ArrowRightLeft },
   { value: "cash_to_krw_account", label: "현금 → KRW 계좌이체(카카오뱅크 3333-03-1258874 예금주:김학태)", icon: Banknote },
-  { value: "foreign_to_account", label: "외화 수령 → 원화 계좌이체", icon: TrendingUp }
+  { value: "vnd_account_to_krw_account", label: "VND 계좌 → KRW 계좌이체", icon: TrendingUp },
+  { value: "cash_to_vnd_account", label: "현금 → VND 계좌이체", icon: ArrowUpRight },
+  { value: "krw_account_to_vnd_account", label: "KRW 계좌 → VND 계좌이체", icon: ArrowDownLeft }
 ];
 
 export default function TransactionForm() {
@@ -947,21 +949,36 @@ export default function TransactionForm() {
       floorProfit = vndOriginalAmount - flooredAmount;
     }
 
-    // 자산명 결정: 계좌이체인 경우 카카오뱅크 계좌
+    // 자산명 결정: 계좌이체별 계좌명 매핑
     const getToAssetName = () => {
-      if (formData.transactionType === "cash_to_krw_account") {
+      if (formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account") {
         return "카카오뱅크 (김학태)";
+      } else if (formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") {
+        // VND 계좌는 선택에 따라 결정 (기본값: 신한은행)
+        return formData.toAssetId === "bidv" ? "BIDV" : "신한은행";
       }
       return `${formData.toCurrency} 현금`;
+    };
+    
+    const getFromAssetName = () => {
+      if (formData.transactionType === "vnd_account_to_krw_account") {
+        return formData.fromAssetId === "bidv" ? "BIDV" : "신한은행";
+      } else if (formData.transactionType === "krw_account_to_vnd_account") {
+        if (formData.fromAssetId === "kakao") return "카카오뱅크 (김학태)";
+        if (formData.fromAssetId === "kookmin") return "국민은행 (김학태)";
+        if (formData.fromAssetId === "hana") return "하나은행";
+        return "카카오뱅크 (김학태)"; // 기본값
+      }
+      return `${formData.fromCurrency} 현금`;
     };
 
     // 거래 데이터 구성
     const transactionData = {
       type: formData.transactionType,
-      fromAssetType: "cash",
+      fromAssetType: (formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") ? "account" : "cash",
       fromAssetId: formData.fromAssetId,
-      fromAssetName: `${formData.fromCurrency} 현금`,
-      toAssetType: formData.transactionType === "cash_to_krw_account" ? "account" : "cash",
+      fromAssetName: getFromAssetName(),
+      toAssetType: (formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") ? "account" : "cash",
       toAssetId: formData.toAssetId,
       toAssetName: getToAssetName(),
       fromAmount: formData.fromAmount,
@@ -984,7 +1001,7 @@ export default function TransactionForm() {
         // VND 분배 정보 저장  
         vndBreakdown: formData.toCurrency === "VND" ? vndBreakdown : undefined,
         // KRW 분배 정보 저장 (계좌이체용)
-        krwBreakdown: formData.toCurrency === "KRW" && formData.transactionType === "cash_to_krw_account" ? krwBreakdown : undefined
+        krwBreakdown: formData.toCurrency === "KRW" && (formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account") ? krwBreakdown : undefined
       },
       status: "confirmed"
     };
@@ -1073,10 +1090,18 @@ export default function TransactionForm() {
                 <Select 
                   value={formData.fromCurrency} 
                   onValueChange={(value) => {
-                    // cash_to_krw_account인 경우 toCurrency를 KRW로 고정
+                    // 거래유형별 통화 자동 설정
                     let newToCurrency = formData.toCurrency;
                     if (formData.transactionType === "cash_to_krw_account") {
                       newToCurrency = "KRW";
+                    } else if (formData.transactionType === "vnd_account_to_krw_account") {
+                      // VND 계좌 → KRW 계좌: fromCurrency를 VND로, toCurrency를 KRW로 고정
+                      newToCurrency = "KRW";
+                    } else if (formData.transactionType === "cash_to_vnd_account") {
+                      newToCurrency = "VND";
+                    } else if (formData.transactionType === "krw_account_to_vnd_account") {
+                      // KRW 계좌 → VND 계좌: fromCurrency를 KRW로, toCurrency를 VND로 고정
+                      newToCurrency = "VND";
                     } else {
                       // 일반적인 경우: 받는 통화가 변경되었을 때 주는 통화가 동일하면 초기화
                       newToCurrency = value === formData.toCurrency ? "" : formData.toCurrency;
@@ -1112,8 +1137,13 @@ export default function TransactionForm() {
                     <SelectValue placeholder="통화 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {formData.transactionType === "cash_to_krw_account" ? (
+                    {formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account" ? (
                       <SelectItem value="KRW">KRW (한국 원) - 카카오뱅크 계좌이체</SelectItem>
+                    ) : formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account" ? (
+                      <>
+                        <SelectItem value="VND">VND (베트남 동) - 신한은행</SelectItem>
+                        <SelectItem value="VND">VND (베트남 동) - BIDV</SelectItem>
+                      </>
                     ) : (
                       /* 받는 통화와 동일한 통화 제외 */
                       ["VND", "KRW", "USD"].filter(currency => currency !== formData.fromCurrency).map(currency => (
@@ -1133,7 +1163,7 @@ export default function TransactionForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
-                {formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account" ? (
+                {(formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "cash_to_vnd_account") ? (
                   <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg mt-2">
                     <div className="text-xl font-bold text-green-700">
                       {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
@@ -1198,7 +1228,7 @@ export default function TransactionForm() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <Label>받는 권종 ({formData.fromCurrency})</Label>
-                {formData.transactionType === "cash_to_krw_account" || formData.transactionType === "foreign_to_account" ? (
+                {(formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") ? (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <Input
                       type="number"
@@ -1209,8 +1239,40 @@ export default function TransactionForm() {
                       data-testid="input-total-amount"
                     />
                     <div className="text-xs text-gray-500 mt-1">
-                      계좌이체/송금 시 총 금액만 입력
+                      계좌 간 이체 시 총 금액만 입력
                     </div>
+                    
+                    {/* 계좌 선택 드롭다운 */}
+                    {formData.transactionType === "vnd_account_to_krw_account" && (
+                      <div className="mt-2">
+                        <Label className="text-sm">출금 계좌</Label>
+                        <Select value={formData.fromAssetId} onValueChange={(value) => setFormData({ ...formData, fromAssetId: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="VND 계좌 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="shinhan">신한은행 (2,216만 VND)</SelectItem>
+                            <SelectItem value="bidv">BIDV (120만 VND)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {formData.transactionType === "krw_account_to_vnd_account" && (
+                      <div className="mt-2">
+                        <Label className="text-sm">출금 계좌</Label>
+                        <Select value={formData.fromAssetId} onValueChange={(value) => setFormData({ ...formData, fromAssetId: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="KRW 계좌 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="kakao">카카오뱅크 (0원)</SelectItem>
+                            <SelectItem value="kookmin">국민은행 (0원)</SelectItem>
+                            <SelectItem value="hana">하나은행 (75만원)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1827,7 +1889,7 @@ export default function TransactionForm() {
               )}
               
               {/* KRW 권종별 분배 - VND→KRW 환전용 및 계좌이체용 (VND 분배 패턴 복사) */}
-              {formData.toCurrency === "KRW" && (formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account") && (
+              {formData.toCurrency === "KRW" && (formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account") && (
                 <div>
                   <Label className="text-base font-medium">권종별 분배</Label>
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mt-2">
@@ -2277,7 +2339,7 @@ export default function TransactionForm() {
 
 
             {/* 고객 정보 (선택사항) */}
-            {(formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account" || formData.transactionType === "cash_to_krw_account") && (
+            {(formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") && (
               <div className="p-4 bg-yellow-50 rounded-lg space-y-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
