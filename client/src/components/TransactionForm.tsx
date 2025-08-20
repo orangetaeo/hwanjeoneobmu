@@ -661,14 +661,9 @@ export default function TransactionForm() {
           // KRW는 1000원 단위로 반올림 (예: 10,500원 → 11,000원, 10,200원 → 10,000원)
           const finalAmount = Math.round(calculatedToAmount / 1000) * 1000;
           console.log(`KRW 1000원 단위 반올림: ${calculatedToAmount} → ${finalAmount}`);
-          setFormData(prev => ({ 
-            ...prev, 
-            toAmount: finalAmount.toString(),
-            exchangeRate: (finalAmount / total).toString()
-          }));
           
           // KRW 분배 계산 및 설정
-          console.log("VND→KRW 환전: KRW 분배 계산 시작");
+          console.log("VND→KRW 환전: KRW 분배 계산 시작, finalAmount:", finalAmount);
           // 우선 실제 보유량 기반으로 시도
           let breakdown = calculateKRWBreakdown(finalAmount, false);
           console.log("KRW 분배 계산 (보유량 기반):", breakdown);
@@ -682,6 +677,12 @@ export default function TransactionForm() {
           }
           
           setKrwBreakdown(breakdown);
+          
+          setFormData(prev => ({ 
+            ...prev, 
+            toAmount: finalAmount.toString(),
+            exchangeRate: (finalAmount / total).toString()
+          }));
         } else if (formData.toCurrency === "USD") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
           // USD는 소수점 2자리까지 반올림
