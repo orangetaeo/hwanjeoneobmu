@@ -157,7 +157,22 @@ export default function CashTransactionHistory({
   // 거래가 감소인지 확인
   function isDecreaseTransaction(transaction: Transaction): boolean {
     if (transaction.type === 'cash_change') {
-      return (parseFloat(String(transaction.toAmount)) || 0) < 0;
+      // cash_change 거래의 경우 메타데이터의 balanceChange 값으로 판단
+      const metadata = transaction.metadata as any;
+      if (metadata?.balanceChange !== undefined) {
+        return metadata.balanceChange < 0;
+      }
+      // 메타데이터가 없는 경우 권종별 변동사항에서 계산
+      if (metadata?.denominationChanges) {
+        const totalChange = Object.entries(metadata.denominationChanges).reduce((total: number, [denom, change]: [string, any]) => {
+          const denomValue = parseFloat(denom.replace(/,/g, ''));
+          const changeAmount = typeof change === 'number' ? change : parseFloat(change) || 0;
+          return total + (denomValue * changeAmount);
+        }, 0);
+        return totalChange < 0;
+      }
+      // 폴백: 기존 로직
+      return (parseFloat(String(transaction.toAmount)) || 0) < (parseFloat(String(transaction.fromAmount)) || 0);
     } else if ((transaction.type as string) === 'cash_exchange') {
       // 환전 거래에서 증가/감소 판단
       // fromAsset = 고객이 준 돈 (환전상 입장에서 증가)
