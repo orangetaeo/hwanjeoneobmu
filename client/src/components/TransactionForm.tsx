@@ -69,6 +69,7 @@ export default function TransactionForm() {
     fromDenominations: [] as string[], // 여러 권종 선택
     toDenomination: "",
     denominationAmounts: {} as Record<string, string>, // 권종별 수량
+    vndBreakdown: {} as Record<string, number>, // VND 권종별 분배
     fromAmount: "",
     toAmount: "",
     exchangeRate: "",
@@ -399,9 +400,9 @@ export default function TransactionForm() {
     console.log(`KRW 분배 계산 시작: ${totalAmount.toLocaleString()} KRW`);
 
     // KRW 현금 자산에서 권종별 보유 장수 조회
-    const krwCashAsset = assets?.find((asset: any) => 
+    const krwCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
       asset.name === "KRW 현금" && asset.currency === "KRW"
-    );
+    ) : null;
     
 
 
@@ -452,9 +453,9 @@ export default function TransactionForm() {
     console.log(`USD 분배 계산 시작: ${totalAmount.toLocaleString()} USD`);
 
     // USD 현금 자산에서 권종별 보유 장수 조회
-    const usdCashAsset = assets?.find((asset: any) => 
+    const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
       asset.name === "USD 현금" && asset.currency === "USD"
-    );
+    ) : null;
 
     for (const denom of usdDenominations) {
       if (remaining >= denom) {
@@ -1730,9 +1731,9 @@ export default function TransactionForm() {
                                   </div>
                                   {(() => {
                                     // USD 현금 자산에서 해당 권종의 보유 장수 조회
-                                    const usdCashAsset = assets?.find?.((asset: any) => 
+                                    const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
                                       asset.name === "USD 현금" && asset.currency === "USD"
-                                    );
+                                    ) : null;
                                     const availableCount = usdCashAsset?.metadata?.denominations?.[denom] || 0;
                                     const isInsufficient = count > availableCount;
                                     
