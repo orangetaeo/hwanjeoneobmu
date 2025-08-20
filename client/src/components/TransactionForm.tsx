@@ -1185,11 +1185,10 @@ export default function TransactionForm() {
                                       const calculatedAmount = amount * denomValue * useRate;
                                       
                                       console.log(`환전 예상 계산 (${denom.value}): ${amount}장 × ${denomValue} × ${useRate} = ${calculatedAmount}`);
+                                      console.log(`Math.floor(${calculatedAmount}) = ${Math.floor(calculatedAmount)}`);
                                       
-                                      // VND의 경우 무조건 내림 적용
-                                      const finalAmount = formData.toCurrency === "VND" ? 
-                                        formatVNDWithFloor(calculatedAmount) : 
-                                        Math.floor(calculatedAmount);
+                                      // VND의 경우 정확한 계산값 사용 (반올림 없음)
+                                      const finalAmount = Math.floor(calculatedAmount);
                                         
                                       console.log(`환전 예상 최종 (${denom.value}): ${finalAmount}`);
                                       return finalAmount.toLocaleString();
@@ -1960,7 +1959,7 @@ export default function TransactionForm() {
                     <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
                       <span className="text-sm text-gray-600 font-medium">고객이 주는 금액</span>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-emerald-700">{formatNumber(formData.fromAmount)} {formData.fromCurrency}</div>
+                        <div className="text-lg font-bold text-emerald-700">{getCurrentTotal()} {formData.fromCurrency}</div>
                       </div>
                     </div>
                     
@@ -1968,7 +1967,7 @@ export default function TransactionForm() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600 font-medium">고객이 받는 금액</span>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-teal-700">{formatNumber(formData.toAmount)} {formData.toCurrency}</div>
+                          <div className="text-lg font-bold text-teal-700">{totalAmount.toLocaleString()} {formData.toCurrency}</div>
                         </div>
                       </div>
                       
