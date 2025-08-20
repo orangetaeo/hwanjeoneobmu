@@ -1469,12 +1469,20 @@ export default function TransactionForm() {
                             let currentBreakdown = vndBreakdown;
                             if (!vndBreakdown || Object.keys(vndBreakdown).length === 0) {
                               // 기본값 다시 계산
+                              const currentTotalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                                if (amount && parseFloat(amount) > 0) {
+                                  const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                  return total + (parseFloat(amount) * denomValue);
+                                }
+                                return total;
+                              }, 0);
+                              
                               const targetAmount = vndOriginalAmount > 0 ? vndOriginalAmount : 
-                                (totalFromDenominations > 0 ? (() => {
+                                (currentTotalFromDenominations > 0 ? (() => {
                                   const rate = formData.fromCurrency === "KRW" ? 
                                     getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
                                     getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                                  const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                                  const calculatedAmount = currentTotalFromDenominations * parseFloat(rate);
                                   return formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
                                 })() : (parseFloat(formData.toAmount) || 0));
                               currentBreakdown = calculateVNDBreakdown(targetAmount);
