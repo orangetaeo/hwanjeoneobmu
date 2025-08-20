@@ -280,17 +280,30 @@ export default function TransactionForm() {
       searchDenomination = "500000";
     }
     
-    // VND→USD의 경우 매도시세 26,000 직접 사용
+    // VND→USD의 경우 USD→VND의 내 매입가를 역산하여 사용
     if (fromCurrency === "VND" && toCurrency === "USD") {
-      console.log(`VND→USD 매도시세: 26,000 VND = 1 USD 사용`);
+      // USD→VND 환율 찾기 (100달러 기준)
+      const usdToVndRate = exchangeRates.find((rate: any) => 
+        rate.fromCurrency === "USD" && 
+        rate.toCurrency === "VND" && 
+        rate.denomination === "100"
+      );
       
-      return {
-        fromCurrency: "VND",
-        toCurrency: "USD",
-        denomination: "500000",
-        myBuyRate: (1 / 26000).toFixed(8), // 1 USD = 26,000 VND → 1 VND = 1/26000 USD
-        mySellRate: (1 / 26000).toFixed(8)
-      };
+      if (usdToVndRate) {
+        // USD→VND의 내 매입가를 역산하여 VND→USD 매도시세 계산
+        const sellRate = parseFloat(usdToVndRate.myBuyRate);
+        const vndToUsdRate = 1 / sellRate;
+        console.log(`VND→USD 매도시세: ${sellRate.toLocaleString()} VND = 1 USD (USD→VND 내 매입가 역산)`);
+        
+        return {
+          fromCurrency: "VND",
+          toCurrency: "USD",
+          denomination: "500000",
+          myBuyRate: vndToUsdRate.toFixed(8),
+          mySellRate: vndToUsdRate.toFixed(8),
+          sellRateVnd: sellRate // 매도시세 VND 값 저장
+        };
+      }
     }
     
     const rate = exchangeRates.find((rate: any) => 
@@ -1635,7 +1648,10 @@ export default function TransactionForm() {
                                       ${denomValue}
                                     </div>
                                     <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
-                                      매도시세: 26,000
+                                      매도시세: {(() => {
+                                        const rate = getDenominationRate("VND", "USD", "500000");
+                                        return rate?.sellRateVnd ? rate.sellRateVnd.toLocaleString() : "25,000";
+                                      })()}
                                     </div>
                                   </div>
                                   <div className="text-xs sm:text-sm text-gray-500">
