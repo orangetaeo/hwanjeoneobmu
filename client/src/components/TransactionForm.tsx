@@ -293,7 +293,7 @@ export default function TransactionForm() {
         const avgRate = usdToVndRates.reduce((sum, rate) => sum + parseFloat(rate.myBuyRate), 0) / usdToVndRates.length;
         const vndToUsdRate = 1 / avgRate;
         
-        console.log(`VND→USD 매도시세: ${avgRate.toLocaleString()} VND = 1 USD (USD→VND 평균 내 매입가)`);
+
         
         return {
           fromCurrency: "VND",
