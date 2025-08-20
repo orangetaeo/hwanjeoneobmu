@@ -2400,7 +2400,7 @@ export default function TransactionForm() {
                       getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
                       getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
                     const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                    targetAmount = formatVNDWithFloor(calculatedAmount);
+                    targetAmount = Math.floor(calculatedAmount);
                   } else {
                     targetAmount = parseFloat(formData.toAmount) || 0;
                   }
@@ -2424,8 +2424,9 @@ export default function TransactionForm() {
                   // 보유량 부족 여부 확인
                   const hasShortage = Object.entries(actualBreakdown).some(([denom, count]) => {
                     const requiredCount = parseInt(count.toString());
-                    const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+                    const denomKey = denom.toString(); // 쉼표 없는 형태로 유지
                     const availableCount = denomComposition[denomKey] || 0;
+                    console.log(`보유량 검증: ${denom} VND - 필요: ${requiredCount}장, 보유: ${availableCount}장`);
                     return requiredCount > availableCount;
                   });
 
