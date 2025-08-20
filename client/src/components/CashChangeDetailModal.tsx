@@ -205,13 +205,41 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
       
       if (isFromAsset) {
         // FROM 자산: 고객이 준 돈 (증가)
-        if (metadata?.denominationAmounts) {
-          Object.entries(metadata.denominationAmounts).forEach(([denom, count]) => {
+        if (cashAsset.currency === 'USD' && (metadata?.denominationAmounts?.USD || metadata?.usdBreakdown)) {
+          const usdAmounts = metadata?.denominationAmounts?.USD || metadata?.usdBreakdown || {};
+          Object.entries(usdAmounts).forEach(([denom, count]) => {
             const changeNum = typeof count === 'number' ? count : parseInt(count as string) || 0;
             if (changeNum > 0) {
               let denomValue = parseInt(denom.replace(/,/g, ''));
               if (denom === '20_10') denomValue = 30;
               
+              increases.push({
+                denomination: denom,
+                change: changeNum,
+                value: changeNum * denomValue
+              });
+            }
+          });
+        } else if (cashAsset.currency === 'KRW' && metadata?.denominationAmounts) {
+          // KRW 처리
+          Object.entries(metadata.denominationAmounts).forEach(([denom, count]) => {
+            const changeNum = typeof count === 'number' ? count : parseInt(count as string) || 0;
+            if (changeNum > 0) {
+              const denomValue = parseInt(denom.replace(/,/g, ''));
+              increases.push({
+                denomination: denom,
+                change: changeNum,
+                value: changeNum * denomValue
+              });
+            }
+          });
+        } else if (cashAsset.currency === 'VND' && (metadata?.denominationAmounts?.VND || metadata?.vndBreakdown)) {
+          // VND 처리
+          const vndAmounts = metadata?.denominationAmounts?.VND || metadata?.vndBreakdown || {};
+          Object.entries(vndAmounts).forEach(([denom, count]) => {
+            const changeNum = typeof count === 'number' ? count : parseInt(count as string) || 0;
+            if (changeNum > 0) {
+              const denomValue = parseInt(denom.replace(/,/g, ''));
               increases.push({
                 denomination: denom,
                 change: changeNum,
