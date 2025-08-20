@@ -226,74 +226,76 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        {/* 고정 헤더 */}
-        <DialogHeader className="flex-shrink-0 pb-4 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <Banknote size={20} />
-            {(transaction.type as string) === 'cash_exchange' ? '현금 환전 상세 내역' : '현금 증감 상세 내역'}
+      <DialogContent className="max-w-2xl max-h-[95vh] w-[98vw] sm:w-[95vw] overflow-hidden flex flex-col p-3 sm:p-4 md:p-6">
+        {/* 고정 헤더 - 모바일 최적화 */}
+        <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Banknote size={18} className="sm:w-5 sm:h-5" />
+            <span className="leading-tight">
+              {(transaction.type as string) === 'cash_exchange' ? '현금 환전 상세 내역' : '현금 증감 상세 내역'}
+            </span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm leading-tight">
             {(transaction.type as string) === 'cash_exchange' 
               ? `${getExchangeTypeText(transaction, currency)} - ${date} ${time}` 
               : `${transaction.toAssetName} - ${date} ${time}`}
           </DialogDescription>
         </DialogHeader>
 
-        {/* 스크롤 가능한 내용 영역 */}
-        <div className="flex-1 overflow-y-auto mt-4">
-          <div className="space-y-6">
-          {/* 전체 요약 */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">변동 요약</h3>
-              <Badge variant={netChange >= 0 ? "default" : "destructive"} className="flex items-center gap-1">
-                {netChange >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                {netChange >= 0 ? '증가' : '감소'}
+        {/* 스크롤 가능한 내용 영역 - 모바일 최적화 */}
+        <div className="flex-1 overflow-y-auto mt-3 sm:mt-4">
+          <div className="space-y-3 sm:space-y-6">
+          {/* 전체 요약 - 모바일 최적화 */}
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-center sm:text-left">변동 요약</h3>
+              <Badge variant={netChange >= 0 ? "default" : "destructive"} className="flex items-center gap-1 mx-auto sm:mx-0 w-fit">
+                {netChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                <span className="text-xs sm:text-sm">{netChange >= 0 ? '증가' : '감소'}</span>
               </Badge>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <div className="text-sm text-green-600 mb-1">총 증가</div>
-                <div className="font-bold text-green-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-50 rounded-lg text-center">
+                <div className="text-xs sm:text-sm text-green-600 mb-1">총 증가</div>
+                <div className="font-bold text-green-800 text-sm sm:text-base break-words">
                   +{formatInputWithCommas(totalIncrease.toString())} {getCurrencySymbol(currency)}
                 </div>
               </div>
               
-              <div className="p-3 bg-red-50 rounded-lg">
-                <div className="text-sm text-red-600 mb-1">총 감소</div>
-                <div className="font-bold text-red-800">
+              <div className="p-2 sm:p-3 bg-red-50 rounded-lg text-center">
+                <div className="text-xs sm:text-sm text-red-600 mb-1">총 감소</div>
+                <div className="font-bold text-red-800 text-sm sm:text-base break-words">
                   -{formatInputWithCommas(totalDecrease.toString())} {getCurrencySymbol(currency)}
                 </div>
               </div>
               
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <div className="text-sm text-blue-600 mb-1">순 변동</div>
-                <div className={`font-bold ${netChange >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
+              <div className="p-2 sm:p-3 bg-blue-50 rounded-lg text-center">
+                <div className="text-xs sm:text-sm text-blue-600 mb-1">순 변동</div>
+                <div className={`font-bold text-sm sm:text-base break-words ${netChange >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
                   {netChange >= 0 ? '+' : ''}{formatInputWithCommas(netChange.toString())} {getCurrencySymbol(currency)}
                 </div>
               </div>
             </div>
           </Card>
 
-          {/* 증가한 지폐 */}
+          {/* 증가한 지폐 - 모바일 최적화 */}
           {increases.length > 0 && (
-            <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-700">
-                <TrendingUp size={18} />
+            <Card className="p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-green-700 justify-center sm:justify-start">
+                <TrendingUp size={16} className="sm:w-5 sm:h-5" />
                 증가한 지폐
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {increases.map((item) => (
-                  <div key={item.denomination} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Banknote size={16} className="text-green-600" />
-                      <span className="font-medium">{getDenominationName(item.denomination, currency)}</span>
+                  <div key={item.denomination} className="flex items-center justify-between p-2 sm:p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <Banknote size={14} className="text-green-600 flex-shrink-0 sm:w-4 sm:h-4" />
+                      <span className="font-medium text-sm sm:text-base truncate">{getDenominationName(item.denomination, currency)}</span>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-green-800">+{item.change}장</div>
-                      <div className="text-sm text-green-600">
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-bold text-green-800 text-sm sm:text-base">+{item.change}장</div>
+                      <div className="text-xs sm:text-sm text-green-600 break-words">
                         +{formatInputWithCommas(item.value.toString())} {getCurrencySymbol(currency)}
                       </div>
                     </div>
@@ -303,23 +305,23 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
             </Card>
           )}
 
-          {/* 감소한 지폐 */}
+          {/* 감소한 지폐 - 모바일 최적화 */}
           {decreases.length > 0 && (
-            <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-700">
-                <TrendingDown size={18} />
+            <Card className="p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-red-700 justify-center sm:justify-start">
+                <TrendingDown size={16} className="sm:w-5 sm:h-5" />
                 감소한 지폐
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {decreases.map((item) => (
-                  <div key={item.denomination} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Banknote size={16} className="text-red-600" />
-                      <span className="font-medium">{getDenominationName(item.denomination, currency)}</span>
+                  <div key={item.denomination} className="flex items-center justify-between p-2 sm:p-3 bg-red-50 rounded-lg">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <Banknote size={14} className="text-red-600 flex-shrink-0 sm:w-4 sm:h-4" />
+                      <span className="font-medium text-sm sm:text-base truncate">{getDenominationName(item.denomination, currency)}</span>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-red-800">-{item.change}장</div>
-                      <div className="text-sm text-red-600">
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-bold text-red-800 text-sm sm:text-base">-{item.change}장</div>
+                      <div className="text-xs sm:text-sm text-red-600 break-words">
                         -{formatInputWithCommas(item.value.toString())} {getCurrencySymbol(currency)}
                       </div>
                     </div>
@@ -329,11 +331,11 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
             </Card>
           )}
 
-          {/* 메모 */}
+          {/* 메모 - 모바일 최적화 */}
           {transaction.memo && (
-            <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-2">메모</h3>
-              <p className="text-gray-700">{transaction.memo}</p>
+            <Card className="p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 text-center sm:text-left">메모</h3>
+              <p className="text-gray-700 text-sm sm:text-base leading-relaxed break-words">{transaction.memo}</p>
             </Card>
           )}
           </div>

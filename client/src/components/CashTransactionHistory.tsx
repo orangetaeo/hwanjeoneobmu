@@ -217,30 +217,30 @@ export default function CashTransactionHistory({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-4xl max-h-[90vh] w-[95vw] sm:max-w-4xl overflow-hidden flex flex-col p-3 sm:p-6"
+        className="max-w-4xl max-h-[95vh] w-[98vw] sm:w-[95vw] sm:max-w-4xl overflow-hidden flex flex-col p-2 sm:p-4 md:p-6"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        {/* 고정 헤더 영역 */}
-        <div className="flex-shrink-0 space-y-4 pb-4 border-b">
+        {/* 고정 헤더 영역 - 모바일 최적화 */}
+        <div className="flex-shrink-0 space-y-2 sm:space-y-4 pb-3 sm:pb-4 border-b">
           <DialogHeader>
             <DialogTitle 
               ref={titleRef}
               tabIndex={-1}
-              className="text-xl font-bold outline-none"
+              className="text-lg sm:text-xl font-bold outline-none text-center sm:text-left"
             >
               {cashAsset.currency} 현금 증감 내역
             </DialogTitle>
           </DialogHeader>
 
           {/* 현금 자산 정보 - 모바일 최적화 */}
-          <Card className="p-3 sm:p-4 bg-gray-50">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-              <div>
-                <h3 className="font-semibold text-base sm:text-lg">{cashAsset.name}</h3>
-                <p className="text-xs sm:text-sm text-gray-600">현재 잔액</p>
+          <Card className="p-2 sm:p-3 md:p-4 bg-gray-50">
+            <div className="flex flex-col gap-1 sm:gap-2">
+              <div className="text-center sm:text-left">
+                <h3 className="font-semibold text-sm sm:text-base md:text-lg">{cashAsset.name}</h3>
+                <p className="text-xs text-gray-600">현재 잔액</p>
               </div>
-              <div className="text-left sm:text-right">
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 break-all">
+              <div className="text-center sm:text-right">
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 break-words">
                   {formatCurrency(cashAsset.balance, cashAsset.currency)} {cashAsset.currency}
                 </p>
               </div>
@@ -249,21 +249,21 @@ export default function CashTransactionHistory({
         </div>
 
         {/* 스크롤 가능한 내용 영역 */}
-        <div className="flex-1 overflow-y-auto mt-4">
-          <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto mt-2 sm:mt-4">
+          <div className="space-y-3 sm:space-y-4">
 
           {/* 검색 및 필터 - 모바일 최적화 */}
-          <Card className="p-3 sm:p-4">
-            <div className="space-y-3 sm:space-y-4">
+          <Card className="p-2 sm:p-3 md:p-4">
+            <div className="space-y-2 sm:space-y-3">
               {/* 검색어 입력 */}
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+                  <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <Input
-                    placeholder="거래내역 검색 (메모, 거래명)"
+                    placeholder="거래내역 검색"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 text-sm h-10 sm:h-9"
+                    className="pl-8 sm:pl-9 text-sm h-10 sm:h-9"
                     data-testid="input-search-transactions"
                     autoFocus={false}
                   />
@@ -271,38 +271,38 @@ export default function CashTransactionHistory({
               </div>
 
               {/* 필터 및 정렬 - 모바일 최적화 */}
-              <div className="space-y-3">
-                {/* 날짜 필터 */}
-                <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <div className="space-y-2 sm:space-y-3">
+                {/* 날짜 필터 - 모바일에서 세로 배치 */}
+                <div className="space-y-2">
                   <div className="flex items-center gap-1 text-sm text-gray-600">
                     <Calendar size={14} />
                     <span>기간</span>
                   </div>
-                  <div className="flex gap-2 items-center flex-1">
+                  <div className="flex gap-2 items-center">
                     <Input
                       type="date"
                       placeholder="시작일"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="flex-1 min-w-0 text-sm h-10 sm:h-9"
+                      className="flex-1 text-xs sm:text-sm h-9 sm:h-9"
                       data-testid="input-start-date"
                     />
-                    <span className="text-gray-500 text-sm">~</span>
+                    <span className="text-gray-500 text-sm px-1">~</span>
                     <Input
                       type="date"
                       placeholder="종료일"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="flex-1 min-w-0 text-sm h-10 sm:h-9"
+                      className="flex-1 text-xs sm:text-sm h-9 sm:h-9"
                       data-testid="input-end-date"
                     />
                   </div>
                 </div>
 
-                {/* 타입 필터 및 정렬 */}
-                <div className="flex gap-2">
+                {/* 타입 필터 및 정렬 - 모바일 최적화 */}
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease' | 'direct' | 'exchange') => setTypeFilter(value)}>
-                    <SelectTrigger className="flex-1 h-10 sm:h-9 text-sm">
+                    <SelectTrigger className="w-full sm:flex-1 h-9 text-xs sm:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -359,12 +359,12 @@ export default function CashTransactionHistory({
           </Card>
 
           {/* 거래 내역 헤더 - 모바일 최적화 */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">최근 거래 내역</h3>
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm text-gray-600">표시 개수:</span>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
+            <h3 className="text-sm sm:text-lg font-semibold text-gray-900 text-center sm:text-left">최근 거래 내역</h3>
+            <div className="flex items-center justify-center sm:justify-end gap-2">
+              <span className="text-xs text-gray-600">표시:</span>
               <Select value={displayCount.toString()} onValueChange={(value) => setDisplayCount(parseInt(value))}>
-                <SelectTrigger className="w-20 sm:w-24 text-sm h-10 sm:h-9">
+                <SelectTrigger className="w-16 sm:w-20 text-xs sm:text-sm h-8 sm:h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -376,14 +376,14 @@ export default function CashTransactionHistory({
             </div>
           </div>
 
-          {/* 거래 내역 리스트 */}
-          <div className="space-y-3">
+          {/* 거래 내역 리스트 - 모바일 최적화 */}
+          <div className="space-y-2 sm:space-y-3">
             {filteredTransactions.length === 0 ? (
-              <Card className="p-8 text-center">
+              <Card className="p-6 sm:p-8 text-center">
                 <div className="text-gray-500">
-                  <Clock size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">거래 내역이 없습니다</p>
-                  <p className="text-sm">현금 증감 거래를 추가해보세요.</p>
+                  <Clock size={32} className="mx-auto mb-3 opacity-50 sm:w-12 sm:h-12" />
+                  <p className="text-sm sm:text-lg font-medium mb-1 sm:mb-2">거래 내역이 없습니다</p>
+                  <p className="text-xs sm:text-sm">현금 증감 거래를 추가해보세요.</p>
                 </div>
               </Card>
             ) : (
@@ -393,25 +393,23 @@ export default function CashTransactionHistory({
                 return (
                   <Card 
                     key={transaction.id} 
-                    className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    className="p-3 sm:p-4 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.98] sm:active:scale-100"
                     onClick={() => {
                       setSelectedTransaction(transaction);
                       setIsCashDetailModalOpen(true);
                     }}
                     data-testid={`transaction-${transaction.id}`}
                   >
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
-                        <div className="mt-0.5 sm:mt-1 flex-shrink-0">
+                    <div className="flex justify-between items-start gap-2 sm:gap-3">
+                      <div className="flex items-start space-x-2 flex-1 min-w-0">
+                        <div className="mt-0.5 flex-shrink-0">
                           {getTransactionIcon(isDecrease)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="font-medium text-sm sm:text-base text-gray-900 truncate">
-                              {getTransactionTypeText(transaction, isDecrease)}
-                            </h4>
-                          </div>
-                          <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                          <h4 className="font-medium text-xs sm:text-sm md:text-base text-gray-900 mb-1 leading-tight">
+                            {getTransactionTypeText(transaction, isDecrease)}
+                          </h4>
+                          <p className="text-xs text-gray-600 mb-1">
                             {new Date(transaction.timestamp).toLocaleString('ko-KR', {
                               month: 'short',
                               day: 'numeric',
@@ -420,15 +418,15 @@ export default function CashTransactionHistory({
                             })}
                           </p>
                           {transaction.memo && (
-                            <p className="text-xs sm:text-sm text-gray-500 break-words">
+                            <p className="text-xs text-gray-500 line-clamp-2 leading-tight">
                               메모: {transaction.memo}
                             </p>
                           )}
                         </div>
                       </div>
                       
-                      <div className="text-right flex-shrink-0">
-                        <p className={`text-sm sm:text-lg font-bold break-all ${
+                      <div className="text-right flex-shrink-0 min-w-0">
+                        <p className={`text-sm sm:text-base md:text-lg font-bold break-words ${
                           isDecrease ? 'text-red-600' : 'text-green-600'
                         }`}>
                           {isDecrease ? '-' : '+'}
