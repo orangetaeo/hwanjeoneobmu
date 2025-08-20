@@ -135,7 +135,17 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                   return aOrder - bOrder;
                 })
                 .map((asset: any) => (
-                <Card key={asset.id} className="p-6 bg-gray-50 overflow-hidden">
+                <Card 
+                  key={asset.id} 
+                  className="p-6 bg-gray-50 overflow-hidden cursor-pointer sm:cursor-default hover:bg-gray-100 sm:hover:bg-gray-50 transition-colors"
+                  onClick={() => {
+                    // 모바일에서만 카드 클릭으로 증감내역 열기
+                    if (window.innerWidth < 768) {
+                      onOpenModal('viewCashTransactions', asset);
+                    }
+                  }}
+                  data-testid={`card-cash-asset-${asset.id}`}
+                >
                   <div className="flex justify-between items-start mb-4">
                     <div className="min-w-0 flex-1 mr-4">
                       <h4 className="font-semibold text-gray-900 flex items-center truncate">
@@ -150,7 +160,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => onOpenModal('editCashAsset', asset)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenModal('editCashAsset', asset);
+                        }}
                         data-testid={`button-edit-${asset.id}`}
                       >
                         <Edit size={16} />
@@ -158,7 +171,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => onOpenModal('deleteCashAsset', asset)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenModal('deleteCashAsset', asset);
+                        }}
                         data-testid={`button-delete-${asset.id}`}
                       >
                         <Trash2 size={16} className="text-red-600" />
@@ -194,13 +210,21 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     ))}
                   </div>
 
-                  {/* 현금 증감 내역 버튼 */}
-                  <div className="mt-4 pt-4 border-t border-gray-200">
+                  {/* 모바일에서 카드 터치 안내 */}
+                  <div className="mt-4 pt-4 border-t border-gray-200 sm:hidden">
+                    <p className="text-xs text-gray-500 text-center">카드를 터치하여 증감내역 보기</p>
+                  </div>
+
+                  {/* PC에서만 증감 내역 버튼 표시 */}
+                  <div className="mt-4 pt-4 border-t border-gray-200 hidden sm:block">
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="w-full"
-                      onClick={() => onOpenModal('viewCashTransactions', asset)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenModal('viewCashTransactions', asset);
+                      }}
                       data-testid={`button-view-transactions-${asset.id}`}
                     >
                       <Clock size={16} className="mr-2" />
