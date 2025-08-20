@@ -537,7 +537,7 @@ export default function TransactionForm() {
   // KRW 권종별 분배에서 총액 계산
   const calculateTotalFromKRWBreakdown = (breakdown: Record<string, number>) => {
     return Object.entries(breakdown).reduce((total, [denom, count]) => {
-      return total + (parseInt(denom) * count);
+      return total + (parseInt(denom.replace(/,/g, '')) * count);
     }, 0);
   };
 
@@ -603,9 +603,7 @@ export default function TransactionForm() {
     return Object.entries(breakdown).reduce((total, [denom, count]) => {
       return total + (parseInt(denom) * count);
     }, 0);
-  };
-
-
+  }
 
   // VND 권종별 분배 수정 핸들러
   const handleVNDBreakdownChange = (denomination: string, newCount: number) => {
@@ -2263,6 +2261,10 @@ export default function TransactionForm() {
                               // KRW→USD도 소수점 이하 올림
                               finalAmount = Math.ceil(calculatedTotal);
                               console.log(`KRW→USD 올림 처리: ${calculatedTotal} → ${finalAmount}`);
+                            } else if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                              // USD→KRW도 올림 처리 (1000원 단위)
+                              finalAmount = Math.ceil(calculatedTotal / 1000) * 1000;
+                              console.log(`USD→KRW 올림 처리: ${calculatedTotal} → ${finalAmount}`);
                             } else {
                               finalAmount = Math.floor(calculatedTotal);
                             }
@@ -2894,6 +2896,37 @@ export default function TransactionForm() {
                   });
 
                   if (hasShortage) {
+                    return true;
+                  }
+
+                  // KRW 분배 금액 검증 - USD→KRW는 올림 처리
+                  let expectedKRWTotal;
+                  if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                    // USD→KRW는 1000원 단위 올림 처리하여 기대값 계산
+                    const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                      if (amount && parseFloat(amount) > 0) {
+                        const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                        const totalFromCurrency = parseFloat(amount) * denomValue;
+                        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                        const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                        if (rate > 0) {
+                          return total + (totalFromCurrency * rate);
+                        }
+                      }
+                      return total;
+                    }, 0);
+                    expectedKRWTotal = Math.ceil(calculatedTotal / 1000) * 1000;
+                    console.log(`KRW 버튼 활성화 검증: 계산값 ${calculatedTotal} → 1000원 단위 올림 ${expectedKRWTotal}`);
+                  } else {
+                    expectedKRWTotal = Math.floor(parseFloat(formData.toAmount) || 0);
+                  }
+                  
+                  const actualKRWTotal = calculateTotalFromKRWBreakdown(krwBreakdown);
+                  console.log(`KRW 버튼 활성화 검증: 기대값 ${expectedKRWTotal}, 실제값 ${actualKRWTotal}`);
+                  
+                  // 금액이 일치하지 않으면 비활성화
+                  if (actualKRWTotal !== expectedKRWTotal && expectedKRWTotal > 0) {
+                    console.log(`KRW 금액 불일치로 버튼 비활성화: ${actualKRWTotal} !== ${expectedKRWTotal}`);
                     return true;
                   }
                 }
