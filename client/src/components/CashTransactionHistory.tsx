@@ -63,28 +63,12 @@ export default function CashTransactionHistory({
     // 메타데이터에 해당 자산 ID가 있는지 확인
     const hasMatchingAssetId = transaction.metadata?.assetId === cashAsset.id;
     
-    // 디버깅 로그
-    if (cashAsset.name === "VND 현금") {
-      console.log('VND 거래 필터링:', {
-        transactionId: transaction.id.substring(0, 8),
-        type: transaction.type,
-        isCashTransaction,
-        fromAssetName: transaction.fromAssetName,
-        toAssetName: transaction.toAssetName,
-        fromAssetMatches,
-        toAssetMatches,
-        hasMatchingAssetId,
-        result: isCashTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId)
-      });
-    }
+
     
     return isCashTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId);
   });
 
-  // 디버깅 로그 추가
-  if (cashAsset.name === "VND 현금") {
-    console.log(`VND 현금 총 거래 수: ${cashTransactions.length}`);
-  }
+
 
   const filteredTransactions = cashTransactions
     .filter(transaction => {
@@ -114,18 +98,7 @@ export default function CashTransactionHistory({
           isDecrease = true; // 고객이 받은 돈을 사업자가 줌 (감소)
         }
         
-        // 디버깅 로그 추가
-        if (cashAsset.name === "VND 현금") {
-          console.log('VND cash_exchange 필터링:', {
-            transactionId: transaction.id.substring(0, 8),
-            fromAssetName: transaction.fromAssetName,
-            toAssetName: transaction.toAssetName,
-            isIncrease,
-            isDecrease,
-            typeFilter,
-            matchesType: typeFilter === 'all' || (typeFilter === 'increase' && isIncrease) || (typeFilter === 'decrease' && isDecrease)
-          });
-        }
+
       } else {
         // cash_change의 경우 기존 로직 유지
         isDecrease = transaction.fromAssetName?.includes('현금') && 
@@ -138,16 +111,7 @@ export default function CashTransactionHistory({
         (typeFilter === 'increase' && isIncrease) ||
         (typeFilter === 'decrease' && isDecrease);
       
-      // 디버깅 로그 추가
-      if (cashAsset.name === "VND 현금") {
-        console.log('VND 최종 필터링:', {
-          transactionId: transaction.id.substring(0, 8),
-          matchesSearch,
-          matchesDateRange,
-          matchesType,
-          finalResult: matchesSearch && matchesDateRange && matchesType
-        });
-      }
+
       
       return matchesSearch && matchesDateRange && matchesType;
     })
@@ -160,9 +124,18 @@ export default function CashTransactionHistory({
           bValue = new Date(b.timestamp).getTime();
           break;
         case 'amount':
-          // 현금 증감 금액 계산 (fromAmount 또는 toAmount 중 해당하는 것)
-          aValue = a.fromAssetName?.includes(cashAsset.currency) ? a.fromAmount : a.toAmount;
-          bValue = b.fromAssetName?.includes(cashAsset.currency) ? b.fromAmount : b.toAmount;
+          // 현금 증감 금액 계산 - cash_exchange와 cash_change 모두 고려
+          if (a.type === 'cash_exchange') {
+            aValue = a.fromAssetName === cashAsset.name ? parseFloat(a.fromAmount.toString()) : parseFloat(a.toAmount.toString());
+          } else {
+            aValue = a.fromAssetName?.includes(cashAsset.currency) ? parseFloat(a.fromAmount.toString()) : parseFloat(a.toAmount.toString());
+          }
+          
+          if (b.type === 'cash_exchange') {
+            bValue = b.fromAssetName === cashAsset.name ? parseFloat(b.fromAmount.toString()) : parseFloat(b.toAmount.toString());
+          } else {
+            bValue = b.fromAssetName?.includes(cashAsset.currency) ? parseFloat(b.fromAmount.toString()) : parseFloat(b.toAmount.toString());
+          }
           break;
         default:
           return 0;
@@ -172,11 +145,7 @@ export default function CashTransactionHistory({
     })
     .slice(0, displayCount); // 선택한 개수만 표시
 
-  // 디버깅 로그 추가
-  if (cashAsset.name === "VND 현금") {
-    console.log(`VND 필터링된 거래 수: ${filteredTransactions.length}`);
-    console.log('첫 번째 거래:', filteredTransactions[0]);
-  }
+
 
   const getTransactionAmount = (transaction: Transaction) => {
     let isDecrease = false;
