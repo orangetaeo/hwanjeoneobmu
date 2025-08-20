@@ -407,7 +407,14 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Select 
                       value={formData.fromCurrency} 
                       onValueChange={(value) => {
-                        setFormData({ ...formData, fromCurrency: value, denomination: "" });
+                        // 기준통화 변경 시 목표통화가 동일하면 초기화
+                        const newToCurrency = value === formData.toCurrency ? "" : formData.toCurrency;
+                        setFormData({ 
+                          ...formData, 
+                          fromCurrency: value, 
+                          toCurrency: newToCurrency,
+                          denomination: "" 
+                        });
                       }}
                     >
                       <SelectTrigger data-testid="select-from-currency">
@@ -416,6 +423,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       <SelectContent>
                         <SelectItem value="USD">USD (달러)</SelectItem>
                         <SelectItem value="KRW">KRW (원)</SelectItem>
+                        <SelectItem value="VND">VND (동)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -607,89 +615,101 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
             </CardContent>
           </Card>
 
-          {/* 현재 시세 목록 */}
+          {/* 현재 시세 목록 - 통화쌍별로 분리 */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="w-5 h-5" />
-                현재 운영 중인 시세 ({formData.fromCurrency} → {formData.toCurrency})
+                현재 운영 중인 시세
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingRates ? (
                 <div className="text-center py-8">로딩 중...</div>
-              ) : !Array.isArray(exchangeRates) || 
-                   exchangeRates.filter(rate => rate.fromCurrency === formData.fromCurrency).length === 0 ? (
+              ) : !Array.isArray(exchangeRates) || exchangeRates.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  {formData.fromCurrency} → {formData.toCurrency} 시세가 없습니다.
+                  등록된 시세가 없습니다.
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {Array.isArray(exchangeRates) && 
-                    exchangeRates
-                      .filter(rate => rate.fromCurrency === formData.fromCurrency)
-                      .sort((a, b) => getDenominationValue(b.denomination) - getDenominationValue(a.denomination))
-                      .map((rate: ExchangeRate) => (
-                    <div 
-                      key={rate.id} 
-                      className={`p-4 border rounded-lg ${
-                        rate.isActive === "false" ? "bg-gray-50 border-gray-300" : "bg-white border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {rate.fromCurrency} → {rate.toCurrency}
-                          </span>
-                          {rate.denomination && (
-                            <Badge variant="outline">{formatDenomination(rate.denomination, rate.fromCurrency)}</Badge>
-                          )}
-
+                <div className="space-y-6">
+                  {CURRENCY_PAIRS.map((pair) => {
+                    const pairRates = exchangeRates.filter(rate => 
+                      rate.fromCurrency === pair.from && rate.toCurrency === pair.to
+                    );
+                    
+                    if (pairRates.length === 0) return null;
+                    
+                    return (
+                      <div key={`${pair.from}-${pair.to}`} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex items-center gap-2 mb-4">
+                          <h3 className="text-lg font-semibold text-gray-800">{pair.label}</h3>
+                          <Badge variant="secondary">{pairRates.length}개 시세</Badge>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          {new Date(rate.updatedAt).toLocaleString("ko-KR")}
-                        </span>
+                        
+                        <div className="space-y-3">
+                          {pairRates
+                            .sort((a, b) => getDenominationValue(b.denomination) - getDenominationValue(a.denomination))
+                            .map((rate: ExchangeRate) => (
+                            <div 
+                              key={rate.id} 
+                              className={`p-3 border rounded-lg ${
+                                rate.isActive === "false" ? "bg-gray-100 border-gray-300" : "bg-white border-gray-200"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  {rate.denomination && (
+                                    <Badge variant="outline">{formatDenomination(rate.denomination, rate.fromCurrency)}</Badge>
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(rate.updatedAt).toLocaleString("ko-KR")}
+                                </span>
+                              </div>
+                              
+                              <div className="grid grid-cols-3 gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-500">금은방</span>
+                                  <div className="font-medium">{formatRate(rate.goldShopRate, rate.fromCurrency)}</div>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">매입</span>
+                                  <div className="font-medium text-green-600">{formatRate(rate.myBuyRate, rate.fromCurrency)}</div>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">매도</span>
+                                  <div className="font-medium text-red-600">{formatRate(rate.mySellRate, rate.fromCurrency)}</div>
+                                </div>
+                              </div>
+                              
+                              <div className="mt-3 flex justify-between items-center">
+                                <div className="flex-1">
+                                  {rate.memo && (
+                                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded truncate inline-block max-w-[200px]" title={rate.memo}>
+                                      {rate.memo.length > 20 ? `${rate.memo.substring(0, 20)}...` : rate.memo}
+                                    </span>
+                                  )}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant={rate.isActive === "true" ? "destructive" : "default"}
+                                  onClick={() => toggleMutation.mutate({ 
+                                    id: rate.id, 
+                                    isActive: rate.isActive !== "true" 
+                                  })}
+                                  disabled={toggleMutation.isPending && toggleMutation.variables?.id === rate.id}
+                                  className="text-xs px-3 py-1 ml-2 flex-shrink-0"
+                                >
+                                  {(toggleMutation.isPending && toggleMutation.variables?.id === rate.id) ? "처리중..." : 
+                                   rate.isActive === "true" ? "비활성화" : "활성화"}
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">금은방</span>
-                          <div className="font-medium">{formatRate(rate.goldShopRate, rate.fromCurrency)}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">매입</span>
-                          <div className="font-medium text-green-600">{formatRate(rate.myBuyRate, rate.fromCurrency)}</div>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">매도</span>
-                          <div className="font-medium text-red-600">{formatRate(rate.mySellRate, rate.fromCurrency)}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3 flex justify-between items-center">
-                        <div className="flex-1">
-                          {rate.memo && (
-                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded truncate inline-block max-w-[200px]" title={rate.memo}>
-                              {rate.memo.length > 20 ? `${rate.memo.substring(0, 20)}...` : rate.memo}
-                            </span>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant={rate.isActive === "true" ? "destructive" : "default"}
-                          onClick={() => toggleMutation.mutate({ 
-                            id: rate.id, 
-                            isActive: rate.isActive !== "true" 
-                          })}
-                          disabled={toggleMutation.isPending && toggleMutation.variables?.id === rate.id}
-                          className="text-xs px-3 py-1 ml-2 flex-shrink-0"
-                        >
-                          {(toggleMutation.isPending && toggleMutation.variables?.id === rate.id) ? "처리중..." : 
-                           rate.isActive === "true" ? "비활성화" : "활성화"}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -704,9 +724,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
               <TrendingUp className="w-5 h-5" />
               <span className="hidden sm:inline">환전상 시세 히스토리</span>
               <span className="sm:hidden">시세 히스토리</span>
-              <span className="text-sm font-normal text-gray-500">
-                ({formData.fromCurrency} → {formData.toCurrency})
-              </span>
+
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
