@@ -1197,11 +1197,16 @@ export default function TransactionForm() {
                         // VND 현금 보유 상황 확인 - 디버그 추가
                         console.log("전체 자산 데이터:", assets);
                         console.log("assets?.data 배열:", assets?.data);
+                        console.log("assets 자체가 배열인지:", Array.isArray(assets));
                         
-                        const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => {
+                        // assets가 직접 배열이거나 assets.data가 배열인 경우 처리
+                        const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+                        console.log("사용할 자산 배열:", assetArray);
+                        
+                        const vndCashAsset = assetArray.find((asset: any) => {
                           console.log("자산 확인:", asset.name, asset.currency, asset.type);
                           return asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash";
-                        }) : null;
+                        });
                         
                         const denomComposition = vndCashAsset?.metadata?.denominations || {};
                         console.log("VND 현금 자산:", vndCashAsset);
@@ -2054,9 +2059,10 @@ export default function TransactionForm() {
               // USD 권종 분배가 있는 경우 검증
               if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
                 // USD 현금 보유 상황 확인
-                const usdCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
+                const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+                const usdCashAsset = assetArray.find((asset: any) => 
                   asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
-                ) : null;
+                );
                 const denomComposition = usdCashAsset?.metadata?.denominations || {};
 
                 // 보유량 부족 항목들 찾기
@@ -2128,9 +2134,10 @@ export default function TransactionForm() {
                   : fixedBreakdown;
 
                 // VND 현금 보유 상황 확인
-                const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
+                const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+                const vndCashAsset = assetArray.find((asset: any) => 
                   asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                ) : null;
+                );
                 const denomComposition = vndCashAsset?.metadata?.denominations || {};
 
                 // 보유량 부족 항목들 찾기
