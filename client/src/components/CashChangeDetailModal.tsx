@@ -250,6 +250,7 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   };
 
   const { increases, decreases } = getChangeInfo();
+  console.log('UI 렌더링 데이터:', { increases, decreases, denominationChanges });
   const totalIncrease = increases.reduce((sum, item) => sum + item.value, 0);
   const totalDecrease = decreases.reduce((sum, item) => sum + item.value, 0);
   const netChange = totalIncrease - totalDecrease; // 증가 - 감소 = 순변동
