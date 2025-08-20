@@ -550,9 +550,13 @@ export default function TransactionForm() {
     console.log(`USD 분배 계산 시작: ${totalAmount.toLocaleString()} USD`);
 
     // USD 현금 자산에서 권종별 보유 장수 조회
-    const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+    const assetArray = Array.isArray(assets) ? assets : [];
+    const usdCashAsset = assetArray.find((asset: Asset) => 
       asset.name === "USD 현금" && asset.currency === "USD"
-    ) : null;
+    );
+    
+    console.log("USD 현금 자산 검색 결과:", usdCashAsset);
+    console.log("USD 권종별 보유량:", usdCashAsset?.metadata?.denominations);
 
     for (const denom of usdDenominations) {
       if (remaining >= denom) {
@@ -570,6 +574,8 @@ export default function TransactionForm() {
           const availableCount = usdCashAsset?.metadata?.denominations?.[denom.toString()] || 0;
           const actualCount = Math.min(idealCount, availableCount);
           
+          console.log(`${denom} USD: 이상값 ${idealCount}장, 보유량 ${availableCount}장, 실제 ${actualCount}장`);
+          
           if (actualCount > 0) {
             breakdown[denom.toString()] = actualCount;
             remaining -= actualCount * denom;
@@ -583,11 +589,9 @@ export default function TransactionForm() {
 
     // 남은 금액이 있으면 가장 작은 권종(1 USD)으로 추가 처리
     if (remaining > 0) {
-      const smallestDenom = 1;
-      const additionalCount = Math.ceil(remaining / smallestDenom);
-      const currentCount = breakdown[smallestDenom.toString()] || 0;
-      breakdown[smallestDenom.toString()] = currentCount + additionalCount;
-      console.log(`${smallestDenom} USD: ${additionalCount}장 추가, 남은 금액: 0`);
+      const oneUsdCount = breakdown["1"] || 0;
+      breakdown["1"] = oneUsdCount + remaining;
+      console.log(`1 USD: ${remaining}장 추가, 남은 금액: 0`);
     }
 
     console.log("USD 분배 결과:", breakdown);
@@ -600,6 +604,8 @@ export default function TransactionForm() {
       return total + (parseInt(denom) * count);
     }, 0);
   };
+
+
 
   // VND 권종별 분배 수정 핸들러
   const handleVNDBreakdownChange = (denomination: string, newCount: number) => {
@@ -1948,8 +1954,20 @@ export default function TransactionForm() {
                 </div>
               )}
 
-              {/* USD 권종별 분배 (VND → USD 거래시) */}
-              {formData.toCurrency === "USD" && formData.fromCurrency === "VND" && parseFloat(formData.toAmount || "0") > 0 && (
+              {/* USD 권종별 분배 (VND → USD, KRW → USD 거래시) */}
+              {(() => {
+                const shouldShow = formData.toCurrency === "USD" && 
+                                 (formData.fromCurrency === "VND" || formData.fromCurrency === "KRW") && 
+                                 parseFloat(formData.toAmount || "0") > 0;
+                console.log("USD 분배 표시 조건:", {
+                  toCurrency: formData.toCurrency,
+                  fromCurrency: formData.fromCurrency,
+                  toAmount: formData.toAmount,
+                  toAmountParsed: parseFloat(formData.toAmount || "0"),
+                  shouldShow
+                });
+                return shouldShow;
+              })() && (
                 <div>
                   <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
                   <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
@@ -1957,19 +1975,25 @@ export default function TransactionForm() {
                       {(() => {
                         // 환전 금액으로부터 USD 분배 계산 (정수 부분만)
                         const targetUSDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
+                        console.log(`USD 분배 대상 금액: ${targetUSDAmount} USD`);
                         
                         // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
                         let displayBreakdown;
                         if (Object.keys(usdBreakdown).length > 0) {
+                          console.log("기존 USD 분배 사용:", usdBreakdown);
                           displayBreakdown = usdBreakdown;
                         } else {
                           // 실제 보유량 기반 분배를 우선 시도
+                          console.log("USD 분배 계산 시작 - 보유량 기반");
                           const realBreakdown = calculateUSDBreakdown(targetUSDAmount, false);
                           if (Object.keys(realBreakdown).length > 0) {
+                            console.log("보유량 기반 USD 분배 성공:", realBreakdown);
                             displayBreakdown = realBreakdown;
                           } else {
                             // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
+                            console.log("보유량 기반 USD 분배 실패, 이상적 분배 시도");
                             displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
+                            console.log("이상적 USD 분배:", displayBreakdown);
                           }
                         }
 
