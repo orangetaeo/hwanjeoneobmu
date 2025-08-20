@@ -998,6 +998,7 @@ export default function TransactionForm() {
                       const isSelected = formData.fromDenominations.includes(denom.value);
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
                       const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                      console.log(`매매시세 조건 체크: useRate=${useRate}, toCurrency=${formData.toCurrency}, 조건결과=${useRate > 0 && (formData.toCurrency === "KRW" || formData.toCurrency === "USD")}`);
                       
                       return (
                         <div 
