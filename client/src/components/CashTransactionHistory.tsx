@@ -123,12 +123,16 @@ export default function CashTransactionHistory({
       return Math.abs(parseFloat(String(transaction.toAmount)) || 0);
     } else if ((transaction.type as string) === 'cash_exchange') {
       // 환전 거래의 경우 해당 현금 자산과 연관된 금액 반환
-      // fromAsset = 고객이 준 돈(증가), toAsset = 고객에게 준 돈(감소)
+      // fromAsset = 고객이 준 돈, toAsset = 고객이 받은 돈
+      // VND→KRW: VND fromAsset, KRW toAsset (환전상 KRW 감소)
+      // KRW→VND: KRW fromAsset, VND toAsset (환전상 KRW 증가)
       if (transaction.fromAssetName === cashAsset.name || 
           (transaction.fromAssetName?.includes(cashAsset.currency) && transaction.fromAssetName?.includes('현금'))) {
+        // KRW가 fromAsset인 경우: 고객이 KRW를 주고 다른 통화를 받음 (환전상 KRW 증가)
         return parseFloat(String(transaction.fromAmount)) || 0;
       } else if (transaction.toAssetName === cashAsset.name || 
                 (transaction.toAssetName?.includes(cashAsset.currency) && transaction.toAssetName?.includes('현금'))) {
+        // KRW가 toAsset인 경우: 고객이 다른 통화를 주고 KRW를 받음 (환전상 KRW 감소)
         return parseFloat(String(transaction.toAmount)) || 0;
       }
     }
@@ -140,8 +144,11 @@ export default function CashTransactionHistory({
     if (transaction.type === 'cash_change') {
       return (parseFloat(String(transaction.toAmount)) || 0) < 0;
     } else if ((transaction.type as string) === 'cash_exchange') {
-      // 환전 거래에서 현재 자산이 도착(to) 자산인 경우 감소 (고객에게 준 돈)
-      // fromAsset = 고객이 준 돈(증가), toAsset = 고객에게 준 돈(감소)
+      // 환전 거래에서 증가/감소 판단
+      // fromAsset = 고객이 준 돈 (환전상 입장에서 증가)
+      // toAsset = 고객이 받은 돈 (환전상 입장에서 감소)
+      // VND→KRW: VND fromAsset, KRW toAsset (환전상 KRW 감소)
+      // KRW→VND: KRW fromAsset, VND toAsset (환전상 KRW 증가)
       return transaction.toAssetName === cashAsset.name || 
              (transaction.toAssetName?.includes(cashAsset.currency) && transaction.toAssetName?.includes('현금'));
     }
