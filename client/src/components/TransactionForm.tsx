@@ -1671,7 +1671,8 @@ export default function TransactionForm() {
                         const targetAmount = totalFromDenominations > 0 ? (() => {
                           // VND → KRW는 myBuyRate 사용 (고객에게 유리한 환율)
                           const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000")?.myBuyRate || "0";
-                          const calculatedAmount = totalFromDenominations / parseFloat(rate);
+                          const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                          console.log(`KRW 분배 계산 (보유량 기반): ${totalFromDenominations} VND × ${rate} = ${calculatedAmount} KRW`);
                           return formData.toCurrency === "KRW" ? Math.ceil(calculatedAmount) : calculatedAmount;
                         })() : (parseFloat(formData.toAmount) || 0);
                         
