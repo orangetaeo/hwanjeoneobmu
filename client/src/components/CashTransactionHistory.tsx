@@ -190,7 +190,31 @@ export default function CashTransactionHistory({
     if (transaction.type === 'cash_change') {
       return isDecrease ? `${cashAsset.currency} 현금 직접 감소` : `${cashAsset.currency} 현금 직접 증가`;
     } else if ((transaction.type as string) === 'cash_exchange') {
-      // 환전 거래에서 로직 수정: 감소=지급, 증가=수령
+      // 환전 거래에서 자세한 정보 표시
+      const metadata = transaction.metadata as any;
+      const fromCurrency = transaction.fromAssetName?.includes('KRW') ? 'KRW' : 
+                          transaction.fromAssetName?.includes('VND') ? 'VND' : 
+                          transaction.fromAssetName?.includes('USD') ? 'USD' : '';
+      const toCurrency = transaction.toAssetName?.includes('KRW') ? 'KRW' : 
+                        transaction.toAssetName?.includes('VND') ? 'VND' : 
+                        transaction.toAssetName?.includes('USD') ? 'USD' : '';
+      
+      // 환전 방향과 권종 정보 추출
+      let denominationInfo = '';
+      if (metadata?.denominationAmounts) {
+        const denoms = Object.entries(metadata.denominationAmounts);
+        if (denoms.length > 0) {
+          const [denom, count] = denoms[0] as [string, string];
+          if (fromCurrency === 'KRW') {
+            denominationInfo = ` ${parseInt(denom).toLocaleString()}원권 ${count}장`;
+          } else if (fromCurrency === 'VND') {
+            denominationInfo = ` ${parseInt(denom).toLocaleString()}동권 ${count}장`;
+          } else if (fromCurrency === 'USD') {
+            denominationInfo = ` $${denom} ${count}장`;
+          }
+        }
+      }
+      
       if (isDecrease) {
         return `${cashAsset.currency} 현금 환전 지급`;
       } else {
