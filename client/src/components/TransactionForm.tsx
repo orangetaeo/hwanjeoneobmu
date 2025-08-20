@@ -462,9 +462,15 @@ export default function TransactionForm() {
             console.log(`${denom.toLocaleString()} KRW: ${idealCount}장 (재고 무시), 남은 금액: ${remaining.toLocaleString()}`);
           }
         } else {
-          // 보유 장수 제한 적용
-          const availableCount = krwCashAsset?.metadata?.denominations?.[denom.toString()] || 0;
+          // 보유 장수 제한 적용 - 키 매칭 로직 수정
+          const denomKeys = Object.keys(krwCashAsset?.metadata?.denominations || {});
+          const denomKey = denomKeys.find(key => 
+            key.replace(/,/g, '') === denom.toString() || key === denom.toString()
+          ) || denom.toString();
+          const availableCount = krwCashAsset?.metadata?.denominations?.[denomKey] || 0;
           const actualCount = Math.min(idealCount, availableCount);
+          
+          console.log(`${denom.toLocaleString()} KRW 키 매칭: ${denom} → ${denomKey}, 보유량: ${availableCount}`);
           
           if (actualCount > 0) {
             breakdown[denom.toString()] = actualCount;
