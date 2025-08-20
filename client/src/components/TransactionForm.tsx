@@ -376,7 +376,7 @@ export default function TransactionForm() {
 
   // VND 권종별 분배 계산 (고액권부터 우선 분배)
   const calculateVNDBreakdown = (totalAmount: number) => {
-    const vndDenominations = [500000, 200000, 100000, 50000, 20000, 10000];
+    const vndDenominations = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
     const breakdown: { [key: string]: number } = {};
     let remaining = totalAmount;
 
@@ -393,13 +393,30 @@ export default function TransactionForm() {
       }
     }
 
-    // 남은 금액이 있으면 가장 작은 권종(10,000 VND)으로 추가 처리
+    // 남은 금액이 있으면 정확히 분배
     if (remaining > 0) {
-      const smallestDenom = 10000;
-      const additionalCount = Math.ceil(remaining / smallestDenom);
-      const currentCount = breakdown[smallestDenom.toString()] || 0;
-      breakdown[smallestDenom.toString()] = currentCount + additionalCount;
-      console.log(`${smallestDenom.toLocaleString()} VND: ${additionalCount}장 추가, 남은 금액: 0`);
+      console.log(`남은 금액 ${remaining} VND를 추가 분배`);
+      
+      // 5000원과 1000원으로 정확히 분배
+      if (remaining >= 5000) {
+        const count5000 = Math.floor(remaining / 5000);
+        breakdown["5000"] = (breakdown["5000"] || 0) + count5000;
+        remaining = remaining % 5000;
+        console.log(`5,000 VND: ${count5000}장 추가, 남은 금액: ${remaining}`);
+      }
+      
+      if (remaining >= 1000) {
+        const count1000 = Math.floor(remaining / 1000);
+        breakdown["1000"] = (breakdown["1000"] || 0) + count1000;
+        remaining = remaining % 1000;
+        console.log(`1,000 VND: ${count1000}장 추가, 남은 금액: ${remaining}`);
+      }
+      
+      // 1000원 미만의 잔액이 있으면 1000원권으로 올림
+      if (remaining > 0) {
+        breakdown["1000"] = (breakdown["1000"] || 0) + 1;
+        console.log(`1,000 VND: 1장 추가 (잔액 ${remaining} 처리), 남은 금액: 0`);
+      }
     }
 
     console.log("VND 분배 결과:", breakdown);
