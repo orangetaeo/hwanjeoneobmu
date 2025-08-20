@@ -1854,12 +1854,12 @@ export default function TransactionForm() {
                         // 실제로 고객이 받을 금액을 기준으로 분배
                         let fixedBreakdown = calculateKRWBreakdown(targetAmount > 0 ? targetAmount : 0, false);
                         
-                        // 보유량 부족으로 분배가 불완전한 경우 이상적인 분배 사용
-                        const actualTotal = calculateTotalFromKRWBreakdown(fixedBreakdown);
-                        console.log(`KRW 분배 표시 검증: 목표 ${targetAmount}, 실제 ${actualTotal}`);
+                        // 고액권(5만원, 1만원) 보유량 부족 시 이상적인 분배 사용
+                        const hasHighDenominations = fixedBreakdown['50000'] > 0 || fixedBreakdown['10000'] > 0;
+                        console.log(`KRW 분배 검증: 고액권 보유 여부 ${hasHighDenominations}, 분배:`, fixedBreakdown);
                         
-                        if (actualTotal < targetAmount) {
-                          console.log("KRW 보유량 부족으로 이상적인 분배 표시");
+                        if (!hasHighDenominations && targetAmount >= 50000) {
+                          console.log("고액권 보유량 부족으로 이상적인 분배 표시");
                           fixedBreakdown = calculateKRWBreakdown(targetAmount, true);
                           console.log("KRW 분배 (이상적 분배):", fixedBreakdown);
                         }
