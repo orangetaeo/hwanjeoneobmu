@@ -444,6 +444,7 @@ export default function TransactionForm() {
       asset.name === "KRW 현금" && asset.currency === "KRW"
     );
     
+    console.log("전체 자산 배열:", assetArray);
     console.log("KRW 현금 자산 검색 결과:", krwCashAsset);
     console.log("권종별 보유량:", krwCashAsset?.metadata?.denominations);
     
@@ -1142,7 +1143,8 @@ export default function TransactionForm() {
                             </div>
                             {(
                               (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") || 
-                              (formData.fromCurrency === "USD" && formData.toCurrency === "VND")
+                              (formData.fromCurrency === "USD" && formData.toCurrency === "VND") ||
+                              (formData.fromCurrency === "VND" && formData.toCurrency === "KRW")
                             ) && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
