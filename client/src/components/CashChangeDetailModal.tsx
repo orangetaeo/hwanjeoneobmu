@@ -60,6 +60,14 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
           }
         });
       }
+    } else if (cashAsset.currency === 'USD') {
+      // USD 현금 상세 페이지: usdBreakdown (USD 감소)
+      const usdBreakdown = metadata?.usdBreakdown || {};
+      Object.entries(usdBreakdown).forEach(([denom, amount]) => {
+        if (amount && (amount as number) > 0) {
+          denominationChanges[denom] = -(amount as number); // USD 감소
+        }
+      });
     }
   }
   

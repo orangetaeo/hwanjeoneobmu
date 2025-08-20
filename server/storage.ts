@@ -942,7 +942,43 @@ export class DatabaseStorage implements IStorage {
             denominations: updatedDenominations
           }
         });
-      } 
+      }
+      // 도착 통화가 USD이고 USD 권종별 분배가 있는 경우 - USD 차감 처리  
+      else if (transaction.toAssetName?.includes('USD') && metadata.usdBreakdown) {
+        const currentMetadata = toAsset.metadata as any || {};
+        const currentDenominations = currentMetadata.denominations || {};
+        const updatedDenominations = { ...currentDenominations };
+        
+        const usdDenominationData = metadata.usdBreakdown || {};
+        
+        for (const [denomination, amount] of Object.entries(usdDenominationData)) {
+          if (amount && (amount as number) > 0) {
+            const currentQty = updatedDenominations[denomination] || 0;
+            const deductQty = amount as number;
+            updatedDenominations[denomination] = Math.max(0, currentQty - deductQty);
+            
+            console.log(`USD $${denomination} 권종 차감: ${currentQty} → ${updatedDenominations[denomination]} (${deductQty}장 차감)`);
+          }
+        }
+        
+        const newBalance = Math.max(0, currentBalance - toAmount);
+        
+        console.log('USD 도착 자산 권종별 차감:', {
+          assetName: transaction.toAssetName,
+          currentBalance,
+          newBalance,
+          deductedAmount: toAmount,
+          denominationChanges: updatedDenominations
+        });
+        
+        await this.updateAsset(userId, toAsset.id, {
+          balance: newBalance.toString(),
+          metadata: {
+            ...currentMetadata,
+            denominations: updatedDenominations
+          }
+        });
+      }
       // 일반적인 경우 (고객에게 준 돈 - 총액만 감소)
       else {
         const newBalance = Math.max(0, currentBalance - toAmount);

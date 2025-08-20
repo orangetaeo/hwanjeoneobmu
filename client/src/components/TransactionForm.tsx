@@ -687,6 +687,28 @@ export default function TransactionForm() {
       }
     }
 
+    // 권종별 보유 수량 검증 (USD 분배)
+    if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
+      const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+        asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
+      ) : null;
+      
+      if (usdCashAsset?.metadata?.denominations) {
+        const denomComposition = usdCashAsset.metadata.denominations;
+        for (const [denom, requiredCount] of Object.entries(usdBreakdown)) {
+          const availableCount = denomComposition[denom] || 0;
+          if (requiredCount > availableCount) {
+            toast({
+              variant: "destructive",
+              title: "보유 수량 부족",
+              description: `$${denom} 권종이 ${requiredCount - availableCount}장 부족합니다.`,
+            });
+            return;
+          }
+        }
+      }
+    }
+
     // VND 내림으로 인한 수익 계산
     let floorProfit = 0;
     if (formData.toCurrency === "VND" && vndOriginalAmount > 0) {
@@ -717,7 +739,11 @@ export default function TransactionForm() {
         toDenomination: formData.toDenomination,
         exchangeRateSource: calculatedData.rateSource,
         isAutoCalculated: calculatedData.isAutoCalculated,
-        floorProfit: floorProfit // VND 내림으로 인한 수익
+        floorProfit: floorProfit, // VND 내림으로 인한 수익
+        // USD 분배 정보 저장
+        usdBreakdown: formData.toCurrency === "USD" ? usdBreakdown : undefined,
+        // VND 분배 정보 저장  
+        vndBreakdown: formData.toCurrency === "VND" ? vndBreakdown : undefined
       },
       status: "confirmed"
     };
