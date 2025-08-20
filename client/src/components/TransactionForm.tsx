@@ -1256,9 +1256,7 @@ export default function TransactionForm() {
                                       return finalAmount.toLocaleString();
                                     })()} {formData.toCurrency}
                                   </div>
-                                  <div className="text-sm text-orange-600 mt-1">
-                                    환율: {useRate.toFixed(2)}
-                                  </div>
+
                                 </div>
                               )}
                             </div>
@@ -2364,8 +2362,41 @@ export default function TransactionForm() {
                     <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
                       <span className="text-sm text-gray-600 font-medium">적용 환율</span>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-cyan-700">{formatNumber(calculateAverageExchangeRate().toString())}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">(권종별 평균)</div>
+                        <div className="text-lg font-bold text-cyan-700">{(() => {
+                          // KRW 권종별 매도시세들의 평균 계산
+                          const rates = [];
+                          
+                          // 거래에 사용된 KRW 권종별 매도시세 수집
+                          if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
+                            Object.keys(krwBreakdown).forEach(denom => {
+                              const count = krwBreakdown[denom];
+                              if (count > 0) {
+                                let searchDenom = denom.toString();
+                                if (denom === "5000" || denom === "1000") {
+                                  searchDenom = "5000_1000";
+                                }
+                                
+                                const krwVndRate = exchangeRates?.find((rate: any) => 
+                                  rate.fromCurrency === "KRW" && 
+                                  rate.toCurrency === "VND" && 
+                                  rate.denomination === searchDenom
+                                );
+                                
+                                if (krwVndRate?.myBuyRate) {
+                                  rates.push(parseFloat(krwVndRate.myBuyRate));
+                                }
+                              }
+                            });
+                          }
+                          
+                          if (rates.length > 0) {
+                            const average = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+                            return average.toFixed(2);
+                          }
+                          
+                          return calculateAverageExchangeRate().toString();
+                        })()}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">(매도시세 평균)</div>
                       </div>
                     </div>
                     
