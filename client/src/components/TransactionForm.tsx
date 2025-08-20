@@ -1495,13 +1495,13 @@ export default function TransactionForm() {
                           // 현재 총액과 목표 총액 계산
                           const currentTotal = Object.entries(currentBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
-                            const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
+                            const denomCount = typeof count === 'number' ? count : parseInt(String(count));
                             return total + (denomValue * denomCount);
                           }, 0);
                           
                           const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
-                            const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
+                            const denomCount = typeof count === 'number' ? count : parseInt(String(count));
                             return total + (denomValue * denomCount);
                           }, 0);
                           
@@ -1517,7 +1517,7 @@ export default function TransactionForm() {
                           }
                           
                           // VND 현금 보유 상황 확인
-                          const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
+                          const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
                             asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                           ) : null;
                           const denomComposition = vndCashAsset?.metadata?.denominations || {};
@@ -1743,7 +1743,7 @@ export default function TransactionForm() {
                               // 사용자가 수정한 값이 있는 경우
                               totalAmount = Object.entries(vndBreakdown).reduce((total, [denom, count]) => {
                                 const denomValue = parseInt(denom);
-                                const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
+                                const denomCount = typeof count === 'number' ? count : parseInt(String(count));
                                 return total + (denomValue * denomCount);
                               }, 0);
                               console.log("총 분배액 (수정값):", totalAmount);
@@ -1872,7 +1872,7 @@ export default function TransactionForm() {
                         // 분배 자동 업데이트는 useEffect에서 처리하므로 제거
                         
                         // KRW 현금 보유 상황 확인
-                        const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+                        const assetArray = Array.isArray(assets) ? assets : [];
                         const krwCashAsset = assetArray.find((asset: any) => 
                           asset.name === "KRW 현금" && asset.currency === "KRW" && asset.type === "cash"
                         );
@@ -2505,7 +2505,7 @@ export default function TransactionForm() {
 
                       {/* KRW 보유량 부족 경고 */}
                       {formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0 && (() => {
-                        const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
+                        const assetArray = Array.isArray(assets) ? assets : [];
                         const krwCashAsset = assetArray.find((asset: any) => 
                           asset.name === "KRW 현금" && asset.currency === "KRW"
                         );
@@ -2685,7 +2685,7 @@ export default function TransactionForm() {
               // USD 권종 분배가 있는 경우 검증
               if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
                 // USD 현금 보유 상황 확인
-                const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+                const assetArray = Array.isArray(assets) ? assets : [];
                 const usdCashAsset = assetArray.find((asset: any) => 
                   asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
                 );
@@ -2760,7 +2760,7 @@ export default function TransactionForm() {
                   : fixedBreakdown;
 
                 // VND 현금 보유 상황 확인
-                const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+                const assetArray = Array.isArray(assets) ? assets : [];
                 const vndCashAsset = assetArray.find((asset: any) => 
                   asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                 );
@@ -3050,7 +3050,7 @@ export default function TransactionForm() {
 
                 // KRW 거래인 경우 보유량 부족 검증
                 if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
-                  const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
+                  const assetArray = Array.isArray(assets) ? assets : [];
                   const krwCashAsset = assetArray.find((asset: any) => 
                     asset.name === "KRW 현금" && asset.currency === "KRW"
                   );
