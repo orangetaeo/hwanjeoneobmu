@@ -1894,6 +1894,51 @@ export default function TransactionForm() {
                             displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
                           }
                         }
+
+                        // USD 현금 자산 조회
+                        const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                          asset.name === "USD 현금" && asset.currency === "USD"
+                        ) : null;
+                        const usdDenomComposition = usdCashAsset?.metadata?.denominations || {};
+
+                        // USD 보유량 부족 검증
+                        const usdShortageItems: Array<{denom: number, required: number, available: number, shortage: number}> = [];
+                        Object.entries(displayBreakdown).forEach(([denom, count]) => {
+                          const requiredCount = parseInt(count?.toString() || "0");
+                          const availableCount = usdDenomComposition[denom] || 0;
+                          
+                          if (requiredCount > availableCount) {
+                            usdShortageItems.push({
+                              denom: parseInt(denom),
+                              required: requiredCount,
+                              available: availableCount,
+                              shortage: requiredCount - availableCount
+                            });
+                          }
+                        });
+
+                        // USD 보유량 부족 시 오류 메시지 표시
+                        if (usdShortageItems.length > 0) {
+                          return (
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-red-800 mb-2">
+                                <AlertCircle className="w-5 h-5" />
+                                <span className="font-semibold">USD 보유량 부족 오류</span>
+                              </div>
+                              <div className="text-sm text-red-700 space-y-1">
+                                {usdShortageItems.map((item) => (
+                                  <div key={item.denom}>
+                                    • ${item.denom}: 필요 {item.required}장, 보유 {item.available}장 
+                                    <span className="font-bold text-red-800"> (부족: {item.shortage}장)</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="text-xs text-red-600 mt-2">
+                                USD 현금 보유량을 확인하고 거래 금액을 조정하세요.
+                              </div>
+                            </div>
+                          );
+                        }
                         
                         return Object.entries(displayBreakdown)
                           .filter(([denom, count]) => count > 0)
@@ -1934,18 +1979,14 @@ export default function TransactionForm() {
                                   </div>
                                   {(() => {
                                     // USD 현금 자산에서 해당 권종의 보유 장수 조회
-                                    const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
-                                      asset.name === "USD 현금" && asset.currency === "USD"
-                                    ) : null;
-                                    const availableCount = usdCashAsset?.metadata?.denominations?.[denom] || 0;
-                                    const isInsufficient = count > availableCount;
+                                    const availableCount = usdDenomComposition[denom] || 0;
                                     
                                     return (
                                       <div className="text-xs text-gray-400">
-                                        보유: {availableCount}장 
-                                        {isInsufficient && (
-                                          <span className="text-red-500 ml-1">
-                                            (부족: {count - availableCount}장)
+                                        보유: {availableCount}장
+                                        {count > 0 && (
+                                          <span className="ml-1 text-blue-600">
+                                            -{count}장 = {Math.max(0, availableCount - count)}장
                                           </span>
                                         )}
                                       </div>
