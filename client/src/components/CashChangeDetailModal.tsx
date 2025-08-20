@@ -44,42 +44,75 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
           }
         });
       } else {
-        // 다른통화→KRW: KRW 금액을 권종으로 분해해서 표시 (KRW 감소)
-        const krwAmount = parseFloat(transaction.toAmount.toString());
+        // 다른통화→KRW: krwBreakdown 사용하거나 금액을 권종으로 분해 (KRW 감소)
+        const krwBreakdown = metadata?.krwBreakdown || {};
         
-        // 104,000원 예시: 50,000원×2 + 4,000원
-        // 4,000원은 1,000원×4로 분해
-        const count50k = Math.floor(krwAmount / 50000);
-        const remaining50k = krwAmount % 50000;
-        
-        const count10k = Math.floor(remaining50k / 10000);
-        const remaining10k = remaining50k % 10000;
-        
-        const count5k = Math.floor(remaining10k / 5000);
-        const remaining5k = remaining10k % 5000;
-        
-        const count1k = Math.floor(remaining5k / 1000);
-        
-        if (count50k > 0) denominationChanges['50000'] = -count50k;
-        if (count10k > 0) denominationChanges['10000'] = -count10k;
-        if (count5k > 0) denominationChanges['5000'] = -count5k;
-        if (count1k > 0) denominationChanges['1000'] = -count1k;
+        if (Object.keys(krwBreakdown).length > 0) {
+          // krwBreakdown이 있으면 사용
+          Object.entries(krwBreakdown).forEach(([denom, amount]: [string, any]) => {
+            if (amount && parseInt(amount.toString()) > 0) {
+              denominationChanges[denom] = -parseInt(amount.toString()); // KRW 감소
+            }
+          });
+        } else {
+          // krwBreakdown이 없으면 자동 분해
+          const krwAmount = parseFloat(transaction.toAmount.toString());
+          
+          // 159,000원 예시: 50,000원×3 + 5,000원×1 + 1,000원×4
+          const count50k = Math.floor(krwAmount / 50000);
+          const remaining50k = krwAmount % 50000;
+          
+          const count10k = Math.floor(remaining50k / 10000);
+          const remaining10k = remaining50k % 10000;
+          
+          const count5k = Math.floor(remaining10k / 5000);
+          const remaining5k = remaining10k % 5000;
+          
+          const count1k = Math.floor(remaining5k / 1000);
+          
+          if (count50k > 0) denominationChanges['50000'] = -count50k;
+          if (count10k > 0) denominationChanges['10000'] = -count10k;
+          if (count5k > 0) denominationChanges['5000'] = -count5k;
+          if (count1k > 0) denominationChanges['1000'] = -count1k;
+        }
       }
     } else if (cashAsset.currency === 'VND') {
-      // VND 현금 상세 페이지: cash_exchange 거래에서 항상 VND 감소로 처리 (사업자가 VND 지급)
-      const vndAmount = parseFloat(transaction.toAmount.toString());
-      let remaining = vndAmount;
-      const vndDenoms = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
+      // VND 현금 상세 페이지에서 환전 거래 처리
+      const isVndIncrease = transaction.fromAssetName === cashAsset.name; // VND가 fromAsset이면 증가
       
-      vndDenoms.forEach(denom => {
-        if (remaining >= denom) {
-          const count = Math.floor(remaining / denom);
-          if (count > 0) {
-            denominationChanges[denom.toString()] = -count;
-            remaining -= count * denom;
+      if (isVndIncrease) {
+        // VND→다른통화: denominationAmounts는 VND 권종 (VND 증가)
+        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+          if (amount && parseFloat(amount as string) > 0) {
+            denominationChanges[denom] = parseInt(amount as string); // VND 증가
           }
+        });
+      } else {
+        // 다른통화→VND: vndBreakdown 사용하거나 금액을 권종으로 분해 (VND 감소)
+        if (Object.keys(vndBreakdown).length > 0) {
+          // vndBreakdown이 있으면 사용
+          Object.entries(vndBreakdown).forEach(([denom, amount]: [string, any]) => {
+            if (amount && parseInt(amount.toString()) > 0) {
+              denominationChanges[denom] = -parseInt(amount.toString()); // VND 감소
+            }
+          });
+        } else {
+          // vndBreakdown이 없으면 자동 분해
+          const vndAmount = parseFloat(transaction.toAmount.toString());
+          let remaining = vndAmount;
+          const vndDenoms = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
+          
+          vndDenoms.forEach(denom => {
+            if (remaining >= denom) {
+              const count = Math.floor(remaining / denom);
+              if (count > 0) {
+                denominationChanges[denom.toString()] = -count;
+                remaining -= count * denom;
+              }
+            }
+          });
         }
-      });
+      }
     } else if (cashAsset.currency === 'USD') {
       // USD 현금 상세 페이지에서 환전 거래 처리
       const isUsdIncrease = transaction.fromAssetName === cashAsset.name; // USD가 fromAsset이면 증가
