@@ -763,6 +763,29 @@ export default function TransactionForm() {
       }
     }
 
+    // 권종별 보유 수량 검증 (KRW 분배)
+    if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
+      const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
+      const krwCashAsset = assetArray.find((asset: any) => 
+        asset.name === "KRW 현금" && asset.currency === "KRW"
+      );
+      
+      if (krwCashAsset?.metadata?.denominations) {
+        const denomComposition = krwCashAsset.metadata.denominations;
+        for (const [denom, requiredCount] of Object.entries(krwBreakdown)) {
+          const availableCount = denomComposition[denom] || 0;
+          if (requiredCount > availableCount) {
+            toast({
+              variant: "destructive",
+              title: "KRW 보유 수량 부족",
+              description: `${formatNumber(denom)} KRW 권종이 ${requiredCount - availableCount}장 부족합니다.`,
+            });
+            return;
+          }
+        }
+      }
+    }
+
     // 권종별 보유 수량 검증 (USD 분배)
     if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
       const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -1669,22 +1692,36 @@ export default function TransactionForm() {
                                   </div>
                                   {(() => {
                                     // KRW 현금 자산에서 해당 권종의 보유 장수 조회
-                                    const krwCashAsset = assets?.find?.((asset: any) => 
+                                    const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
+                                    const krwCashAsset = assetArray.find((asset: any) => 
                                       asset.name === "KRW 현금" && asset.currency === "KRW"
                                     );
+                                    
+                                    console.log(`KRW ${denom} 권종 보유량 확인:`, {
+                                      denom: denom,
+                                      krwCashAsset: krwCashAsset,
+                                      denominations: krwCashAsset?.metadata?.denominations
+                                    });
 
                                     if (krwCashAsset?.metadata?.denominations) {
                                       const availableCount = krwCashAsset.metadata.denominations[denom] || 0;
                                       const remainingCount = Math.max(0, availableCount - count);
+                                      const isInsufficient = count > availableCount;
+                                      
                                       return (
-                                        <div className="text-xs text-blue-600 mt-1">
+                                        <div className={`text-xs mt-1 ${isInsufficient ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
                                           보유: {availableCount}장 - 사용량: {count}장 = 남은량: {remainingCount}장
+                                          {isInsufficient && (
+                                            <div className="text-red-600 font-bold mt-1">
+                                              ⚠️ 보유량 부족!
+                                            </div>
+                                          )}
                                         </div>
                                       );
                                     }
                                     return (
                                       <div className="text-xs text-red-600 mt-1">
-                                        보유량 정보 없음
+                                        KRW 현금 자산 정보를 불러올 수 없습니다.
                                       </div>
                                     );
                                   })()}
