@@ -2052,29 +2052,8 @@ export default function TransactionForm() {
                             <div key={denom} className="bg-white p-3 rounded border border-green-200">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex flex-col min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <div className="text-sm sm:text-base font-medium text-gray-900">
-                                      ${denomValue}
-                                    </div>
-                                    <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
-                                      매도시세: {(() => {
-                                        // USD 권종에 따른 해당 환율 찾기
-                                        let searchDenom = "100"; // 기본값
-                                        if (denomValue >= 100) searchDenom = "100";
-                                        else if (denomValue >= 50) searchDenom = "50"; 
-                                        else if (denomValue >= 10) searchDenom = "20_10";
-                                        else searchDenom = "5_2_1";
-                                        
-                                        const usdRate = exchangeRates?.find((rate: any) => 
-                                          rate.fromCurrency === "USD" && 
-                                          rate.toCurrency === "VND" && 
-                                          rate.denomination === searchDenom
-                                        );
-                                        
-                                        const sellRate = usdRate?.myBuyRate ? parseFloat(usdRate.myBuyRate) : 25000;
-                                        return sellRate.toLocaleString();
-                                      })()}
-                                    </div>
+                                  <div className="text-sm sm:text-base font-medium text-gray-900">
+                                    ${denomValue}
                                   </div>
                                   <div className="text-xs sm:text-sm text-gray-500">
                                     {count}장 × ${denomValue} = ${subtotal}
@@ -2120,30 +2099,22 @@ export default function TransactionForm() {
                       <div className="text-xs sm:text-sm font-medium text-green-700">
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
-                            // USD 권종별 분배 총액 계산
-                            let totalAmount = 0;
+                            console.log("USD 총 분배액 계산 시작");
+                            console.log("formData:", {
+                              fromCurrency: formData.fromCurrency,
+                              toCurrency: formData.toCurrency,
+                              denominationAmounts: formData.denominationAmounts
+                            });
                             
-                            // 권종별 환율 적용 실제 계산값 사용
-                            const currentTotalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
-                              if (amount && parseFloat(amount) > 0) {
-                                const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                                return total + (parseFloat(amount) * denomValue);
-                              }
-                              return total;
+                            // USD 권종별 분배의 총액은 displayBreakdown 사용
+                            const totalAmount = Object.entries(displayBreakdown || {}).reduce((total, [denom, count]) => {
+                              const denomValue = parseInt(denom);
+                              const subtotal = count * denomValue;
+                              console.log(`USD 총액 계산: ${denom} USD × ${count}장 = ${subtotal}`);
+                              return total + subtotal;
                             }, 0);
                             
-                            if (currentTotalFromDenominations > 0) {
-                              // VND → USD는 myBuyRate 사용하고 Math.floor로 정확한 계산
-                              const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000");
-                              const rate = parseFloat(rateInfo?.myBuyRate || "0");
-                              
-                              if (rate > 0) {
-                                const calculatedAmount = currentTotalFromDenominations * rate;
-                                totalAmount = Math.ceil(calculatedAmount);
-                                console.log(`VND→USD 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.ceil = ${totalAmount} USD`);
-                              }
-                            }
-                            
+                            console.log(`USD 총 분배액 최종: ${totalAmount}`);
                             return totalAmount.toLocaleString();
                           })()} USD
                         </span>
