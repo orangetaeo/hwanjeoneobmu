@@ -2259,6 +2259,10 @@ export default function TransactionForm() {
                               // USD는 소수점 이하 올림
                               finalAmount = Math.ceil(calculatedTotal);
                               console.log(`VND→USD 올림 처리: ${calculatedTotal} → ${finalAmount}`);
+                            } else if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                              // KRW→USD도 소수점 이하 올림
+                              finalAmount = Math.ceil(calculatedTotal);
+                              console.log(`KRW→USD 올림 처리: ${calculatedTotal} → ${finalAmount}`);
                             } else {
                               finalAmount = Math.floor(calculatedTotal);
                             }
