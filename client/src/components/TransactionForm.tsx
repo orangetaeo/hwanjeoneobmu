@@ -1536,25 +1536,22 @@ export default function TransactionForm() {
                                 const calculatedVNDAmount = Object.entries(formData.denominationAmounts || {}).reduce((totalVND, [denom, amount]) => {
                                   if (amount && parseFloat(amount) > 0) {
                                     const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                                    const totalKRW = parseFloat(amount) * denomValue;
+                                    const totalFromCurrency = parseFloat(amount) * denomValue;
                                     
                                     const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
                                     const rate = formData.fromCurrency === "KRW" ? 
                                       parseFloat(rateInfo?.mySellRate || "0") :
                                       parseFloat(rateInfo?.myBuyRate || "0");
                                     
-                                    return totalVND + (totalKRW * rate);
+                                    return totalVND + (totalFromCurrency * rate);
                                   }
                                   return totalVND;
                                 }, 0);
                                 
                                 const flooredAmount = formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedVNDAmount) : calculatedVNDAmount;
                                 
-                                // 정확한 금액으로 VND 분배 계산
-                                const tempBreakdown = calculateVNDBreakdown(flooredAmount);
-                                totalAmount = Object.entries(tempBreakdown).reduce((total, [denom, count]) => {
-                                  return total + (parseInt(denom) * count);
-                                }, 0);
+                                // 실제 계산 금액 그대로 사용 (자동 보정 없음)
+                                totalAmount = flooredAmount;
                               } else {
                                 totalAmount = 0;
                               }
