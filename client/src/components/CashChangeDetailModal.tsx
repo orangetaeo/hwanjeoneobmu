@@ -21,6 +21,11 @@ interface CashChangeDetailModalProps {
 export default function CashChangeDetailModal({ transaction, isOpen, onClose, cashAsset }: CashChangeDetailModalProps) {
   if (!transaction || (transaction.type !== 'cash_change' && (transaction.type as string) !== 'cash_exchange')) return null;
 
+  console.log(`=== CashChangeDetailModal 시작 ===`);
+  console.log(`거래 타입: ${transaction.type}`);
+  console.log(`현재 자산: ${cashAsset.name} (${cashAsset.currency})`);
+  console.log(`거래 메타데이터:`, transaction.metadata);
+
   const metadata = transaction.metadata as any;
   let denominationChanges = metadata?.denominationChanges || {};
   
@@ -114,6 +119,9 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
     }
   }
   
+  console.log(`=== 최종 denominationChanges ===`);
+  console.log(`denominationChanges:`, denominationChanges);
+  
   // 통화별 지폐 단위 정의
   const getCurrencyDenominations = (currency: string) => {
     switch (currency) {
@@ -185,7 +193,9 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
 
     // denominationChanges에 저장된 모든 키를 순회
     Object.entries(denominationChanges).forEach(([denom, change]) => {
-      if (change && Math.abs(change) > 0) {
+      const changeNum = typeof change === 'number' ? change : parseInt(change as string) || 0;
+      
+      if (changeNum && Math.abs(changeNum) > 0) {
         // 권종별 값 계산
         let denomValue = 0;
         if (denom === '20/10') {
@@ -194,17 +204,17 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
           denomValue = parseInt(denom.replace(/,/g, '')); // 콤마 제거 후 숫자 변환
         }
         
-        if (change > 0) {
+        if (changeNum > 0) {
           increases.push({
             denomination: denom,
-            change,
-            value: change * denomValue
+            change: changeNum,
+            value: changeNum * denomValue
           });
         } else {
           decreases.push({
             denomination: denom,
-            change: Math.abs(change),
-            value: Math.abs(change) * denomValue
+            change: Math.abs(changeNum),
+            value: Math.abs(changeNum) * denomValue
           });
         }
       }
