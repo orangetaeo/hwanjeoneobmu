@@ -210,11 +210,6 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                     ))}
                   </div>
 
-                  {/* 모바일에서 카드 터치 안내 */}
-                  <div className="mt-4 pt-4 border-t border-gray-200 sm:hidden">
-                    <p className="text-xs text-gray-500 text-center">카드를 터치하여 증감내역 보기</p>
-                  </div>
-
                   {/* PC에서만 증감 내역 버튼 표시 */}
                   <div className="mt-4 pt-4 border-t border-gray-200 hidden sm:block">
                     <Button 
