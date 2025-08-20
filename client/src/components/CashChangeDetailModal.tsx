@@ -226,8 +226,9 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        {/* 고정 헤더 */}
+        <DialogHeader className="flex-shrink-0 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Banknote size={20} />
             {(transaction.type as string) === 'cash_exchange' ? '현금 환전 상세 내역' : '현금 증감 상세 내역'}
@@ -239,7 +240,9 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        {/* 스크롤 가능한 내용 영역 */}
+        <div className="flex-1 overflow-y-auto mt-4">
+          <div className="space-y-6">
           {/* 전체 요약 */}
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
@@ -333,6 +336,7 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
               <p className="text-gray-700">{transaction.memo}</p>
             </Card>
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
