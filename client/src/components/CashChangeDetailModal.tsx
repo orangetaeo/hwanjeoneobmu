@@ -105,6 +105,25 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
           denominationChanges[denom] = -(amount as number); // USD 감소
         }
       });
+    } else if (cashAsset.currency === 'USD') {
+      // USD 현금 상세 페이지: 거래 유형에 따라 증가/감소 판단
+      const isUsdIncrease = transaction.toAssetName === cashAsset.name; // USD가 toAsset이면 증가
+      
+      if (isUsdIncrease) {
+        // USD 증가인 경우: denominationAmounts 사용 (고객이 준 USD)
+        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+          if (amount && parseFloat(amount as string) > 0) {
+            denominationChanges[denom] = parseInt(amount as string); // USD 증가
+          }
+        });
+      } else {
+        // USD 감소인 경우: denominationAmounts 사용 (마이너스로 표시)
+        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+          if (amount && parseFloat(amount as string) > 0) {
+            denominationChanges[denom] = -parseInt(amount as string); // USD 감소
+          }
+        });
+      }
     }
   }
   
