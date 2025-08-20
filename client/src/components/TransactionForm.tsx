@@ -2012,33 +2012,7 @@ export default function TransactionForm() {
                         });
                       })()}
                       
-                      {/* USD 분배 총액 검증 */}
-                      {(() => {
-                        const expectedUSDTotal = Math.floor(parseFloat(formData.toAmount) || 0);
-                        const actualUSDTotal = calculateTotalFromUSDBreakdown(usdBreakdown);
-                        
-                        if (actualUSDTotal !== expectedUSDTotal && expectedUSDTotal > 0) {
-                          const difference = expectedUSDTotal - actualUSDTotal;
-                          return (
-                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-                              <div className="text-xs text-red-600">
-                                ⚠️ 분배액과 환전액이 일치하지 않습니다
-                              </div>
-                              <div className="text-xs text-red-700 mt-1">
-                                환전 예상 금액: ${expectedUSDTotal}<br/>
-                                실제 분배 금액: ${actualUSDTotal}<br/>
-                                차이: ${Math.abs(difference)} {difference > 0 ? '부족' : '초과'}
-                              </div>
-                              {difference > 0 && (
-                                <div className="text-xs text-red-600 mt-1">
-                                  💡 USD 현금 보유량을 확인하세요
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
+
                     </div>
                   </div>
                 </div>
