@@ -667,7 +667,9 @@ export default function TransactionForm() {
           }));
           
           // KRW 분배 계산 및 설정
-          const breakdown = calculateKRWBreakdown(finalAmount);
+          console.log("VND→KRW 환전: KRW 분배 계산 시작");
+          const breakdown = calculateKRWBreakdown(finalAmount, false);
+          console.log("KRW 분배 계산 완료:", breakdown);
           setKrwBreakdown(breakdown);
         } else if (formData.toCurrency === "USD") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
