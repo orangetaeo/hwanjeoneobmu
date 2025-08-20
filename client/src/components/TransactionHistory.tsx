@@ -287,8 +287,14 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
 
                           {profitRate !== null && (
                             <div className="flex justify-between sm:block">
-                              <span className="text-gray-500 text-xs sm:text-sm">수익률</span>
-                              <span className={`font-medium text-sm sm:text-base ${profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              <span className="text-gray-500 text-xs sm:text-sm mb-1">수익률</span>
+                              <span className={`
+                                font-bold text-sm sm:text-base px-2 py-1 rounded-md border
+                                ${profitRate >= 0 
+                                  ? 'text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-900/30 dark:border-green-600' 
+                                  : 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/30 dark:border-red-600'
+                                }
+                              `}>
                                 {profitRate >= 0 ? '+' : ''}{profitRate.toFixed(2)}%
                               </span>
                             </div>
@@ -332,11 +338,17 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                     )}
                   </div>
 
-                  {/* 수익 표시 - 강조 표시 */}
+                  {/* 수익 표시 - 눈에 띄는 디자인 */}
                   {transaction.profit !== 0 && (
                     <div className="text-left sm:text-right flex-shrink-0">
-                      <div className="text-xs sm:text-sm text-gray-500">수익</div>
-                      <div className={`font-bold text-lg sm:text-xl ${transaction.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className="text-xs sm:text-sm text-gray-500 mb-1">수익</div>
+                      <div className={`
+                        font-bold text-lg sm:text-xl px-3 py-2 rounded-lg border-2 shadow-md
+                        ${transaction.profit >= 0 
+                          ? 'text-green-700 bg-green-50 border-green-200 shadow-green-100 dark:text-green-400 dark:bg-green-900/30 dark:border-green-600 dark:shadow-green-900/20' 
+                          : 'text-red-700 bg-red-50 border-red-200 shadow-red-100 dark:text-red-400 dark:bg-red-900/30 dark:border-red-600 dark:shadow-red-900/20'
+                        }
+                      `}>
                         {transaction.profit >= 0 ? '+' : ''}₩{formatInputWithCommas(Math.round(transaction.profit).toString())}
                       </div>
                     </div>
@@ -381,12 +393,14 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             </div>
             
             <div>
-              <div className="text-gray-500 text-xs sm:text-sm">총 수익</div>
-              <div className={`font-bold text-lg sm:text-xl ${
-                filteredTransactions.reduce((sum, t) => sum + t.profit, 0) >= 0 
-                  ? 'text-green-600' 
-                  : 'text-red-600'
-              }`}>
+              <div className="text-gray-500 text-xs sm:text-sm mb-2">총 수익</div>
+              <div className={`
+                font-bold text-lg sm:text-xl px-4 py-3 rounded-xl border-2 shadow-lg text-center
+                ${filteredTransactions.reduce((sum, t) => sum + t.profit, 0) >= 0 
+                  ? 'text-green-800 bg-gradient-to-r from-green-50 to-green-100 border-green-300 shadow-green-200 dark:text-green-300 dark:from-green-900/40 dark:to-green-800/40 dark:border-green-500 dark:shadow-green-900/30' 
+                  : 'text-red-800 bg-gradient-to-r from-red-50 to-red-100 border-red-300 shadow-red-200 dark:text-red-300 dark:from-red-900/40 dark:to-red-800/40 dark:border-red-500 dark:shadow-red-900/30'
+                }
+              `}>
                 {filteredTransactions.reduce((sum, t) => sum + t.profit, 0) >= 0 ? '+' : ''}
                 ₩{formatInputWithCommas(
                   Math.round(filteredTransactions
