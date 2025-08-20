@@ -85,7 +85,7 @@ export default function CashTransactionHistory({
       let isIncrease = false;
       
       if ((transaction.type as string) === 'cash_exchange') {
-        // cash_exchange 비즈니스 로직: 고객이 KRW를 주고 VND를 받아감
+        // cash_exchange 비즈니스 로직:
         // fromAssetName = 고객이 준 돈 = 사업자가 받음(증가)
         // toAssetName = 고객이 받은 돈 = 사업자가 줌(감소)
         if (transaction.fromAssetName === cashAsset.name) {
@@ -167,16 +167,13 @@ export default function CashTransactionHistory({
 
   const getTransactionTypeText = (transaction: Transaction, isDecrease: boolean) => {
     if ((transaction.type as string) === 'cash_exchange') {
-      // 비즈니스 관점에서의 올바른 표기
-      // 실제 환전: 고객이 VND를 주고 KRW를 받아감
-      // -> 사업자는 VND를 수령하고 KRW를 지급 (하지만 고객 관점에서는 KRW를 수령)
-      
-      if (cashAsset.currency === 'KRW') {
-        // KRW 자산 - 사업자가 고객으로부터 VND를 받고 KRW를 줌 = KRW 현금 수령
-        return 'KRW 현금 환전 수령';
-      } else if (cashAsset.currency === 'VND') {
-        // VND 자산 - 사업자가 고객으로부터 VND를 받음 = VND 현금 지급  
-        return 'VND 현금 환전 지급';
+      // 사업자 관점에서 현금 흐름 표시
+      if (transaction.fromAssetName === cashAsset.name) {
+        // 고객이 준 돈 = 사업자가 받은 돈 (증가)
+        return `${cashAsset.currency} 현금 환전 수령`;
+      } else if (transaction.toAssetName === cashAsset.name) {
+        // 고객이 받은 돈 = 사업자가 준 돈 (감소)
+        return `${cashAsset.currency} 현금 환전 지급`;
       }
       
       return '현금 환전';
