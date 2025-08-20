@@ -1203,9 +1203,16 @@ export default function TransactionForm() {
                         const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
                         console.log("사용할 자산 배열:", assetArray);
                         
+                        // 모든 자산을 출력해서 VND 현금이 어떻게 저장되어 있는지 확인
+                        console.log("모든 자산 목록:");
+                        assetArray.forEach((asset: any, index: number) => {
+                          console.log(`${index}: name="${asset.name}", currency="${asset.currency}", type="${asset.type}"`);
+                        });
+                        
                         const vndCashAsset = assetArray.find((asset: any) => {
-                          console.log("자산 확인:", asset.name, asset.currency, asset.type);
-                          return asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash";
+                          const isMatch = asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash";
+                          console.log(`자산 확인: name="${asset.name}", currency="${asset.currency}", type="${asset.type}" -> 매치: ${isMatch}`);
+                          return isMatch;
                         });
                         
                         const denomComposition = vndCashAsset?.metadata?.denominations || {};
@@ -1266,7 +1273,7 @@ export default function TransactionForm() {
                           
                           denominations.forEach(denom => {
                             const currentCount = vndBreakdown[denom.toString()] || 0;
-                            const denomKey = denom.toLocaleString(); // 쉼표 포함 형태로 변환
+                            const denomKey = denom.toString(); // 쉼표 없는 형태로 변환
                             const availableCount = denomComposition[denomKey] || 0;
                             const usableCount = availableCount - currentCount;
                             
@@ -1293,9 +1300,10 @@ export default function TransactionForm() {
                             vndBreakdown[denom.toString()] : defaultCount;
                           const suggestedCount = suggestions[denom.toString()] || 0;
                         
-                          // 권종 키 형태 확인 (쉼표 포함된 형태로 저장되어 있음)
-                          const denomKey = denom.toLocaleString();  // 숫자를 "500,000" 형태로 변환
+                          // 권종 키 형태 확인 (쉼표 없는 형태로 저장되어 있음)
+                          const denomKey = denom.toString();  // 숫자를 "500000" 형태로 변환
                           const availableCount = denomComposition[denomKey] || 0;
+                          console.log(`${denom} VND 보유량 확인: key="${denomKey}", available=${availableCount}`);
                           
                           // 모든 권종을 기본으로 표기
                           if (true) {
@@ -2144,7 +2152,7 @@ export default function TransactionForm() {
                 const shortageItems: Array<{denom: number, required: number, available: number, shortage: number}> = [];
                 Object.entries(actualBreakdown).forEach(([denom, count]) => {
                   const requiredCount = parseInt(count?.toString() || "0");
-                  const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+                  const denomKey = denom.toString(); // 쉼표 없는 형태로 변환
                   const availableCount = denomComposition[denomKey] || 0;
                   if (requiredCount > availableCount) {
                     const shortage = requiredCount - availableCount;
