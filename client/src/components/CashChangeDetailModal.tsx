@@ -21,10 +21,7 @@ interface CashChangeDetailModalProps {
 export default function CashChangeDetailModal({ transaction, isOpen, onClose, cashAsset }: CashChangeDetailModalProps) {
   if (!transaction || (transaction.type !== 'cash_change' && (transaction.type as string) !== 'cash_exchange')) return null;
 
-  console.log(`=== CashChangeDetailModal 시작 ===`);
-  console.log(`거래 타입: ${transaction.type}`);
-  console.log(`현재 자산: ${cashAsset.name} (${cashAsset.currency})`);
-  console.log(`거래 메타데이터:`, transaction.metadata);
+
 
   const metadata = transaction.metadata as any;
   let denominationChanges = metadata?.denominationChanges || {};
@@ -82,8 +79,6 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
       } else {
         // VND 감소인 경우: 실제 VND 분배 계산
         const vndAmount = parseFloat(transaction.toAmount.toString());
-        console.log(`VND 감소 계산: ${vndAmount} VND`);
-        
         // VND 분배 계산 (1,798,000 VND)
         let remaining = vndAmount;
         const vndDenoms = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
@@ -94,7 +89,6 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
             if (count > 0) {
               denominationChanges[denom.toString()] = -count;
               remaining -= count * denom;
-              console.log(`VND 감소: ${denom} ${count}장 -> ${-count}`);
             }
           }
         });
@@ -102,25 +96,20 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
     } else if (cashAsset.currency === 'USD') {
       // USD 현금 상세 페이지: denominationAmounts가 USD 권종이므로 항상 증가로 처리
       // 실제로는 VND→USD 환전에서 USD를 받은 것 (사업자 관점에서 USD 증가)
-      console.log(`USD 거래 처리: denominationAmounts=${JSON.stringify(denominationAmounts)}`);
-      
       Object.entries(denominationAmounts).forEach(([denom, amount]) => {
         if (amount && parseFloat(amount as string) > 0) {
           // 20_10 권종 처리
           if (denom === '20_10') {
             denominationChanges['20/10'] = parseInt(amount as string); // 표시용으로 20/10 사용
-            console.log(`USD 증가: 20/10달러 ${amount}장 -> ${parseInt(amount as string)}`);
           } else {
             denominationChanges[denom] = parseInt(amount as string); // USD 증가
-            console.log(`USD 증가: ${denom}달러 ${amount}장 -> ${parseInt(amount as string)}`);
           }
         }
       });
     }
   }
   
-  console.log(`=== 최종 denominationChanges ===`);
-  console.log(`denominationChanges:`, denominationChanges);
+
   
   // 통화별 지폐 단위 정의
   const getCurrencyDenominations = (currency: string) => {
@@ -219,6 +208,21 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
         }
       }
     });
+
+    // VND의 경우 고액권부터 정렬
+    if (cashAsset.currency === 'VND') {
+      increases.sort((a, b) => {
+        const aValue = parseInt(a.denomination.replace(/,/g, ''));
+        const bValue = parseInt(b.denomination.replace(/,/g, ''));
+        return bValue - aValue; // 내림차순 정렬 (고액권 먼저)
+      });
+      
+      decreases.sort((a, b) => {
+        const aValue = parseInt(a.denomination.replace(/,/g, ''));
+        const bValue = parseInt(b.denomination.replace(/,/g, ''));
+        return bValue - aValue; // 내림차순 정렬 (고액권 먼저)
+      });
+    }
 
     return { increases, decreases };
   };
