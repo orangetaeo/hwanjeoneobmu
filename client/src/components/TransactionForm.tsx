@@ -1771,13 +1771,34 @@ export default function TransactionForm() {
                           return total;
                         }, 0);
 
-                        // VND → KRW 환전될 KRW 금액 계산 (Math.ceil 사용)
+                        // VND → KRW 환전될 KRW 금액 계산 (Math.ceil 사용), USD → KRW도 올림 처리
                         const targetAmount = totalFromDenominations > 0 ? (() => {
-                          // VND → KRW는 myBuyRate 사용 (고객에게 유리한 환율)
-                          const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000")?.myBuyRate || "0";
-                          const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                          console.log(`KRW 분배 계산 (보유량 기반): ${totalFromDenominations} VND × ${rate} = ${calculatedAmount} KRW`);
-                          return formData.toCurrency === "KRW" ? Math.ceil(calculatedAmount) : calculatedAmount;
+                          if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
+                            // VND → KRW는 myBuyRate 사용 (고객에게 유리한 환율)
+                            const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000")?.myBuyRate || "0";
+                            const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                            console.log(`VND→KRW 분배 계산: ${totalFromDenominations} VND × ${rate} = ${calculatedAmount} KRW`);
+                            return Math.ceil(calculatedAmount);
+                          } else if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                            // USD → KRW는 myBuyRate 사용하고 1000원 단위 올림 처리
+                            const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                              if (amount && parseFloat(amount) > 0) {
+                                const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                const totalFromCurrency = parseFloat(amount) * denomValue;
+                                const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                                const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                                if (rate > 0) {
+                                  return total + (totalFromCurrency * rate);
+                                }
+                              }
+                              return total;
+                            }, 0);
+                            const ceilAmount = Math.ceil(calculatedTotal / 1000) * 1000;
+                            console.log(`USD→KRW 분배 계산: 계산값 ${calculatedTotal} → 1000원 단위 올림 ${ceilAmount} KRW`);
+                            return ceilAmount;
+                          } else {
+                            return totalFromDenominations;
+                          }
                         })() : (parseFloat(formData.toAmount) || 0);
                         
                         // 실제로 고객이 받을 금액을 기준으로 분배
@@ -1930,16 +1951,34 @@ export default function TransactionForm() {
                             }, 0);
                             
                             if (currentTotalFromDenominations > 0) {
-                              // VND → KRW는 myBuyRate 사용하고 Math.ceil로 고객에게 유리하게
-                              const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000");
-                              const rate = parseFloat(rateInfo?.myBuyRate || "0");
-                              
-                              if (rate > 0) {
-                                const calculatedAmount = currentTotalFromDenominations * rate;
-                                // Math.ceil 후 1000원 단위로 반올림
-                                const ceilAmount = Math.ceil(calculatedAmount);
-                                totalAmount = Math.ceil(ceilAmount / 1000) * 1000;
-                                console.log(`VND→KRW 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.ceil = ${ceilAmount} → 1000원 반올림 = ${totalAmount} KRW`);
+                              if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
+                                // VND → KRW는 myBuyRate 사용하고 Math.ceil로 고객에게 유리하게
+                                const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000");
+                                const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                                
+                                if (rate > 0) {
+                                  const calculatedAmount = currentTotalFromDenominations * rate;
+                                  // Math.ceil 후 1000원 단위로 반올림
+                                  const ceilAmount = Math.ceil(calculatedAmount);
+                                  totalAmount = Math.ceil(ceilAmount / 1000) * 1000;
+                                  console.log(`VND→KRW 총액 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.ceil = ${ceilAmount} → 1000원 반올림 = ${totalAmount} KRW`);
+                                }
+                              } else if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                                // USD → KRW는 권종별 환율 적용하고 1000원 단위 올림 처리
+                                const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                                  if (amount && parseFloat(amount) > 0) {
+                                    const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                    const totalFromCurrency = parseFloat(amount) * denomValue;
+                                    const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                                    const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                                    if (rate > 0) {
+                                      return total + (totalFromCurrency * rate);
+                                    }
+                                  }
+                                  return total;
+                                }, 0);
+                                totalAmount = Math.ceil(calculatedTotal / 1000) * 1000;
+                                console.log(`USD→KRW 총액 계산: 계산값 ${calculatedTotal} → 1000원 단위 올림 ${totalAmount} KRW`);
                               }
                             }
                             
@@ -1966,9 +2005,28 @@ export default function TransactionForm() {
                 });
                 return shouldShow;
               })() && (() => {
-                // 환전 금액으로부터 USD 분배 계산 (정수 부분만)
-                const targetUSDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
-                console.log(`USD 분배 대상 금액: ${targetUSDAmount} USD`);
+                // 환전 금액으로부터 USD 분배 계산 - KRW→USD는 올림 처리 적용
+                let targetUSDAmount;
+                if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                  // KRW→USD는 올림 처리하여 분배 대상 계산
+                  const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      const totalFromCurrency = parseFloat(amount) * denomValue;
+                      const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                      const rate = parseFloat(rateInfo?.mySellRate || "0");
+                      if (rate > 0) {
+                        return total + (totalFromCurrency / rate);
+                      }
+                    }
+                    return total;
+                  }, 0);
+                  targetUSDAmount = Math.ceil(calculatedTotal);
+                  console.log(`USD 분배 대상 금액 (KRW→USD 올림): 계산값 ${calculatedTotal} → ${targetUSDAmount} USD`);
+                } else {
+                  targetUSDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
+                  console.log(`USD 분배 대상 금액: ${targetUSDAmount} USD`);
+                }
                 
                 // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
                 let displayBreakdown;
