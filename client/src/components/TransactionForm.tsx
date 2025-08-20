@@ -439,9 +439,13 @@ export default function TransactionForm() {
     console.log(`KRW 분배 계산 시작: ${totalAmount.toLocaleString()} KRW`);
 
     // KRW 현금 자산에서 권종별 보유 장수 조회
-    const krwCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+    const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+    const krwCashAsset = assetArray.find((asset: any) => 
       asset.name === "KRW 현금" && asset.currency === "KRW"
-    ) : null;
+    );
+    
+    console.log("KRW 현금 자산 검색 결과:", krwCashAsset);
+    console.log("권종별 보유량:", krwCashAsset?.metadata?.denominations);
     
 
 
