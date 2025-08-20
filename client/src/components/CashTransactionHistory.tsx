@@ -299,10 +299,10 @@ export default function CashTransactionHistory({
                   </div>
                 </div>
 
-                {/* 타입 필터 및 정렬 - 모바일 최적화 */}
-                <div className="flex flex-col sm:flex-row gap-2">
+                {/* 타입 필터 및 정렬 - 모바일 한 줄 배치 */}
+                <div className="flex gap-2">
                   <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease' | 'direct' | 'exchange') => setTypeFilter(value)}>
-                    <SelectTrigger className="w-full sm:flex-1 h-9 text-xs sm:text-sm">
+                    <SelectTrigger className="w-1/3 h-9 text-xs sm:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -315,7 +315,7 @@ export default function CashTransactionHistory({
                   </Select>
 
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="flex-1 h-10 sm:h-9 text-sm">
+                    <SelectTrigger className="flex-1 h-9 text-xs sm:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -329,7 +329,7 @@ export default function CashTransactionHistory({
                     size="sm"
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     data-testid="button-sort-order"
-                    className="px-3 h-10 sm:h-9"
+                    className="px-2 sm:px-3 h-9"
                   >
                     <ArrowUpDown size={14} />
                   </Button>
@@ -358,10 +358,10 @@ export default function CashTransactionHistory({
             </div>
           </Card>
 
-          {/* 거래 내역 헤더 - 모바일 최적화 */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
-            <h3 className="text-sm sm:text-lg font-semibold text-gray-900 text-center sm:text-left">최근 거래 내역</h3>
-            <div className="flex items-center justify-center sm:justify-end gap-2">
+          {/* 거래 내역 헤더 - PC/모바일 통합 한 줄 배치 */}
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm sm:text-lg font-semibold text-gray-900">최근 거래 내역</h3>
+            <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600">표시:</span>
               <Select value={displayCount.toString()} onValueChange={(value) => setDisplayCount(parseInt(value))}>
                 <SelectTrigger className="w-16 sm:w-20 text-xs sm:text-sm h-8 sm:h-9">
