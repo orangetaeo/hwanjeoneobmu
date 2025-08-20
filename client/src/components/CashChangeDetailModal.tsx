@@ -66,20 +66,15 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
         if (count1k > 0) denominationChanges['1000'] = -count1k;
       }
     } else if (cashAsset.currency === 'VND') {
-      // VND 현금 상세 페이지: 거래 유형에 따라 증가/감소 판단
-      const isVndIncrease = transaction.fromAssetName === cashAsset.name; // VND가 fromAsset이면 증가
+      // VND 현금 상세 페이지: USD→VND 환전에서 VND를 지급한 경우 (감소)
+      // denominationAmounts에 USD 권종이 있으면 VND를 지급한 것으로 판단
+      const hasUsdDenominations = Object.keys(denominationAmounts).some(key => 
+        ['50', '20_10', '100', '20', '10', '5', '2', '1'].includes(key)
+      );
       
-      if (isVndIncrease) {
-        // VND 증가인 경우: denominationAmounts 사용 (고객이 준 VND)
-        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
-          if (amount && parseFloat(amount as string) > 0) {
-            denominationChanges[denom] = parseInt(amount as string); // VND 증가
-          }
-        });
-      } else {
-        // VND 감소인 경우: 실제 VND 분배 계산
+      if (hasUsdDenominations) {
+        // USD→VND 환전: VND 감소 (사업자가 VND를 지급)
         const vndAmount = parseFloat(transaction.toAmount.toString());
-        // VND 분배 계산 (1,798,000 VND)
         let remaining = vndAmount;
         const vndDenoms = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
         
@@ -90,6 +85,13 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
               denominationChanges[denom.toString()] = -count;
               remaining -= count * denom;
             }
+          }
+        });
+      } else {
+        // VND→다른통화 환전: VND 증가 (고객이 VND를 지급)
+        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+          if (amount && parseFloat(amount as string) > 0) {
+            denominationChanges[denom] = parseInt(amount as string); // VND 증가
           }
         });
       }
@@ -228,14 +230,9 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   };
 
   const { increases, decreases } = getChangeInfo();
-  console.log('increases:', increases);
-  console.log('decreases:', decreases);
-  
   const totalIncrease = increases.reduce((sum, item) => sum + item.value, 0);
   const totalDecrease = decreases.reduce((sum, item) => sum + item.value, 0);
   const netChange = totalIncrease - totalDecrease; // 증가 - 감소 = 순변동
-  
-  console.log(`순변동 계산: totalIncrease=${totalIncrease}, totalDecrease=${totalDecrease}, netChange=${netChange}`);
 
   const formatDateTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
