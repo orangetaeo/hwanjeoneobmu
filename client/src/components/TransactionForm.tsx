@@ -1014,9 +1014,9 @@ export default function TransactionForm() {
                           }}
                           data-testid={`card-denom-${denom.value}`}
                         >
-                          {/* 상단: 권종명, 매도시세 - 모바일 최적화 */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                            <div className="flex items-center space-x-2 flex-1">
+                          {/* 상단: 체크박스, 권종명, 매도시세 - 모바일 한 줄 배치 */}
+                          <div className="flex items-center justify-between mb-2 gap-2">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
                               <div 
                                 className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer flex-shrink-0 ${(isSelected || hasData) ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}
                                 onClick={(e) => {
