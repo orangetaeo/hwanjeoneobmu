@@ -998,7 +998,6 @@ export default function TransactionForm() {
                       const isSelected = formData.fromDenominations.includes(denom.value);
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
                       const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
-                      console.log(`매매시세 조건 체크: useRate=${useRate}, toCurrency=${formData.toCurrency}, 조건결과=${useRate > 0 && (formData.toCurrency === "KRW" || formData.toCurrency === "USD")}`);
                       
                       return (
                         <div 
@@ -1071,7 +1070,7 @@ export default function TransactionForm() {
                                 )}
                               </div>
                             </div>
-                            {useRate > 0 && formData.toCurrency !== "VND" && (
+                            {useRate > 0 && formData.fromCurrency !== "VND" && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
                                   매매시세 {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
