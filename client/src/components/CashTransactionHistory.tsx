@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Search, Filter, ArrowUpDown, X, TrendingUp, TrendingDown, Clock, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { Transaction, CashAsset } from '@/types';
 import CashChangeDetailModal from '@/components/CashChangeDetailModal';
-import { formatCurrency } from '@/utils/helpers';
+import { formatCurrency, formatTransactionAmount } from '@/utils/helpers';
 
 interface CashTransactionHistoryProps {
   isOpen: boolean;
@@ -480,7 +480,7 @@ export default function CashTransactionHistory({
                             isDecrease ? 'text-red-600' : 'text-green-600'
                           }`}>
                             {isDecrease ? '-' : '+'}
-                            {formatCurrency(amount, cashAsset.currency)}
+                            {formatTransactionAmount(amount, cashAsset.currency, cashAsset.name)}
                           </p>
                           <p className="text-xs text-gray-500">{cashAsset.currency}</p>
                         </div>

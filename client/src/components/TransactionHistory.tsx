@@ -250,7 +250,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                         <div>
                           <div className="text-gray-500">수수료</div>
                           <div className="font-medium text-red-600">
-                            {formatInputWithCommas(transaction.fees.toString())}
+                            {formatTransactionAmount(transaction.fees, transaction.fromCurrency, transaction.fromAssetName)}
                           </div>
                         </div>
                       )}
@@ -264,7 +264,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                             <div>
                               <div className="text-gray-500">시장 가격</div>
                               <div className="font-medium">
-                                ₩{formatInputWithCommas(transaction.marketPrice.toString())}
+                                ₩{formatTransactionAmount(transaction.marketPrice, 'KRW')}
                               </div>
                             </div>
                           )}
@@ -273,7 +273,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                             <div>
                               <div className="text-gray-500">거래 가격</div>
                               <div className="font-medium">
-                                ₩{formatInputWithCommas(transaction.customPrice.toString())}
+                                ₩{formatTransactionAmount(transaction.customPrice, 'KRW')}
                               </div>
                             </div>
                           )}
