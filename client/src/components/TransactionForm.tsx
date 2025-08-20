@@ -1227,7 +1227,7 @@ export default function TransactionForm() {
                           const remainingAmount = targetTotal - currentTotal;
                           console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "남은 금액:", remainingAmount);
                           
-                          const suggestions = {};
+                          const suggestions: Record<string, number> = {};
                           
                           // 목표 금액에 도달했으면 추천 없음
                           if (remainingAmount <= 0) {
@@ -1236,10 +1236,12 @@ export default function TransactionForm() {
                           }
                           
                           // VND 현금 보유 상황 확인
-                          const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                          const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
                             asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                           ) : null;
                           const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                          console.log("VND 현금 자산:", vndCashAsset);
+                          console.log("권종 구성 데이터:", denomComposition);
                           
                           // 각 권종별로 남은 금액을 분배하는 방법들을 계산
                           const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
@@ -1268,12 +1270,12 @@ export default function TransactionForm() {
                         const suggestions = calculateSuggestions();
 
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
-                          const defaultCount = fixedBreakdown[denom.toString()] || 0;
+                          const defaultCount = (fixedBreakdown as Record<string, number>)[denom.toString()] || 0;
                           const currentCount = vndBreakdown?.[denom.toString()] !== undefined ? 
                             vndBreakdown[denom.toString()] : defaultCount;
                           const suggestedCount = suggestions[denom.toString()] || 0;
                         
-                          const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                          const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
                             asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                           ) : null;
                           
@@ -1306,7 +1308,7 @@ export default function TransactionForm() {
                                       type="text"
                                       min="0"
                                       max={availableCount}
-                                      value={currentCount.toString()}
+                                      value={currentCount?.toString() || "0"}
                                       className="w-16 sm:w-20 h-10 sm:h-12 text-sm sm:text-base text-center font-medium"
                                       onChange={(e) => {
                                         const value = e.target.value;
@@ -1913,7 +1915,7 @@ export default function TransactionForm() {
                         // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
                         const actualBreakdown = (vndBreakdown && Object.keys(vndBreakdown).length > 0) 
                           ? vndBreakdown 
-                          : fixedBreakdown;
+                          : (fixedBreakdown as Record<string, number>);
 
                         // VND 분배가 있는 경우에만 표시
                         const hasBreakdown = Object.entries(actualBreakdown).some(([denom, count]) => parseInt(count.toString()) > 0);
@@ -1924,11 +1926,11 @@ export default function TransactionForm() {
                               <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
                               <div className="space-y-1">
                                 {Object.entries(actualBreakdown)
-                                  .filter(([denom, count]) => parseInt(count.toString()) > 0)
+                                  .filter(([denom, count]) => parseInt(count?.toString() || "0") > 0)
                                   .sort(([a], [b]) => parseInt(b) - parseInt(a))
                                   .map(([denom, count]) => {
                                     const denomValue = parseInt(denom);
-                                    const denomCount = parseInt(count.toString());
+                                    const denomCount = parseInt(count?.toString() || "0");
                                     const subtotal = denomValue * denomCount;
                                     return (
                                       <div key={denom} className="flex items-center justify-between text-xs">
@@ -2045,13 +2047,13 @@ export default function TransactionForm() {
               // USD 권종 분배가 있는 경우 검증
               if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
                 // USD 현금 보유 상황 확인
-                const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                const usdCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
                   asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
                 ) : null;
                 const denomComposition = usdCashAsset?.metadata?.denominations || {};
 
                 // 보유량 부족 항목들 찾기
-                const shortageItems = [];
+                const shortageItems: Array<{denom: string, required: number, available: number, shortage: number}> = [];
                 Object.entries(usdBreakdown).forEach(([denom, count]) => {
                   const requiredCount = parseInt(count.toString());
                   const availableCount = denomComposition[denom] || 0;
@@ -2119,15 +2121,15 @@ export default function TransactionForm() {
                   : fixedBreakdown;
 
                 // VND 현금 보유 상황 확인
-                const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
                   asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                 ) : null;
                 const denomComposition = vndCashAsset?.metadata?.denominations || {};
 
                 // 보유량 부족 항목들 찾기
-                const shortageItems = [];
+                const shortageItems: Array<{denom: number, required: number, available: number, shortage: number}> = [];
                 Object.entries(actualBreakdown).forEach(([denom, count]) => {
-                  const requiredCount = parseInt(count.toString());
+                  const requiredCount = parseInt(count?.toString() || "0");
                   const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
                   const availableCount = denomComposition[denomKey] || 0;
                   if (requiredCount > availableCount) {
@@ -2169,11 +2171,11 @@ export default function TransactionForm() {
             {/* 금액 불일치 경고 */}
             {(() => {
               // VND 권종 분배가 있는 경우에만 검증
-              if (formData.toCurrency === "VND" && formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) {
+              if (formData.toCurrency === "VND" && vndBreakdown && Object.keys(vndBreakdown).length > 0) {
                 // 실제 분배 총액 계산
-                const actualTotal = Object.entries(formData.vndBreakdown).reduce((total, [denom, count]) => {
+                const actualTotal = Object.entries(vndBreakdown).reduce((total, [denom, count]) => {
                   const denomValue = parseInt(denom);
-                  const denomCount = parseInt(count.toString());
+                  const denomCount = parseInt(count?.toString() || "0");
                   return total + (denomValue * denomCount);
                 }, 0);
 
