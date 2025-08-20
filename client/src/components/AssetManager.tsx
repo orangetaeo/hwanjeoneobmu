@@ -164,9 +164,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                           e.stopPropagation();
                           onOpenModal('editCashAsset', asset);
                         }}
+                        disabled={isButtonLoading(`edit-${asset.id}`)}
                         data-testid={`button-edit-${asset.id}`}
                       >
-                        <Edit size={16} />
+                        {isButtonLoading(`edit-${asset.id}`) ? '처리중...' : <Edit size={16} />}
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -175,9 +176,10 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                           e.stopPropagation();
                           onOpenModal('deleteCashAsset', asset);
                         }}
+                        disabled={isButtonLoading(`delete-${asset.id}`)}
                         data-testid={`button-delete-${asset.id}`}
                       >
-                        <Trash2 size={16} className="text-red-600" />
+                        {isButtonLoading(`delete-${asset.id}`) ? '처리중...' : <Trash2 size={16} className="text-red-600" />}
                       </Button>
                     </div>
                   </div>
@@ -264,17 +266,19 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('editKoreanAccount', account)}
+                        disabled={isButtonLoading(`edit-${account.id}`)}
                         data-testid={`button-edit-account-${account.id}`}
                       >
-                        <Edit size={16} />
+                        {isButtonLoading(`edit-${account.id}`) ? '처리중...' : <Edit size={16} />}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('deleteKoreanAccount', account)}
+                        disabled={isButtonLoading(`delete-${account.id}`)}
                         data-testid={`button-delete-account-${account.id}`}
                       >
-                        <Trash2 size={16} className="text-red-600" />
+                        {isButtonLoading(`delete-${account.id}`) ? '처리중...' : <Trash2 size={16} className="text-red-600" />}
                       </Button>
                     </div>
                   </div>
@@ -327,17 +331,19 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('editVietnameseAccount', account)}
+                        disabled={isButtonLoading(`edit-${account.id}`)}
                         data-testid={`button-edit-account-${account.id}`}
                       >
-                        <Edit size={16} />
+                        {isButtonLoading(`edit-${account.id}`) ? '처리중...' : <Edit size={16} />}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('deleteVietnameseAccount', account)}
+                        disabled={isButtonLoading(`delete-${account.id}`)}
                         data-testid={`button-delete-account-${account.id}`}
                       >
-                        <Trash2 size={16} className="text-red-600" />
+                        {isButtonLoading(`delete-${account.id}`) ? '처리중...' : <Trash2 size={16} className="text-red-600" />}
                       </Button>
                     </div>
                   </div>
@@ -393,17 +399,19 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('editExchangeAsset', asset)}
+                        disabled={isButtonLoading(`edit-${asset.id}`)}
                         data-testid={`button-edit-exchange-${asset.id}`}
                       >
-                        <Edit size={16} />
+                        {isButtonLoading(`edit-${asset.id}`) ? '처리중...' : <Edit size={16} />}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('deleteExchangeAsset', asset)}
+                        disabled={isButtonLoading(`delete-${asset.id}`)}
                         data-testid={`button-delete-exchange-${asset.id}`}
                       >
-                        <Trash2 size={16} className="text-red-600" />
+                        {isButtonLoading(`delete-${asset.id}`) ? '처리중...' : <Trash2 size={16} className="text-red-600" />}
                       </Button>
                     </div>
                   </div>
@@ -447,17 +455,19 @@ export default function AssetManager({ data, onOpenModal, activeTab = "cash", on
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('editBinanceAsset', asset)}
+                        disabled={isButtonLoading(`edit-${asset.id}`)}
                         data-testid={`button-edit-binance-${asset.id}`}
                       >
-                        <Edit size={16} />
+                        {isButtonLoading(`edit-${asset.id}`) ? '처리중...' : <Edit size={16} />}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => onOpenModal('deleteBinanceAsset', asset)}
+                        disabled={isButtonLoading(`delete-${asset.id}`)}
                         data-testid={`button-delete-binance-${asset.id}`}
                       >
-                        <Trash2 size={16} className="text-red-600" />
+                        {isButtonLoading(`delete-${asset.id}`) ? '처리중...' : <Trash2 size={16} className="text-red-600" />}
                       </Button>
                     </div>
                   </div>

@@ -1739,6 +1739,91 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
                 </div>
               )}
 
+              {/* VND, USD 수정 모드 - 동적 지폐 구성 */}
+              {editData && form.watch('currency') !== 'KRW' && (
+                <div className="space-y-4">
+                  {Object.entries(denominations).length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(denominations)
+                        .sort((a, b) => {
+                          const numA = parseFloat(a[0].replace(/,/g, ''));
+                          const numB = parseFloat(b[0].replace(/,/g, ''));
+                          return numB - numA;
+                        })
+                        .map(([denom, count]) => (
+                          <div key={denom} className={`space-y-3 p-4 border rounded-lg ${getDenominationColor(form.watch('currency'), denom)}`}>
+                            <label className="text-xs font-semibold text-gray-800 block text-center">
+                              {form.watch('currency') === 'USD' ? 
+                                `$${denom}` : 
+                                `${parseFloat(denom.replace(/,/g, '')).toLocaleString()}₫`
+                              }
+                            </label>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const currentCount = typeof count === 'number' ? count : 0;
+                                  const newValue = currentCount - 1;
+                                  setDenominations((prev: Record<string, number>) => ({
+                                    ...prev,
+                                    [denom]: newValue
+                                  }));
+                                }}
+                                className="h-8 w-8 p-0 flex-shrink-0"
+                                data-testid={`button-decrease-${denom}-edit`}
+                              >
+                                <Minus size={14} />
+                              </Button>
+                              <Input
+                                type="text"
+                                value={(typeof count === 'number' ? count : 0).toString()}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0;
+                                  setDenominations((prev: Record<string, number>) => ({
+                                    ...prev,
+                                    [denom]: value
+                                  }));
+                                }}
+                                className="h-10 sm:h-9 text-center flex-1 min-w-0"
+                                placeholder="0"
+                                data-testid={`input-${denom}-edit`}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const currentCount = typeof count === 'number' ? count : 0;
+                                  const newValue = currentCount + 1;
+                                  setDenominations((prev: Record<string, number>) => ({
+                                    ...prev,
+                                    [denom]: newValue
+                                  }));
+                                }}
+                                className="h-8 w-8 p-0 flex-shrink-0"
+                                data-testid={`button-increase-${denom}-edit`}
+                              >
+                                <Plus size={14} />
+                              </Button>
+                            </div>
+                            <div className="text-xs text-gray-500 text-center">
+                              총액: {form.watch('currency') === 'USD' ? '$' : '₫'}
+                              {(parseFloat(denom.replace(/,/g, '')) * (typeof count === 'number' ? count : 0)).toLocaleString()}
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-4">
+                      지폐 구성 정보가 없습니다.
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* USD, VND 통화 증감 모드 - 지폐 구성 입력만 표시 (현재 자산 정보는 위에서 표시됨) */}
               {false && !editData && form.watch('currency') !== 'KRW' && (
                 <div className="space-y-4">
