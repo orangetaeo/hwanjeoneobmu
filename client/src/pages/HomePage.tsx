@@ -97,8 +97,7 @@ export default function HomePage() {
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    refetchInterval: 15000 // 15초마다 자산 데이터 새로고침
+    refetchOnWindowFocus: true
   });
   
   const { data: transactionsData = [], isLoading: transactionsLoading, error: transactionsError, refetch: refetchTransactions } = useQuery({
@@ -109,8 +108,7 @@ export default function HomePage() {
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000 // 10초마다 자동 새로고침
+    refetchOnWindowFocus: true
   });
   
   const { data: exchangeRatesData = [], isLoading: exchangeRatesLoading, error: exchangeRatesError, refetch: refetchExchangeRates } = useQuery({
