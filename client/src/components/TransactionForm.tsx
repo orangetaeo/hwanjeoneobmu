@@ -1810,8 +1810,12 @@ export default function TransactionForm() {
                                       </div>
                                       <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
                                         매도시세: {(() => {
-                                          // KRW 권종에 따른 해당 환율 찾기
-                                          let searchDenom = "500000"; // 기본값 (VND → KRW는 500000 VND 기준)
+                                          // KRW 권종에 따른 해당 VND 권종 매핑
+                                          let searchDenom = "500000"; // 기본값
+                                          if (denom >= 50000) searchDenom = "500000";
+                                          else if (denom >= 10000) searchDenom = "200000"; 
+                                          else if (denom >= 5000) searchDenom = "100000";
+                                          else if (denom >= 1000) searchDenom = "50000";
                                           
                                           const vndKrwRate = exchangeRates?.find((rate: any) => 
                                             rate.fromCurrency === "VND" && 
@@ -1819,10 +1823,10 @@ export default function TransactionForm() {
                                             rate.denomination === searchDenom
                                           );
                                           
-                                          // 500,000 VND → KRW 환율을 기준으로 VND 금액 계산 후 표시
+                                          // 해당 권종의 실제 환전상 시세에서 VND 금액 표시
                                           const rate = parseFloat(vndKrwRate?.myBuyRate || "0.051");
-                                          const vndAmount = Math.round(1 / rate); // 1 KRW = ? VND
-                                          return vndAmount.toLocaleString();
+                                          const vndForOneKrw = Math.round(1 / rate); // 1 KRW = ? VND
+                                          return `${vndForOneKrw.toLocaleString()} (${searchDenom}동)`;
                                         })()}
                                       </div>
                                     </div>
