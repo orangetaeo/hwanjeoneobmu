@@ -1041,11 +1041,11 @@ export default function TransactionForm() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm sm:text-base font-semibold text-gray-800 truncate">
+                                <div className="text-base sm:text-lg font-semibold text-gray-800 truncate">
                                   {denom.label}
                                   {/* 접힌 상태에서 권종명 옆에 수량 표시 */}
                                   {!isSelected && hasData && (
-                                    <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium text-gray-600">
+                                    <span className="ml-1 sm:ml-2 text-sm sm:text-base font-medium text-gray-600">
                                       ({parseInt(formData.denominationAmounts[denom.value]).toLocaleString()}장)
                                     </span>
                                   )}
@@ -1064,12 +1064,9 @@ export default function TransactionForm() {
                               </div>
                             </div>
                             {useRate > 0 && !(formData.fromCurrency === "VND" && formData.toCurrency === "USD") && (
-                              <div className="px-2 py-1 bg-red-50 border border-red-200 rounded text-center min-w-[70px] sm:min-w-[80px] flex-shrink-0">
-                                <div className="text-xs text-red-600 font-medium">
-                                  매매 시세
-                                </div>
-                                <div className="text-xs sm:text-sm font-bold text-red-700">
-                                  {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
+                              <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[100px] sm:min-w-[110px] flex-shrink-0">
+                                <div className="text-sm font-bold text-red-700 whitespace-nowrap">
+                                  매매시세 {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
                                 </div>
                               </div>
                             )}
