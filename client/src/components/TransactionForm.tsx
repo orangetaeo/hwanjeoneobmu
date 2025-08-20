@@ -714,46 +714,92 @@ export default function TransactionForm() {
           }
         } else if (formData.toCurrency === "KRW") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
-          // KRW는 1000원 단위로 반올림 (예: 10,500원 → 11,000원, 10,200원 → 10,000원)
-          const finalAmount = Math.round(calculatedToAmount / 1000) * 1000;
-          console.log(`KRW 1000원 단위 반올림: ${calculatedToAmount} → ${finalAmount}`);
           
-          // KRW 분배 계산 및 설정
-          console.log("VND→KRW 환전: KRW 분배 계산 시작, finalAmount:", finalAmount);
-          // 우선 실제 보유량 기반으로 시도
-          let breakdown = calculateKRWBreakdown(finalAmount, false);
-          console.log("KRW 분배 계산 (보유량 기반):", breakdown);
-          
-          // 만약 고액권이 없으면 이상적인 분배로 표시
-          const hasHighDenominations = breakdown['50000'] > 0 || breakdown['10000'] > 0 || breakdown['5000'] > 0;
-          if (!hasHighDenominations) {
-            console.log("고액권 보유량 부족으로 이상적인 분배 계산");
-            breakdown = calculateKRWBreakdown(finalAmount, true);
-            console.log("KRW 분배 계산 (이상적 분배):", breakdown);
+          // USD→KRW인 경우 올림 처리 적용
+          if (formData.fromCurrency === "USD") {
+            // 1000원 단위 올림으로 고객에게 유리한 금액 제공
+            const ceilAmount = Math.ceil(calculatedToAmount / 1000) * 1000;
+            console.log(`USD→KRW 올림 처리: ${calculatedToAmount} → ${ceilAmount}`);
+            
+            setFormData(prev => ({ 
+              ...prev, 
+              toAmount: ceilAmount.toString(),
+              exchangeRate: (ceilAmount / total).toString()
+            }));
+            
+            // KRW 분배 계산 및 설정 (올림된 금액 기준)
+            console.log("USD→KRW 환전: KRW 분배 계산 시작, finalAmount:", ceilAmount);
+            let breakdown = calculateKRWBreakdown(ceilAmount, false);
+            console.log("KRW 분배 계산 (보유량 기반):", breakdown);
+            
+            // 만약 고액권이 없으면 이상적인 분배로 표시
+            const hasHighDenominations = breakdown['50000'] > 0 || breakdown['10000'] > 0 || breakdown['5000'] > 0;
+            if (!hasHighDenominations) {
+              console.log("고액권 보유량 부족으로 이상적인 분배 계산");
+              breakdown = calculateKRWBreakdown(ceilAmount, true);
+              console.log("KRW 분배 계산 (이상적 분배):", breakdown);
+            }
+            
+            setKrwBreakdown(breakdown);
+          } else {
+            // VND→KRW나 다른 경우는 기존 로직 유지
+            const finalAmount = Math.round(calculatedToAmount / 1000) * 1000;
+            console.log(`KRW 1000원 단위 반올림: ${calculatedToAmount} → ${finalAmount}`);
+            
+            // KRW 분배 계산 및 설정
+            console.log("VND→KRW 환전: KRW 분배 계산 시작, finalAmount:", finalAmount);
+            // 우선 실제 보유량 기반으로 시도
+            let breakdown = calculateKRWBreakdown(finalAmount, false);
+            console.log("KRW 분배 계산 (보유량 기반):", breakdown);
+            
+            // 만약 고액권이 없으면 이상적인 분배로 표시
+            const hasHighDenominations = breakdown['50000'] > 0 || breakdown['10000'] > 0 || breakdown['5000'] > 0;
+            if (!hasHighDenominations) {
+              console.log("고액권 보유량 부족으로 이상적인 분배 계산");
+              breakdown = calculateKRWBreakdown(finalAmount, true);
+              console.log("KRW 분배 계산 (이상적 분배):", breakdown);
+            }
+            
+            setKrwBreakdown(breakdown);
+            
+            setFormData(prev => ({ 
+              ...prev, 
+              toAmount: finalAmount.toString(),
+              exchangeRate: (finalAmount / total).toString()
+            }));
           }
-          
-          setKrwBreakdown(breakdown);
-          
-          setFormData(prev => ({ 
-            ...prev, 
-            toAmount: finalAmount.toString(),
-            exchangeRate: (finalAmount / total).toString()
-          }));
         } else if (formData.toCurrency === "USD") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
-          // USD는 소수점 2자리까지 반올림
-          const finalAmount = Math.round(calculatedToAmount * 100) / 100;
-          console.log(`USD 소수점 2자리 반올림: ${calculatedToAmount} → ${finalAmount}`);
-          setFormData(prev => ({ 
-            ...prev, 
-            toAmount: finalAmount.toString(),
-            exchangeRate: (finalAmount / total).toString()
-          }));
           
-          // USD 분배 계산 및 설정 (정수 부분만)
-          const integerAmount = Math.round(finalAmount);
-          const breakdown = calculateUSDBreakdown(integerAmount);
-          setUsdBreakdown(breakdown);
+          // KRW→USD인 경우 올림 처리 적용
+          if (formData.fromCurrency === "KRW") {
+            // 올림 처리로 고객에게 유리한 금액 제공
+            const ceilAmount = Math.ceil(calculatedToAmount);
+            console.log(`KRW→USD 올림 처리: ${calculatedToAmount} → ${ceilAmount}`);
+            setFormData(prev => ({ 
+              ...prev, 
+              toAmount: ceilAmount.toString(),
+              exchangeRate: (ceilAmount / total).toString()
+            }));
+            
+            // USD 분배 계산 및 설정 (올림된 정수 금액 기준)
+            const breakdown = calculateUSDBreakdown(ceilAmount);
+            setUsdBreakdown(breakdown);
+          } else {
+            // 다른 경우는 기존 로직 유지
+            const finalAmount = Math.round(calculatedToAmount * 100) / 100;
+            console.log(`USD 소수점 2자리 반올림: ${calculatedToAmount} → ${finalAmount}`);
+            setFormData(prev => ({ 
+              ...prev, 
+              toAmount: finalAmount.toString(),
+              exchangeRate: (finalAmount / total).toString()
+            }));
+            
+            // USD 분배 계산 및 설정 (정수 부분만)
+            const integerAmount = Math.round(finalAmount);
+            const breakdown = calculateUSDBreakdown(integerAmount);
+            setUsdBreakdown(breakdown);
+          }
         } else {
           setVndOriginalAmount(0); // 다른 통화는 0으로 리셋
           const finalAmount = Math.round(calculatedToAmount);
@@ -1804,6 +1850,12 @@ export default function TransactionForm() {
                         // 실제로 고객이 받을 금액을 기준으로 분배
                         const fixedBreakdown = calculateKRWBreakdown(targetAmount > 0 ? targetAmount : 0);
                         
+                        // USD→KRW 올림 처리인 경우 분배 자동 업데이트
+                        if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                          console.log("KRW 분배 자동 업데이트 - 올림 처리 금액 기준");
+                          setKrwBreakdown(fixedBreakdown);
+                        }
+                        
                         // KRW 현금 보유 상황 확인
                         const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
                         const krwCashAsset = assetArray.find((asset: any) => 
@@ -2028,20 +2080,34 @@ export default function TransactionForm() {
                   console.log(`USD 분배 대상 금액: ${targetUSDAmount} USD`);
                 }
                 
-                // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
+                // 올림 처리된 금액을 기준으로 분배를 자동 업데이트
                 let displayBreakdown;
-                if (Object.keys(usdBreakdown).length > 0) {
+                
+                // KRW→USD 올림 처리인 경우 분배 자동 업데이트
+                if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                  console.log("USD 분배 자동 업데이트 - 올림 처리 금액 기준");
+                  const realBreakdown = calculateUSDBreakdown(targetUSDAmount, false);
+                  if (Object.keys(realBreakdown).length > 0) {
+                    console.log("보유량 기반 USD 분배 성공:", realBreakdown);
+                    displayBreakdown = realBreakdown;
+                    // 올림 처리된 금액과 일치하도록 분배 자동 업데이트
+                    setUsdBreakdown(realBreakdown);
+                  } else {
+                    console.log("보유량 기반 USD 분배 실패, 이상적 분배 사용");
+                    displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
+                    setUsdBreakdown(displayBreakdown);
+                  }
+                } else if (Object.keys(usdBreakdown).length > 0) {
                   console.log("기존 USD 분배 사용:", usdBreakdown);
                   displayBreakdown = usdBreakdown;
                 } else {
-                  // 실제 보유량 기반 분배를 우선 시도
+                  // 일반적인 경우 보유량 기반 분배
                   console.log("USD 분배 계산 시작 - 보유량 기반");
                   const realBreakdown = calculateUSDBreakdown(targetUSDAmount, false);
                   if (Object.keys(realBreakdown).length > 0) {
                     console.log("보유량 기반 USD 분배 성공:", realBreakdown);
                     displayBreakdown = realBreakdown;
                   } else {
-                    // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
                     console.log("보유량 기반 USD 분배 실패, 이상적 분배 시도");
                     displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
                     console.log("이상적 USD 분배:", displayBreakdown);
