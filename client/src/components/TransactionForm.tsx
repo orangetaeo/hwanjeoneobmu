@@ -1532,7 +1532,7 @@ export default function TransactionForm() {
                               }, 0);
                               
                               if (currentTotalFromDenominations > 0) {
-                                // 권종별로 정확한 환율 적용해서 계산 - 이것이 실제 정확한 값
+                                // 권종별로 정확한 환율 적용해서 계산 - 실제 정확한 값 (반올림 없음)
                                 totalAmount = Object.entries(formData.denominationAmounts || {}).reduce((totalVND, [denom, amount]) => {
                                   if (amount && parseFloat(amount) > 0) {
                                     const denomValue = getDenominationValue(formData.fromCurrency, denom);
@@ -1543,15 +1543,16 @@ export default function TransactionForm() {
                                       parseFloat(rateInfo?.mySellRate || "0") :
                                       parseFloat(rateInfo?.myBuyRate || "0");
                                     
-                                    return totalVND + (totalFromCurrency * rate);
+                                    const denomResult = totalFromCurrency * rate;
+                                    console.log(`권종별 계산: ${denom} ${formData.fromCurrency} ${amount}장 = ${totalFromCurrency} × ${rate} = ${denomResult} VND`);
+                                    
+                                    return totalVND + denomResult;
                                   }
                                   return totalVND;
                                 }, 0);
                                 
-                                // VND의 경우 Math.round 적용
-                                if (formData.toCurrency === "VND") {
-                                  totalAmount = formatVNDWithFloor(totalAmount);
-                                }
+                                // 총 분배액 표시에서는 실제 계산값 그대로 사용 (반올림 안 함)
+                                console.log(`최종 총 분배액 (반올림 전): ${totalAmount} VND`);
                               } else {
                                 totalAmount = 0;
                               }
