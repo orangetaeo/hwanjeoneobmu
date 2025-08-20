@@ -1180,13 +1180,18 @@ export default function TransactionForm() {
                                   <div className="text-sm text-orange-600 font-medium mb-1">환전 예상</div>
                                   <div className="text-lg font-bold text-orange-700">
                                     ≈ {(() => {
-                                      const calculatedAmount = parseFloat(formData.denominationAmounts[denom.value]) * 
-                                        getDenominationValue(formData.fromCurrency, denom.value) * 
-                                        useRate;
+                                      const amount = parseFloat(formData.denominationAmounts[denom.value]);
+                                      const denomValue = getDenominationValue(formData.fromCurrency, denom.value);
+                                      const calculatedAmount = amount * denomValue * useRate;
+                                      
+                                      console.log(`환전 예상 계산 (${denom.value}): ${amount}장 × ${denomValue} × ${useRate} = ${calculatedAmount}`);
+                                      
                                       // VND의 경우 무조건 내림 적용
                                       const finalAmount = formData.toCurrency === "VND" ? 
                                         formatVNDWithFloor(calculatedAmount) : 
                                         Math.floor(calculatedAmount);
+                                        
+                                      console.log(`환전 예상 최종 (${denom.value}): ${finalAmount}`);
                                       return finalAmount.toLocaleString();
                                     })()} {formData.toCurrency}
                                   </div>
