@@ -1,36 +1,6 @@
 # Overview
 
-This is a full-stack asset management and exchange tracking application designed to help users manage various financial assets including cash, bank accounts, and cryptocurrency holdings, while also tracking exchange transactions. The application provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
-
-## Recent Major Updates (January 2025)
-
-### VND→USD Exchange System Completion (August 20, 2025)
-- **Complete USD Denomination Distribution**: Implemented full USD cash breakdown functionality with calculateUSDBreakdown, handleUSDBreakdownChange, and comprehensive UI components for all USD denominations ($100, $50, $20, $10, $5, $2, $1)
-- **Denomination-Specific Exchange Rates**: Fixed USD denomination cards to display accurate sell rates from exchange rate management system ($100: 26,000 VND, $50: 25,800 VND, $20/$10: 25,400 VND, $5/$2/$1: 25,000 VND)
-- **UI Optimization for VND→USD**: Removed unnecessary exchange rate and sell rate displays from VND denomination cards in VND→USD transactions, maintaining clean interface with only denomination names and quantities
-- **Average Exchange Rate Calculation**: Implemented weighted average calculation for transaction confirmation using all USD→VND denomination rates, correctly displaying 25,550 VND average rate
-- **Complete Transaction Flow**: VND→USD exchanges now support full end-to-end processing with accurate denomination tracking, inventory validation, and proper asset balance updates
-- **USD Inventory Protection System**: Implemented comprehensive USD cash validation preventing transactions when insufficient inventory available, matching KRW→VND transaction protection patterns with automatic button disabling and clear error messaging
-
-### VND Exchange Transaction System Enhancements
-- **Complete Auto-Adjustment System**: Fixed Math.ceil() based precise excess calculation for VND denomination distribution (500,000 VND now correctly adjusts from 19→16 instead of 19→17)
-- **Smart Inventory Management**: Real-time validation preventing quantity inputs exceeding available stock with automatic caps
-- **Transaction Amount Verification**: Comprehensive final validation comparing actual VND distribution totals against expected exchange amounts with detailed error messages
-- **Enhanced Transaction Confirmation**: Added detailed VND denomination breakdown in transaction confirmation section showing individual quantities, subtotals, and total distribution
-- **Preserved User Input Logic**: System maintains user input denominations during auto-adjustment while intelligently rebalancing other denominations
-
-### VND Amount Calculation Accuracy Fix (August 19, 2025)
-- **Fixed VND Distribution Calculation**: Resolved critical calculation error where VND breakdown used incorrect targetAmount (11,640,000 VND) instead of actual exchange amount (vndOriginalAmount: 11,630,000 VND)
-- **Unified Display Consistency**: All screen displays now show correct VND amount of 11,630,000 VND with proper denomination breakdown (500,000×23 + 100,000×1 + 20,000×1 + 10,000×1)
-- **Error Message Correction**: Fixed transaction validation error messages to display accurate "환전 예상 금액" matching actual exchange amounts
-- **Transaction Validation Enhancement**: Strengthened amount verification logic ensuring actual vs expected totals match exactly before allowing transaction completion
-- **Mobile Responsive Design**: Completed mobile optimization for TransactionForm component with responsive layouts, touch-friendly input sizes, and proper text scaling for all screen sizes
-- **Calculation Independence Fix**: Fixed denomination fold/unfold UI state affecting calculations by using Object.entries(denominationAmounts) instead of fromDenominations array
-- **Amount Validation Accuracy**: Corrected VND amount mismatch validation to use vndOriginalAmount or formatVNDWithFloor values for precise error checking
-- **UI Layout Improvement**: Relocated amount display sections (받는 금액/주는 금액) above denomination selection for better user workflow and more intuitive interface design
-- **Mobile VND Distribution Enhancement**: Improved VND denomination input interface with larger touch-friendly input fields (16×40px → 20×48px), expanded +0 button sizes, right-aligned layout for input elements, and increased card padding for better mobile usability
-- **Exchange Rate Rules Implementation**: Established clear rate selection logic - VND→KRW and VND→USD exchanges use "내 매입가" (my buy rate), while KRW→VND exchanges use "내 매도가" (my sell rate) for accurate business calculations
-- **KRW 1000원 단위 내림 처리**: VND→KRW 환전 시 1000원 단위로 완전 내림 적용 (예: 10,200원 → 10,000원), 1000원 미만 지급 불가 정책 반영
+This is a full-stack asset management and exchange tracking application for managing various financial assets including cash, bank accounts, and cryptocurrency holdings, and tracking exchange transactions. It provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
 # User Preferences
 
@@ -38,7 +8,7 @@ Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
-## Frontend Architecture
+## Frontend
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter
 - **State Management**: TanStack Query
@@ -46,14 +16,14 @@ Preferred communication style: Simple, everyday language.
 - **UI Components**: Radix UI primitives
 - **Build Tool**: Vite
 
-## Backend Architecture
+## Backend
 - **Runtime**: Node.js with Express.js
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
 - **Storage Interface**: Abstracted storage layer
 - **API Design**: RESTful API structure with `/api` prefix routing
 
-## Data Storage Solutions
+## Data Storage
 - **Primary Database**: PostgreSQL configured through Drizzle ORM
 - **ORM**: Drizzle ORM with schema-first approach and automatic type generation
 - **Advanced Schema**: Multi-table structure supporting complex financial transactions (`transactions`, `assets`, `rates`)
@@ -79,36 +49,36 @@ Preferred communication style: Simple, everyday language.
 - **Comprehensive History**: Advanced filtering, sorting, and search capabilities for transaction history.
 - **Data Integrity**: PostgreSQL constraints and validation ensuring data consistency.
 - **User Experience**: Modal-based workflows for state management and error handling.
-- **Dynamic Rendering**: Conditional rendering based on currency for specific denominations (e.g., KRW banknotes).
+- **Dynamic Rendering**: Conditional rendering based on currency for specific denominations.
 - **Automated Test Data**: Standardized test data sets for consistent development and testing.
-- **VND Floor Profit System**: Automatic calculation and storage of profit from VND amount floor operations, with visual indicators showing difference amounts and separate profit tracking in transaction metadata.
-- **Enhanced Denomination Input System**: Click-to-activate card interface with data persistence, integer-only input validation with automatic comma formatting, collapsed card data preview showing quantity and total amount, and one-click data reset functionality via checkbox interaction.
-- **Cash Exchange Transaction Display System**: Comprehensive transaction labeling system with proper Korean terminology distinguishing between receipt ("수령") and payment ("지급") operations. KRW cash increases display as "KRW 현금 환전 수령" and VND cash increases display as "VND 현금 환전 지급", with consistent formatting across transaction history lists and detail modals including timestamp information.
-- **VND Denomination Distribution Management**: Complete editable VND denomination breakdown system allowing staff to modify distribution quantities per customer requirements, with real-time total amount updates, visual remaining balance calculations showing "보유: X장 -사용량 = 남은량" format, leading zero prevention in input fields, and reset to default functionality for efficient transaction processing.
-- **Smart VND Recommendation System**: Intelligent recommendation engine that suggests optimal denomination adjustments when amounts don't match target totals. Features include precise calculation logic (200,000 VND exactly 5 sheets, 100,000 VND exactly 12 sheets for 1,200,000 VND deficit), inventory-aware recommendations respecting available stock, and automatic recommendation clearing when target amounts are achieved through alternative denomination selections.
-- **Advanced Auto-Adjustment System**: Sophisticated automatic rebalancing when user inputs exceed target amounts. Uses Math.ceil() for precise excess calculation, intelligently reduces large denominations while preserving user input values, and automatically supplements with smaller denominations to maintain exact target totals. Includes comprehensive logging for transaction transparency.
-- **Inventory Protection System**: Real-time validation preventing users from entering quantities exceeding available stock. Automatically caps input values at maximum available quantities with clear console feedback, ensuring transaction feasibility and preventing inventory errors during customer service operations.
-- **Transaction Amount Verification**: Comprehensive final validation system that compares actual VND denomination distribution totals against expected exchange amounts. Displays detailed error messages with amount breakdowns and prevents transaction completion when totals don't match, ensuring 100% accuracy in real-money exchanges.
+- **VND Floor Profit System**: Automatic calculation and storage of profit from VND amount floor operations.
+- **Enhanced Denomination Input System**: Click-to-activate card interface with data persistence, integer-only input validation, collapsed card data preview, and one-click data reset.
+- **Cash Exchange Transaction Display System**: Comprehensive transaction labeling system with proper Korean terminology.
+- **VND Denomination Distribution Management**: Editable VND denomination breakdown system with real-time total amount updates and remaining balance calculations.
+- **Smart VND Recommendation System**: Intelligent recommendation engine for optimal denomination adjustments.
+- **Advanced Auto-Adjustment System**: Sophisticated automatic rebalancing for user input exceeding target amounts.
+- **Inventory Protection System**: Real-time validation preventing quantities exceeding available stock.
+- **Transaction Amount Verification**: Comprehensive final validation comparing actual denomination distribution totals against expected exchange amounts.
 
 ## UI/UX Decisions
 - **Dashboard Layout**: 3-column responsive design with distinct sections for KRW, foreign currency, and crypto assets.
-- **Iconography**: Consistent use of Lucide icons throughout the application for professional and clean visual design.
-- **Exchange Operations**: Unified icon system using ArrowRightLeft (transfers), TrendingUp (P2P trading), History (transaction history), and Coins (API status).
+- **Iconography**: Consistent use of Lucide icons.
+- **Exchange Operations**: Unified icon system using ArrowRightLeft, TrendingUp, History, and Coins.
 - **Readability**: Enhanced font sizes for asset amounts.
-- **Mobile Optimization**: Reduced header height, compact navigation, optimized text/icon sizes, and responsive padding for mobile landscape mode.
+- **Mobile Optimization**: Reduced header height, compact navigation, optimized text/icon sizes, and responsive padding.
 - **Dynamic Elements**: Dynamic page titles and visual indicators.
 - **Currency Ordering**: KRW assets prioritized in display.
-- **UI Component Unification**: Standardized all form elements to use shadcn/ui components for design consistency.
+- **UI Component Unification**: Standardized all form elements to use shadcn/ui components.
 
 ## Core Implementations
 - **Exchange Rate Management**: Comprehensive system with database schemas for current and historical rates, UPSERT functionality, change percentage tracking, advanced validation, and currency denomination support.
 - **Transaction System Integration**: Rebuilt TransactionForm leveraging the exchange rate system for auto-rate fetching, smart transaction logic, customer information capture, denomination awareness, real-time calculation, and professional validation.
-- **Sell Rate Display System**: Implemented visual sell rate indicators in red boxes positioned on each denomination selection card, displaying "매도 시세" labels with rates formatted to 2 decimal places, providing immediate rate reference for staff during customer transactions.
-- **Duplicate Asset Validation**: Comprehensive checking and prevention for bank accounts, exchange assets, and Binance assets, including merging quantities and user notifications.
-- **Unified Icon System**: Replaced all colorful emojis and flags with monochrome Lucide icons for a consistent and professional appearance across the application.
-- **Mobile Navigation Enhancement**: Redesigned mobile navigation with a hamburger menu, sliding sidebar, and simplified bottom navigation for improved accessibility.
-- **Exchange Rate History Mobile Optimization**: Enhanced mobile user experience for exchange rate history display with responsive design patterns, single-line header layout displaying currency pair, denomination, change percentage, and date, improved mobile readability with proper spacing and touch-friendly design, and responsive grid layout that stacks vertically on mobile.
-- **VND Amount Processing**: Implemented Math.floor (무조건 내림) for all VND calculations and displays, with visual difference indicators and automatic profit tracking for floor-based rounding differences stored in transaction metadata.
+- **Sell Rate Display System**: Visual sell rate indicators in red boxes on denomination selection cards.
+- **Duplicate Asset Validation**: Comprehensive checking and prevention for bank accounts, exchange assets, and Binance assets.
+- **Unified Icon System**: Replaced all colorful emojis and flags with monochrome Lucide icons.
+- **Mobile Navigation Enhancement**: Redesigned mobile navigation with a hamburger menu, sliding sidebar, and simplified bottom navigation.
+- **Exchange Rate History Mobile Optimization**: Enhanced mobile user experience for exchange rate history display.
+- **VND Amount Processing**: Implemented Math.floor for all VND calculations and displays, with visual difference indicators and automatic profit tracking.
 
 # External Dependencies
 
