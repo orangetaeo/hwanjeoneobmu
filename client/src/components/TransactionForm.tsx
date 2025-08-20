@@ -1192,10 +1192,7 @@ export default function TransactionForm() {
                           return total;
                         }, 0);
                         
-                        console.log("VND 분배 조건 체크:");
-                        console.log("formData.denominationAmounts:", formData.denominationAmounts);
-                        console.log("totalFromDenominations:", totalFromDenominations);
-                        console.log("formData.toCurrency:", formData.toCurrency);
+
 
                         // denominationAmounts에서 직접 환전될 VND 금액 계산
                         const targetAmount = totalFromDenominations > 0 ? (() => {
@@ -1468,33 +1465,26 @@ export default function TransactionForm() {
                       <div className="text-xs sm:text-sm font-medium text-orange-700">
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
-                            // 수정된 VND 분배가 있으면 그것을 사용, 없으면 기본 계산값 사용
-                            if (vndBreakdown && Object.keys(vndBreakdown).length > 0) {
-                              return Object.entries(vndBreakdown).reduce((total, [denom, count]) => 
-                                total + (parseInt(denom) * (typeof count === 'number' ? count : parseInt(count.toString()))), 0
-                              ).toLocaleString();
+                            // 현재 분배 상황 (수정값이 있으면 사용, 없으면 기본값 다시 계산)
+                            let currentBreakdown = vndBreakdown;
+                            if (!vndBreakdown || Object.keys(vndBreakdown).length === 0) {
+                              // 기본값 다시 계산
+                              const targetAmount = vndOriginalAmount > 0 ? vndOriginalAmount : 
+                                (totalFromDenominations > 0 ? (() => {
+                                  const rate = formData.fromCurrency === "KRW" ? 
+                                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                                    getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                                  const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                                  return formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
+                                })() : (parseFloat(formData.toAmount) || 0));
+                              currentBreakdown = calculateVNDBreakdown(targetAmount);
                             }
                             
-                            // 기본 계산
-                            const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
-                              if (amount && parseFloat(amount) > 0) {
-                                const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                                return total + (parseFloat(amount) * denomValue);
-                              }
-                              return total;
-                            }, 0);
-
-                            const targetAmount = totalFromDenominations > 0 ? (() => {
-                              const rate = formData.fromCurrency === "KRW" ? 
-                                getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
-                                getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                              const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                              return formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
-                            })() : (parseFloat(formData.toAmount) || 0);
-                            
-                            // 실제 환전금액 기준으로 분배 계산
-                            const breakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
-                            return Object.entries(breakdown).reduce((total, [denom, count]) => total + (parseInt(denom) * parseInt(count.toString())), 0).toLocaleString();
+                            return Object.entries(currentBreakdown).reduce((total, [denom, count]) => {
+                              const denomValue = parseInt(denom);
+                              const denomCount = typeof count === 'number' ? count : parseInt((count as any).toString());
+                              return total + (denomValue * denomCount);
+                            }, 0).toLocaleString();
                           })()} VND
                         </span>
                       </div>
