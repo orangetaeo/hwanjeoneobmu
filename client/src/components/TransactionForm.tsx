@@ -1822,8 +1822,9 @@ export default function TransactionForm() {
                                             rate.denomination === searchDenom
                                           );
                                           
-                                          // KRW → VND 매입시세 (myBuyRate) 표시
-                                          return krwVndRate?.myBuyRate || "18.90";
+                                          // KRW → VND 매입시세 (myBuyRate) 소수점 2자리까지 표시
+                                          const rate = krwVndRate?.myBuyRate || "18.90";
+                                          return parseFloat(rate).toFixed(2);
                                         })()}
                                       </div>
                                     </div>
