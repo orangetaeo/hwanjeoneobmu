@@ -124,6 +124,7 @@ export default function CashTransactionHistory({
       return Math.abs(transaction.amount || 0);
     } else if ((transaction.type as string) === 'cash_exchange') {
       // 환전 거래의 경우 해당 현금 자산과 연관된 금액 반환
+      // fromAsset = 고객이 준 돈(증가), toAsset = 고객에게 준 돈(감소)
       if (transaction.fromAssetName === cashAsset.name || 
           (transaction.fromAssetName?.includes(cashAsset.currency) && transaction.fromAssetName?.includes('현금'))) {
         return transaction.fromAmount || 0;
@@ -140,9 +141,10 @@ export default function CashTransactionHistory({
     if (transaction.type === 'cash_change') {
       return (transaction.amount || 0) < 0;
     } else if ((transaction.type as string) === 'cash_exchange') {
-      // 환전 거래에서 현재 자산이 출금(from) 자산인 경우 감소
-      return transaction.fromAssetName === cashAsset.name || 
-             (transaction.fromAssetName?.includes(cashAsset.currency) && transaction.fromAssetName?.includes('현금'));
+      // 환전 거래에서 현재 자산이 도착(to) 자산인 경우 감소 (고객에게 준 돈)
+      // fromAsset = 고객이 준 돈(증가), toAsset = 고객에게 준 돈(감소)
+      return transaction.toAssetName === cashAsset.name || 
+             (transaction.toAssetName?.includes(cashAsset.currency) && transaction.toAssetName?.includes('현금'));
     }
     return false;
   }
@@ -152,6 +154,7 @@ export default function CashTransactionHistory({
     if (transaction.type === 'cash_change') {
       return isDecrease ? `${cashAsset.currency} 현금 직접 감소` : `${cashAsset.currency} 현금 직접 증가`;
     } else if ((transaction.type as string) === 'cash_exchange') {
+      // 환전 거래에서 로직 수정: 감소=지급, 증가=수령
       if (isDecrease) {
         return `${cashAsset.currency} 현금 환전 지급`;
       } else {
