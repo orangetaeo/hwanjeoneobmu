@@ -76,13 +76,10 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
           const count = Math.floor(remaining / denom);
           if (count > 0) {
             denominationChanges[denom.toString()] = -count;
-            console.log(`VND 감소 설정: ${denom} = ${-count}`);
             remaining -= count * denom;
           }
         }
       });
-      
-      console.log('최종 VND denominationChanges:', denominationChanges);
     } else if (cashAsset.currency === 'USD') {
       // USD 현금 상세 페이지: denominationAmounts가 USD 권종이므로 항상 증가로 처리
       // 실제로는 VND→USD 환전에서 USD를 받은 것 (사업자 관점에서 USD 증가)

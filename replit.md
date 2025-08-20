@@ -11,7 +11,7 @@ This is a full-stack asset management and exchange tracking application for mana
 - **formatVNDWithFloor 완전 제거**: 모든 VND 계산에서 Math.floor 사용으로 정확한 계산값 유지 (반올림 오차 완전 해결)
 - **VND 권종 카드 확장**: 5,000과 1,000 VND 권종 추가로 완전한 분배 시스템 구현
 - **거래 확인 시스템 완성**: 실시간 권종별 환율 계산으로 정확한 고객 지급 금액 표시 및 완전한 권종별 분배 제공
-- **현금 환전 상세 내역 시스템 완성**: USD/VND 현금 증감 내역 정확한 표시, VND 고액권 우선 정렬, 순변동 음수 표시 구현
+- **현금 환전 상세 내역 시스템 완성**: USD/VND 현금 증감 내역 정확한 표시, VND 고액권 우선 정렬, 순변동 음수 표시 구현, 사업자 관점 완전 반영
 
 # User Preferences
 
