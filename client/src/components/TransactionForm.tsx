@@ -2032,7 +2032,40 @@ export default function TransactionForm() {
                         });
                       })()}
                       
-
+                    </div>
+                    
+                    <div className="mt-3 pt-2 border-t border-green-200">
+                      <div className="text-xs sm:text-sm font-medium text-green-700">
+                        총 분배액: <span className="text-sm sm:text-lg font-bold">
+                          {(() => {
+                            // USD 권종별 분배 총액 계산
+                            let totalAmount = 0;
+                            
+                            // 권종별 환율 적용 실제 계산값 사용
+                            const currentTotalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                              if (amount && parseFloat(amount) > 0) {
+                                const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                return total + (parseFloat(amount) * denomValue);
+                              }
+                              return total;
+                            }, 0);
+                            
+                            if (currentTotalFromDenominations > 0) {
+                              // VND → USD는 myBuyRate 사용하고 Math.floor로 정확한 계산
+                              const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000");
+                              const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                              
+                              if (rate > 0) {
+                                const calculatedAmount = currentTotalFromDenominations * rate;
+                                totalAmount = Math.floor(calculatedAmount);
+                                console.log(`VND→USD 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.floor = ${totalAmount} USD`);
+                              }
+                            }
+                            
+                            return totalAmount.toLocaleString();
+                          })()} USD
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
