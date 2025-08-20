@@ -6,6 +6,8 @@ This is a full-stack asset management and exchange tracking application for mana
 - **매매시세 박스 시스템 완성**: 새거래 화면에서 권종별 매매시세 표시 기능 완전 구현
 - **URL 기반 라우팅 시스템**: /new-transaction 등 직접 URL 접근 지원
 - **환율 표시 규칙**: KRW→VND/USD→VND는 매매시세 박스 표시, VND→KRW는 숨김
+- **부동소수점 오차 해결**: VND 계산에서 Math.floor → Math.round 변경 (3,779,999.999... → 3,780,000)
+- **반올림 방식 통일**: 모든 통화(VND, KRW, USD) 계산에서 공정한 반올림 방식 적용
 
 # User Preferences
 

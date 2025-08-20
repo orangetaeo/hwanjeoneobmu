@@ -609,9 +609,9 @@ export default function TransactionForm() {
           }
         } else if (formData.toCurrency === "KRW") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
-          // KRW는 1000원 단위로 완전 내림 (예: 10,200원 → 10,000원)
-          const finalAmount = Math.floor(calculatedToAmount / 1000) * 1000;
-          console.log(`KRW 1000원 단위 내림: ${calculatedToAmount} → ${finalAmount}`);
+          // KRW는 1000원 단위로 반올림 (예: 10,500원 → 11,000원, 10,200원 → 10,000원)
+          const finalAmount = Math.round(calculatedToAmount / 1000) * 1000;
+          console.log(`KRW 1000원 단위 반올림: ${calculatedToAmount} → ${finalAmount}`);
           setFormData(prev => ({ 
             ...prev, 
             toAmount: finalAmount.toString(),
@@ -623,9 +623,9 @@ export default function TransactionForm() {
           setKrwBreakdown(breakdown);
         } else if (formData.toCurrency === "USD") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
-          // USD는 소수점 2자리까지 허용
-          const finalAmount = Math.floor(calculatedToAmount * 100) / 100;
-          console.log(`USD 소수점 2자리: ${calculatedToAmount} → ${finalAmount}`);
+          // USD는 소수점 2자리까지 반올림
+          const finalAmount = Math.round(calculatedToAmount * 100) / 100;
+          console.log(`USD 소수점 2자리 반올림: ${calculatedToAmount} → ${finalAmount}`);
           setFormData(prev => ({ 
             ...prev, 
             toAmount: finalAmount.toString(),
@@ -633,12 +633,12 @@ export default function TransactionForm() {
           }));
           
           // USD 분배 계산 및 설정 (정수 부분만)
-          const integerAmount = Math.floor(finalAmount);
+          const integerAmount = Math.round(finalAmount);
           const breakdown = calculateUSDBreakdown(integerAmount);
           setUsdBreakdown(breakdown);
         } else {
           setVndOriginalAmount(0); // 다른 통화는 0으로 리셋
-          const finalAmount = Math.floor(calculatedToAmount);
+          const finalAmount = Math.round(calculatedToAmount);
           setFormData(prev => ({ 
             ...prev, 
             toAmount: finalAmount.toString(),
