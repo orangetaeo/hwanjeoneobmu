@@ -773,7 +773,9 @@ export default function TransactionForm() {
       if (krwCashAsset?.metadata?.denominations) {
         const denomComposition = krwCashAsset.metadata.denominations;
         for (const [denom, requiredCount] of Object.entries(krwBreakdown)) {
-          const availableCount = denomComposition[denom] || 0;
+          // 권종 키를 쉼표 포함 형태로 변환 (예: "50000" → "50,000")
+          const denomKey = parseInt(denom).toLocaleString();
+          const availableCount = denomComposition[denomKey] || 0;
           if (requiredCount > availableCount) {
             toast({
               variant: "destructive",
@@ -1704,9 +1706,19 @@ export default function TransactionForm() {
                                     });
 
                                     if (krwCashAsset?.metadata?.denominations) {
-                                      const availableCount = krwCashAsset.metadata.denominations[denom] || 0;
+                                      // 권종 키를 쉼표 포함 형태로 변환 (예: "50000" → "50,000")
+                                      const denomKey = parseInt(denom).toLocaleString();
+                                      const availableCount = krwCashAsset.metadata.denominations[denomKey] || 0;
                                       const remainingCount = Math.max(0, availableCount - count);
                                       const isInsufficient = count > availableCount;
+                                      
+                                      console.log(`KRW ${denom} 권종 매칭:`, {
+                                        originalDenom: denom,
+                                        denomKey: denomKey,
+                                        availableCount: availableCount,
+                                        count: count,
+                                        remainingCount: remainingCount
+                                      });
                                       
                                       return (
                                         <div className={`text-xs mt-1 ${isInsufficient ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
