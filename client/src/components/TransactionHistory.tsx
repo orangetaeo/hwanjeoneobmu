@@ -128,7 +128,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* 필터 및 검색 - 모바일 최적화 */}
       <Card className="p-3 sm:p-4">
         <div className="space-y-3 sm:space-y-0 sm:flex sm:gap-4">
@@ -144,9 +144,9 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-24 sm:w-40 h-9 sm:h-10 text-xs sm:text-sm">
+              <SelectTrigger className="w-28 sm:w-40 h-9 sm:h-10 text-xs sm:text-sm flex-shrink-0">
                 <Filter size={14} className="mr-1" />
                 <SelectValue />
               </SelectTrigger>
@@ -163,7 +163,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-20 sm:w-32 h-9 sm:h-10 text-xs sm:text-sm">
+              <SelectTrigger className="w-20 sm:w-32 h-9 sm:h-10 text-xs sm:text-sm flex-shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -177,7 +177,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
               variant="outline"
               size="sm"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="px-2 sm:px-3 h-9 sm:h-10"
+              className="px-2 sm:px-3 h-9 sm:h-10 flex-shrink-0"
             >
               <ArrowUpDown size={14} />
             </Button>
@@ -203,17 +203,16 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             return (
               <Card 
                 key={transaction.id} 
-                className="p-2 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="p-2 sm:p-4 hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
                 onClick={() => onTransactionClick?.(transaction)}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     {/* 헤더 정보 - 모바일 최적화 */}
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                      <Badge className={`${getTransactionTypeColor(transaction.type)} flex items-center gap-1 text-xs sm:text-sm w-fit`}>
+                      <Badge className={`${getTransactionTypeColor(transaction.type)} flex items-center gap-1 text-xs sm:text-sm px-2 py-1 whitespace-nowrap`}>
                         {getTransactionIcon(transaction.type)}
-                        <span className="hidden sm:inline">{getTransactionTypeText(transaction.type)}</span>
-                        <span className="sm:hidden">{getTransactionTypeText(transaction.type).slice(0, 4)}</span>
+                        <span>{getTransactionTypeText(transaction.type)}</span>
                       </Badge>
                       
                       <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -333,11 +332,11 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                     )}
                   </div>
 
-                  {/* 수익 표시 - 모바일 최적화 */}
+                  {/* 수익 표시 - 강조 표시 */}
                   {transaction.profit !== 0 && (
                     <div className="text-left sm:text-right flex-shrink-0">
                       <div className="text-xs sm:text-sm text-gray-500">수익</div>
-                      <div className={`font-bold text-sm sm:text-base ${transaction.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`font-bold text-lg sm:text-xl ${transaction.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {transaction.profit >= 0 ? '+' : ''}₩{formatInputWithCommas(Math.round(transaction.profit).toString())}
                       </div>
                     </div>
@@ -383,7 +382,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             
             <div>
               <div className="text-gray-500 text-xs sm:text-sm">총 수익</div>
-              <div className={`font-bold text-sm sm:text-lg ${
+              <div className={`font-bold text-lg sm:text-xl ${
                 filteredTransactions.reduce((sum, t) => sum + t.profit, 0) >= 0 
                   ? 'text-green-600' 
                   : 'text-red-600'
