@@ -175,34 +175,93 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
     const increases: Array<{ denomination: string; change: number; value: number }> = [];
     const decreases: Array<{ denomination: string; change: number; value: number }> = [];
 
-    // denominationChanges에 저장된 모든 키를 순회
-    Object.entries(denominationChanges).forEach(([denom, change]) => {
-      const changeNum = typeof change === 'number' ? change : parseInt(change as string) || 0;
+    const metadata = transaction.metadata as any;
+    
+    // 환전 거래인 경우 특별 처리
+    if (transaction.type === 'cash_exchange') {
+      // 현재 보고 있는 자산에 따라 증가/감소 결정
+      const isFromAsset = transaction.fromAssetName === cashAsset.name;
+      const isToAsset = transaction.toAssetName === cashAsset.name;
       
-      if (changeNum && Math.abs(changeNum) > 0) {
-        // 권종별 값 계산
-        let denomValue = 0;
-        if (denom === '20/10') {
-          denomValue = 20; // 20/10달러는 20달러 가치로 계산
-        } else {
-          denomValue = parseInt(denom.replace(/,/g, '')); // 콤마 제거 후 숫자 변환
-        }
-        
-        if (changeNum > 0) {
-          increases.push({
-            denomination: denom,
-            change: changeNum,
-            value: changeNum * denomValue
-          });
-        } else {
-          decreases.push({
-            denomination: denom,
-            change: Math.abs(changeNum),
-            value: Math.abs(changeNum) * denomValue
+      if (isFromAsset) {
+        // FROM 자산: 고객이 준 돈 (증가)
+        if (metadata?.denominationAmounts) {
+          Object.entries(metadata.denominationAmounts).forEach(([denom, count]) => {
+            const changeNum = typeof count === 'number' ? count : parseInt(count as string) || 0;
+            if (changeNum > 0) {
+              let denomValue = parseInt(denom.replace(/,/g, ''));
+              if (denom === '20_10') denomValue = 30;
+              
+              increases.push({
+                denomination: denom,
+                change: changeNum,
+                value: changeNum * denomValue
+              });
+            }
           });
         }
       }
-    });
+      
+      if (isToAsset) {
+        // TO 자산: 고객에게 준 돈 (감소)
+        if (cashAsset.currency === 'VND' && metadata?.vndBreakdown) {
+          Object.entries(metadata.vndBreakdown).forEach(([denom, count]) => {
+            const changeNum = typeof count === 'number' ? count : parseInt(count as string) || 0;
+            if (changeNum > 0) {
+              const denomValue = parseInt(denom.replace(/,/g, ''));
+              decreases.push({
+                denomination: denom,
+                change: changeNum,
+                value: changeNum * denomValue
+              });
+            }
+          });
+        } else if (cashAsset.currency === 'USD' && metadata?.usdBreakdown) {
+          Object.entries(metadata.usdBreakdown).forEach(([denom, count]) => {
+            const changeNum = typeof count === 'number' ? count : parseInt(count as string) || 0;
+            if (changeNum > 0) {
+              let denomValue = parseInt(denom.replace(/,/g, ''));
+              if (denom === '20_10') denomValue = 30;
+              
+              decreases.push({
+                denomination: denom,
+                change: changeNum,
+                value: changeNum * denomValue
+              });
+            }
+          });
+        }
+      }
+    } else {
+      // 현금 증감 거래인 경우 기존 로직 사용
+      Object.entries(denominationChanges).forEach(([denom, change]) => {
+        const changeNum = typeof change === 'number' ? change : parseInt(change as string) || 0;
+        
+        if (changeNum && Math.abs(changeNum) > 0) {
+          // 권종별 값 계산
+          let denomValue = 0;
+          if (denom === '20/10' || denom === '20_10') {
+            denomValue = 30; // 20+10=30 가치로 계산
+          } else {
+            denomValue = parseInt(denom.replace(/,/g, '')); // 콤마 제거 후 숫자 변환
+          }
+          
+          if (changeNum > 0) {
+            increases.push({
+              denomination: denom,
+              change: changeNum,
+              value: changeNum * denomValue
+            });
+          } else {
+            decreases.push({
+              denomination: denom,
+              change: Math.abs(changeNum),
+              value: Math.abs(changeNum) * denomValue
+            });
+          }
+        }
+      });
+    }
 
     // 모든 통화에서 고액권부터 정렬
     const sortByDenomination = (arr: Array<{ denomination: string; change: number; value: number }>) => {
