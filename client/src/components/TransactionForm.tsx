@@ -1194,6 +1194,14 @@ export default function TransactionForm() {
                         // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
+                        // VND 현금 보유 상황 확인
+                        const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
+                          asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                        ) : null;
+                        const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                        console.log("VND 현금 자산:", vndCashAsset);
+                        console.log("권종 구성 데이터:", denomComposition);
+                        
                         // 권종 데이터가 없으면 안내 메시지 표시
                         if (totalFromDenominations === 0) {
                           return (
@@ -1275,12 +1283,6 @@ export default function TransactionForm() {
                             vndBreakdown[denom.toString()] : defaultCount;
                           const suggestedCount = suggestions[denom.toString()] || 0;
                         
-                          const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
-                            asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                          ) : null;
-                          
-                          const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                          
                           // 권종 키 형태 확인 (쉼표 포함된 형태로 저장되어 있음)
                           const denomKey = denom.toLocaleString();  // 숫자를 "500,000" 형태로 변환
                           const availableCount = denomComposition[denomKey] || 0;
