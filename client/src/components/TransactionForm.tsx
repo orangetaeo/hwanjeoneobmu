@@ -1194,10 +1194,15 @@ export default function TransactionForm() {
                         // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
-                        // VND 현금 보유 상황 확인
-                        const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => 
-                          asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
-                        ) : null;
+                        // VND 현금 보유 상황 확인 - 디버그 추가
+                        console.log("전체 자산 데이터:", assets);
+                        console.log("assets?.data 배열:", assets?.data);
+                        
+                        const vndCashAsset = Array.isArray(assets?.data) ? assets.data.find((asset: any) => {
+                          console.log("자산 확인:", asset.name, asset.currency, asset.type);
+                          return asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash";
+                        }) : null;
+                        
                         const denomComposition = vndCashAsset?.metadata?.denominations || {};
                         console.log("VND 현금 자산:", vndCashAsset);
                         console.log("권종 구성 데이터:", denomComposition);
