@@ -344,8 +344,8 @@ export default function TransactionForm() {
       // USD: 정수만 표기
       return Math.round(rate).toLocaleString('ko-KR');
     } else if (toCurrency === "VND") {
-      // VND: 표기 없음 (빈 문자열 반환)
-      return "";
+      // VND: 소수점 2자리까지 표기 (KRW→VND, USD→VND 환율 표시)
+      return rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     } else {
       return rate.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
     }
@@ -1076,10 +1076,7 @@ export default function TransactionForm() {
                             ) && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
-                                  {formData.toCurrency === "VND" ? 
-                                    `매매시세` : 
-                                    `매매시세 ${formatRate(useRate, formData.fromCurrency, formData.toCurrency)}`
-                                  }
+                                  매매시세 {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
                                 </div>
                               </div>
                             )}
