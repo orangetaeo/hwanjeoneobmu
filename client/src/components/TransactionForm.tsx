@@ -998,6 +998,7 @@ export default function TransactionForm() {
                       const isSelected = formData.fromDenominations.includes(denom.value);
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
                       const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                      console.log(`매매시세 디버그: fromCurrency=${formData.fromCurrency}, toCurrency=${formData.toCurrency}, denom=${denom.value}, rateInfo=`, rateInfo, `useRate=${useRate}`);
                       
                       return (
                         <div 
