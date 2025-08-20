@@ -2845,12 +2845,34 @@ export default function TransactionForm() {
                     return true;
                   }
 
-                  // USD 분배 금액 검증
-                  const expectedUSDTotal = Math.floor(parseFloat(formData.toAmount) || 0);
+                  // USD 분배 금액 검증 - KRW→USD는 올림 처리
+                  let expectedUSDTotal;
+                  if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                    // KRW→USD는 올림 처리하여 기대값 계산
+                    const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                      if (amount && parseFloat(amount) > 0) {
+                        const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                        const totalFromCurrency = parseFloat(amount) * denomValue;
+                        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                        const rate = parseFloat(rateInfo?.mySellRate || "0");
+                        if (rate > 0) {
+                          return total + (totalFromCurrency / rate);
+                        }
+                      }
+                      return total;
+                    }, 0);
+                    expectedUSDTotal = Math.ceil(calculatedTotal);
+                    console.log(`USD 버튼 활성화 검증: 계산값 ${calculatedTotal} → 올림 ${expectedUSDTotal}`);
+                  } else {
+                    expectedUSDTotal = Math.floor(parseFloat(formData.toAmount) || 0);
+                  }
+                  
                   const actualUSDTotal = calculateTotalFromUSDBreakdown(usdBreakdown);
+                  console.log(`USD 버튼 활성화 검증: 기대값 ${expectedUSDTotal}, 실제값 ${actualUSDTotal}`);
                   
                   // 금액이 일치하지 않으면 비활성화
                   if (actualUSDTotal !== expectedUSDTotal && expectedUSDTotal > 0) {
+                    console.log(`USD 금액 불일치로 버튼 비활성화: ${actualUSDTotal} !== ${expectedUSDTotal}`);
                     return true;
                   }
                 }
