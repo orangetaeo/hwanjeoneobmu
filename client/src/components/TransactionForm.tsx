@@ -93,6 +93,22 @@ export default function TransactionForm() {
 
   // 권종별 환율의 평균 계산
   const calculateAverageExchangeRate = () => {
+    // VND→USD 거래의 경우 USD→VND 권종별 환율의 평균 계산
+    if (formData.fromCurrency === "VND" && formData.toCurrency === "USD") {
+      if (Array.isArray(exchangeRates)) {
+        const usdToVndRates = exchangeRates.filter((rate: any) => 
+          rate.fromCurrency === "USD" && 
+          rate.toCurrency === "VND"
+        );
+        
+        if (usdToVndRates.length > 0) {
+          const avgRate = usdToVndRates.reduce((sum, rate) => sum + parseFloat(rate.myBuyRate), 0) / usdToVndRates.length;
+          return avgRate; // VND/USD 형태로 반환
+        }
+      }
+    }
+    
+    // 기존 로직: 실제 거래 금액 기준 계산
     const totalFromAmount = calculateTotalFromAmount();
     const totalToAmount = parseFloat(formData.toAmount);
     
