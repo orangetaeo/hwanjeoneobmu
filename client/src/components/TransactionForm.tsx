@@ -506,25 +506,14 @@ export default function TransactionForm() {
           const denominations = krwCashAsset?.metadata?.denominations || {};
           let availableCount = 0;
           
-          // 다양한 키 형태로 매칭 시도
-          const possibleKeys = [
-            denom.toString(), // "50000"
-            denom.toLocaleString(), // "50,000"
-            `${denom.toLocaleString()}`, // 명시적 문자열 변환
-            `${(denom/1000).toFixed(0)},000`, // 직접 콤마 추가
-          ];
+          // 실제 키와 직접 매칭
+          const denomKey = `${(denom/1000).toFixed(0)},000`; // "50,000" 형태
+          availableCount = denominations[denomKey] || 0;
           
-          console.log(`${denom} 매칭 시도할 키들:`, possibleKeys);
-          
-          for (const key of possibleKeys) {
-            if (denominations[key] !== undefined) {
-              availableCount = denominations[key];
-              break;
-            }
-          }
+          console.log(`${denom.toLocaleString()} KRW 키 매칭: ${denom} → "${denomKey}", 보유량: ${availableCount}`);
           const actualCount = Math.min(idealCount, availableCount);
           
-          console.log(`${denom.toLocaleString()} KRW 키 매칭: ${denom}, 보유량: ${availableCount}`);
+
           
           if (actualCount > 0) {
             breakdown[denom.toString()] = actualCount;
