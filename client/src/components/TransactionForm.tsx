@@ -952,8 +952,8 @@ export default function TransactionForm() {
                 <Select 
                   value={formData.fromCurrency} 
                   onValueChange={(value) => {
-                    // KRW -> KRW 환전 방지
-                    if (value === "KRW" && formData.toCurrency === "KRW") {
+                    // 동일 통화 간 환전 방지
+                    if (value === formData.toCurrency && formData.toCurrency) {
                       toast({
                         title: "환전 불가",
                         description: "같은 통화 간의 환전은 불가능합니다. 다른 통화를 선택해주세요.",
@@ -979,8 +979,8 @@ export default function TransactionForm() {
                 <Select 
                   value={formData.toCurrency} 
                   onValueChange={(value) => {
-                    // KRW -> KRW 환전 방지
-                    if (formData.fromCurrency === "KRW" && value === "KRW") {
+                    // 동일 통화 간 환전 방지
+                    if (formData.fromCurrency === value && formData.fromCurrency) {
                       toast({
                         title: "환전 불가",
                         description: "같은 통화 간의 환전은 불가능합니다. 다른 통화를 선택해주세요.",
