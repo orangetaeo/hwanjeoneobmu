@@ -81,18 +81,38 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
         }
       });
     } else if (cashAsset.currency === 'USD') {
-      // USD 현금 상세 페이지: denominationAmounts가 USD 권종이므로 항상 증가로 처리
-      // 실제로는 VND→USD 환전에서 USD를 받은 것 (사업자 관점에서 USD 증가)
-      Object.entries(denominationAmounts).forEach(([denom, amount]) => {
-        if (amount && parseFloat(amount as string) > 0) {
-          // 20_10 권종 처리
-          if (denom === '20_10') {
-            denominationChanges['20/10'] = parseInt(amount as string); // 표시용으로 20/10 사용
-          } else {
-            denominationChanges[denom] = parseInt(amount as string); // USD 증가
+      // USD 현금 상세 페이지에서 환전 거래 처리
+      const isUsdIncrease = transaction.fromAssetName === cashAsset.name; // USD가 fromAsset이면 증가
+      
+      if (isUsdIncrease) {
+        // USD→다른통화: denominationAmounts.USD 또는 usdBreakdown 사용 (USD 증가)
+        const usdAmounts = denominationAmounts.USD || metadata?.usdBreakdown || {};
+        Object.entries(usdAmounts).forEach(([denom, amount]: [string, any]) => {
+          if (amount && parseFloat(amount.toString()) > 0) {
+            // 20_10 권종 처리
+            if (denom === '20_10') {
+              denominationChanges['20/10'] = parseInt(amount.toString()); // 표시용으로 20/10 사용
+            } else {
+              denominationChanges[denom] = parseInt(amount.toString()); // USD 증가
+            }
           }
-        }
-      });
+        });
+      } else {
+        // 다른통화→USD: USD 금액을 권종으로 분해해서 표시 (USD 감소)
+        const usdAmount = parseFloat(transaction.toAmount.toString());
+        let remaining = usdAmount;
+        const usdDenoms = [100, 50, 20, 10, 5, 2, 1];
+        
+        usdDenoms.forEach(denom => {
+          if (remaining >= denom) {
+            const count = Math.floor(remaining / denom);
+            if (count > 0) {
+              denominationChanges[denom.toString()] = -count;
+              remaining -= count * denom;
+            }
+          }
+        });
+      }
     }
   }
   
