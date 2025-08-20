@@ -54,12 +54,22 @@ const CURRENCY_DENOMINATIONS = {
     { value: "50000", label: "5만원" },
     { value: "10000", label: "1만원" },
     { value: "5000_1000", label: "5천/1천원" }
+  ],
+  VND: [
+    { value: "500000", label: "50만동" },
+    { value: "200000", label: "20만동" },
+    { value: "100000", label: "10만동" },
+    { value: "50000", label: "5만동" },
+    { value: "20000", label: "2만동" },
+    { value: "10000", label: "1만동" }
   ]
 };
 
 const CURRENCY_PAIRS = [
   { from: "USD", to: "VND", label: "USD → VND" },
-  { from: "KRW", to: "VND", label: "KRW → VND" }
+  { from: "KRW", to: "VND", label: "KRW → VND" },
+  { from: "USD", to: "KRW", label: "USD → KRW" },
+  { from: "KRW", to: "USD", label: "KRW → USD" }
 ];
 
 export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?: any }) {
@@ -514,19 +524,24 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                       <div className="mt-2 p-2 bg-blue-50 rounded-md border">
                         <div className="text-xs text-blue-600 font-medium mb-1">📊 오늘 시장 환율 (참고용)</div>
                         <div className="text-sm space-y-1">
-                          {formData.fromCurrency === 'USD' && realTimeRates['USD-VND'] && (
+                          {formData.fromCurrency === 'USD' && formData.toCurrency === 'VND' && realTimeRates['USD-VND'] && (
                             <div className="text-gray-700">
                               USD → VND: <span className="font-medium">{Math.round(realTimeRates['USD-VND']).toLocaleString('ko-KR')}</span>
                             </div>
                           )}
-                          {formData.fromCurrency === 'KRW' && realTimeRates['KRW-VND'] && (
+                          {formData.fromCurrency === 'KRW' && formData.toCurrency === 'VND' && realTimeRates['KRW-VND'] && (
                             <div className="text-gray-700">
                               KRW → VND: <span className="font-medium">{realTimeRates['KRW-VND'].toFixed(2)}</span>
                             </div>
                           )}
-                          {formData.fromCurrency === 'USD' && realTimeRates['USD-KRW'] && (
-                            <div className="text-gray-600 text-xs">
-                              USD → KRW: {Math.round(realTimeRates['USD-KRW']).toLocaleString('ko-KR')}
+                          {formData.fromCurrency === 'USD' && formData.toCurrency === 'KRW' && realTimeRates['USD-KRW'] && (
+                            <div className="text-gray-700">
+                              USD → KRW: <span className="font-medium">{Math.round(realTimeRates['USD-KRW']).toLocaleString('ko-KR')}</span>
+                            </div>
+                          )}
+                          {formData.fromCurrency === 'KRW' && formData.toCurrency === 'USD' && realTimeRates['KRW-USD'] && (
+                            <div className="text-gray-700">
+                              KRW → USD: <span className="font-medium">{realTimeRates['KRW-USD'].toFixed(4)}</span>
                             </div>
                           )}
                         </div>

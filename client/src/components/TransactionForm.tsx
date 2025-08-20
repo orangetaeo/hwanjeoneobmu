@@ -111,7 +111,37 @@ export default function TransactionForm() {
         
         if (usdToVndRates.length > 0) {
           const avgRate = usdToVndRates.reduce((sum, rate) => sum + parseFloat(rate.myBuyRate), 0) / usdToVndRates.length;
-          return avgRate; // VND/USD 형태로 반환
+          return avgRate;
+        }
+      }
+    }
+    
+    // USD→KRW 거래의 경우 USD→KRW 권종별 환율의 평균 계산
+    if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+      if (Array.isArray(exchangeRates)) {
+        const usdToKrwRates = exchangeRates.filter((rate: any) => 
+          rate.fromCurrency === "USD" && 
+          rate.toCurrency === "KRW"
+        );
+        
+        if (usdToKrwRates.length > 0) {
+          const avgRate = usdToKrwRates.reduce((sum, rate) => sum + parseFloat(rate.mySellRate), 0) / usdToKrwRates.length;
+          return avgRate;
+        }
+      }
+    }
+    
+    // KRW→USD 거래의 경우 KRW→USD 권종별 환율의 평균 계산
+    if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+      if (Array.isArray(exchangeRates)) {
+        const krwToUsdRates = exchangeRates.filter((rate: any) => 
+          rate.fromCurrency === "KRW" && 
+          rate.toCurrency === "USD"
+        );
+        
+        if (krwToUsdRates.length > 0) {
+          const avgRate = krwToUsdRates.reduce((sum, rate) => sum + parseFloat(rate.mySellRate), 0) / krwToUsdRates.length;
+          return avgRate;
         }
       }
     }
@@ -136,14 +166,14 @@ export default function TransactionForm() {
   });
 
   // 자산 목록 조회 (실시간 새로고침)
-  const { data: assets = [], isLoading: isLoadingAssets, refetch: refetchAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets, refetch: refetchAssets } = useQuery<Asset[]>({
     queryKey: ["/api/assets"],
     refetchOnWindowFocus: true,
     refetchInterval: 10000, // 10초마다 자동 새로고침
   });
 
   // 환율 목록 조회
-  const { data: exchangeRates = [], isLoading: isLoadingRates } = useQuery({
+  const { data: exchangeRates = [], isLoading: isLoadingRates } = useQuery<any[]>({
     queryKey: ["/api/exchange-rates"],
   });
 
@@ -294,6 +324,16 @@ export default function TransactionForm() {
   const getDenominationRate = (fromCurrency: string, toCurrency: string, denomination: string) => {
     if (!Array.isArray(exchangeRates)) return null;
     
+    // USD↔KRW 환전을 위한 직접 환율 조회
+    if ((fromCurrency === "USD" && toCurrency === "KRW") || (fromCurrency === "KRW" && toCurrency === "USD")) {
+      return exchangeRates.find((rate: any) => 
+        rate.fromCurrency === fromCurrency && 
+        rate.toCurrency === toCurrency && 
+        rate.denomination === denomination &&
+        rate.isActive === "true"
+      );
+    }
+    
     // KRW 5천원권과 1천원권의 경우 5/1천원권 매매 시세 사용
     let searchDenomination = denomination;
     if (fromCurrency === "KRW" && (denomination === "5000" || denomination === "1000")) {
@@ -317,8 +357,6 @@ export default function TransactionForm() {
         // 평균 환율 계산
         const avgRate = usdToVndRates.reduce((sum, rate) => sum + parseFloat(rate.myBuyRate), 0) / usdToVndRates.length;
         const vndToUsdRate = 1 / avgRate;
-        
-
         
         return {
           fromCurrency: "VND",
@@ -439,8 +477,8 @@ export default function TransactionForm() {
     console.log(`KRW 분배 계산 시작: ${totalAmount.toLocaleString()} KRW`);
 
     // KRW 현금 자산에서 권종별 보유 장수 조회
-    const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
-    const krwCashAsset = assetArray.find((asset: any) => 
+    const assetArray = Array.isArray(assets) ? assets : [];
+    const krwCashAsset = assetArray.find((asset: Asset) => 
       asset.name === "KRW 현금" && asset.currency === "KRW"
     );
     
@@ -771,8 +809,8 @@ export default function TransactionForm() {
 
     // 권종별 보유 수량 검증 (KRW 분배)
     if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
-      const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
-      const krwCashAsset = assetArray.find((asset: any) => 
+      const assetArray = Array.isArray(assets) ? assets : [];
+      const krwCashAsset = assetArray.find((asset: Asset) => 
         asset.name === "KRW 현금" && asset.currency === "KRW"
       );
       
@@ -796,7 +834,7 @@ export default function TransactionForm() {
 
     // 권종별 보유 수량 검증 (USD 분배)
     if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
-      const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+      const usdCashAsset = Array.isArray(assets) ? assets.find((asset: Asset) => 
         asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
       ) : null;
       
@@ -1170,7 +1208,9 @@ export default function TransactionForm() {
                             </div>
                             {(
                               (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") || 
-                              (formData.fromCurrency === "USD" && formData.toCurrency === "VND")
+                              (formData.fromCurrency === "USD" && formData.toCurrency === "VND") ||
+                              (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") ||
+                              (formData.fromCurrency === "KRW" && formData.toCurrency === "USD")
                             ) && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
@@ -1305,8 +1345,8 @@ export default function TransactionForm() {
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
                         // VND 현금 보유 상황 확인
-                        const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
-                        const vndCashAsset = assetArray.find((asset: any) => 
+                        const assetArray = Array.isArray(assets) ? assets : [];
+                        const vndCashAsset = assetArray.find((asset: Asset) => 
                           asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
                         );
                         const denomComposition = vndCashAsset?.metadata?.denominations || {};
@@ -2402,10 +2442,46 @@ export default function TransactionForm() {
                       <span className="text-sm text-gray-600 font-medium">적용 환율</span>
                       <div className="text-right">
                         <div className="text-lg font-bold text-cyan-700">{(() => {
-                          // KRW 권종별 매도시세들의 평균 계산
-                          const rates = [];
+                          // 통화쌍별 환율 평균 계산
+                          const rates: number[] = [];
                           
-                          // 거래에 사용된 KRW 권종별 매도시세 수집
+                          // USD→KRW 환전: USD 권종별 매도시세 수집
+                          if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW" && Object.keys(usdBreakdown).length > 0) {
+                            Object.keys(usdBreakdown).forEach(denom => {
+                              const count = usdBreakdown[denom];
+                              if (count > 0) {
+                                const usdKrwRate = exchangeRates?.find((rate: any) => 
+                                  rate.fromCurrency === "USD" && 
+                                  rate.toCurrency === "KRW" && 
+                                  rate.denomination === denom
+                                );
+                                
+                                if (usdKrwRate?.mySellRate) {
+                                  rates.push(parseFloat(usdKrwRate.mySellRate));
+                                }
+                              }
+                            });
+                          }
+                          
+                          // KRW→USD 환전: KRW 권종별 매도시세 수집
+                          if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD" && Object.keys(krwBreakdown).length > 0) {
+                            Object.keys(krwBreakdown).forEach(denom => {
+                              const count = krwBreakdown[denom];
+                              if (count > 0) {
+                                const krwUsdRate = exchangeRates?.find((rate: any) => 
+                                  rate.fromCurrency === "KRW" && 
+                                  rate.toCurrency === "USD" && 
+                                  rate.denomination === denom
+                                );
+                                
+                                if (krwUsdRate?.mySellRate) {
+                                  rates.push(parseFloat(krwUsdRate.mySellRate));
+                                }
+                              }
+                            });
+                          }
+                          
+                          // 기존 VND 환전: KRW→VND 매도시세 수집
                           if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
                             Object.keys(krwBreakdown).forEach(denom => {
                               const count = krwBreakdown[denom];
