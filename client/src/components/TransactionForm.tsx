@@ -1649,8 +1649,21 @@ export default function TransactionForm() {
                                     </div>
                                     <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
                                       매도시세: {(() => {
-                                        const rate = getDenominationRate("VND", "USD", "500000");
-                                        return rate?.sellRateVnd ? rate.sellRateVnd.toLocaleString() : "25,000";
+                                        // USD 권종에 따른 해당 환율 찾기
+                                        let searchDenom = "100"; // 기본값
+                                        if (denomValue >= 100) searchDenom = "100";
+                                        else if (denomValue >= 50) searchDenom = "50"; 
+                                        else if (denomValue >= 10) searchDenom = "20_10";
+                                        else searchDenom = "5_2_1";
+                                        
+                                        const usdRate = exchangeRates?.find((rate: any) => 
+                                          rate.fromCurrency === "USD" && 
+                                          rate.toCurrency === "VND" && 
+                                          rate.denomination === searchDenom
+                                        );
+                                        
+                                        const sellRate = usdRate?.myBuyRate ? parseFloat(usdRate.myBuyRate) : 25000;
+                                        return sellRate.toLocaleString();
                                       })()}
                                     </div>
                                   </div>
