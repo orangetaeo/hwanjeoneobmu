@@ -336,11 +336,9 @@ export default function TransactionForm() {
 
   // 환율 포맷팅 함수
   const formatRate = (rate: number, fromCurrency: string, toCurrency: string) => {
-    // VND→KRW 환전 시 소수점 3자리로 표기
-    if (fromCurrency === "VND" && toCurrency === "KRW") {
-      return rate.toLocaleString('ko-KR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-    } else if (toCurrency === "KRW") {
-      return rate.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+    // 받는 권종이 KRW일 때 소수점 2자리까지 표기
+    if (toCurrency === "KRW") {
+      return rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     } else {
       return rate.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
     }
