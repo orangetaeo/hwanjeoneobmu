@@ -120,12 +120,8 @@ export default function CashTransactionHistory({
   // 거래 타입별 금액 계산
   function getTransactionAmount(transaction: Transaction): number {
     if (transaction.type === 'cash_change') {
-      // cash_change 거래의 경우 메타데이터의 balanceChange 값 사용
+      // cash_change 거래의 경우 권종별 변동사항을 우선하여 계산
       const metadata = transaction.metadata as any;
-      if (metadata?.balanceChange !== undefined) {
-        return Math.abs(metadata.balanceChange);
-      }
-      // 메타데이터가 없는 경우 권종별 변동사항에서 계산
       if (metadata?.denominationChanges) {
         const totalChange = Object.entries(metadata.denominationChanges).reduce((total: number, [denom, change]: [string, any]) => {
           const denomValue = parseFloat(denom.replace(/,/g, ''));
@@ -133,6 +129,10 @@ export default function CashTransactionHistory({
           return total + (denomValue * changeAmount);
         }, 0);
         return Math.abs(totalChange);
+      }
+      // 권종별 변동사항이 없는 경우 메타데이터의 balanceChange 값 사용
+      if (metadata?.balanceChange !== undefined) {
+        return Math.abs(metadata.balanceChange);
       }
       // 폴백: 기존 로직
       return Math.abs(parseFloat(String(transaction.toAmount)) || 0);
@@ -157,12 +157,8 @@ export default function CashTransactionHistory({
   // 거래가 감소인지 확인
   function isDecreaseTransaction(transaction: Transaction): boolean {
     if (transaction.type === 'cash_change') {
-      // cash_change 거래의 경우 메타데이터의 balanceChange 값으로 판단
+      // cash_change 거래의 경우 권종별 변동사항을 우선하여 판단
       const metadata = transaction.metadata as any;
-      if (metadata?.balanceChange !== undefined) {
-        return metadata.balanceChange < 0;
-      }
-      // 메타데이터가 없는 경우 권종별 변동사항에서 계산
       if (metadata?.denominationChanges) {
         const totalChange = Object.entries(metadata.denominationChanges).reduce((total: number, [denom, change]: [string, any]) => {
           const denomValue = parseFloat(denom.replace(/,/g, ''));
@@ -170,6 +166,10 @@ export default function CashTransactionHistory({
           return total + (denomValue * changeAmount);
         }, 0);
         return totalChange < 0;
+      }
+      // 권종별 변동사항이 없는 경우 메타데이터의 balanceChange 값으로 판단
+      if (metadata?.balanceChange !== undefined) {
+        return metadata.balanceChange < 0;
       }
       // 폴백: 기존 로직
       return (parseFloat(String(transaction.toAmount)) || 0) < (parseFloat(String(transaction.fromAmount)) || 0);
