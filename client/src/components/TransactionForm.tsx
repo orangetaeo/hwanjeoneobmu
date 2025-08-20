@@ -2017,16 +2017,21 @@ export default function TransactionForm() {
                           return total;
                         }, 0);
 
-                        let targetAmount = 0;
-                        if (totalFromDenominations > 0) {
-                          const rate = formData.fromCurrency === "KRW" ? 
-                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
-                            getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                          const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                          targetAmount = formatVNDWithFloor(calculatedAmount);
-                        } else {
-                          targetAmount = parseFloat(formData.toAmount) || 0;
-                        }
+                        // 권종별로 정확한 환율 적용해서 계산한 실제 금액 사용
+                        const targetAmount = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                          if (amount && parseFloat(amount) > 0) {
+                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                            const totalFromCurrency = parseFloat(amount) * denomValue;
+                            
+                            const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                            const rate = formData.fromCurrency === "KRW" ? 
+                              parseFloat(rateInfo?.mySellRate || "0") :
+                              parseFloat(rateInfo?.myBuyRate || "0");
+                            
+                            return total + (totalFromCurrency * rate);
+                          }
+                          return total;
+                        }, 0);
                         
                         // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
