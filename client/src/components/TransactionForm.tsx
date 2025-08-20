@@ -1006,8 +1006,9 @@ export default function TransactionForm() {
                   <div className="text-xl font-bold text-blue-700">
                     {(() => {
                       if (formData.transactionType === "cash_exchange" && formData.toCurrency === "VND" && vndOriginalAmount > 0) {
-                        // 실제 환전금액 사용 (무조건 내림 적용)
-                        const flooredAmount = formatVNDWithFloor(vndOriginalAmount);
+                        // 실제 환전금액 사용 (정확한 Math.floor 적용)
+                        const flooredAmount = Math.floor(vndOriginalAmount);
+                        console.log(`파란 박스 VND 표시: vndOriginalAmount=${vndOriginalAmount}, Math.floor=${flooredAmount}`);
                         return flooredAmount.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
                       }
                       
