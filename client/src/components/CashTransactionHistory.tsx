@@ -120,6 +120,21 @@ export default function CashTransactionHistory({
   // 거래 타입별 금액 계산
   function getTransactionAmount(transaction: Transaction): number {
     if (transaction.type === 'cash_change') {
+      // cash_change 거래의 경우 메타데이터의 balanceChange 값 사용
+      const metadata = transaction.metadata as any;
+      if (metadata?.balanceChange !== undefined) {
+        return Math.abs(metadata.balanceChange);
+      }
+      // 메타데이터가 없는 경우 권종별 변동사항에서 계산
+      if (metadata?.denominationChanges) {
+        const totalChange = Object.entries(metadata.denominationChanges).reduce((total: number, [denom, change]: [string, any]) => {
+          const denomValue = parseFloat(denom.replace(/,/g, ''));
+          const changeAmount = typeof change === 'number' ? change : parseFloat(change) || 0;
+          return total + (denomValue * changeAmount);
+        }, 0);
+        return Math.abs(totalChange);
+      }
+      // 폴백: 기존 로직
       return Math.abs(parseFloat(String(transaction.toAmount)) || 0);
     } else if ((transaction.type as string) === 'cash_exchange') {
       // 환전 거래의 경우 해당 현금 자산과 연관된 금액 반환
