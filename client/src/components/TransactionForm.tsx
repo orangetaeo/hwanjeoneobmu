@@ -91,6 +91,13 @@ export default function TransactionForm() {
   
   // USD 권종별 분배 수정용 상태
   const [usdBreakdown, setUsdBreakdown] = useState<Record<string, number>>({});
+  
+  // 통화나 권종 변경 시 분배 상태 초기화
+  useEffect(() => {
+    setVndBreakdown({});
+    setKrwBreakdown({});
+    setUsdBreakdown({});
+  }, [formData.fromCurrency, formData.toCurrency, JSON.stringify(formData.denominationAmounts)]);
 
   // 권종별 환율의 평균 계산
   const calculateAverageExchangeRate = () => {
