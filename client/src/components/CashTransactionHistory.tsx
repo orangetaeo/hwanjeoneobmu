@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Filter, ArrowUpDown, X, TrendingUp, TrendingDown, Clock, Calendar } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, X, TrendingUp, TrendingDown, Clock, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { Transaction, CashAsset } from '@/types';
 import CashChangeDetailModal from '@/components/CashChangeDetailModal';
 import { formatCurrency } from '@/utils/helpers';
@@ -31,6 +31,7 @@ export default function CashTransactionHistory({
   const [displayCount, setDisplayCount] = useState<number>(5);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isCashDetailModalOpen, setIsCashDetailModalOpen] = useState(false);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   // 모달이 열릴 때 포커스 관리
@@ -38,7 +39,16 @@ export default function CashTransactionHistory({
     if (isOpen) {
       // 모든 input 요소에서 포커스 제거
       const inputs = document.querySelectorAll('input');
-      inputs.forEach(input => input.blur());
+      inputs.forEach(input => {
+        input.blur();
+        // 모바일에서 date input이 자동으로 열리는 것을 방지
+        if (input.type === 'date') {
+          input.readOnly = true;
+          setTimeout(() => {
+            input.readOnly = false;
+          }, 300);
+        }
+      });
       
       // 제목에 포커스 주기
       setTimeout(() => {
@@ -192,108 +202,141 @@ export default function CashTransactionHistory({
         {/* 검색 및 필터 - 고정 영역 */}
         <div className="flex-shrink-0 mt-2 sm:mt-4">
           <Card className="p-2 sm:p-3 md:p-4">
-            <div className="space-y-2 sm:space-y-3">
-              {/* 필터 및 정렬 - 모바일 최적화 */}
+            {/* 필터 토글 헤더 */}
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                className="flex items-center gap-2 p-2 hover:bg-gray-100"
+              >
+                <Filter size={14} />
+                <span className="text-sm font-medium">검색 및 필터</span>
+                {isFilterExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </Button>
+            </div>
+
+            {/* 검색 및 필터 내용 - 접고 펼 수 있음 */}
+            {isFilterExpanded && (
               <div className="space-y-2 sm:space-y-3">
-                {/* 날짜 필터 - 모바일에서 세로 배치 */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Calendar size={14} />
-                    <span>기간</span>
+                {/* 필터 및 정렬 - 모바일 최적화 */}
+                <div className="space-y-2 sm:space-y-3">
+                  {/* 날짜 필터 - 모바일에서 세로 배치 */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <Calendar size={14} />
+                      <span>기간</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="date"
+                        placeholder="시작일"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="flex-1 text-xs sm:text-sm h-9 sm:h-9"
+                        data-testid="input-start-date"
+                        onFocus={(e) => {
+                          // 모바일에서 즉시 닫기 방지
+                          e.target.showPicker && e.target.showPicker();
+                        }}
+                        onBlur={(e) => {
+                          // 포커스 잃을 때 처리
+                          e.target.blur();
+                        }}
+                      />
+                      <span className="text-gray-500 text-sm px-1">~</span>
+                      <Input
+                        type="date"
+                        placeholder="종료일"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="flex-1 text-xs sm:text-sm h-9 sm:h-9"
+                        data-testid="input-end-date"
+                        onFocus={(e) => {
+                          // 모바일에서 즉시 닫기 방지
+                          e.target.showPicker && e.target.showPicker();
+                        }}
+                        onBlur={(e) => {
+                          // 포커스 잃을 때 처리
+                          e.target.blur();
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="date"
-                      placeholder="시작일"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="flex-1 text-xs sm:text-sm h-9 sm:h-9"
-                      data-testid="input-start-date"
-                    />
-                    <span className="text-gray-500 text-sm px-1">~</span>
-                    <Input
-                      type="date"
-                      placeholder="종료일"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="flex-1 text-xs sm:text-sm h-9 sm:h-9"
-                      data-testid="input-end-date"
-                    />
+
+                  {/* 타입 필터 및 정렬 - 모바일 한 줄 배치 */}
+                  <div className="flex gap-2">
+                    <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease' | 'direct' | 'exchange') => setTypeFilter(value)}>
+                      <SelectTrigger className="w-1/3 h-9 text-xs sm:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">전체</SelectItem>
+                        <SelectItem value="increase">증가</SelectItem>
+                        <SelectItem value="decrease">감소</SelectItem>
+                        <SelectItem value="direct">직접 증감</SelectItem>
+                        <SelectItem value="exchange">환전 거래</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="flex-1 h-9 text-xs sm:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="timestamp">시간순</SelectItem>
+                        <SelectItem value="amount">금액순</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                      data-testid="button-sort-order"
+                      className="px-2 sm:px-3 h-9"
+                    >
+                      <ArrowUpDown size={14} />
+                    </Button>
                   </div>
-                </div>
 
-                {/* 타입 필터 및 정렬 - 모바일 한 줄 배치 */}
-                <div className="flex gap-2">
-                  <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease' | 'direct' | 'exchange') => setTypeFilter(value)}>
-                    <SelectTrigger className="w-1/3 h-9 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">전체</SelectItem>
-                      <SelectItem value="increase">증가</SelectItem>
-                      <SelectItem value="decrease">감소</SelectItem>
-                      <SelectItem value="direct">직접 증감</SelectItem>
-                      <SelectItem value="exchange">환전 거래</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="flex-1 h-9 text-xs sm:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="timestamp">시간순</SelectItem>
-                      <SelectItem value="amount">금액순</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    data-testid="button-sort-order"
-                    className="px-2 sm:px-3 h-9"
-                  >
-                    <ArrowUpDown size={14} />
-                  </Button>
-                </div>
-
-                {/* 검색어 입력 - 하단 이동 */}
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                    <Input
-                      placeholder="거래내역 검색"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8 sm:pl-9 text-sm h-10 sm:h-9"
-                      data-testid="input-search-transactions"
-                      autoFocus={false}
-                    />
+                  {/* 검색어 입력과 필터 초기화 버튼 - 같은 줄 배치 */}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                        <Input
+                          placeholder="거래내역 검색"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-8 sm:pl-9 text-sm h-9"
+                          data-testid="input-search-transactions"
+                          autoFocus={false}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* 필터 초기화 버튼 - 검색과 같은 줄 */}
+                    {(searchTerm || startDate || endDate || typeFilter !== 'all') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSearchTerm('');
+                          setStartDate('');
+                          setEndDate('');
+                          setTypeFilter('all');
+                        }}
+                        data-testid="button-clear-filters"
+                        className="px-2 sm:px-3 h-9 flex-shrink-0"
+                      >
+                        <X size={14} />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* 필터 초기화 버튼 */}
-              {(searchTerm || startDate || endDate || typeFilter !== 'all') && (
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setStartDate('');
-                      setEndDate('');
-                      setTypeFilter('all');
-                    }}
-                    data-testid="button-clear-filters"
-                  >
-                    <X size={16} className="mr-2" />
-                    필터 초기화
-                  </Button>
-                </div>
-              )}
-            </div>
+            )}
           </Card>
         </div>
 
