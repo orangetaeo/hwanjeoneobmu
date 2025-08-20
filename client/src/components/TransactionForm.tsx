@@ -1321,7 +1321,7 @@ export default function TransactionForm() {
                           console.log("권종 구성 데이터:", denomComposition);
                           
                           // 각 권종별로 남은 금액을 분배하는 방법들을 계산
-                          const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
+                          const denominations = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
                           
                           denominations.forEach(denom => {
                             const currentCount = currentBreakdown[denom.toString()] || 0;
@@ -1349,7 +1349,7 @@ export default function TransactionForm() {
                         // 현재 화면에 표시되는 권종별 입력값들의 총합을 계산하여 외부에서 사용할 수 있도록 저장
                         let currentDisplayTotal = 0;
                         
-                        const denominationCards = [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
+                        const denominationCards = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000].map((denom) => {
                           const defaultCount = (fixedBreakdown as Record<string, number>)[denom.toString()] || 0;
                           const currentCount = vndBreakdown?.[denom.toString()] !== undefined ? 
                             vndBreakdown[denom.toString()] : defaultCount;
