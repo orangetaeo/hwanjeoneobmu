@@ -1641,130 +1641,98 @@ export default function TransactionForm() {
                 </div>
               )}
               
-              {/* KRW 권종별 분배 섹션 - VND→KRW 환전용 */}
-              {formData.toCurrency === "KRW" && formData.fromCurrency === "VND" && parseFloat(formData.toAmount || "0") > 0 && (
+              {/* KRW 권종별 분배 - VND→KRW 환전용 (VND 분배 패턴 복사) */}
+              {formData.toCurrency === "KRW" && (
                 <div>
-                  <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
-                  <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                    <div className="space-y-3">
+                  <Label className="text-base font-medium">권종별 분배</Label>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mt-2">
+                    <div className="text-sm font-medium text-blue-700 mb-3 flex items-center">
+                      <span className="mr-2">💰</span>
+                      고액권 우선
+                    </div>
+                    <div className="space-y-2">
                       {(() => {
-                        // 환전 금액으로부터 KRW 분배 계산
-                        const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
-                        
-                        // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
-                        let displayBreakdown;
-                        if (Object.keys(krwBreakdown).length > 0) {
-                          displayBreakdown = krwBreakdown;
-                          console.log("KRW 분배 - 사용자 수정값 사용:", displayBreakdown);
-                        } else {
-                          console.log("KRW 분배 - 자동 계산 시작, targetKRWAmount:", targetKRWAmount);
-                          // 실제 보유량 기반 분배를 우선 시도
-                          const realBreakdown = calculateKRWBreakdown(targetKRWAmount, false);
-                          console.log("KRW 분배 - 실제 보유량 기반 결과:", realBreakdown);
-                          if (Object.keys(realBreakdown).length > 0) {
-                            displayBreakdown = realBreakdown;
-                          } else {
-                            console.log("KRW 분배 - 이상적인 분배로 전환");
-                            // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
-                            displayBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
-                            console.log("KRW 분배 - 이상적인 분배 결과:", displayBreakdown);
+                        // VND 입력에서 직접 총액 계산
+                        const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                          if (amount && parseFloat(amount) > 0) {
+                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                            return total + (parseFloat(amount) * denomValue);
                           }
-                        }
-                        
-                        return Object.entries(displayBreakdown)
-                          .filter(([denom, count]) => count > 0)
-                          .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                          .map(([denom, count]) => {
-                          const denomValue = parseInt(denom);
-                          const subtotal = denomValue * count;
-                          return (
-                            <div key={denom} className="bg-white p-3 rounded border border-blue-200">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex flex-col min-w-0 flex-1">
-                                  <div className="text-sm sm:text-base font-medium text-gray-900">
-                                    {formatNumber(denomValue)} KRW
-                                  </div>
-                                  <div className="text-xs sm:text-sm text-gray-500">
-                                    {count}장 × {formatNumber(denomValue)} = {formatNumber(subtotal)} KRW
-                                  </div>
-                                  {(() => {
-                                    // KRW 현금 자산에서 해당 권종의 보유 장수 조회
-                                    const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
-                                    const krwCashAsset = assetArray.find((asset: any) => 
-                                      asset.name === "KRW 현금" && asset.currency === "KRW"
-                                    );
-                                    
-                                    console.log(`KRW ${denom} 권종 보유량 확인:`, {
-                                      denom: denom,
-                                      krwCashAsset: krwCashAsset,
-                                      denominations: krwCashAsset?.metadata?.denominations
-                                    });
+                          return total;
+                        }, 0);
 
-                                    if (krwCashAsset?.metadata?.denominations) {
-                                      // 권종 키를 쉼표 포함 형태로 변환 (예: "50000" → "50,000")
-                                      const denomKey = parseInt(denom).toLocaleString();
-                                      const availableCount = krwCashAsset.metadata.denominations[denomKey] || 0;
-                                      const remainingCount = Math.max(0, availableCount - count);
-                                      const isInsufficient = count > availableCount;
-                                      
-                                      console.log(`KRW ${denom} 권종 매칭:`, {
-                                        originalDenom: denom,
-                                        denomKey: denomKey,
-                                        availableCount: availableCount,
-                                        count: count,
-                                        remainingCount: remainingCount
-                                      });
-                                      
-                                      return (
-                                        <div className={`text-xs mt-1 ${isInsufficient ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
-                                          보유: {availableCount}장 - 사용량: {count}장 = 남은량: {remainingCount}장
-                                          {isInsufficient && (
-                                            <div className="text-red-600 font-bold mt-1">
-                                              ⚠️ 보유량 부족!
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    }
-                                    return (
-                                      <div className="text-xs text-red-600 mt-1">
-                                        KRW 현금 자산 정보를 불러올 수 없습니다.
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  <Input
-                                    type="text"
-                                    value={count.toString()}
-                                    className="w-16 sm:w-20 h-10 sm:h-12 text-sm sm:text-base text-center font-medium"
-                                    onChange={(e) => {
-                                      const value = e.target.value;
-                                      if (value === '' || /^\d+$/.test(value)) {
-                                        const newCount = value === '' ? 0 : parseInt(value);
-                                        
-                                        // 보유 장수 제한 검증
-                                        const krwCashAsset = assets?.find((asset: any) => 
-                                          asset.name === "KRW 현금" && asset.currency === "KRW"
-                                        );
-                                        const availableCount = krwCashAsset?.metadata?.denominations?.[denom] || 0;
-                                        
-                                        if (newCount > availableCount) {
-                                          console.log(`KRW ${denom} 권종: 입력값 ${newCount}장이 보유량 ${availableCount}장을 초과하여 ${availableCount}장으로 제한됨`);
-                                          handleKRWBreakdownChange(denom, availableCount);
-                                        } else {
-                                          handleKRWBreakdownChange(denom, newCount);
-                                        }
-                                      }
-                                    }}
-                                    data-testid={`input-krw-${denom}`}
-                                  />
-                                  <span className="text-sm sm:text-base text-gray-600 font-medium">장</span>
-                                </div>
+                        // VND → KRW 환전될 KRW 금액 계산 (Math.ceil 사용)
+                        const targetAmount = totalFromDenominations > 0 ? (() => {
+                          // VND → KRW는 myBuyRate 사용 (고객에게 유리한 환율)
+                          const rate = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000")?.myBuyRate || "0";
+                          const calculatedAmount = totalFromDenominations / parseFloat(rate);
+                          return formData.toCurrency === "KRW" ? Math.ceil(calculatedAmount) : calculatedAmount;
+                        })() : (parseFloat(formData.toAmount) || 0);
+                        
+                        // 실제로 고객이 받을 금액을 기준으로 분배
+                        const fixedBreakdown = calculateKRWBreakdown(targetAmount > 0 ? targetAmount : 0);
+                        
+                        // KRW 현금 보유 상황 확인
+                        const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
+                        const krwCashAsset = assetArray.find((asset: any) => 
+                          asset.name === "KRW 현금" && asset.currency === "KRW" && asset.type === "cash"
+                        );
+                        const denomComposition = krwCashAsset?.metadata?.denominations || {};
+                        
+                        // 권종 데이터가 없으면 안내 메시지 표시
+                        if (totalFromDenominations === 0) {
+                          return (
+                            <div className="bg-white p-4 rounded border border-blue-200 text-center">
+                              <div className="text-sm text-gray-500">
+                                받는 권종을 선택하면 권종별 분배가 표시됩니다
                               </div>
                             </div>
                           );
+                        }
+
+                        // 분배 상황: 기본값 사용 (편집 불가로 단순화)
+                        const actualBreakdown = fixedBreakdown;
+                        
+                        const denominationCards = [50000, 10000, 5000, 1000].map((denom) => {
+                          const count = (actualBreakdown as Record<string, number>)[denom.toString()] || 0;
+                          
+                          // 권종 키 형태 확인 - 기존 성공한 패턴 사용
+                          const denomKeys = Object.keys(denomComposition);
+                          const denomKey = denomKeys.find(key => 
+                            key.replace(/,/g, '') === denom.toString() || key === denom.toString()
+                          ) || denom.toString();
+                          const availableCount = denomComposition[denomKey] || 0;
+                          
+                          if (count > 0) {
+                            return (
+                              <div key={denom} className="bg-white p-3 sm:p-4 rounded border border-blue-200">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                                      {formatNumber(denom)} KRW
+                                    </div>
+                                    <div className="text-xs sm:text-sm text-gray-500">
+                                      보유: {formatNumber(availableCount)}장
+                                      {count > 0 && (
+                                        <span className={`ml-1 ${(availableCount - count) < 0 ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
+                                          -{count}장 = {availableCount - count}장
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                                    <div className="text-lg sm:text-xl font-bold text-blue-700">
+                                      {count}장
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
                         });
+                        
+                        return denominationCards.filter(Boolean);
                       })()}
                     </div>
                     
@@ -1772,69 +1740,34 @@ export default function TransactionForm() {
                       <div className="text-xs sm:text-sm font-medium text-blue-700">
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
-                            const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
+                            // KRW 권종별 분배 총액 계산
+                            let totalAmount = 0;
                             
-                            let displayBreakdown;
-                            if (Object.keys(krwBreakdown).length > 0) {
-                              displayBreakdown = krwBreakdown;
-                            } else {
-                              const realBreakdown = calculateKRWBreakdown(targetKRWAmount, false);
-                              if (Object.keys(realBreakdown).length > 0) {
-                                displayBreakdown = realBreakdown;
-                              } else {
-                                displayBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                            // 권종별 환율 적용 실제 계산값 사용
+                            const currentTotalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                              if (amount && parseFloat(amount) > 0) {
+                                const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                return total + (parseFloat(amount) * denomValue);
+                              }
+                              return total;
+                            }, 0);
+                            
+                            if (currentTotalFromDenominations > 0) {
+                              // VND → KRW는 myBuyRate 사용하고 Math.ceil로 고객에게 유리하게
+                              const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, "500000");
+                              const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                              
+                              if (rate > 0) {
+                                const calculatedAmount = currentTotalFromDenominations / rate;
+                                totalAmount = Math.ceil(calculatedAmount);
+                                console.log(`VND→KRW 계산: ${currentTotalFromDenominations} VND ÷ ${rate} = ${calculatedAmount} → Math.ceil = ${totalAmount} KRW`);
                               }
                             }
                             
-                            return Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
-                              total + (parseInt(denom) * count), 0
-                            ).toLocaleString();
+                            return totalAmount.toLocaleString();
                           })()} KRW
                         </span>
                       </div>
-                      
-                      {(() => {
-                        const targetKRWAmount = Math.floor((parseFloat(formData.toAmount) || 0) / 1000) * 1000;
-                        
-                        let displayBreakdown;
-                        if (Object.keys(krwBreakdown).length > 0) {
-                          displayBreakdown = krwBreakdown;
-                        } else {
-                          const realBreakdown = calculateKRWBreakdown(targetKRWAmount, false);
-                          if (Object.keys(realBreakdown).length > 0) {
-                            displayBreakdown = realBreakdown;
-                          } else {
-                            displayBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
-                          }
-                        }
-                        
-                        const actualKRWTotal = Object.entries(displayBreakdown).reduce((total, [denom, count]) => 
-                          total + (parseInt(denom) * count), 0
-                        );
-                        const expectedKRWTotal = targetKRWAmount;
-                        
-                        if (actualKRWTotal !== expectedKRWTotal && expectedKRWTotal > 0) {
-                          const difference = expectedKRWTotal - actualKRWTotal;
-                          return (
-                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-                              <div className="text-xs text-red-600">
-                                ⚠️ 분배액과 환전액이 일치하지 않습니다
-                              </div>
-                              <div className="text-xs text-red-700 mt-1">
-                                환전 예상 금액: {expectedKRWTotal.toLocaleString()} KRW<br/>
-                                실제 분배 금액: {actualKRWTotal.toLocaleString()} KRW<br/>
-                                차이: {Math.abs(difference).toLocaleString()} KRW {difference > 0 ? '부족' : '초과'}
-                              </div>
-                              {difference > 0 && (
-                                <div className="text-xs text-red-600 mt-1">
-                                  💡 KRW 현금 보유량을 확인하세요
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
                     </div>
                   </div>
                 </div>
