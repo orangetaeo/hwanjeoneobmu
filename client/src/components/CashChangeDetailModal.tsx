@@ -198,13 +198,27 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   const getExchangeTypeText = (transaction: Transaction, currency: string) => {
     if ((transaction.type as string) !== 'cash_exchange') return '';
     
-    // 현재 보고 있는 통화에 따라 정확한 표기
+    const metadata = transaction.metadata as any;
+    
+    // 거래 유형에 따른 정확한 표기
     if (currency === 'KRW') {
       // KRW 현금 상세 페이지 - 사업자가 KRW를 받음 (수령)
       return 'KRW 현금 환전 수령';
     } else if (currency === 'VND') {
-      // VND 현금 상세 페이지 - 사업자가 VND를 줌 (지급)
-      return 'VND 현금 환전 지급';
+      // VND 현금 상세 페이지 - 거래 유형에 따라 수령/지급 판단
+      const isVndIncrease = transaction.fromAssetName === cashAsset.name;
+      
+      if (isVndIncrease) {
+        // VND→USD 환전: 사업자가 VND를 받음 (수령)
+        const toCurrency = metadata?.toCurrency || 'USD';
+        return `${toCurrency} 현금 지급 환전→ VND 수량 증가`;
+      } else {
+        // KRW→VND 환전: 사업자가 VND를 줌 (지급)
+        return 'VND 현금 환전 지급';
+      }
+    } else if (currency === 'USD') {
+      // USD 현금 상세 페이지 - 사업자가 USD를 줌 (지급)
+      return 'USD 현금 환전 지급';
     }
     
     return '현금환전';
