@@ -10,6 +10,7 @@ This is a full-stack asset management and exchange tracking application designed
 - **UI Optimization for VND→USD**: Removed unnecessary exchange rate and sell rate displays from VND denomination cards in VND→USD transactions, maintaining clean interface with only denomination names and quantities
 - **Average Exchange Rate Calculation**: Implemented weighted average calculation for transaction confirmation using all USD→VND denomination rates, correctly displaying 25,550 VND average rate
 - **Complete Transaction Flow**: VND→USD exchanges now support full end-to-end processing with accurate denomination tracking, inventory validation, and proper asset balance updates
+- **USD Inventory Protection System**: Implemented comprehensive USD cash validation preventing transactions when insufficient inventory available, matching KRW→VND transaction protection patterns with automatic button disabling and clear error messaging
 
 ### VND Exchange Transaction System Enhancements
 - **Complete Auto-Adjustment System**: Fixed Math.ceil() based precise excess calculation for VND denomination distribution (500,000 VND now correctly adjusts from 19→16 instead of 19→17)
