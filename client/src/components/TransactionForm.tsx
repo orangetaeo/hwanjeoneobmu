@@ -1958,7 +1958,21 @@ export default function TransactionForm() {
             </div>
 
             {/* 거래 확인 */}
-            {formData.fromAmount && formData.toAmount && formData.exchangeRate && (
+            {(() => {
+              console.log("거래 확인 조건 체크:");
+              console.log("fromAmount:", formData.fromAmount);
+              console.log("toAmount:", formData.toAmount);
+              console.log("exchangeRate:", formData.exchangeRate);
+              console.log("권종별 입력:", formData.denominationAmounts);
+              console.log("총 권종별 합계:", calculateTotalFromAmount());
+              
+              const hasFromAmount = formData.fromAmount || calculateTotalFromAmount() > 0;
+              const hasToAmount = formData.toAmount;
+              const hasExchangeRate = formData.exchangeRate;
+              
+              console.log("표시 조건:", { hasFromAmount, hasToAmount, hasExchangeRate });
+              return hasFromAmount && hasToAmount && hasExchangeRate;
+            })() && (
               <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200 rounded-xl p-6 shadow-sm">
                 {/* 배경 장식 */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/30 to-transparent rounded-full transform translate-x-16 -translate-y-16"></div>
@@ -2006,6 +2020,8 @@ export default function TransactionForm() {
                             
                             console.log(`거래확인 최종 총액: ${calculatedTotal}`);
                             console.log(`거래확인 Math.floor: ${Math.floor(calculatedTotal)}`);
+                            console.log(`formData.toAmount: ${formData.toAmount}`);
+                            console.log(`실제 화면 표시값: ${Math.floor(calculatedTotal).toLocaleString()}`);
                             return Math.floor(calculatedTotal).toLocaleString();
                           })()} {formData.toCurrency}</div>
                         </div>
