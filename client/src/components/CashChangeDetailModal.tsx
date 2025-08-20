@@ -231,8 +231,6 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   const totalIncrease = increases.reduce((sum, item) => sum + item.value, 0);
   const totalDecrease = decreases.reduce((sum, item) => sum + item.value, 0);
   const netChange = totalIncrease - totalDecrease; // 증가 - 감소 = 순변동
-  
-  console.log(`순변동 계산: totalIncrease=${totalIncrease}, totalDecrease=${totalDecrease}, netChange=${netChange}`);
 
   const formatDateTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
@@ -330,7 +328,7 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
               <div className="p-2 sm:p-3 bg-blue-50 rounded-lg text-center">
                 <div className="text-xs sm:text-sm text-blue-600 sm:mb-1">순 변동</div>
                 <div className={`font-bold text-xs sm:text-base break-words ${netChange >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
-                  {netChange >= 0 ? '+' : ''}{formatInputWithCommas(netChange.toString())} {getCurrencySymbol(currency)}
+                  {netChange >= 0 ? '+' : '-'}{formatInputWithCommas(Math.abs(netChange).toString())} {getCurrencySymbol(currency)}
                 </div>
               </div>
             </div>
