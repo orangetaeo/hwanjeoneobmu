@@ -486,7 +486,9 @@ export default function TransactionForm() {
     console.log("KRW 현금 자산 검색 결과:", krwCashAsset);
     console.log("권종별 보유량:", krwCashAsset?.metadata?.denominations);
     
-
+    // 디버깅을 위한 키 목록 출력
+    const allKeys = Object.keys(krwCashAsset?.metadata?.denominations || {});
+    console.log("사용 가능한 모든 키:", allKeys);
 
     for (const denom of krwDenominations) {
       if (remaining >= denom) {
@@ -501,14 +503,28 @@ export default function TransactionForm() {
           }
         } else {
           // 보유 장수 제한 적용 - 키 매칭 로직 수정
-          const denomKeys = Object.keys(krwCashAsset?.metadata?.denominations || {});
-          const denomKey = denomKeys.find(key => 
-            key.replace(/,/g, '') === denom.toString() || key === denom.toString()
-          ) || denom.toString();
-          const availableCount = krwCashAsset?.metadata?.denominations?.[denomKey] || 0;
+          const denominations = krwCashAsset?.metadata?.denominations || {};
+          let availableCount = 0;
+          
+          // 다양한 키 형태로 매칭 시도
+          const possibleKeys = [
+            denom.toString(), // "50000"
+            denom.toLocaleString(), // "50,000"
+            `${denom.toLocaleString()}`, // 명시적 문자열 변환
+            `${(denom/1000).toFixed(0)},000`, // 직접 콤마 추가
+          ];
+          
+          console.log(`${denom} 매칭 시도할 키들:`, possibleKeys);
+          
+          for (const key of possibleKeys) {
+            if (denominations[key] !== undefined) {
+              availableCount = denominations[key];
+              break;
+            }
+          }
           const actualCount = Math.min(idealCount, availableCount);
           
-          console.log(`${denom.toLocaleString()} KRW 키 매칭: ${denom} → ${denomKey}, 보유량: ${availableCount}`);
+          console.log(`${denom.toLocaleString()} KRW 키 매칭: ${denom}, 보유량: ${availableCount}`);
           
           if (actualCount > 0) {
             breakdown[denom.toString()] = actualCount;
