@@ -50,7 +50,7 @@ export default function CashTransactionHistory({
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
     // cash_change 또는 cash_exchange 타입 거래 필터링
-    const isCashTransaction = transaction.type === 'cash_change' || (transaction.type as string) === 'cash_exchange';
+    const isCashTransaction = transaction.type === 'cash_change' || transaction.type === 'cash_exchange';
     
     // 현금 자산명이 정확히 일치하거나 통화가 일치하는 경우
     const fromAssetMatches = transaction.fromAssetName === cashAsset.name || 
@@ -62,6 +62,21 @@ export default function CashTransactionHistory({
     
     // 메타데이터에 해당 자산 ID가 있는지 확인
     const hasMatchingAssetId = transaction.metadata?.assetId === cashAsset.id;
+    
+    // 디버깅 로그
+    if (cashAsset.name === "VND 현금") {
+      console.log('VND 거래 필터링:', {
+        transactionId: transaction.id.substring(0, 8),
+        type: transaction.type,
+        isCashTransaction,
+        fromAssetName: transaction.fromAssetName,
+        toAssetName: transaction.toAssetName,
+        fromAssetMatches,
+        toAssetMatches,
+        hasMatchingAssetId,
+        result: isCashTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId)
+      });
+    }
     
     return isCashTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId);
   });
