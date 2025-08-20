@@ -2043,8 +2043,54 @@ export default function TransactionForm() {
 
             {/* 보유량 부족 경고 */}
             {(() => {
+              // USD 권종 분배가 있는 경우 검증
+              if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
+                // USD 현금 보유 상황 확인
+                const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                  asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
+                ) : null;
+                const denomComposition = usdCashAsset?.metadata?.denominations || {};
+
+                // 보유량 부족 항목들 찾기
+                const shortageItems = [];
+                Object.entries(usdBreakdown).forEach(([denom, count]) => {
+                  const requiredCount = parseInt(count.toString());
+                  const availableCount = denomComposition[denom] || 0;
+                  if (requiredCount > availableCount) {
+                    const shortage = requiredCount - availableCount;
+                    shortageItems.push({
+                      denom: `$${denom}`,
+                      required: requiredCount,
+                      available: availableCount,
+                      shortage
+                    });
+                  }
+                });
+
+                if (shortageItems.length > 0) {
+                  return (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-red-800 mb-2">
+                        <AlertCircle className="w-5 h-5" />
+                        <span className="font-semibold">USD 보유량 부족 오류</span>
+                      </div>
+                      <div className="text-sm text-red-700 space-y-1">
+                        {shortageItems.map((item, index) => (
+                          <div key={index}>
+                            • {item.denom}: 필요 {item.required}장, 보유 {item.available}장 
+                            <span className="font-bold text-red-800"> (부족: {item.shortage}장)</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="text-xs text-red-600 mt-2">
+                        USD 현금 보유량을 확인하고 거래 금액을 조정하세요.
+                      </div>
+                    </div>
+                  );
+                }
+              }
               // VND 권종 분배가 있는 경우에만 검증
-              if (formData.toCurrency === "VND") {
+              else if (formData.toCurrency === "VND") {
                 // 기본 분배 계산
                 const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
                   if (amount && parseFloat(amount) > 0) {
@@ -2257,6 +2303,35 @@ export default function TransactionForm() {
 
                   // 금액이 일치하지 않으면 비활성화
                   if (Math.abs(actualTotal - expectedTotal) > 0) {
+                    return true;
+                  }
+                }
+
+                // USD 거래인 경우 보유량 부족 검증
+                if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
+                  // USD 현금 보유 상황 확인
+                  const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                    asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
+                  ) : null;
+                  const denomComposition = usdCashAsset?.metadata?.denominations || {};
+
+                  // 보유량 부족 여부 확인
+                  const hasShortage = Object.entries(usdBreakdown).some(([denom, count]) => {
+                    const requiredCount = parseInt(count.toString());
+                    const availableCount = denomComposition[denom] || 0;
+                    return requiredCount > availableCount;
+                  });
+
+                  if (hasShortage) {
+                    return true;
+                  }
+
+                  // USD 분배 금액 검증
+                  const expectedUSDTotal = Math.floor(parseFloat(formData.toAmount) || 0);
+                  const actualUSDTotal = calculateTotalFromUSDBreakdown(usdBreakdown);
+                  
+                  // 금액이 일치하지 않으면 비활성화
+                  if (actualUSDTotal !== expectedUSDTotal && expectedUSDTotal > 0) {
                     return true;
                   }
                 }
