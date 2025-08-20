@@ -673,8 +673,16 @@ export default function TransactionForm() {
         }
         console.log(`환율 조회: ${formData.fromCurrency}→${formData.toCurrency}, 권종: ${denomValue}, 환율: ${rate}`);
         const totalValue = amount * getDenominationValue(formData.fromCurrency, denomValue);
-        const calculatedValue = totalValue * rate;
-        console.log(`계산: ${totalValue} * ${rate} = ${calculatedValue}`);
+        
+        // KRW→USD 환전의 경우 나누기 적용
+        let calculatedValue;
+        if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+          calculatedValue = totalValue / rate;
+          console.log(`계산: ${totalValue} / ${rate} = ${calculatedValue}`);
+        } else {
+          calculatedValue = totalValue * rate;
+          console.log(`계산: ${totalValue} * ${rate} = ${calculatedValue}`);
+        }
         return totalAmount + calculatedValue;
       }, 0);
       
@@ -1284,13 +1292,23 @@ export default function TransactionForm() {
                                     ≈ {(() => {
                                       const amount = parseFloat(formData.denominationAmounts[denom.value]);
                                       const denomValue = getDenominationValue(formData.fromCurrency, denom.value);
-                                      const calculatedAmount = amount * denomValue * useRate;
                                       
-                                      console.log(`환전 예상 계산 (${denom.value}): ${amount}장 × ${denomValue} × ${useRate} = ${calculatedAmount}`);
+                                      // KRW→USD 환전의 경우 나누기 적용
+                                      let calculatedAmount;
+                                      if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                                        calculatedAmount = (amount * denomValue) / useRate;
+                                        console.log(`환전 예상 계산 (${denom.value}): ${amount}장 × ${denomValue} ÷ ${useRate} = ${calculatedAmount}`);
+                                      } else {
+                                        calculatedAmount = amount * denomValue * useRate;
+                                        console.log(`환전 예상 계산 (${denom.value}): ${amount}장 × ${denomValue} × ${useRate} = ${calculatedAmount}`);
+                                      }
+                                      
                                       console.log(`Math.floor(${calculatedAmount}) = ${Math.floor(calculatedAmount)}`);
                                       
-                                      // VND의 경우 정확한 계산값 사용 (반올림 없음)
-                                      const finalAmount = Math.floor(calculatedAmount);
+                                      // VND의 경우 정확한 계산값 사용 (반올림 없음), USD는 소수점 2자리
+                                      const finalAmount = formData.toCurrency === "USD" ? 
+                                        Math.round(calculatedAmount * 100) / 100 : 
+                                        Math.floor(calculatedAmount);
                                         
                                       console.log(`환전 예상 최종 (${denom.value}): ${finalAmount}`);
                                       return finalAmount.toLocaleString();
@@ -2218,8 +2236,15 @@ export default function TransactionForm() {
                                   parseFloat(rateInfo?.mySellRate || "0") :
                                   parseFloat(rateInfo?.myBuyRate || "0");
                                 
-                                const subtotal = totalFromCurrency * rate;
-                                console.log(`거래확인: ${denom} ${amount}장 × ${denomValue} × ${rate} = ${subtotal}`);
+                                // KRW→USD 환전의 경우 나누기 적용
+                                let subtotal;
+                                if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                                  subtotal = totalFromCurrency / rate;
+                                  console.log(`거래확인: ${denom} ${amount}장 × ${denomValue} ÷ ${rate} = ${subtotal}`);
+                                } else {
+                                  subtotal = totalFromCurrency * rate;
+                                  console.log(`거래확인: ${denom} ${amount}장 × ${denomValue} × ${rate} = ${subtotal}`);
+                                }
                                 return total + subtotal;
                               }
                               return total;
