@@ -2057,8 +2057,8 @@ export default function TransactionForm() {
                               
                               if (rate > 0) {
                                 const calculatedAmount = currentTotalFromDenominations * rate;
-                                totalAmount = Math.floor(calculatedAmount);
-                                console.log(`VND→USD 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.floor = ${totalAmount} USD`);
+                                totalAmount = Math.ceil(calculatedAmount);
+                                console.log(`VND→USD 계산: ${currentTotalFromDenominations} VND × ${rate} = ${calculatedAmount} → Math.ceil = ${totalAmount} USD`);
                               }
                             }
                             
@@ -2186,12 +2186,16 @@ export default function TransactionForm() {
                             }, 0);
                             
                             console.log(`거래확인 최종 총액: ${calculatedTotal}`);
-                            // VND→KRW 환전에서는 올림 사용, KRW 1000원 단위로 올림
+                            // VND→KRW 환전에서는 올림 사용, KRW 1000원 단위로 올림, VND→USD도 올림 사용
                             let finalAmount;
                             if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
                               // KRW 1000원 단위로 올림
                               finalAmount = Math.ceil(calculatedTotal / 1000) * 1000;
                               console.log(`VND→KRW 올림 처리: ${calculatedTotal} → ${finalAmount}`);
+                            } else if (formData.fromCurrency === "VND" && formData.toCurrency === "USD") {
+                              // USD는 소수점 이하 올림
+                              finalAmount = Math.ceil(calculatedTotal);
+                              console.log(`VND→USD 올림 처리: ${calculatedTotal} → ${finalAmount}`);
                             } else {
                               finalAmount = Math.floor(calculatedTotal);
                             }
