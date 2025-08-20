@@ -999,16 +999,7 @@ export default function TransactionForm() {
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
                       const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
                       
-                      // 강력한 디버깅 로그
-                      console.log(`=== 매매시세 전체 디버그 ===`);
-                      console.log(`fromCurrency: ${formData.fromCurrency}`);
-                      console.log(`toCurrency: ${formData.toCurrency}`);
-                      console.log(`denom: ${denom.value}`);
-                      console.log(`rateInfo:`, rateInfo);
-                      console.log(`useRate: ${useRate}`);
-                      console.log(`isSelected: ${isSelected}`);
-                      console.log(`hasData: ${hasData}`);
-                      console.log(`================`);
+
                       
                       return (
                         <div 
@@ -1081,19 +1072,16 @@ export default function TransactionForm() {
                                 )}
                               </div>
                             </div>
-                            {(() => {
-                              const shouldShowRate = (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") || 
-                                                     (formData.fromCurrency === "USD" && formData.toCurrency === "VND");
-                              console.log(`매매시세 박스 조건: fromCurrency=${formData.fromCurrency}, toCurrency=${formData.toCurrency}, shouldShow=${shouldShowRate}, useRate=${useRate}`);
-                              
-                              return shouldShowRate && (
-                                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
-                                  <div className="text-sm font-bold text-red-700 whitespace-nowrap">
-                                    매매시세 {useRate > 0 ? formatRate(useRate, formData.fromCurrency, formData.toCurrency) : '0.00'}
-                                  </div>
+                            {(
+                              (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") || 
+                              (formData.fromCurrency === "USD" && formData.toCurrency === "VND")
+                            ) && (
+                              <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
+                                <div className="text-sm font-bold text-red-700 whitespace-nowrap">
+                                  매매시세 {useRate > 0 ? formatRate(useRate, formData.fromCurrency, formData.toCurrency) : '0.00'}
                                 </div>
-                              );
-                            })()}
+                              </div>
+                            )}
                           </div>
                           
                           {/* 하단: 수량 입력 및 계산 결과 */}

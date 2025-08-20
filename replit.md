@@ -2,6 +2,11 @@
 
 This is a full-stack asset management and exchange tracking application for managing various financial assets including cash, bank accounts, and cryptocurrency holdings, and tracking exchange transactions. It provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
+## Recent Changes (August 20, 2025)
+- **매매시세 박스 시스템 완성**: 새거래 화면에서 권종별 매매시세 표시 기능 완전 구현
+- **URL 기반 라우팅 시스템**: /new-transaction 등 직접 URL 접근 지원
+- **환율 표시 규칙**: KRW→VND/USD→VND는 매매시세 박스 표시, VND→KRW는 숨김
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
