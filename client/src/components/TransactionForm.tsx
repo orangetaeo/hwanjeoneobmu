@@ -1071,16 +1071,19 @@ export default function TransactionForm() {
                                 )}
                               </div>
                             </div>
-                            {(
-                              (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") ||
-                              (formData.fromCurrency === "USD" && formData.toCurrency === "VND")
-                            ) && (
-                              <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
-                                <div className="text-sm font-bold text-red-700 whitespace-nowrap">
-                                  매매시세 {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
+                            {(() => {
+                              const shouldShowRate = (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") || 
+                                                     (formData.fromCurrency === "USD" && formData.toCurrency === "VND");
+                              console.log(`매매시세 박스 조건: fromCurrency=${formData.fromCurrency}, toCurrency=${formData.toCurrency}, shouldShow=${shouldShowRate}, useRate=${useRate}`);
+                              
+                              return shouldShowRate && (
+                                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
+                                  <div className="text-sm font-bold text-red-700 whitespace-nowrap">
+                                    매매시세 {useRate > 0 ? formatRate(useRate, formData.fromCurrency, formData.toCurrency) : '0.00'}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                           
                           {/* 하단: 수량 입력 및 계산 결과 */}
