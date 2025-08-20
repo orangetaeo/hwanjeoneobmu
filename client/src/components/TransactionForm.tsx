@@ -1611,7 +1611,7 @@ export default function TransactionForm() {
               {/* USD 권종별 분배 (VND → USD 거래시) */}
               {formData.toCurrency === "USD" && formData.fromCurrency === "VND" && parseFloat(formData.toAmount || "0") > 0 && (
                 <div>
-                  <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
+                  <Label>받는 권종 ({formData.toCurrency}) - 권종별 분배 (자동 계산)</Label>
                   <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
                     <div className="space-y-3">
                       {(() => {
@@ -1643,16 +1643,8 @@ export default function TransactionForm() {
                             <div key={denom} className="bg-white p-3 rounded border border-green-200">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex flex-col min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <div className="text-sm sm:text-base font-medium text-gray-900">
-                                      ${denomValue}
-                                    </div>
-                                    <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
-                                      매도시세: {(() => {
-                                        const rate = getDenominationRate("VND", "USD", "500000");
-                                        return rate?.sellRateVnd ? rate.sellRateVnd.toLocaleString() : "25,000";
-                                      })()}
-                                    </div>
+                                  <div className="text-sm sm:text-base font-medium text-gray-900">
+                                    ${denomValue}
                                   </div>
                                   <div className="text-xs sm:text-sm text-gray-500">
                                     {count}장 × ${denomValue} = ${subtotal}
@@ -1678,16 +1670,9 @@ export default function TransactionForm() {
                                   })()}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={displayBreakdown[denom] || 0}
-                                    onChange={(e) => {
-                                      const newCount = parseInt(e.target.value) || 0;
-                                      handleUSDBreakdownChange(denom, newCount);
-                                    }}
-                                    className="w-16 h-8 text-xs text-center px-1"
-                                  />
+                                  <div className="w-16 h-8 text-xs text-center px-1 bg-gray-50 border rounded flex items-center justify-center font-medium">
+                                    {count}
+                                  </div>
                                   <span className="text-xs text-gray-500">장</span>
                                 </div>
                               </div>
