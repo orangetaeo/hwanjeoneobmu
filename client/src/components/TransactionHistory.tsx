@@ -129,9 +129,9 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
 
   return (
     <div className="space-y-6">
-      {/* 필터 및 검색 */}
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+      {/* 필터 및 검색 - 모바일 최적화 */}
+      <Card className="p-3 sm:p-4">
+        <div className="space-y-3 sm:space-y-0 sm:flex sm:gap-4">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -139,15 +139,15 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                 placeholder="거래내역 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-9 sm:h-10 text-sm sm:text-base"
               />
             </div>
           </div>
           
           <div className="flex gap-2">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-40">
-                <Filter size={16} />
+              <SelectTrigger className="w-24 sm:w-40 h-9 sm:h-10 text-xs sm:text-sm">
+                <Filter size={14} className="mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -163,7 +163,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-20 sm:w-32 h-9 sm:h-10 text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -177,8 +177,9 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
               variant="outline"
               size="sm"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="px-2 sm:px-3 h-9 sm:h-10"
             >
-              <ArrowUpDown size={16} />
+              <ArrowUpDown size={14} />
             </Button>
           </div>
         </div>
@@ -187,11 +188,11 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
       {/* 거래 내역 리스트 */}
       <div className="space-y-4">
         {filteredTransactions.length === 0 ? (
-          <Card className="p-8 text-center">
+          <Card className="p-6 sm:p-8 text-center">
             <div className="text-gray-500">
-              <Clock size={48} className="mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">거래 내역이 없습니다</p>
-              <p className="text-sm">새로운 거래를 추가해보세요.</p>
+              <Clock size={36} className="sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+              <p className="text-base sm:text-lg font-medium mb-2">거래 내역이 없습니다</p>
+              <p className="text-xs sm:text-sm">새로운 거래를 추가해보세요.</p>
             </div>
           </Card>
         ) : (
@@ -202,119 +203,126 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             return (
               <Card 
                 key={transaction.id} 
-                className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => onTransactionClick?.(transaction)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge className={`${getTransactionTypeColor(transaction.type)} flex items-center gap-1`}>
+                    {/* 헤더 정보 - 모바일 최적화 */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                      <Badge className={`${getTransactionTypeColor(transaction.type)} flex items-center gap-1 text-xs sm:text-sm w-fit`}>
                         {getTransactionIcon(transaction.type)}
-                        {getTransactionTypeText(transaction.type)}
+                        <span className="hidden sm:inline">{getTransactionTypeText(transaction.type)}</span>
+                        <span className="sm:hidden">{getTransactionTypeText(transaction.type).slice(0, 4)}</span>
                       </Badge>
                       
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                         {date} {time}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-medium">{transaction.fromAssetName}</span>
-                      <ArrowRight size={16} className="text-gray-400" />
-                      <span className="font-medium">{transaction.toAssetName}</span>
+                    {/* 모바일 최적화된 자산명 표시 */}
+                    <div className="flex items-center gap-2 mb-2 overflow-hidden">
+                      <span className="font-medium text-sm sm:text-base truncate">{transaction.fromAssetName}</span>
+                      <ArrowRight size={14} className="text-gray-400 flex-shrink-0" />
+                      <span className="font-medium text-sm sm:text-base truncate">{transaction.toAssetName}</span>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <div className="text-gray-500">보낸 금액</div>
-                        <div className="font-medium">
-                          {formatTransactionAmount(transaction.fromAmount, transaction.fromCurrency, transaction.fromAssetName)}
+                    {/* 모바일 최적화된 거래 정보 */}
+                    <div className="space-y-2 sm:space-y-0">
+                      {/* 모바일: 세로 배치, 데스크톱: 그리드 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 text-sm">
+                        <div className="flex justify-between sm:block">
+                          <span className="text-gray-500 text-xs sm:text-sm">보낸 금액</span>
+                          <span className="font-medium text-sm sm:text-base">
+                            {formatTransactionAmount(transaction.fromAmount, transaction.fromCurrency, transaction.fromAssetName)}
+                          </span>
                         </div>
-                      </div>
-                      
-                      <div>
-                        <div className="text-gray-500">받은 금액</div>
-                        <div className="font-medium">
-                          {formatTransactionAmount(transaction.toAmount, transaction.toCurrency, transaction.toAssetName)}
+                        
+                        <div className="flex justify-between sm:block">
+                          <span className="text-gray-500 text-xs sm:text-sm">받은 금액</span>
+                          <span className="font-medium text-sm sm:text-base">
+                            {formatTransactionAmount(transaction.toAmount, transaction.toCurrency, transaction.toAssetName)}
+                          </span>
                         </div>
-                      </div>
-                      
-                      <div>
-                        <div className="text-gray-500">환율/가격</div>
-                        <div className="font-medium">
-                          {formatTransactionAmount(transaction.rate)}
+                        
+                        <div className="flex justify-between sm:block">
+                          <span className="text-gray-500 text-xs sm:text-sm">환율/가격</span>
+                          <span className="font-medium text-sm sm:text-base">
+                            {formatTransactionAmount(transaction.rate)}
+                          </span>
                         </div>
-                      </div>
 
-                      {transaction.fees !== undefined && transaction.fees > 0 && (
-                        <div>
-                          <div className="text-gray-500">수수료</div>
-                          <div className="font-medium text-red-600">
-                            {formatTransactionAmount(transaction.fees, transaction.fromCurrency, transaction.fromAssetName)}
+                        {transaction.fees !== undefined && transaction.fees > 0 && (
+                          <div className="flex justify-between sm:block">
+                            <span className="text-gray-500 text-xs sm:text-sm">수수료</span>
+                            <span className="font-medium text-red-600 text-sm sm:text-base">
+                              {formatTransactionAmount(transaction.fees, transaction.fromCurrency, transaction.fromAssetName)}
+                            </span>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
-                    {/* 고급 거래 정보 */}
+                    {/* 고급 거래 정보 - 모바일 최적화 */}
                     {(transaction.customPrice || transaction.marketPrice) && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-sm">
                           {transaction.marketPrice && (
-                            <div>
-                              <div className="text-gray-500">시장 가격</div>
-                              <div className="font-medium">
+                            <div className="flex justify-between sm:block">
+                              <span className="text-gray-500 text-xs sm:text-sm">시장 가격</span>
+                              <span className="font-medium text-sm sm:text-base">
                                 ₩{formatTransactionAmount(transaction.marketPrice, 'KRW')}
-                              </div>
+                              </span>
                             </div>
                           )}
                           
                           {transaction.customPrice && (
-                            <div>
-                              <div className="text-gray-500">거래 가격</div>
-                              <div className="font-medium">
+                            <div className="flex justify-between sm:block">
+                              <span className="text-gray-500 text-xs sm:text-sm">거래 가격</span>
+                              <span className="font-medium text-sm sm:text-base">
                                 ₩{formatTransactionAmount(transaction.customPrice, 'KRW')}
-                              </div>
+                              </span>
                             </div>
                           )}
 
                           {profitRate !== null && (
-                            <div>
-                              <div className="text-gray-500">수익률</div>
-                              <div className={`font-medium ${profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {profitRate >= 0 ? '+' : ''}{profitRate.toFixed(2)}%
-                              </div>
+                            <div className="flex justify-between sm:block">
+                              <span className="text-gray-500 text-xs sm:text-sm">수익률</span>
+                              <span className={`font-medium text-sm sm:text-base ${profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {profitRate >= 0 ? '+' : ''}{Math.round(profitRate)}%
+                              </span>
                             </div>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {/* 메모 */}
+                    {/* 메모 - 모바일 최적화 */}
                     {transaction.memo && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <div className="text-sm text-gray-600">
+                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           <strong>메모:</strong> {transaction.memo}
                         </div>
                       </div>
                     )}
 
-                    {/* 메타데이터 */}
+                    {/* 메타데이터 - 모바일 최적화 */}
                     {transaction.metadata && Object.keys(transaction.metadata).length > 0 && (
                       <div className="mt-2">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1 sm:gap-2">
                           {transaction.metadata.exchangeName && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs h-6 px-2">
                               {transaction.metadata.exchangeName}
                             </Badge>
                           )}
                           {transaction.metadata.p2pPlatform && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs h-6 px-2">
                               {transaction.metadata.p2pPlatform}
                             </Badge>
                           )}
                           {transaction.metadata.networkType && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs h-6 px-2">
                               {transaction.metadata.networkType === 'TRC20' ? 'TRC20 (무료)' : 
                                transaction.metadata.networkType === 'ERC20' ? 'ERC20' :
                                transaction.metadata.networkType === 'BSC' ? 'BSC' : transaction.metadata.networkType}
