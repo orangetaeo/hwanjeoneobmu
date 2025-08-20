@@ -8,6 +8,7 @@ This is a full-stack asset management and exchange tracking application for mana
 - **환율 표시 규칙**: KRW→VND/USD→VND는 매매시세 박스 표시, VND→KRW는 숨김
 - **부동소수점 오차 해결**: VND 계산에서 Math.floor → Math.round 변경 (3,779,999.999... → 3,780,000)
 - **반올림 방식 통일**: 모든 통화(VND, KRW, USD) 계산에서 공정한 반올림 방식 적용
+- **권종별 분배 완성도 향상**: 모든 통화에서 남은 금액 자동 보정 (VND 10,000권, KRW 1,000권, USD 1달러권으로 자동 추가)
 
 # User Preferences
 

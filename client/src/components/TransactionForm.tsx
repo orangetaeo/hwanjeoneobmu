@@ -455,6 +455,15 @@ export default function TransactionForm() {
       }
     }
 
+    // 남은 금액이 있으면 가장 작은 권종(1,000 KRW)으로 추가 처리
+    if (remaining > 0) {
+      const smallestDenom = 1000;
+      const additionalCount = Math.ceil(remaining / smallestDenom);
+      const currentCount = breakdown[smallestDenom.toString()] || 0;
+      breakdown[smallestDenom.toString()] = currentCount + additionalCount;
+      console.log(`${smallestDenom.toLocaleString()} KRW: ${additionalCount}장 추가, 남은 금액: 0`);
+    }
+
     console.log("KRW 분배 결과:", breakdown);
     return breakdown;
   };
@@ -504,6 +513,15 @@ export default function TransactionForm() {
           }
         }
       }
+    }
+
+    // 남은 금액이 있으면 가장 작은 권종(1 USD)으로 추가 처리
+    if (remaining > 0) {
+      const smallestDenom = 1;
+      const additionalCount = Math.ceil(remaining / smallestDenom);
+      const currentCount = breakdown[smallestDenom.toString()] || 0;
+      breakdown[smallestDenom.toString()] = currentCount + additionalCount;
+      console.log(`${smallestDenom} USD: ${additionalCount}장 추가, 남은 금액: 0`);
     }
 
     console.log("USD 분배 결과:", breakdown);
