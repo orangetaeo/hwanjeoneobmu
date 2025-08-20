@@ -1959,7 +1959,7 @@ export default function TransactionForm() {
                     <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
                       <span className="text-sm text-gray-600 font-medium">고객이 주는 금액</span>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-emerald-700">{getCurrentTotal()} {formData.fromCurrency}</div>
+                        <div className="text-lg font-bold text-emerald-700">{calculateTotalFromAmount().toLocaleString()} {formData.fromCurrency}</div>
                       </div>
                     </div>
                     
