@@ -1819,8 +1819,10 @@ export default function TransactionForm() {
                                             rate.denomination === searchDenom
                                           );
                                           
-                                          // 환전상 시세에 입력된 원본 값 그대로 표시
-                                          return vndKrwRate?.myBuyRate || "0.053";
+                                          // 500,000 VND → KRW 환율을 기준으로 VND 금액 계산 후 표시
+                                          const rate = parseFloat(vndKrwRate?.myBuyRate || "0.051");
+                                          const vndAmount = Math.round(1 / rate); // 1 KRW = ? VND
+                                          return vndAmount.toLocaleString();
                                         })()}
                                       </div>
                                     </div>
