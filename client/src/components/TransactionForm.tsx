@@ -1656,11 +1656,23 @@ export default function TransactionForm() {
                                         else if (denomValue >= 10) searchDenom = "20_10";
                                         else searchDenom = "5_2_1";
                                         
+                                        console.log(`USD 권종 ${denomValue} 매도시세 검색:`, {
+                                          searchDenom,
+                                          exchangeRatesAvailable: !!exchangeRates,
+                                          exchangeRatesLength: exchangeRates?.length
+                                        });
+                                        
                                         const usdRate = exchangeRates?.find((rate: any) => 
                                           rate.fromCurrency === "USD" && 
                                           rate.toCurrency === "VND" && 
                                           rate.denomination === searchDenom
                                         );
+                                        
+                                        console.log(`USD 권종 ${denomValue} 환율 결과:`, {
+                                          searchDenom,
+                                          found: !!usdRate,
+                                          myBuyRate: usdRate?.myBuyRate
+                                        });
                                         
                                         const sellRate = usdRate?.myBuyRate ? parseFloat(usdRate.myBuyRate) : 25000;
                                         return sellRate.toLocaleString();
