@@ -1510,7 +1510,7 @@ export default function TransactionForm() {
                       <div className="text-xs sm:text-sm font-medium text-orange-700">
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
-                            // VND 권종별 분배 총액 계산 - 현재 권종별 입력값들을 직접 계산
+                            // VND 권종별 분배 총액 계산 - 실제 환율 계산 결과를 우선 사용
                             let totalAmount = 0;
                             
                             if (vndBreakdown && Object.keys(vndBreakdown).length > 0) {
@@ -1522,7 +1522,7 @@ export default function TransactionForm() {
                               }, 0);
                               console.log("총 분배액 (수정값):", totalAmount);
                             } else {
-                              // 기본 분배값 재계산 - VND 분배를 다시 계산
+                              // 권종별 환율 적용 실제 계산값 사용 (VND 분배 자동 보정 무시)
                               const currentTotalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
                                 if (amount && parseFloat(amount) > 0) {
                                   const denomValue = getDenominationValue(formData.fromCurrency, denom);
@@ -1532,8 +1532,8 @@ export default function TransactionForm() {
                               }, 0);
                               
                               if (currentTotalFromDenominations > 0) {
-                                // 권종별로 정확한 환율 적용해서 계산
-                                const calculatedVNDAmount = Object.entries(formData.denominationAmounts || {}).reduce((totalVND, [denom, amount]) => {
+                                // 권종별로 정확한 환율 적용해서 계산 - 이것이 실제 정확한 값
+                                totalAmount = Object.entries(formData.denominationAmounts || {}).reduce((totalVND, [denom, amount]) => {
                                   if (amount && parseFloat(amount) > 0) {
                                     const denomValue = getDenominationValue(formData.fromCurrency, denom);
                                     const totalFromCurrency = parseFloat(amount) * denomValue;
@@ -1548,14 +1548,14 @@ export default function TransactionForm() {
                                   return totalVND;
                                 }, 0);
                                 
-                                const flooredAmount = formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedVNDAmount) : calculatedVNDAmount;
-                                
-                                // 실제 계산 금액 그대로 사용 (자동 보정 없음)
-                                totalAmount = flooredAmount;
+                                // VND의 경우 Math.round 적용
+                                if (formData.toCurrency === "VND") {
+                                  totalAmount = formatVNDWithFloor(totalAmount);
+                                }
                               } else {
                                 totalAmount = 0;
                               }
-                              console.log("총 분배액 (재계산):", totalAmount);
+                              console.log("총 분배액 (실제 환율 계산):", totalAmount);
                             }
                             
                             return totalAmount.toLocaleString();
