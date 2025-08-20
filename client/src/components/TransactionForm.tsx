@@ -2093,9 +2093,15 @@ export default function TransactionForm() {
                             }, 0);
                             
                             console.log(`거래확인 최종 총액: ${calculatedTotal}`);
-                            // VND→KRW 환전에서는 올림 사용
-                            const finalAmount = (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") ? 
-                              Math.ceil(calculatedTotal) : Math.floor(calculatedTotal);
+                            // VND→KRW 환전에서는 올림 사용, KRW 1000원 단위로 올림
+                            let finalAmount;
+                            if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
+                              // KRW 1000원 단위로 올림
+                              finalAmount = Math.ceil(calculatedTotal / 1000) * 1000;
+                              console.log(`VND→KRW 올림 처리: ${calculatedTotal} → ${finalAmount}`);
+                            } else {
+                              finalAmount = Math.floor(calculatedTotal);
+                            }
                             console.log(`거래확인 Math.ceil/floor: ${finalAmount}`);
                             console.log(`formData.toAmount: ${formData.toAmount}`);
                             console.log(`실제 화면 표시값: ${finalAmount.toLocaleString()}`);
