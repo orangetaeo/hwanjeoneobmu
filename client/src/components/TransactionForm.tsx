@@ -1328,6 +1328,51 @@ export default function TransactionForm() {
                         // 실제 분배 상황: 수정값이 있으면 사용, 없으면 기본값 사용
                         const actualBreakdown = vndBreakdown && Object.keys(vndBreakdown).length > 0 ? vndBreakdown : fixedBreakdown;
                         
+                        // VND 보유량 부족 검증
+                        const vndShortageItems: Array<{denom: number, required: number, available: number, shortage: number}> = [];
+                        [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000].forEach((denom) => {
+                          const defaultCount = (fixedBreakdown as Record<string, number>)[denom.toString()] || 0;
+                          const currentCount = vndBreakdown?.[denom.toString()] !== undefined ? 
+                            vndBreakdown[denom.toString()] : defaultCount;
+                          
+                          if (currentCount > 0) {
+                            const denomKey = denom.toString();
+                            const availableCount = denomComposition[denomKey] || 0;
+                            
+                            if (currentCount > availableCount) {
+                              vndShortageItems.push({
+                                denom,
+                                required: currentCount,
+                                available: availableCount,
+                                shortage: currentCount - availableCount
+                              });
+                            }
+                          }
+                        });
+
+                        // VND 보유량 부족 시 오류 메시지 표시
+                        if (vndShortageItems.length > 0) {
+                          return (
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-red-800 mb-2">
+                                <AlertCircle className="w-5 h-5" />
+                                <span className="font-semibold">VND 보유량 부족 오류</span>
+                              </div>
+                              <div className="text-sm text-red-700 space-y-1">
+                                {vndShortageItems.map((item) => (
+                                  <div key={item.denom}>
+                                    • {formatNumber(item.denom.toString())} VND: 필요 {item.required}장, 보유 {item.available}장 
+                                    <span className="font-bold text-red-800"> (부족: {item.shortage}장)</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="text-xs text-red-600 mt-2">
+                                VND 현금 보유량을 확인하고 거래 금액을 조정하세요.
+                              </div>
+                            </div>
+                          );
+                        }
+                        
                         // 동적 추천 시스템: 현재 상황에서 남은 금액을 최적 분배
                         const calculateSuggestions = () => {
                           // 현재 분배 상황 (수정값이 있으면 사용, 없으면 기본값 사용)
@@ -1419,8 +1464,8 @@ export default function TransactionForm() {
                                     <div className="text-xs sm:text-sm text-gray-500">
                                       보유: {formatNumber(availableCount)}장
                                       {currentCount > 0 && (
-                                        <span className={`ml-1 ${(availableCount - currentCount) < 0 ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
-                                          -{currentCount}장 = {availableCount - currentCount}장
+                                        <span className="ml-1 text-blue-600">
+                                          -{currentCount}장 = {Math.max(0, availableCount - currentCount)}장
                                         </span>
                                       )}
                                     </div>
