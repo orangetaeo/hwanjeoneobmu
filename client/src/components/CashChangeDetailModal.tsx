@@ -1,5 +1,4 @@
-import { Transaction } from '@shared/schema';
-import { CashAsset } from '@/types';
+import { Transaction, CashAsset } from '@/types';
 import {
   Dialog,
   DialogContent,

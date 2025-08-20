@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { 
   Home, 
   TrendingUp, 
@@ -41,6 +42,7 @@ import { ExchangeRate, InsertExchangeRate } from '@shared/schema';
 export default function HomePage() {
   const { user, loading: authLoading } = useFirebaseAuth();
   const { realTimeRates, cryptoRates, isFetchingRates } = useExchangeRates();
+  const [location] = useLocation();
   
   // Data states
   const [cashAssets, setCashAssets] = useState<CashAsset[]>([]);
@@ -53,6 +55,25 @@ export default function HomePage() {
   
   // UI states
   const [currentView, setCurrentView] = useState('dashboard');
+  
+  // URL 기반 라우팅 처리
+  useEffect(() => {
+    if (location === '/new-transaction') {
+      setCurrentView('new-transaction');
+    } else if (location === '/assets') {
+      setCurrentView('assets');
+    } else if (location === '/exchange-operations') {
+      setCurrentView('exchange-operations');
+    } else if (location === '/transactions') {
+      setCurrentView('transactions');
+    } else if (location === '/rates') {
+      setCurrentView('rates');
+    } else if (location === '/exchange-rates') {
+      setCurrentView('exchange-rates');
+    } else if (location === '/') {
+      setCurrentView('dashboard');
+    }
+  }, [location]);
   const [modalInfo, setModalInfo] = useState<ModalInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAssetForm, setShowAssetForm] = useState(false);
@@ -1496,14 +1517,17 @@ export default function HomePage() {
       )}
 
       {/* Cash Change Detail Modal */}
-      <CashChangeDetailModal
-        transaction={selectedTransaction}
-        isOpen={isCashDetailModalOpen}
-        onClose={() => {
-          setIsCashDetailModalOpen(false);
-          setSelectedTransaction(null);
-        }}
-      />
+      {selectedCashAsset && (
+        <CashChangeDetailModal
+          transaction={selectedTransaction}
+          isOpen={isCashDetailModalOpen}
+          onClose={() => {
+            setIsCashDetailModalOpen(false);
+            setSelectedTransaction(null);
+          }}
+          cashAsset={selectedCashAsset}
+        />
+      )}
 
       {/* Modal */}
       {modalInfo && (
