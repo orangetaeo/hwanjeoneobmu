@@ -217,20 +217,21 @@ export default function CashTransactionHistory({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-4xl max-h-[90vh] w-[95vw] sm:max-w-4xl overflow-y-auto p-3 sm:p-6"
+        className="max-w-4xl max-h-[90vh] w-[95vw] sm:max-w-4xl overflow-hidden flex flex-col p-3 sm:p-6"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle 
-            ref={titleRef}
-            tabIndex={-1}
-            className="text-xl font-bold outline-none"
-          >
-            {cashAsset.currency} 현금 증감 내역
-          </DialogTitle>
-        </DialogHeader>
+        {/* 고정 헤더 영역 */}
+        <div className="flex-shrink-0 space-y-4 pb-4 border-b">
+          <DialogHeader>
+            <DialogTitle 
+              ref={titleRef}
+              tabIndex={-1}
+              className="text-xl font-bold outline-none"
+            >
+              {cashAsset.currency} 현금 증감 내역
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
           {/* 현금 자산 정보 - 모바일 최적화 */}
           <Card className="p-3 sm:p-4 bg-gray-50">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
@@ -245,6 +246,11 @@ export default function CashTransactionHistory({
               </div>
             </div>
           </Card>
+        </div>
+
+        {/* 스크롤 가능한 내용 영역 */}
+        <div className="flex-1 overflow-y-auto mt-4">
+          <div className="space-y-4">
 
           {/* 검색 및 필터 - 모바일 최적화 */}
           <Card className="p-3 sm:p-4">
@@ -437,6 +443,7 @@ export default function CashTransactionHistory({
             )}
           </div>
         </div>
+      </div>
       </DialogContent>
       
       {/* Cash Change Detail Modal */}
