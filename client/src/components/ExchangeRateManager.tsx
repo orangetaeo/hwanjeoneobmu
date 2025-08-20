@@ -632,22 +632,33 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {CURRENCY_PAIRS.map((pair) => {
-                    const pairRates = exchangeRates.filter(rate => 
-                      rate.fromCurrency === pair.from && rate.toCurrency === pair.to
+                  {/* 선택된 통화쌍의 시세만 표시 */}
+                  {(() => {
+                    // 현재 선택된 통화쌍에 해당하는 시세만 필터링
+                    const selectedPairRates = exchangeRates.filter(rate => 
+                      rate.fromCurrency === formData.fromCurrency && 
+                      rate.toCurrency === formData.toCurrency
                     );
                     
-                    if (pairRates.length === 0) return null;
+                    if (selectedPairRates.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-gray-500">
+                          {formData.fromCurrency} → {formData.toCurrency} 시세가 없습니다.
+                        </div>
+                      );
+                    }
                     
                     return (
-                      <div key={`${pair.from}-${pair.to}`} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="border rounded-lg p-4 bg-gray-50">
                         <div className="flex items-center gap-2 mb-4">
-                          <h3 className="text-lg font-semibold text-gray-800">{pair.label}</h3>
-                          <Badge variant="secondary">{pairRates.length}개 시세</Badge>
+                          <h3 className="text-lg font-semibold text-gray-800">
+                            {formData.fromCurrency} → {formData.toCurrency}
+                          </h3>
+                          <Badge variant="secondary">{selectedPairRates.length}개 시세</Badge>
                         </div>
                         
                         <div className="space-y-3">
-                          {pairRates
+                          {selectedPairRates
                             .sort((a, b) => getDenominationValue(b.denomination) - getDenominationValue(a.denomination))
                             .map((rate: ExchangeRate) => (
                             <div 
@@ -709,7 +720,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                         </div>
                       </div>
                     );
-                  })}
+                  })()}
                 </div>
               )}
             </CardContent>
