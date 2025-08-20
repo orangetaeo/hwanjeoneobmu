@@ -228,9 +228,14 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   };
 
   const { increases, decreases } = getChangeInfo();
+  console.log('increases:', increases);
+  console.log('decreases:', decreases);
+  
   const totalIncrease = increases.reduce((sum, item) => sum + item.value, 0);
   const totalDecrease = decreases.reduce((sum, item) => sum + item.value, 0);
   const netChange = totalIncrease - totalDecrease; // 증가 - 감소 = 순변동
+  
+  console.log(`순변동 계산: totalIncrease=${totalIncrease}, totalDecrease=${totalDecrease}, netChange=${netChange}`);
 
   const formatDateTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
