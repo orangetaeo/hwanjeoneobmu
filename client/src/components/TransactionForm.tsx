@@ -2209,6 +2209,56 @@ export default function TransactionForm() {
                         }
                         return null;
                       })()}
+
+                      {/* KRW 보유량 부족 경고 */}
+                      {formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0 && (() => {
+                        const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
+                        const krwCashAsset = assetArray.find((asset: any) => 
+                          asset.name === "KRW 현금" && asset.currency === "KRW"
+                        );
+                        const denomComposition = krwCashAsset?.metadata?.denominations || {};
+
+                        // 보유량 부족 항목들 찾기
+                        const shortageItems: Array<{denom: string, required: number, available: number, shortage: number}> = [];
+                        Object.entries(krwBreakdown).forEach(([denom, count]) => {
+                          const requiredCount = parseInt(count.toString());
+                          const denomKey = parseInt(denom).toLocaleString();
+                          const availableCount = denomComposition[denomKey] || 0;
+                          if (requiredCount > availableCount) {
+                            const shortage = requiredCount - availableCount;
+                            shortageItems.push({
+                              denom: `${formatNumber(denom)} KRW`,
+                              required: requiredCount,
+                              available: availableCount,
+                              shortage
+                            });
+                          }
+                        });
+
+                        if (shortageItems.length > 0) {
+                          return (
+                            <div className="mt-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-red-800 mb-2">
+                                <AlertCircle className="w-5 h-5" />
+                                <span className="font-semibold">KRW 보유량 부족 오류</span>
+                              </div>
+                              <div className="text-sm text-red-700 space-y-1">
+                                {shortageItems.map((item, index) => (
+                                  <div key={index}>
+                                    • {item.denom}: 필요 {item.required}장, 보유 {item.available}장 
+                                    <span className="font-bold text-red-800"> (부족: {item.shortage}장)</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="text-xs text-red-600 mt-2">
+                                KRW 현금 보유량을 확인하고 거래 금액을 조정하세요.
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return null;
+                      })()}
                       
                       {/* USD 권종별 분배 상세 */}
                       {formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0 && (() => {
