@@ -247,9 +247,9 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
           <div className="space-y-3 sm:space-y-6">
           {/* 전체 요약 - 모바일 최적화 */}
           <Card className="p-3 sm:p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-center sm:text-left">변동 요약</h3>
-              <Badge variant={netChange >= 0 ? "default" : "destructive"} className="flex items-center gap-1 mx-auto sm:mx-0 w-fit">
+            <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg font-semibold">변동 요약</h3>
+              <Badge variant={netChange >= 0 ? "default" : "destructive"} className="flex items-center gap-1 w-fit">
                 {netChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                 <span className="text-xs sm:text-sm">{netChange >= 0 ? '증가' : '감소'}</span>
               </Badge>
