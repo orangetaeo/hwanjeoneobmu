@@ -1986,6 +1986,7 @@ export default function TransactionForm() {
                         <div className="text-right">
                           <div className="text-lg font-bold text-teal-700">{(() => {
                             // 권종별로 정확한 환율 적용해서 계산
+                            console.log("거래 확인 부분 계산 시작:");
                             const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
                               if (amount && parseFloat(amount) > 0) {
                                 const denomValue = getDenominationValue(formData.fromCurrency, denom);
@@ -1996,11 +1997,15 @@ export default function TransactionForm() {
                                   parseFloat(rateInfo?.mySellRate || "0") :
                                   parseFloat(rateInfo?.myBuyRate || "0");
                                 
-                                return total + (totalFromCurrency * rate);
+                                const subtotal = totalFromCurrency * rate;
+                                console.log(`거래확인: ${denom} ${amount}장 × ${denomValue} × ${rate} = ${subtotal}`);
+                                return total + subtotal;
                               }
                               return total;
                             }, 0);
                             
+                            console.log(`거래확인 최종 총액: ${calculatedTotal}`);
+                            console.log(`거래확인 Math.floor: ${Math.floor(calculatedTotal)}`);
                             return Math.floor(calculatedTotal).toLocaleString();
                           })()} {formData.toCurrency}</div>
                         </div>
@@ -2018,6 +2023,7 @@ export default function TransactionForm() {
                         }, 0);
 
                         // 권종별로 정확한 환율 적용해서 계산한 실제 금액 사용
+                        console.log("VND 분배용 targetAmount 계산 시작:");
                         const targetAmount = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
                           if (amount && parseFloat(amount) > 0) {
                             const denomValue = getDenominationValue(formData.fromCurrency, denom);
@@ -2028,10 +2034,13 @@ export default function TransactionForm() {
                               parseFloat(rateInfo?.mySellRate || "0") :
                               parseFloat(rateInfo?.myBuyRate || "0");
                             
-                            return total + (totalFromCurrency * rate);
+                            const subtotal = totalFromCurrency * rate;
+                            console.log(`분배용: ${denom} ${amount}장 × ${denomValue} × ${rate} = ${subtotal}`);
+                            return total + subtotal;
                           }
                           return total;
                         }, 0);
+                        console.log(`분배용 targetAmount: ${targetAmount}`);
                         
                         // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
