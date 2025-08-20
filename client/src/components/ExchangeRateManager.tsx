@@ -429,7 +429,10 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                         <SelectValue placeholder="통화 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="VND">VND (동)</SelectItem>
+                        {/* 기준통화와 다른 통화만 표시 */}
+                        {formData.fromCurrency !== "VND" && <SelectItem value="VND">VND (동)</SelectItem>}
+                        {formData.fromCurrency !== "KRW" && <SelectItem value="KRW">KRW (원)</SelectItem>}
+                        {formData.fromCurrency !== "USD" && <SelectItem value="USD">USD (달러)</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
