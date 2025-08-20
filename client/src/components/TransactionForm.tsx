@@ -1897,10 +1897,8 @@ export default function TransactionForm() {
                         [50000, 10000, 5000, 1000].forEach((denom) => {
                           const count = (actualBreakdown as Record<string, number>)[denom.toString()] || 0;
                           if (count > 0) {
-                            const denomKeys = Object.keys(denomComposition);
-                            const denomKey = denomKeys.find(key => 
-                              key.replace(/,/g, '') === denom.toString() || key === denom.toString()
-                            ) || denom.toString();
+                            // 통일된 키 매칭 방식 사용
+                            const denomKey = `${(denom/1000).toFixed(0)},000`; // "50,000" 형태
                             const availableCount = denomComposition[denomKey] || 0;
                             
                             if (count > availableCount) {
@@ -1940,11 +1938,8 @@ export default function TransactionForm() {
                         const denominationCards = [50000, 10000, 5000, 1000].map((denom) => {
                           const count = (actualBreakdown as Record<string, number>)[denom.toString()] || 0;
                           
-                          // 권종 키 형태 확인 - 기존 성공한 패턴 사용
-                          const denomKeys = Object.keys(denomComposition);
-                          const denomKey = denomKeys.find(key => 
-                            key.replace(/,/g, '') === denom.toString() || key === denom.toString()
-                          ) || denom.toString();
+                          // 통일된 키 매칭 방식 사용
+                          const denomKey = `${(denom/1000).toFixed(0)},000`; // "50,000" 형태
                           const availableCount = denomComposition[denomKey] || 0;
                           
                           if (count > 0) {
