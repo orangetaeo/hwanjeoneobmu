@@ -8,8 +8,9 @@ This is a full-stack asset management and exchange tracking application for mana
 - **환율 표시 규칙**: KRW→VND/USD→VND는 매매시세 박스 표시, VND→KRW는 숨김
 - **정확한 환전 계산 시스템**: 권종별 환율 적용으로 정확한 환전 금액 계산 (예: USD 50+20/10달러 → 1,798,000 VND)
 - **VND 분배 시스템 완성**: 5,000원권과 1,000원권 포함한 정확한 분배 (1,798,000 VND → 500,000×3 + 200,000×1 + 50,000×1 + 20,000×2 + 5,000×1 + 1,000×3)
-- **formatVNDWithFloor 제거**: Math.floor 사용으로 정확한 계산값 유지 (반올림 오차 제거)
-- **거래 확인 시스템 개선**: 실시간 권종별 환율 계산으로 정확한 고객 지급 금액 표시
+- **formatVNDWithFloor 완전 제거**: 모든 VND 계산에서 Math.floor 사용으로 정확한 계산값 유지 (반올림 오차 완전 해결)
+- **VND 권종 카드 확장**: 5,000과 1,000 VND 권종 추가로 완전한 분배 시스템 구현
+- **거래 확인 시스템 완성**: 실시간 권종별 환율 계산으로 정확한 고객 지급 금액 표시 및 완전한 권종별 분배 제공
 
 # User Preferences
 
