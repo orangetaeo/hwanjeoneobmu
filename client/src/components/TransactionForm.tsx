@@ -280,28 +280,28 @@ export default function TransactionForm() {
       searchDenomination = "500000";
     }
     
-    // VND→USD의 경우 USD→VND의 내 매입가를 역산하여 사용
+    // VND→USD의 경우 USD→VND의 내 매입가를 역산하여 사용 (평균 환율)
     if (fromCurrency === "VND" && toCurrency === "USD") {
-      // USD→VND 환율 찾기 (100달러 기준)
-      const usdToVndRate = exchangeRates.find((rate: any) => 
+      // 모든 USD→VND 환율의 평균을 계산하여 사용
+      const usdToVndRates = exchangeRates.filter((rate: any) => 
         rate.fromCurrency === "USD" && 
-        rate.toCurrency === "VND" && 
-        rate.denomination === "100"
+        rate.toCurrency === "VND"
       );
       
-      if (usdToVndRate) {
-        // USD→VND의 내 매입가를 역산하여 VND→USD 매도시세 계산
-        const sellRate = parseFloat(usdToVndRate.myBuyRate);
-        const vndToUsdRate = 1 / sellRate;
-        console.log(`VND→USD 매도시세: ${sellRate.toLocaleString()} VND = 1 USD (USD→VND 내 매입가 역산)`);
+      if (usdToVndRates.length > 0) {
+        // 평균 환율 계산
+        const avgRate = usdToVndRates.reduce((sum, rate) => sum + parseFloat(rate.myBuyRate), 0) / usdToVndRates.length;
+        const vndToUsdRate = 1 / avgRate;
+        
+        console.log(`VND→USD 매도시세: ${avgRate.toLocaleString()} VND = 1 USD (USD→VND 평균 내 매입가)`);
         
         return {
           fromCurrency: "VND",
           toCurrency: "USD",
-          denomination: "500000",
+          denomination: searchDenomination,
           myBuyRate: vndToUsdRate.toFixed(8),
           mySellRate: vndToUsdRate.toFixed(8),
-          sellRateVnd: sellRate // 매도시세 VND 값 저장
+          sellRateVnd: avgRate
         };
       }
     }
@@ -1649,8 +1649,12 @@ export default function TransactionForm() {
                                     </div>
                                     <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
                                       매도시세: {(() => {
-                                        // 모든 USD 권종에 100달러 환율 사용 (26,000 VND)
-                                        let searchDenom = "100";
+                                        // USD 권종에 따른 해당 환율 찾기
+                                        let searchDenom = "100"; // 기본값
+                                        if (denomValue >= 100) searchDenom = "100";
+                                        else if (denomValue >= 50) searchDenom = "50"; 
+                                        else if (denomValue >= 10) searchDenom = "20_10";
+                                        else searchDenom = "5_2_1";
                                         
                                         console.log(`USD 권종 ${denomValue} 매도시세 검색:`, {
                                           searchDenom,
