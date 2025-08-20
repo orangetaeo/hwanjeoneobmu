@@ -172,6 +172,12 @@ export default function CashTransactionHistory({
     })
     .slice(0, displayCount); // 선택한 개수만 표시
 
+  // 디버깅 로그 추가
+  if (cashAsset.name === "VND 현금") {
+    console.log(`VND 필터링된 거래 수: ${filteredTransactions.length}`);
+    console.log('첫 번째 거래:', filteredTransactions[0]);
+  }
+
   const getTransactionAmount = (transaction: Transaction) => {
     let isDecrease = false;
     let isIncrease = false;
