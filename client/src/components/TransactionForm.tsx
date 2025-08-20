@@ -1810,23 +1810,20 @@ export default function TransactionForm() {
                                       </div>
                                       <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
                                         매도시세: {(() => {
-                                          // KRW 권종에 따른 해당 VND 권종 매핑
-                                          let searchDenom = "500000"; // 기본값
-                                          if (denom >= 50000) searchDenom = "500000";
-                                          else if (denom >= 10000) searchDenom = "200000"; 
-                                          else if (denom >= 5000) searchDenom = "100000";
-                                          else if (denom >= 1000) searchDenom = "50000";
+                                          // KRW 권종에 따른 해당 KRW → VND 환율 찾기 (관점 변경)
+                                          let searchDenom = denom.toString(); // KRW 권종 그대로 사용
+                                          if (denom === 5000 || denom === 1000) {
+                                            searchDenom = "5000_1000"; // 5천원, 1천원은 합쳐진 권종
+                                          }
                                           
-                                          const vndKrwRate = exchangeRates?.find((rate: any) => 
-                                            rate.fromCurrency === "VND" && 
-                                            rate.toCurrency === "KRW" && 
+                                          const krwVndRate = exchangeRates?.find((rate: any) => 
+                                            rate.fromCurrency === "KRW" && 
+                                            rate.toCurrency === "VND" && 
                                             rate.denomination === searchDenom
                                           );
                                           
-                                          // 해당 권종의 실제 환전상 시세에서 VND 금액 표시
-                                          const rate = parseFloat(vndKrwRate?.myBuyRate || "0.051");
-                                          const vndForOneKrw = Math.round(1 / rate); // 1 KRW = ? VND
-                                          return `${vndForOneKrw.toLocaleString()} (${searchDenom}동)`;
+                                          // KRW → VND 매입시세 (myBuyRate) 표시
+                                          return krwVndRate?.myBuyRate || "18.90";
                                         })()}
                                       </div>
                                     </div>
