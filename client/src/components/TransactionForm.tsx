@@ -1066,7 +1066,7 @@ export default function TransactionForm() {
                               </div>
                             </div>
                             {useRate > 0 && !(formData.fromCurrency === "VND" && formData.toCurrency === "USD") && (
-                              <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[100px] sm:min-w-[110px] flex-shrink-0">
+                              <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
                                   매매시세 {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
                                 </div>
@@ -1194,30 +1194,12 @@ export default function TransactionForm() {
                         // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
-                        // VND 현금 보유 상황 확인 - 디버그 추가
-                        console.log("전체 자산 데이터:", assets);
-                        console.log("assets?.data 배열:", assets?.data);
-                        console.log("assets 자체가 배열인지:", Array.isArray(assets));
-                        
-                        // assets가 직접 배열이거나 assets.data가 배열인 경우 처리
+                        // VND 현금 보유 상황 확인
                         const assetArray = Array.isArray(assets) ? assets : (Array.isArray(assets?.data) ? assets.data : []);
-                        console.log("사용할 자산 배열:", assetArray);
-                        
-                        // 모든 자산을 출력해서 VND 현금이 어떻게 저장되어 있는지 확인
-                        console.log("모든 자산 목록:");
-                        assetArray.forEach((asset: any, index: number) => {
-                          console.log(`${index}: name="${asset.name}", currency="${asset.currency}", type="${asset.type}"`);
-                        });
-                        
-                        const vndCashAsset = assetArray.find((asset: any) => {
-                          const isMatch = asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash";
-                          console.log(`자산 확인: name="${asset.name}", currency="${asset.currency}", type="${asset.type}" -> 매치: ${isMatch}`);
-                          return isMatch;
-                        });
-                        
+                        const vndCashAsset = assetArray.find((asset: any) => 
+                          asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                        );
                         const denomComposition = vndCashAsset?.metadata?.denominations || {};
-                        console.log("VND 현금 자산:", vndCashAsset);
-                        console.log("권종 구성 데이터:", denomComposition);
                         
                         // 권종 데이터가 없으면 안내 메시지 표시
                         if (totalFromDenominations === 0) {
@@ -1303,7 +1285,6 @@ export default function TransactionForm() {
                           // 권종 키 형태 확인 (쉼표 없는 형태로 저장되어 있음)
                           const denomKey = denom.toString();  // 숫자를 "500000" 형태로 변환
                           const availableCount = denomComposition[denomKey] || 0;
-                          console.log(`${denom} VND 보유량 확인: key="${denomKey}", available=${availableCount}`);
                           
                           // 모든 권종을 기본으로 표기
                           if (true) {
