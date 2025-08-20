@@ -66,35 +66,23 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
         if (count1k > 0) denominationChanges['1000'] = -count1k;
       }
     } else if (cashAsset.currency === 'VND') {
-      // VND 현금 상세 페이지: USD→VND 환전에서 VND를 지급한 경우 (감소)
-      // denominationAmounts에 USD 권종이 있으면 VND를 지급한 것으로 판단
-      const hasUsdDenominations = Object.keys(denominationAmounts).some(key => 
-        ['50', '20_10', '100', '20', '10', '5', '2', '1'].includes(key)
-      );
+      // VND 현금 상세 페이지: cash_exchange 거래에서 항상 VND 감소로 처리 (사업자가 VND 지급)
+      const vndAmount = parseFloat(transaction.toAmount.toString());
+      let remaining = vndAmount;
+      const vndDenoms = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
       
-      if (hasUsdDenominations) {
-        // USD→VND 환전: VND 감소 (사업자가 VND를 지급)
-        const vndAmount = parseFloat(transaction.toAmount.toString());
-        let remaining = vndAmount;
-        const vndDenoms = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 1000];
-        
-        vndDenoms.forEach(denom => {
-          if (remaining >= denom) {
-            const count = Math.floor(remaining / denom);
-            if (count > 0) {
-              denominationChanges[denom.toString()] = -count;
-              remaining -= count * denom;
-            }
+      vndDenoms.forEach(denom => {
+        if (remaining >= denom) {
+          const count = Math.floor(remaining / denom);
+          if (count > 0) {
+            denominationChanges[denom.toString()] = -count;
+            console.log(`VND 감소 설정: ${denom} = ${-count}`);
+            remaining -= count * denom;
           }
-        });
-      } else {
-        // VND→다른통화 환전: VND 증가 (고객이 VND를 지급)
-        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
-          if (amount && parseFloat(amount as string) > 0) {
-            denominationChanges[denom] = parseInt(amount as string); // VND 증가
-          }
-        });
-      }
+        }
+      });
+      
+      console.log('최종 VND denominationChanges:', denominationChanges);
     } else if (cashAsset.currency === 'USD') {
       // USD 현금 상세 페이지: denominationAmounts가 USD 권종이므로 항상 증가로 처리
       // 실제로는 VND→USD 환전에서 USD를 받은 것 (사업자 관점에서 USD 증가)
