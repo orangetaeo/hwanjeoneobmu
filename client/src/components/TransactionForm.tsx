@@ -2871,6 +2871,54 @@ export default function TransactionForm() {
                 // 기존 비활성화 조건
                 if (createTransactionMutation.isPending) return true;
 
+                // KRW→USD 거래시 버튼 활성화 조건 검증
+                if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                  const calculatedUSDTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      const totalFromCurrency = parseFloat(amount) * denomValue;
+                      const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                      const rate = parseFloat(rateInfo?.mySellRate || "0");
+                      if (rate > 0) {
+                        return total + (totalFromCurrency / rate);
+                      }
+                    }
+                    return total;
+                  }, 0);
+                  
+                  const expectedAmount = Math.ceil(calculatedUSDTotal);
+                  const actualAmount = parseFloat(formData.toAmount || "0");
+                  const totalFromAmount = calculateTotalFromAmount();
+                  
+                  console.log(`KRW→USD 버튼 검증: 계산 ${calculatedUSDTotal} → 올림 ${expectedAmount}, 실제 ${actualAmount}, 입력 ${totalFromAmount}`);
+                  
+                  return expectedAmount !== actualAmount || totalFromAmount === 0;
+                }
+                
+                // USD→KRW 거래시 버튼 활성화 조건 검증  
+                else if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                  const calculatedKRWTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      const totalFromCurrency = parseFloat(amount) * denomValue;
+                      const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                      const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                      if (rate > 0) {
+                        return total + (totalFromCurrency * rate);
+                      }
+                    }
+                    return total;
+                  }, 0);
+                  
+                  const expectedAmount = Math.ceil(calculatedKRWTotal / 1000) * 1000;
+                  const actualAmount = parseFloat(formData.toAmount || "0");
+                  const totalFromAmount = calculateTotalFromAmount();
+                  
+                  console.log(`USD→KRW 버튼 검증: 계산 ${calculatedKRWTotal} → 올림 ${expectedAmount}, 실제 ${actualAmount}, 입력 ${totalFromAmount}`);
+                  
+                  return expectedAmount !== actualAmount || totalFromAmount === 0;
+                }
+
                 // VND 거래인 경우 보유량 부족 검증
                 if (formData.toCurrency === "VND") {
                   // 기본 분배 계산
