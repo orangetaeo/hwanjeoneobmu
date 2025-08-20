@@ -81,6 +81,11 @@ export default function CashTransactionHistory({
     return isCashTransaction && (fromAssetMatches || toAssetMatches || hasMatchingAssetId);
   });
 
+  // 디버깅 로그 추가
+  if (cashAsset.name === "VND 현금") {
+    console.log(`VND 현금 총 거래 수: ${cashTransactions.length}`);
+  }
+
   const filteredTransactions = cashTransactions
     .filter(transaction => {
       // Search filter
@@ -99,7 +104,7 @@ export default function CashTransactionHistory({
       let isDecrease = false;
       let isIncrease = false;
       
-      if ((transaction.type as string) === 'cash_exchange') {
+      if (transaction.type === 'cash_exchange') {
         // cash_exchange 비즈니스 로직:
         // fromAssetName = 고객이 준 돈 = 사업자가 받음(증가)
         // toAssetName = 고객이 받은 돈 = 사업자가 줌(감소)
@@ -107,6 +112,19 @@ export default function CashTransactionHistory({
           isIncrease = true; // 고객이 준 돈을 사업자가 받음 (증가)
         } else if (transaction.toAssetName === cashAsset.name) {
           isDecrease = true; // 고객이 받은 돈을 사업자가 줌 (감소)
+        }
+        
+        // 디버깅 로그 추가
+        if (cashAsset.name === "VND 현금") {
+          console.log('VND cash_exchange 필터링:', {
+            transactionId: transaction.id.substring(0, 8),
+            fromAssetName: transaction.fromAssetName,
+            toAssetName: transaction.toAssetName,
+            isIncrease,
+            isDecrease,
+            typeFilter,
+            matchesType: typeFilter === 'all' || (typeFilter === 'increase' && isIncrease) || (typeFilter === 'decrease' && isDecrease)
+          });
         }
       } else {
         // cash_change의 경우 기존 로직 유지
@@ -119,6 +137,17 @@ export default function CashTransactionHistory({
         typeFilter === 'all' ||
         (typeFilter === 'increase' && isIncrease) ||
         (typeFilter === 'decrease' && isDecrease);
+      
+      // 디버깅 로그 추가
+      if (cashAsset.name === "VND 현금") {
+        console.log('VND 최종 필터링:', {
+          transactionId: transaction.id.substring(0, 8),
+          matchesSearch,
+          matchesDateRange,
+          matchesType,
+          finalResult: matchesSearch && matchesDateRange && matchesType
+        });
+      }
       
       return matchesSearch && matchesDateRange && matchesType;
     })
@@ -148,7 +177,7 @@ export default function CashTransactionHistory({
     let isIncrease = false;
     let amount = 0;
     
-    if ((transaction.type as string) === 'cash_exchange') {
+    if (transaction.type === 'cash_exchange') {
       // cash_exchange 비즈니스 로직: 고객이 KRW를 주고 VND를 받아감
       // fromAssetName = 고객이 준 돈 = 사업자가 받음(증가)
       // toAssetName = 고객이 받은 돈 = 사업자가 줌(감소)
@@ -181,7 +210,7 @@ export default function CashTransactionHistory({
   };
 
   const getTransactionTypeText = (transaction: Transaction, isDecrease: boolean) => {
-    if ((transaction.type as string) === 'cash_exchange') {
+    if (transaction.type === 'cash_exchange') {
       // 사업자 관점에서 현금 흐름 표시
       if (transaction.fromAssetName === cashAsset.name) {
         // 고객이 준 돈 = 사업자가 받은 돈 (증가)
