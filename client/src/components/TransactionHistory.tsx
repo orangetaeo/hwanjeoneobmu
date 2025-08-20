@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown, Calendar, Filter, Search, TrendingDown, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { Transaction } from '@/types';
-import { formatInputWithCommas } from '@/utils/helpers';
+import { formatInputWithCommas, formatTransactionAmount } from '@/utils/helpers';
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
@@ -228,21 +228,21 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                       <div>
                         <div className="text-gray-500">보낸 금액</div>
                         <div className="font-medium">
-                          {formatInputWithCommas(transaction.fromAmount.toString())}
+                          {formatTransactionAmount(transaction.fromAmount, transaction.fromCurrency, transaction.fromAssetName)}
                         </div>
                       </div>
                       
                       <div>
                         <div className="text-gray-500">받은 금액</div>
                         <div className="font-medium">
-                          {formatInputWithCommas(transaction.toAmount.toString())}
+                          {formatTransactionAmount(transaction.toAmount, transaction.toCurrency, transaction.toAssetName)}
                         </div>
                       </div>
                       
                       <div>
                         <div className="text-gray-500">환율/가격</div>
                         <div className="font-medium">
-                          {formatInputWithCommas(transaction.rate.toString())}
+                          {formatTransactionAmount(transaction.rate)}
                         </div>
                       </div>
 

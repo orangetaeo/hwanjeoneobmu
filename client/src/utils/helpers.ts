@@ -68,6 +68,24 @@ export const parseCommaFormattedNumber = (value: string): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
+// 암호화폐인지 판단하는 함수
+export const isCryptoCurrency = (currency: string, assetName?: string): boolean => {
+  const cryptoCurrencies = ['USDT', 'BTC', 'ETH', 'ADA', 'USDC', 'BNB', 'XRP', 'DOGE', 'SOL', 'AVAX', 'MATIC', 'DOT'];
+  
+  // currency가 암호화폐이거나
+  if (cryptoCurrencies.includes(currency.toUpperCase())) {
+    return true;
+  }
+  
+  // assetName에 암호화폐 관련 키워드가 있는 경우
+  if (assetName) {
+    const cryptoKeywords = ['USDT', 'BTC', 'ETH', 'Bithumb', 'Binance', 'Upbit', '코인', 'Coin'];
+    return cryptoKeywords.some(keyword => assetName.includes(keyword));
+  }
+  
+  return false;
+};
+
 export const formatCurrency = (amount: number | string, currency: string): string => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   
@@ -86,4 +104,25 @@ export const formatCurrency = (amount: number | string, currency: string): strin
   
   // 코인은 소숫점 2자리까지만
   return num.toFixed(2);
+};
+
+// 거래내역용 금액 포맷팅 함수 (암호화폐 여부에 따라 다르게 처리)
+export const formatTransactionAmount = (amount: number | string, currency?: string, assetName?: string): string => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  if (amount === null || amount === undefined || isNaN(num)) {
+    return '0';
+  }
+  
+  if (num === 0) {
+    return '0';
+  }
+  
+  // 암호화폐인 경우 소숫점 2자리까지 표시
+  if (currency && isCryptoCurrency(currency, assetName)) {
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  
+  // 일반 통화는 정수로 표시
+  return Math.round(num).toLocaleString();
 };
