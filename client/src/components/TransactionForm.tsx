@@ -954,8 +954,10 @@ export default function TransactionForm() {
       if (formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account") {
         return "카카오뱅크 (김학태)";
       } else if (formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") {
-        // VND 계좌는 선택에 따라 결정 (기본값: 신한은행)
-        return formData.toAssetId === "bidv" ? "BIDV" : "신한은행";
+        // VND 계좌는 선택에 따라 결정
+        if (formData.toAssetId === "bidv") return "BIDV";
+        if (formData.toAssetId === "shinhan") return "신한은행";
+        return "신한은행"; // 기본값
       }
       return `${formData.toCurrency} 현금`;
     };
@@ -1140,10 +1142,7 @@ export default function TransactionForm() {
                     {formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account" ? (
                       <SelectItem value="KRW">KRW (한국 원) - 카카오뱅크 계좌이체</SelectItem>
                     ) : formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account" ? (
-                      <>
-                        <SelectItem value="VND">VND (베트남 동) - 신한은행</SelectItem>
-                        <SelectItem value="VND">VND (베트남 동) - BIDV</SelectItem>
-                      </>
+                      <SelectItem value="VND">VND (베트남 동) - 계좌 선택 필요</SelectItem>
                     ) : (
                       /* 받는 통화와 동일한 통화 제외 */
                       ["VND", "KRW", "USD"].filter(currency => currency !== formData.fromCurrency).map(currency => (
@@ -1269,6 +1268,22 @@ export default function TransactionForm() {
                             <SelectItem value="kakao">카카오뱅크 (0원)</SelectItem>
                             <SelectItem value="kookmin">국민은행 (0원)</SelectItem>
                             <SelectItem value="hana">하나은행 (75만원)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {/* VND 계좌 선택 (cash_to_vnd_account 및 krw_account_to_vnd_account용) */}
+                    {(formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") && formData.toCurrency === "VND" && (
+                      <div className="mt-2">
+                        <Label className="text-sm">입금 계좌 선택</Label>
+                        <Select value={formData.toAssetId} onValueChange={(value) => setFormData({ ...formData, toAssetId: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="VND 계좌 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="shinhan">신한은행 (2,216만 VND)</SelectItem>
+                            <SelectItem value="bidv">BIDV (120만 VND)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

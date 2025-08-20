@@ -831,20 +831,22 @@ export class DatabaseStorage implements IStorage {
     startDate?: Date;
     endDate?: Date;
   }): Promise<ExchangeRateHistory[]> {
-    let query = db
-      .select()
-      .from(exchangeRateHistory)
-      .where(eq(exchangeRateHistory.userId, userId));
-
+    const conditions = [eq(exchangeRateHistory.userId, userId)];
+    
     if (filters?.fromCurrency) {
-      query = query.where(eq(exchangeRateHistory.fromCurrency, filters.fromCurrency));
+      conditions.push(eq(exchangeRateHistory.fromCurrency, filters.fromCurrency));
     }
     if (filters?.toCurrency) {
-      query = query.where(eq(exchangeRateHistory.toCurrency, filters.toCurrency));
+      conditions.push(eq(exchangeRateHistory.toCurrency, filters.toCurrency));
     }
     if (filters?.denomination) {
-      query = query.where(eq(exchangeRateHistory.denomination, filters.denomination));
+      conditions.push(eq(exchangeRateHistory.denomination, filters.denomination));
     }
+
+    const query = db
+      .select()
+      .from(exchangeRateHistory)
+      .where(and(...conditions));
 
     const result = await query.orderBy(desc(exchangeRateHistory.recordDate));
     return result;
@@ -1198,8 +1200,8 @@ export class DatabaseStorage implements IStorage {
     const denominationAmounts = metadata?.denominationAmounts || {};
     
     console.log('현금→VND계좌 자산 이동:', {
-      fromCurrency: transaction.fromCurrency,
-      toCurrency: transaction.toCurrency,
+      fromAssetName: transaction.fromAssetName,
+      toAssetName: transaction.toAssetName,
       fromAmount,
       toAmount,
       denominationAmounts
