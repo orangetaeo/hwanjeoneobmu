@@ -1532,13 +1532,25 @@ export default function TransactionForm() {
                               }, 0);
                               
                               if (currentTotalFromDenominations > 0) {
-                                const rate = formData.fromCurrency === "KRW" ? 
-                                  getDenominationRate(formData.fromCurrency, formData.toCurrency, "10000")?.mySellRate || "0" :
-                                  getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
-                                const calculatedAmount = currentTotalFromDenominations * parseFloat(rate);
-                                const flooredAmount = formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
+                                // 권종별로 정확한 환율 적용해서 계산
+                                const calculatedVNDAmount = Object.entries(formData.denominationAmounts || {}).reduce((totalVND, [denom, amount]) => {
+                                  if (amount && parseFloat(amount) > 0) {
+                                    const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                    const totalKRW = parseFloat(amount) * denomValue;
+                                    
+                                    const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                                    const rate = formData.fromCurrency === "KRW" ? 
+                                      parseFloat(rateInfo?.mySellRate || "0") :
+                                      parseFloat(rateInfo?.myBuyRate || "0");
+                                    
+                                    return totalVND + (totalKRW * rate);
+                                  }
+                                  return totalVND;
+                                }, 0);
                                 
-                                // 다시 VND 분배 계산
+                                const flooredAmount = formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedVNDAmount) : calculatedVNDAmount;
+                                
+                                // 정확한 금액으로 VND 분배 계산
                                 const tempBreakdown = calculateVNDBreakdown(flooredAmount);
                                 totalAmount = Object.entries(tempBreakdown).reduce((total, [denom, count]) => {
                                   return total + (parseInt(denom) * count);
