@@ -1229,8 +1229,8 @@ export default function TransactionForm() {
                         
                         // 동적 추천 시스템: 현재 상황에서 남은 금액을 최적 분배
                         const calculateSuggestions = () => {
-                          // 현재 분배 상황 (actualBreakdown 사용)
-                          const currentBreakdown = actualBreakdown;
+                          // 현재 분배 상황 (수정값이 있으면 사용, 없으면 기본값 사용)
+                          const currentBreakdown = vndBreakdown && Object.keys(vndBreakdown).length > 0 ? vndBreakdown : fixedBreakdown;
                           
                           // 현재 총액과 목표 총액 계산
                           const currentTotal = Object.entries(currentBreakdown).reduce((total, [denom, count]) => {
