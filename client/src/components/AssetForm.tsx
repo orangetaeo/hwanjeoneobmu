@@ -440,6 +440,8 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           const denomValue = parseFloat(String(denom).replace(/,/g, ''));
           const countValue = typeof count === 'number' ? count : 0;
           
+          console.log(`Balance calculation: ${denom} (${denomValue}) × ${count} (${countValue}) = ${denomValue * countValue}`);
+          
           if (isNaN(denomValue) || isNaN(countValue)) {
             console.warn(`Invalid denomination data: ${denom}=${count}`);
             return total;
@@ -447,6 +449,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
           
           return total + (denomValue * countValue);
         }, 0);
+        
+        console.log(`Final calculated balance for ${data.currency}: ${data.balance}`);
+        console.log(`Final denominations:`, finalDenominations);
         
         // Ensure currency is set
         if (!data.currency) {
