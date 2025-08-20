@@ -185,8 +185,8 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
         </div>
       </Card>
 
-      {/* 거래 내역 리스트 */}
-      <div className="space-y-4">
+      {/* 거래 내역 리스트 - 모바일 최적화 */}
+      <div className="space-y-2 sm:space-y-4">
         {filteredTransactions.length === 0 ? (
           <Card className="p-6 sm:p-8 text-center">
             <div className="text-gray-500">
@@ -203,11 +203,11 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             return (
               <Card 
                 key={transaction.id} 
-                className="p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="p-2 sm:p-4 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => onTransactionClick?.(transaction)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="flex-1 min-w-0">
                     {/* 헤더 정보 - 모바일 최적화 */}
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
                       <Badge className={`${getTransactionTypeColor(transaction.type)} flex items-center gap-1 text-xs sm:text-sm w-fit`}>
@@ -290,7 +290,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                             <div className="flex justify-between sm:block">
                               <span className="text-gray-500 text-xs sm:text-sm">수익률</span>
                               <span className={`font-medium text-sm sm:text-base ${profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {profitRate >= 0 ? '+' : ''}{Math.round(profitRate)}%
+                                {profitRate >= 0 ? '+' : ''}{profitRate.toFixed(2)}%
                               </span>
                             </div>
                           )}
@@ -333,12 +333,12 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                     )}
                   </div>
 
-                  {/* 수익 표시 */}
+                  {/* 수익 표시 - 모바일 최적화 */}
                   {transaction.profit !== 0 && (
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">수익</div>
-                      <div className={`font-bold ${transaction.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.profit >= 0 ? '+' : ''}₩{formatInputWithCommas(transaction.profit.toString())}
+                    <div className="text-left sm:text-right flex-shrink-0">
+                      <div className="text-xs sm:text-sm text-gray-500">수익</div>
+                      <div className={`font-bold text-sm sm:text-base ${transaction.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {transaction.profit >= 0 ? '+' : ''}₩{formatInputWithCommas(Math.round(transaction.profit).toString())}
                       </div>
                     </div>
                   )}
@@ -349,19 +349,19 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
         )}
       </div>
 
-      {/* 통계 요약 */}
+      {/* 통계 요약 - 모바일 최적화 */}
       {filteredTransactions.length > 0 && (
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3">거래 요약</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <Card className="p-3 sm:p-4">
+          <h3 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">거래 요약</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
             <div>
-              <div className="text-gray-500">총 거래 수</div>
-              <div className="font-bold text-lg">{filteredTransactions.length}</div>
+              <div className="text-gray-500 text-xs sm:text-sm">총 거래 수</div>
+              <div className="font-bold text-sm sm:text-lg">{filteredTransactions.length}</div>
             </div>
             
             <div>
-              <div className="text-gray-500">총 거래량</div>
-              <div className="font-bold text-lg">
+              <div className="text-gray-500 text-xs sm:text-sm">총 거래량</div>
+              <div className="font-bold text-sm sm:text-lg">
                 ₩{formatInputWithCommas(
                   filteredTransactions
                     .reduce((sum, t) => sum + t.fromAmount, 0)
@@ -371,8 +371,8 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             </div>
             
             <div>
-              <div className="text-gray-500">총 수수료</div>
-              <div className="font-bold text-lg text-red-600">
+              <div className="text-gray-500 text-xs sm:text-sm">총 수수료</div>
+              <div className="font-bold text-sm sm:text-lg text-red-600">
                 ₩{formatInputWithCommas(
                   filteredTransactions
                     .reduce((sum, t) => sum + (t.fees || 0), 0)
@@ -382,16 +382,16 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
             </div>
             
             <div>
-              <div className="text-gray-500">총 수익</div>
-              <div className={`font-bold text-lg ${
+              <div className="text-gray-500 text-xs sm:text-sm">총 수익</div>
+              <div className={`font-bold text-sm sm:text-lg ${
                 filteredTransactions.reduce((sum, t) => sum + t.profit, 0) >= 0 
                   ? 'text-green-600' 
                   : 'text-red-600'
               }`}>
                 {filteredTransactions.reduce((sum, t) => sum + t.profit, 0) >= 0 ? '+' : ''}
                 ₩{formatInputWithCommas(
-                  filteredTransactions
-                    .reduce((sum, t) => sum + t.profit, 0)
+                  Math.round(filteredTransactions
+                    .reduce((sum, t) => sum + t.profit, 0))
                     .toString()
                 )}
               </div>
