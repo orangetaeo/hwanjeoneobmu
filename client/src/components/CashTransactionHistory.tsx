@@ -25,7 +25,7 @@ export default function CashTransactionHistory({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'increase' | 'decrease'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'increase' | 'decrease' | 'direct' | 'exchange'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [displayCount, setDisplayCount] = useState<number>(5);
@@ -50,7 +50,7 @@ export default function CashTransactionHistory({
   // 해당 현금 자산과 관련된 거래만 필터링
   const cashTransactions = transactions.filter(transaction => {
     // cash_change 또는 cash_exchange 타입 거래 필터링
-    const isCashTransaction = transaction.type === 'cash_change' || transaction.type === 'cash_exchange';
+    const isCashTransaction = transaction.type === 'cash_change' || (transaction.type as string) === 'cash_exchange';
     
     // 현금 자산명이 정확히 일치하거나 통화가 일치하는 경우
     const fromAssetMatches = transaction.fromAssetName === cashAsset.name || 
@@ -84,11 +84,13 @@ export default function CashTransactionHistory({
         (!startDate || transactionDate >= new Date(startDate)) &&
         (!endDate || transactionDate <= new Date(endDate + 'T23:59:59'));
       
-      // Type filter (increase/decrease) - cash_exchange 타입도 고려
+      // Type filter - 거래 방식과 증감 유형 모두 고려
       let isDecrease = false;
       let isIncrease = false;
+      let isExchange = (transaction.type as string) === 'cash_exchange';
+      let isDirect = transaction.type === 'cash_change';
       
-      if (transaction.type === 'cash_exchange') {
+      if ((transaction.type as string) === 'cash_exchange') {
         // cash_exchange 비즈니스 로직:
         // fromAssetName = 고객이 준 돈 = 사업자가 받음(증가)
         // toAssetName = 고객이 받은 돈 = 사업자가 줌(감소)
@@ -109,7 +111,9 @@ export default function CashTransactionHistory({
       const matchesType = 
         typeFilter === 'all' ||
         (typeFilter === 'increase' && isIncrease) ||
-        (typeFilter === 'decrease' && isDecrease);
+        (typeFilter === 'decrease' && isDecrease) ||
+        (typeFilter === 'direct' && isDirect) ||
+        (typeFilter === 'exchange' && isExchange);
       
 
       
@@ -125,13 +129,13 @@ export default function CashTransactionHistory({
           break;
         case 'amount':
           // 현금 증감 금액 계산 - cash_exchange와 cash_change 모두 고려
-          if (a.type === 'cash_exchange') {
+          if ((a.type as string) === 'cash_exchange') {
             aValue = a.fromAssetName === cashAsset.name ? parseFloat(a.fromAmount.toString()) : parseFloat(a.toAmount.toString());
           } else {
             aValue = a.fromAssetName?.includes(cashAsset.currency) ? parseFloat(a.fromAmount.toString()) : parseFloat(a.toAmount.toString());
           }
           
-          if (b.type === 'cash_exchange') {
+          if ((b.type as string) === 'cash_exchange') {
             bValue = b.fromAssetName === cashAsset.name ? parseFloat(b.fromAmount.toString()) : parseFloat(b.toAmount.toString());
           } else {
             bValue = b.fromAssetName?.includes(cashAsset.currency) ? parseFloat(b.fromAmount.toString()) : parseFloat(b.toAmount.toString());
@@ -152,7 +156,7 @@ export default function CashTransactionHistory({
     let isIncrease = false;
     let amount = 0;
     
-    if (transaction.type === 'cash_exchange') {
+    if ((transaction.type as string) === 'cash_exchange') {
       // cash_exchange 비즈니스 로직: 고객이 KRW를 주고 VND를 받아감
       // fromAssetName = 고객이 준 돈 = 사업자가 받음(증가)
       // toAssetName = 고객이 받은 돈 = 사업자가 줌(감소)
@@ -185,22 +189,27 @@ export default function CashTransactionHistory({
   };
 
   const getTransactionTypeText = (transaction: Transaction, isDecrease: boolean) => {
-    if (transaction.type === 'cash_exchange') {
-      // 사업자 관점에서 현금 흐름 표시
+    if ((transaction.type as string) === 'cash_exchange') {
+      const metadata = transaction.metadata as any;
+      
+      // 현재 현금 자산의 증감에 따른 상세한 설명
       if (transaction.fromAssetName === cashAsset.name) {
         // 고객이 준 돈 = 사업자가 받은 돈 (증가)
-        return `${cashAsset.currency} 현금 환전 수령`;
+        const toCurrency = metadata?.toCurrency || '외화';
+        return `${toCurrency} 환전 수령 → ${cashAsset.currency} 현금 증가`;
       } else if (transaction.toAssetName === cashAsset.name) {
         // 고객이 받은 돈 = 사업자가 준 돈 (감소)
-        return `${cashAsset.currency} 현금 환전 지급`;
+        const fromCurrency = metadata?.fromCurrency || '외화';
+        return `${fromCurrency} 환전 지급 → ${cashAsset.currency} 현금 감소`;
       }
       
       return '현금 환전';
     } else {
+      // cash_change 타입: 직접 증감
       if (isDecrease) {
-        return '현금 감소';
+        return `직접 증감 → ${cashAsset.currency} 현금 감소`;
       } else {
-        return '현금 증가';
+        return `직접 증감 → ${cashAsset.currency} 현금 증가`;
       }
     }
   };
@@ -286,7 +295,7 @@ export default function CashTransactionHistory({
 
                 {/* 타입 필터 및 정렬 */}
                 <div className="flex gap-2">
-                  <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease') => setTypeFilter(value)}>
+                  <Select value={typeFilter} onValueChange={(value: 'all' | 'increase' | 'decrease' | 'direct' | 'exchange') => setTypeFilter(value)}>
                     <SelectTrigger className="flex-1 h-10 sm:h-9 text-sm">
                       <SelectValue />
                     </SelectTrigger>
@@ -294,6 +303,8 @@ export default function CashTransactionHistory({
                       <SelectItem value="all">전체</SelectItem>
                       <SelectItem value="increase">증가</SelectItem>
                       <SelectItem value="decrease">감소</SelectItem>
+                      <SelectItem value="direct">직접 증감</SelectItem>
+                      <SelectItem value="exchange">환전 거래</SelectItem>
                     </SelectContent>
                   </Select>
 
