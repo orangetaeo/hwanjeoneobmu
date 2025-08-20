@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown, Calendar, Filter, Search, TrendingDown, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { Transaction } from '@/types';
-import { formatInputWithCommas, formatTransactionAmount } from '@/utils/helpers';
+import { formatInputWithCommas, formatTransactionAmount, formatExchangeRate } from '@/utils/helpers';
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
@@ -248,7 +248,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                         <div className="flex justify-between sm:block">
                           <span className="text-gray-500 text-xs sm:text-sm">환율/가격</span>
                           <span className="font-medium text-sm sm:text-base">
-                            {formatTransactionAmount(transaction.rate)}
+                            {formatExchangeRate(transaction.rate, transaction.fromCurrency, transaction.toCurrency)}
                           </span>
                         </div>
 
@@ -271,7 +271,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                             <div className="flex justify-between sm:block">
                               <span className="text-gray-500 text-xs sm:text-sm">시장 가격</span>
                               <span className="font-medium text-sm sm:text-base">
-                                ₩{formatTransactionAmount(transaction.marketPrice, 'KRW')}
+                                ₩{formatExchangeRate(transaction.marketPrice, transaction.fromCurrency, 'KRW')}
                               </span>
                             </div>
                           )}
@@ -280,7 +280,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                             <div className="flex justify-between sm:block">
                               <span className="text-gray-500 text-xs sm:text-sm">거래 가격</span>
                               <span className="font-medium text-sm sm:text-base">
-                                ₩{formatTransactionAmount(transaction.customPrice, 'KRW')}
+                                ₩{formatExchangeRate(transaction.customPrice, transaction.fromCurrency, 'KRW')}
                               </span>
                             </div>
                           )}

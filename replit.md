@@ -21,6 +21,9 @@ This is a full-stack asset management and exchange tracking application for mana
 - **계좌 간 이체 로직**: VND↔KRW 계좌 간 직접 이체 기능과 환율 적용 시스템 완성
 - **다중 거래 타입 지원**: cash_to_krw_account, cash_to_vnd_account, vnd_account_to_krw_account, krw_account_to_vnd_account 완전 지원
 - **계좌이체 시스템 최종 검증 완료**: 4가지 패턴 모두 실제 거래 테스트 통과, 자산 이동 정확성 확인, TypeScript 빌드 성공, LSP 오류 없음
+- **거래내역 모바일 최적화 완성**: 수익금 강조 표시, 모바일 스크롤 오버플로우 해결, Badge 텍스트 짤림 방지, 카드 레이아웃 개선
+- **환율 표시 시스템 개선**: 매매시세 기준 환율 표시, 통화별 소숫점 규칙 적용 (USD/KRW: 정수, KRW/VND: 소수점 2자리, USD/VND: 정수)
+- **수익 표시 규칙 정리**: 수익 금액은 정수 표시 (Math.round), 수익률은 소수점 2자리 표시 (toFixed(2))
 
 # User Preferences
 
