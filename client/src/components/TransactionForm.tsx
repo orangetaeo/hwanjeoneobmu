@@ -1804,8 +1804,25 @@ export default function TransactionForm() {
                               <div key={denom} className="bg-white p-3 sm:p-4 rounded border border-blue-200">
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="flex flex-col min-w-0 flex-1">
-                                    <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
-                                      {formatNumber(denom)} KRW
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                                        {formatNumber(denom)} KRW
+                                      </div>
+                                      <div className="px-2 py-1 bg-red-100 border border-red-200 rounded text-xs text-red-700 font-medium">
+                                        매도시세: {(() => {
+                                          // KRW 권종에 따른 해당 환율 찾기
+                                          let searchDenom = "500000"; // 기본값 (VND → KRW는 500000 VND 기준)
+                                          
+                                          const vndKrwRate = exchangeRates?.find((rate: any) => 
+                                            rate.fromCurrency === "VND" && 
+                                            rate.toCurrency === "KRW" && 
+                                            rate.denomination === searchDenom
+                                          );
+                                          
+                                          const sellRate = vndKrwRate?.myBuyRate ? parseFloat(vndKrwRate.myBuyRate) : 0.053;
+                                          return sellRate.toFixed(6);
+                                        })()}
+                                      </div>
                                     </div>
                                     <div className="text-xs sm:text-sm text-gray-500">
                                       보유: {formatNumber(availableCount)}장
