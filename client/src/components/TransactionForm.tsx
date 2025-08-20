@@ -1700,6 +1700,51 @@ export default function TransactionForm() {
                         // 분배 상황: 기본값 사용 (편집 불가로 단순화)
                         const actualBreakdown = fixedBreakdown;
                         
+                        // 보유량 부족 검증
+                        const shortageItems: Array<{denom: number, required: number, available: number, shortage: number}> = [];
+                        [50000, 10000, 5000, 1000].forEach((denom) => {
+                          const count = (actualBreakdown as Record<string, number>)[denom.toString()] || 0;
+                          if (count > 0) {
+                            const denomKeys = Object.keys(denomComposition);
+                            const denomKey = denomKeys.find(key => 
+                              key.replace(/,/g, '') === denom.toString() || key === denom.toString()
+                            ) || denom.toString();
+                            const availableCount = denomComposition[denomKey] || 0;
+                            
+                            if (count > availableCount) {
+                              shortageItems.push({
+                                denom,
+                                required: count,
+                                available: availableCount,
+                                shortage: count - availableCount
+                              });
+                            }
+                          }
+                        });
+
+                        // 보유량 부족 시 오류 메시지 표시
+                        if (shortageItems.length > 0) {
+                          return (
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-red-800 mb-2">
+                                <AlertCircle className="w-5 h-5" />
+                                <span className="font-semibold">KRW 보유량 부족 오류</span>
+                              </div>
+                              <div className="text-sm text-red-700 space-y-1">
+                                {shortageItems.map((item) => (
+                                  <div key={item.denom}>
+                                    • {formatNumber(item.denom.toString())} KRW: 필요 {item.required}장, 보유 {item.available}장 
+                                    <span className="font-bold text-red-800"> (부족: {item.shortage}장)</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="text-xs text-red-600 mt-2">
+                                KRW 현금 보유량을 확인하고 거래 금액을 조정하세요.
+                              </div>
+                            </div>
+                          );
+                        }
+                        
                         const denominationCards = [50000, 10000, 5000, 1000].map((denom) => {
                           const count = (actualBreakdown as Record<string, number>)[denom.toString()] || 0;
                           
@@ -1721,8 +1766,8 @@ export default function TransactionForm() {
                                     <div className="text-xs sm:text-sm text-gray-500">
                                       보유: {formatNumber(availableCount)}장
                                       {count > 0 && (
-                                        <span className={`ml-1 ${(availableCount - count) < 0 ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
-                                          -{count}장 = {availableCount - count}장
+                                        <span className="ml-1 text-blue-600">
+                                          -{count}장 = {Math.max(0, availableCount - count)}장
                                         </span>
                                       )}
                                     </div>
