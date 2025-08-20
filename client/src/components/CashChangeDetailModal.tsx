@@ -101,8 +101,14 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
       
       Object.entries(denominationAmounts).forEach(([denom, amount]) => {
         if (amount && parseFloat(amount as string) > 0) {
-          denominationChanges[denom] = parseInt(amount as string); // USD 증가
-          console.log(`USD 증가: ${denom} ${amount}장 -> ${parseInt(amount as string)}`);
+          // 20_10 권종 처리
+          if (denom === '20_10') {
+            denominationChanges['20/10'] = parseInt(amount as string); // 표시용으로 20/10 사용
+            console.log(`USD 증가: 20/10달러 ${amount}장 -> ${parseInt(amount as string)}`);
+          } else {
+            denominationChanges[denom] = parseInt(amount as string); // USD 증가
+            console.log(`USD 증가: ${denom}달러 ${amount}장 -> ${parseInt(amount as string)}`);
+          }
         }
       });
     }
@@ -144,6 +150,11 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
 
   // 지폐 이름 - 혼합된 경우 권종 값으로 통화 판단
   const getDenominationName = (denomination: string, currency: string) => {
+    // USD 특수 케이스 처리
+    if (denomination === '20/10') {
+      return '20/10달러권';
+    }
+    
     const num = parseInt(denomination);
     
     if (currency === 'MIXED') {
@@ -172,25 +183,30 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
     const increases: Array<{ denomination: string; change: number; value: number }> = [];
     const decreases: Array<{ denomination: string; change: number; value: number }> = [];
 
-    denominations.forEach(denomination => {
-      // 콤마가 있는 형식과 없는 형식 모두 확인
-      const commaFormat = parseInt(denomination).toLocaleString();
-      const noCommaFormat = denomination;
-      
-      const change = denominationChanges[commaFormat] || denominationChanges[noCommaFormat] || 0;
-      
-      if (change > 0) {
-        increases.push({
-          denomination,
-          change,
-          value: change * parseInt(denomination)
-        });
-      } else if (change < 0) {
-        decreases.push({
-          denomination,
-          change: Math.abs(change),
-          value: Math.abs(change) * parseInt(denomination)
-        });
+    // denominationChanges에 저장된 모든 키를 순회
+    Object.entries(denominationChanges).forEach(([denom, change]) => {
+      if (change && Math.abs(change) > 0) {
+        // 권종별 값 계산
+        let denomValue = 0;
+        if (denom === '20/10') {
+          denomValue = 20; // 20/10달러는 20달러 가치로 계산
+        } else {
+          denomValue = parseInt(denom.replace(/,/g, '')); // 콤마 제거 후 숫자 변환
+        }
+        
+        if (change > 0) {
+          increases.push({
+            denomination: denom,
+            change,
+            value: change * denomValue
+          });
+        } else {
+          decreases.push({
+            denomination: denom,
+            change: Math.abs(change),
+            value: Math.abs(change) * denomValue
+          });
+        }
       }
     });
 
