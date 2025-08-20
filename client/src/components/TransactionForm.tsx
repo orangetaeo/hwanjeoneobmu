@@ -1071,7 +1071,7 @@ export default function TransactionForm() {
                                 )}
                               </div>
                             </div>
-                            {useRate > 0 && (formData.toCurrency === "KRW" || formData.toCurrency === "USD") && (
+                            {useRate > 0 && formData.toCurrency !== "VND" && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
                                   매매시세 {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
