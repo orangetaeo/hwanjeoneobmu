@@ -1635,14 +1635,19 @@ export default function TransactionForm() {
                         let displayBreakdown;
                         if (Object.keys(krwBreakdown).length > 0) {
                           displayBreakdown = krwBreakdown;
+                          console.log("KRW 분배 - 사용자 수정값 사용:", displayBreakdown);
                         } else {
+                          console.log("KRW 분배 - 자동 계산 시작, targetKRWAmount:", targetKRWAmount);
                           // 실제 보유량 기반 분배를 우선 시도
                           const realBreakdown = calculateKRWBreakdown(targetKRWAmount, false);
+                          console.log("KRW 분배 - 실제 보유량 기반 결과:", realBreakdown);
                           if (Object.keys(realBreakdown).length > 0) {
                             displayBreakdown = realBreakdown;
                           } else {
+                            console.log("KRW 분배 - 이상적인 분배로 전환");
                             // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
                             displayBreakdown = calculateKRWBreakdown(targetKRWAmount, true);
+                            console.log("KRW 분배 - 이상적인 분배 결과:", displayBreakdown);
                           }
                         }
                         
@@ -2039,10 +2044,13 @@ export default function TransactionForm() {
                             }, 0);
                             
                             console.log(`거래확인 최종 총액: ${calculatedTotal}`);
-                            console.log(`거래확인 Math.floor: ${Math.floor(calculatedTotal)}`);
+                            // VND→KRW 환전에서는 올림 사용
+                            const finalAmount = (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") ? 
+                              Math.ceil(calculatedTotal) : Math.floor(calculatedTotal);
+                            console.log(`거래확인 Math.ceil/floor: ${finalAmount}`);
                             console.log(`formData.toAmount: ${formData.toAmount}`);
-                            console.log(`실제 화면 표시값: ${Math.floor(calculatedTotal).toLocaleString()}`);
-                            return Math.floor(calculatedTotal).toLocaleString();
+                            console.log(`실제 화면 표시값: ${finalAmount.toLocaleString()}`);
+                            return finalAmount.toLocaleString();
                           })()} {formData.toCurrency}</div>
                         </div>
                       </div>
