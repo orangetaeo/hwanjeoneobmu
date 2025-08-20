@@ -1233,15 +1233,21 @@ export default function TransactionForm() {
                           const currentBreakdown = vndBreakdown && Object.keys(vndBreakdown).length > 0 ? vndBreakdown : fixedBreakdown;
                           
                           // 현재 총액과 목표 총액 계산
+                          console.log("currentBreakdown:", currentBreakdown);
+                          console.log("fixedBreakdown:", fixedBreakdown);
+                          console.log("vndBreakdown:", vndBreakdown);
+                          
                           const currentTotal = Object.entries(currentBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
+                            console.log(`현재 총액 계산: ${denom} × ${denomCount} = ${denomValue * denomCount}`);
                             return total + (denomValue * denomCount);
                           }, 0);
                           
                           const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
+                            console.log(`목표 총액 계산: ${denom} × ${denomCount} = ${denomValue * denomCount}`);
                             return total + (denomValue * denomCount);
                           }, 0);
                           
