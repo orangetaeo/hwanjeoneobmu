@@ -635,7 +635,7 @@ export default function TransactionForm() {
           console.log("Setting VND original amount:", calculatedToAmount);
           console.log("VND original has decimal:", calculatedToAmount % 1 !== 0);
           setVndOriginalAmount(calculatedToAmount);
-          const finalAmount = formatVNDWithFloor(calculatedToAmount);
+          const finalAmount = Math.floor(calculatedToAmount);
           console.log("VND floored amount:", finalAmount);
           console.log("Difference:", calculatedToAmount - finalAmount);
           
