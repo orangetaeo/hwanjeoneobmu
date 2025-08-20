@@ -1297,10 +1297,16 @@ export default function TransactionForm() {
                         
                         const suggestions = calculateSuggestions();
 
-                        return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
+                        // 현재 화면에 표시되는 권종별 입력값들의 총합을 계산하여 외부에서 사용할 수 있도록 저장
+                        let currentDisplayTotal = 0;
+                        
+                        const denominationCards = [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const defaultCount = (fixedBreakdown as Record<string, number>)[denom.toString()] || 0;
                           const currentCount = vndBreakdown?.[denom.toString()] !== undefined ? 
                             vndBreakdown[denom.toString()] : defaultCount;
+                          
+                          // 현재 표시되는 총합에 추가
+                          currentDisplayTotal += denom * currentCount;
                           const suggestedCount = suggestions[denom.toString()] || 0;
                         
                           // 권종 키 형태 확인 (쉼표 없는 형태로 저장되어 있음)
@@ -1467,7 +1473,9 @@ export default function TransactionForm() {
                             );
                           }
                           return null;
-                        }).filter(Boolean);
+                        });
+                        
+                        return denominationCards.filter(Boolean);
                       })()}
                     </div>
                     
@@ -1487,7 +1495,7 @@ export default function TransactionForm() {
                               }, 0);
                               console.log("총 분배액 (수정값):", totalAmount);
                             } else {
-                              // 기본 분배값 재계산
+                              // 기본 분배값 재계산 - VND 분배를 다시 계산
                               const currentTotalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
                                 if (amount && parseFloat(amount) > 0) {
                                   const denomValue = getDenominationValue(formData.fromCurrency, denom);
@@ -1498,14 +1506,20 @@ export default function TransactionForm() {
                               
                               if (currentTotalFromDenominations > 0) {
                                 const rate = formData.fromCurrency === "KRW" ? 
-                                  getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                                  getDenominationRate(formData.fromCurrency, formData.toCurrency, "10000")?.mySellRate || "0" :
                                   getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
                                 const calculatedAmount = currentTotalFromDenominations * parseFloat(rate);
-                                totalAmount = formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
+                                const flooredAmount = formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
+                                
+                                // 다시 VND 분배 계산
+                                const tempBreakdown = calculateVNDBreakdown(flooredAmount);
+                                totalAmount = Object.entries(tempBreakdown).reduce((total, [denom, count]) => {
+                                  return total + (parseInt(denom) * count);
+                                }, 0);
                               } else {
-                                totalAmount = vndOriginalAmount > 0 ? vndOriginalAmount : (parseFloat(formData.toAmount) || 0);
+                                totalAmount = 0;
                               }
-                              console.log("총 분배액 (기본값):", totalAmount);
+                              console.log("총 분배액 (재계산):", totalAmount);
                             }
                             
                             return totalAmount.toLocaleString();
