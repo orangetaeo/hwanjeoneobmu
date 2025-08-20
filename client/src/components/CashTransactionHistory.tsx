@@ -81,7 +81,6 @@ export default function CashTransactionHistory({
       // Search filter
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = !searchTerm || 
-        transaction.customerName?.toLowerCase().includes(searchLower) ||
         transaction.memo?.toLowerCase().includes(searchLower);
 
       // Date filter
@@ -121,16 +120,16 @@ export default function CashTransactionHistory({
   // 거래 타입별 금액 계산
   function getTransactionAmount(transaction: Transaction): number {
     if (transaction.type === 'cash_change') {
-      return Math.abs(transaction.amount || 0);
+      return Math.abs(parseFloat(String(transaction.toAmount)) || 0);
     } else if ((transaction.type as string) === 'cash_exchange') {
       // 환전 거래의 경우 해당 현금 자산과 연관된 금액 반환
       // fromAsset = 고객이 준 돈(증가), toAsset = 고객에게 준 돈(감소)
       if (transaction.fromAssetName === cashAsset.name || 
           (transaction.fromAssetName?.includes(cashAsset.currency) && transaction.fromAssetName?.includes('현금'))) {
-        return transaction.fromAmount || 0;
+        return parseFloat(String(transaction.fromAmount)) || 0;
       } else if (transaction.toAssetName === cashAsset.name || 
                 (transaction.toAssetName?.includes(cashAsset.currency) && transaction.toAssetName?.includes('현금'))) {
-        return transaction.toAmount || 0;
+        return parseFloat(String(transaction.toAmount)) || 0;
       }
     }
     return 0;
@@ -139,7 +138,7 @@ export default function CashTransactionHistory({
   // 거래가 감소인지 확인
   function isDecreaseTransaction(transaction: Transaction): boolean {
     if (transaction.type === 'cash_change') {
-      return (transaction.amount || 0) < 0;
+      return (parseFloat(String(transaction.toAmount)) || 0) < 0;
     } else if ((transaction.type as string) === 'cash_exchange') {
       // 환전 거래에서 현재 자산이 도착(to) 자산인 경우 감소 (고객에게 준 돈)
       // fromAsset = 고객이 준 돈(증가), toAsset = 고객에게 준 돈(감소)
