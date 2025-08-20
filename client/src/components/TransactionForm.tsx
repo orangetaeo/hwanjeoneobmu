@@ -173,6 +173,7 @@ export default function TransactionForm() {
         fromDenominations: [],
         toDenomination: "",
         denominationAmounts: {},
+        vndBreakdown: {},
         fromAmount: "",
         toAmount: "",
         exchangeRate: "",
@@ -1244,7 +1245,7 @@ export default function TransactionForm() {
                           const denominations = [500000, 200000, 100000, 50000, 20000, 10000];
                           
                           denominations.forEach(denom => {
-                            const currentCount = formData.vndBreakdown[denom.toString()] || 0;
+                            const currentCount = vndBreakdown[denom.toString()] || 0;
                             const denomKey = denom.toLocaleString(); // 쉼표 포함 형태로 변환
                             const availableCount = denomComposition[denomKey] || 0;
                             const usableCount = availableCount - currentCount;
@@ -1268,8 +1269,8 @@ export default function TransactionForm() {
 
                         return [500000, 200000, 100000, 50000, 20000, 10000].map((denom) => {
                           const defaultCount = fixedBreakdown[denom.toString()] || 0;
-                          const currentCount = formData.vndBreakdown?.[denom.toString()] !== undefined ? 
-                            formData.vndBreakdown[denom.toString()] : defaultCount;
+                          const currentCount = vndBreakdown?.[denom.toString()] !== undefined ? 
+                            vndBreakdown[denom.toString()] : defaultCount;
                           const suggestedCount = suggestions[denom.toString()] || 0;
                         
                           const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -1481,11 +1482,11 @@ export default function TransactionForm() {
                         </span>
                       </div>
                       
-                      {formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0 && (
+                      {vndBreakdown && Object.keys(vndBreakdown).length > 0 && (
                         <div className="mt-2">
                           <button
                             type="button"
-                            onClick={() => setFormData({ ...formData, vndBreakdown: {} })}
+                            onClick={() => setVndBreakdown({})}
                             className="text-xs text-blue-600 hover:text-blue-800 underline"
                           >
                             기본값으로 되돌리기
@@ -1910,8 +1911,8 @@ export default function TransactionForm() {
                         const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
                         
                         // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
-                        const actualBreakdown = (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) 
-                          ? formData.vndBreakdown 
+                        const actualBreakdown = (vndBreakdown && Object.keys(vndBreakdown).length > 0) 
+                          ? vndBreakdown 
                           : fixedBreakdown;
 
                         // VND 분배가 있는 경우에만 표시
