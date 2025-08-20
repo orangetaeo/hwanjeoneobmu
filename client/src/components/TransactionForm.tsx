@@ -1967,35 +1967,37 @@ export default function TransactionForm() {
                   shouldShow
                 });
                 return shouldShow;
-              })() && (
+              })() && (() => {
+                // 환전 금액으로부터 USD 분배 계산 (정수 부분만)
+                const targetUSDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
+                console.log(`USD 분배 대상 금액: ${targetUSDAmount} USD`);
+                
+                // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
+                let displayBreakdown;
+                if (Object.keys(usdBreakdown).length > 0) {
+                  console.log("기존 USD 분배 사용:", usdBreakdown);
+                  displayBreakdown = usdBreakdown;
+                } else {
+                  // 실제 보유량 기반 분배를 우선 시도
+                  console.log("USD 분배 계산 시작 - 보유량 기반");
+                  const realBreakdown = calculateUSDBreakdown(targetUSDAmount, false);
+                  if (Object.keys(realBreakdown).length > 0) {
+                    console.log("보유량 기반 USD 분배 성공:", realBreakdown);
+                    displayBreakdown = realBreakdown;
+                  } else {
+                    // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
+                    console.log("보유량 기반 USD 분배 실패, 이상적 분배 시도");
+                    displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
+                    console.log("이상적 USD 분배:", displayBreakdown);
+                  }
+                }
+
+                return (
                 <div>
                   <Label>주는 권종 ({formData.toCurrency}) - 권종별 분배</Label>
                   <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
                     <div className="space-y-3">
                       {(() => {
-                        // 환전 금액으로부터 USD 분배 계산 (정수 부분만)
-                        const targetUSDAmount = Math.floor(parseFloat(formData.toAmount) || 0);
-                        console.log(`USD 분배 대상 금액: ${targetUSDAmount} USD`);
-                        
-                        // 사용자 수정값이 있으면 그것을 사용, 없으면 실제 보유량 기반 분배 계산
-                        let displayBreakdown;
-                        if (Object.keys(usdBreakdown).length > 0) {
-                          console.log("기존 USD 분배 사용:", usdBreakdown);
-                          displayBreakdown = usdBreakdown;
-                        } else {
-                          // 실제 보유량 기반 분배를 우선 시도
-                          console.log("USD 분배 계산 시작 - 보유량 기반");
-                          const realBreakdown = calculateUSDBreakdown(targetUSDAmount, false);
-                          if (Object.keys(realBreakdown).length > 0) {
-                            console.log("보유량 기반 USD 분배 성공:", realBreakdown);
-                            displayBreakdown = realBreakdown;
-                          } else {
-                            // 실제 보유량으로 분배가 불가능하면 이상적인 분배 표시
-                            console.log("보유량 기반 USD 분배 실패, 이상적 분배 시도");
-                            displayBreakdown = calculateUSDBreakdown(targetUSDAmount, true);
-                            console.log("이상적 USD 분배:", displayBreakdown);
-                          }
-                        }
 
                         // USD 현금 자산 조회
                         const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
@@ -2122,7 +2124,8 @@ export default function TransactionForm() {
                     </div>
                   </div>
                 </div>
-              )}
+                );
+              })()}
 
             </div>
 
