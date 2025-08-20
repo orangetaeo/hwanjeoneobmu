@@ -1227,31 +1227,21 @@ export default function TransactionForm() {
                           // 현재 분배 상황 (수정값이 있으면 사용, 없으면 기본값 사용)
                           const currentBreakdown = vndBreakdown && Object.keys(vndBreakdown).length > 0 ? vndBreakdown : fixedBreakdown;
                           
-                          console.log("=== VND 분배 디버그 ===");
-                          console.log("vndBreakdown:", vndBreakdown);
-                          console.log("fixedBreakdown:", fixedBreakdown);
-                          console.log("currentBreakdown 선택됨:", currentBreakdown);
-                          
                           // 현재 총액과 목표 총액 계산
                           const currentTotal = Object.entries(currentBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
-                            const subtotal = denomValue * denomCount;
-                            console.log(`현재 계산: ${denom} × ${denomCount} = ${subtotal}`);
-                            return total + subtotal;
+                            return total + (denomValue * denomCount);
                           }, 0);
                           
                           const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
-                            const subtotal = denomValue * denomCount;
-                            console.log(`목표 계산: ${denom} × ${denomCount} = ${subtotal}`);
-                            return total + subtotal;
+                            return total + (denomValue * denomCount);
                           }, 0);
                           
                           const remainingAmount = targetTotal - currentTotal;
                           console.log("목표 총액:", targetTotal, "현재 총액:", currentTotal, "남은 금액:", remainingAmount);
-                          console.log("================");
                           
                           const suggestions: Record<string, number> = {};
                           
