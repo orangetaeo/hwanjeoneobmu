@@ -259,6 +259,11 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       if (denomData && Object.keys(denomData).length > 0) {
         console.log('Setting denominations from editData:', denomData);
         setDenominations(denomData);
+      } else {
+        // 지폐 구성 데이터가 없는 경우 기본값 설정
+        console.log('No denomination data found, setting defaults for', editData.currency);
+        const defaultDenoms = getDefaultDenominations(editData.currency || 'KRW');
+        setDenominations(defaultDenoms);
       }
     }
   }, [editData?.id, type, editData?.metadata?.denominations, editData?.denominations]);
@@ -427,6 +432,9 @@ export default function AssetForm({ type, editData, onSubmit, onCancel }: AssetF
       if (type === 'cash') {
         // 현재 denominations 상태를 사용 (폼 데이터가 아닌)
         const finalDenominations = { ...denominations };
+        
+        console.log('Current denominations state:', denominations);
+        console.log('Final denominations for calculation:', finalDenominations);
         
         // Validate denominations object
         if (typeof finalDenominations !== 'object' || finalDenominations === null) {
