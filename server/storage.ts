@@ -20,6 +20,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
+import crypto from 'crypto';
 
 export interface IStorage {
   // Transactions with asset movement
@@ -510,12 +511,103 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAsset(userId: string, id: string, updates: Partial<InsertAsset>): Promise<Asset | undefined> {
+    // 현재 자산 정보 조회
+    const [currentAsset] = await db
+      .select()
+      .from(assets)
+      .where(and(eq(assets.userId, userId), eq(assets.id, id)));
+    
+    if (!currentAsset) {
+      return undefined;
+    }
+
+    // 자산 업데이트
     const [result] = await db
       .update(assets)
       .set({ ...updates, updatedAt: new Date() })
       .where(and(eq(assets.userId, userId), eq(assets.id, id)))
       .returning();
+
+    // 현금 자산이고 권종 정보가 변경된 경우 cash_change 거래 생성
+    if (result && currentAsset.type === 'cash' && updates.metadata && 
+        typeof updates.metadata === 'object' && 'denominations' in updates.metadata) {
+      await this.createCashChangeTransaction(userId, currentAsset, result);
+    }
+
     return result || undefined;
+  }
+
+  // 현금 자산 변경 시 cash_change 거래 생성
+  private async createCashChangeTransaction(
+    userId: string, 
+    oldAsset: Asset, 
+    newAsset: Asset
+  ): Promise<void> {
+    const oldDenominations = (oldAsset.metadata as any)?.denominations || {};
+    const newDenominations = (newAsset.metadata as any)?.denominations || {};
+    
+    // 권종별 변동 계산
+    const denominationChanges: Record<string, number> = {};
+    const oldKeys = Object.keys(oldDenominations);
+    const newKeys = Object.keys(newDenominations);
+    const allDenominations = [...new Set([...oldKeys, ...newKeys])];
+    
+    let hasChanges = false;
+    for (const denom of allDenominations) {
+      const oldCount = parseInt(String(oldDenominations[denom] || 0));
+      const newCount = parseInt(String(newDenominations[denom] || 0));
+      const change = newCount - oldCount;
+      
+      if (change !== 0) {
+        denominationChanges[denom] = change;
+        hasChanges = true;
+      }
+    }
+    
+    // 변동사항이 있는 경우에만 거래 생성
+    if (hasChanges) {
+      const oldBalance = parseFloat(oldAsset.balance || '0');
+      const newBalance = parseFloat(newAsset.balance || '0');
+      const balanceChange = newBalance - oldBalance;
+      
+      const transaction: InsertTransaction = {
+        type: 'cash_change',
+        fromAssetType: 'cash',
+        fromAssetId: oldAsset.id,
+        fromAssetName: oldAsset.name,
+        toAssetType: 'cash',
+        toAssetId: newAsset.id,
+        toAssetName: newAsset.name,
+        toCurrency: newAsset.currency,
+        fromAmount: oldBalance.toString(),
+        toAmount: newBalance.toString(),
+        rate: '1',
+        fees: '0',
+        profit: balanceChange.toString(),
+        memo: '현금 자산 수정',
+        metadata: {
+          denominationChanges,
+          assetUpdate: true,
+          oldBalance,
+          newBalance,
+          balanceChange
+        },
+        status: 'confirmed'
+      };
+      
+      // transactions 테이블에 직접 삽입
+      await db.insert(transactions).values({
+        ...transaction,
+        userId,
+        id: crypto.randomUUID()
+      });
+      
+      console.log('현금 자산 수정으로 cash_change 거래 생성:', {
+        assetName: newAsset.name,
+        denominationChanges,
+        balanceChange
+      });
+    }
   }
 
   async deleteAsset(userId: string, id: string): Promise<boolean> {
