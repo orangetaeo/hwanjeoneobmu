@@ -95,27 +95,16 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
         });
       }
     } else if (cashAsset.currency === 'USD') {
-      // USD 현금 상세 페이지: 거래 유형에 따라 증가/감소 판단
-      const isUsdToAsset = transaction.toAssetName === cashAsset.name; // USD가 toAsset이면 증가
-      console.log(`USD 거래 판단: toAsset=${transaction.toAssetName}, 현재자산=${cashAsset.name}, USD증가=${isUsdToAsset}`);
+      // USD 현금 상세 페이지: denominationAmounts가 USD 권종이므로 항상 증가로 처리
+      // 실제로는 VND→USD 환전에서 USD를 받은 것 (사업자 관점에서 USD 증가)
+      console.log(`USD 거래 처리: denominationAmounts=${JSON.stringify(denominationAmounts)}`);
       
-      if (isUsdToAsset) {
-        // USD 증가인 경우: denominationAmounts 사용 (플러스로 표시)
-        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
-          if (amount && parseFloat(amount as string) > 0) {
-            denominationChanges[denom] = parseInt(amount as string); // USD 증가
-            console.log(`USD 증가: ${denom} ${amount}장 -> ${parseInt(amount as string)}`);
-          }
-        });
-      } else {
-        // USD 감소인 경우: denominationAmounts 사용 (마이너스로 표시)
-        Object.entries(denominationAmounts).forEach(([denom, amount]) => {
-          if (amount && parseFloat(amount as string) > 0) {
-            denominationChanges[denom] = -parseInt(amount as string); // USD 감소
-            console.log(`USD 감소: ${denom} ${amount}장 -> ${-parseInt(amount as string)}`);
-          }
-        });
-      }
+      Object.entries(denominationAmounts).forEach(([denom, amount]) => {
+        if (amount && parseFloat(amount as string) > 0) {
+          denominationChanges[denom] = parseInt(amount as string); // USD 증가
+          console.log(`USD 증가: ${denom} ${amount}장 -> ${parseInt(amount as string)}`);
+        }
+      });
     }
   }
   
