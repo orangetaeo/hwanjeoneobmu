@@ -668,8 +668,18 @@ export default function TransactionForm() {
           
           // KRW 분배 계산 및 설정
           console.log("VND→KRW 환전: KRW 분배 계산 시작");
-          const breakdown = calculateKRWBreakdown(finalAmount, false);
-          console.log("KRW 분배 계산 완료:", breakdown);
+          // 우선 실제 보유량 기반으로 시도
+          let breakdown = calculateKRWBreakdown(finalAmount, false);
+          console.log("KRW 분배 계산 (보유량 기반):", breakdown);
+          
+          // 만약 고액권이 없으면 이상적인 분배로 표시
+          const hasHighDenominations = breakdown['50000'] > 0 || breakdown['10000'] > 0 || breakdown['5000'] > 0;
+          if (!hasHighDenominations) {
+            console.log("고액권 보유량 부족으로 이상적인 분배 계산");
+            breakdown = calculateKRWBreakdown(finalAmount, true);
+            console.log("KRW 분배 계산 (이상적 분배):", breakdown);
+          }
+          
           setKrwBreakdown(breakdown);
         } else if (formData.toCurrency === "USD") {
           setVndOriginalAmount(0); // VND가 아니므로 0으로 리셋
