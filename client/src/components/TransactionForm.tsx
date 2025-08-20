@@ -1240,21 +1240,15 @@ export default function TransactionForm() {
                           const currentBreakdown = vndBreakdown && Object.keys(vndBreakdown).length > 0 ? vndBreakdown : fixedBreakdown;
                           
                           // 현재 총액과 목표 총액 계산
-                          console.log("currentBreakdown:", currentBreakdown);
-                          console.log("fixedBreakdown:", fixedBreakdown);
-                          console.log("vndBreakdown:", vndBreakdown);
-                          
                           const currentTotal = Object.entries(currentBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
-                            console.log(`현재 총액 계산: ${denom} × ${denomCount} = ${denomValue * denomCount}`);
                             return total + (denomValue * denomCount);
                           }, 0);
                           
                           const targetTotal = Object.entries(fixedBreakdown).reduce((total, [denom, count]) => {
                             const denomValue = parseInt(denom);
                             const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
-                            console.log(`목표 총액 계산: ${denom} × ${denomCount} = ${denomValue * denomCount}`);
                             return total + (denomValue * denomCount);
                           }, 0);
                           
@@ -1481,7 +1475,7 @@ export default function TransactionForm() {
                       <div className="text-xs sm:text-sm font-medium text-orange-700">
                         총 분배액: <span className="text-sm sm:text-lg font-bold">
                           {(() => {
-                            // VND 권종별 분배 총액 계산 - 수정된 값이 있으면 사용, 없으면 기본 분배 사용
+                            // VND 권종별 분배 총액 계산 - 현재 권종별 입력값들을 직접 계산
                             let totalAmount = 0;
                             
                             if (vndBreakdown && Object.keys(vndBreakdown).length > 0) {
@@ -1491,8 +1485,9 @@ export default function TransactionForm() {
                                 const denomCount = typeof count === 'number' ? count : parseInt(count.toString());
                                 return total + (denomValue * denomCount);
                               }, 0);
+                              console.log("총 분배액 (수정값):", totalAmount);
                             } else {
-                              // 기본 분배값 사용
+                              // 기본 분배값 재계산
                               const currentTotalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
                                 if (amount && parseFloat(amount) > 0) {
                                   const denomValue = getDenominationValue(formData.fromCurrency, denom);
@@ -1510,6 +1505,7 @@ export default function TransactionForm() {
                               } else {
                                 totalAmount = vndOriginalAmount > 0 ? vndOriginalAmount : (parseFloat(formData.toAmount) || 0);
                               }
+                              console.log("총 분배액 (기본값):", totalAmount);
                             }
                             
                             return totalAmount.toLocaleString();
