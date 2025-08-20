@@ -4,6 +4,13 @@ This is a full-stack asset management and exchange tracking application designed
 
 ## Recent Major Updates (January 2025)
 
+### VND→USD Exchange System Completion (August 20, 2025)
+- **Complete USD Denomination Distribution**: Implemented full USD cash breakdown functionality with calculateUSDBreakdown, handleUSDBreakdownChange, and comprehensive UI components for all USD denominations ($100, $50, $20, $10, $5, $2, $1)
+- **Denomination-Specific Exchange Rates**: Fixed USD denomination cards to display accurate sell rates from exchange rate management system ($100: 26,000 VND, $50: 25,800 VND, $20/$10: 25,400 VND, $5/$2/$1: 25,000 VND)
+- **UI Optimization for VND→USD**: Removed unnecessary exchange rate and sell rate displays from VND denomination cards in VND→USD transactions, maintaining clean interface with only denomination names and quantities
+- **Average Exchange Rate Calculation**: Implemented weighted average calculation for transaction confirmation using all USD→VND denomination rates, correctly displaying 25,550 VND average rate
+- **Complete Transaction Flow**: VND→USD exchanges now support full end-to-end processing with accurate denomination tracking, inventory validation, and proper asset balance updates
+
 ### VND Exchange Transaction System Enhancements
 - **Complete Auto-Adjustment System**: Fixed Math.ceil() based precise excess calculation for VND denomination distribution (500,000 VND now correctly adjusts from 19→16 instead of 19→17)
 - **Smart Inventory Management**: Real-time validation preventing quantity inputs exceeding available stock with automatic caps
