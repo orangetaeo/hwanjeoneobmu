@@ -135,30 +135,38 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
   // 지폐 이름 - 혼합된 경우 권종 값으로 통화 판단
   const getDenominationName = (denomination: string, currency: string) => {
     // USD 특수 케이스 처리
-    if (denomination === '20/10') {
+    if (denomination === '20/10' || denomination === '20_10') {
       return '20/10달러권';
     }
     
-    const num = parseInt(denomination);
+    // 원래 denomination에 콤마가 있으면 그대로 사용, 없으면 숫자로 변환 후 콤마 추가
+    let displayValue = denomination;
+    if (!denomination.includes(',') && !isNaN(parseInt(denomination))) {
+      const num = parseInt(denomination);
+      displayValue = num.toLocaleString();
+    }
     
     if (currency === 'MIXED') {
       // 권종 값으로 통화 판단
-      if (['1000', '5000', '10000', '50000'].includes(denomination)) {
-        return `${num.toLocaleString()}원권`;
+      const numericValue = parseInt(denomination.replace(/,/g, ''));
+      if ([1000, 5000, 10000, 50000].includes(numericValue)) {
+        return `${displayValue}원권`;
       } else {
-        return `${num.toLocaleString()}동권`;
+        return `${displayValue}동권`;
       }
     }
     
     switch (currency) {
       case 'KRW':
-        return `${num.toLocaleString()}원권`;
+        return `${displayValue}원권`;
       case 'USD':
-        return `${num}달러권`;
+        // USD는 콤마 없이 표시
+        const usdNum = parseInt(denomination.replace(/,/g, ''));
+        return `${usdNum}달러권`;
       case 'VND':
-        return `${num.toLocaleString()}동권`;
+        return `${displayValue}동권`;
       default:
-        return `${num}`;
+        return `${displayValue}`;
     }
   };
 
@@ -196,20 +204,35 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
       }
     });
 
-    // VND의 경우 고액권부터 정렬
-    if (cashAsset.currency === 'VND') {
-      increases.sort((a, b) => {
-        const aValue = parseInt(a.denomination.replace(/,/g, ''));
-        const bValue = parseInt(b.denomination.replace(/,/g, ''));
+    // 모든 통화에서 고액권부터 정렬
+    const sortByDenomination = (arr: Array<{ denomination: string; change: number; value: number }>) => {
+      return arr.sort((a, b) => {
+        // 20/10 달러 특수 케이스 처리
+        let aValue = 0;
+        let bValue = 0;
+        
+        if (a.denomination === '20/10') {
+          aValue = 20;
+        } else if (a.denomination === '20_10') {
+          aValue = 30; // 20+10=30 가치로 계산
+        } else {
+          aValue = parseInt(a.denomination.replace(/,/g, ''));
+        }
+        
+        if (b.denomination === '20/10') {
+          bValue = 20;
+        } else if (b.denomination === '20_10') {
+          bValue = 30; // 20+10=30 가치로 계산
+        } else {
+          bValue = parseInt(b.denomination.replace(/,/g, ''));
+        }
+        
         return bValue - aValue; // 내림차순 정렬 (고액권 먼저)
       });
-      
-      decreases.sort((a, b) => {
-        const aValue = parseInt(a.denomination.replace(/,/g, ''));
-        const bValue = parseInt(b.denomination.replace(/,/g, ''));
-        return bValue - aValue; // 내림차순 정렬 (고액권 먼저)
-      });
-    }
+    };
+    
+    sortByDenomination(increases);
+    sortByDenomination(decreases);
 
     return { increases, decreases };
   };
