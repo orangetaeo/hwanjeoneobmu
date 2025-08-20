@@ -336,9 +336,16 @@ export default function TransactionForm() {
 
   // 환율 포맷팅 함수
   const formatRate = (rate: number, fromCurrency: string, toCurrency: string) => {
-    // 받는 권종이 KRW일 때 소수점 2자리까지 표기
+    // 받는 권종에 따른 매매시세 표기 방식
     if (toCurrency === "KRW") {
+      // KRW: 소수점 2자리까지 표기
       return rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } else if (toCurrency === "USD") {
+      // USD: 정수만 표기
+      return Math.round(rate).toLocaleString('ko-KR');
+    } else if (toCurrency === "VND") {
+      // VND: 표기 없음 (빈 문자열 반환)
+      return "";
     } else {
       return rate.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
     }
@@ -1063,7 +1070,7 @@ export default function TransactionForm() {
                                 )}
                               </div>
                             </div>
-                            {useRate > 0 && !(formData.fromCurrency === "VND" && formData.toCurrency === "USD") && (
+                            {useRate > 0 && !(formData.fromCurrency === "VND" && formData.toCurrency === "USD") && formData.toCurrency !== "VND" && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
                                   매매시세 {formatRate(useRate, formData.fromCurrency, formData.toCurrency)}
