@@ -255,24 +255,24 @@ export default function CashChangeDetailModal({ transaction, isOpen, onClose, ca
               </Badge>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
               <div className="p-2 sm:p-3 bg-green-50 rounded-lg text-center">
                 <div className="text-xs sm:text-sm text-green-600 mb-1">총 증가</div>
-                <div className="font-bold text-green-800 text-sm sm:text-base break-words">
+                <div className="font-bold text-green-800 text-xs sm:text-base break-words">
                   +{formatInputWithCommas(totalIncrease.toString())} {getCurrencySymbol(currency)}
                 </div>
               </div>
               
               <div className="p-2 sm:p-3 bg-red-50 rounded-lg text-center">
                 <div className="text-xs sm:text-sm text-red-600 mb-1">총 감소</div>
-                <div className="font-bold text-red-800 text-sm sm:text-base break-words">
+                <div className="font-bold text-red-800 text-xs sm:text-base break-words">
                   -{formatInputWithCommas(totalDecrease.toString())} {getCurrencySymbol(currency)}
                 </div>
               </div>
               
               <div className="p-2 sm:p-3 bg-blue-50 rounded-lg text-center">
                 <div className="text-xs sm:text-sm text-blue-600 mb-1">순 변동</div>
-                <div className={`font-bold text-sm sm:text-base break-words ${netChange >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
+                <div className={`font-bold text-xs sm:text-base break-words ${netChange >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
                   {netChange >= 0 ? '+' : ''}{formatInputWithCommas(netChange.toString())} {getCurrencySymbol(currency)}
                 </div>
               </div>

@@ -232,14 +232,14 @@ export default function CashTransactionHistory({
             </DialogTitle>
           </DialogHeader>
 
-          {/* 현금 자산 정보 - 모바일 최적화 */}
+          {/* 현금 자산 정보 - PC/모바일 통합 */}
           <Card className="p-2 sm:p-3 md:p-4 bg-gray-50">
-            <div className="flex flex-col gap-1 sm:gap-2">
-              <div className="text-center sm:text-left">
+            <div className="flex justify-between items-center">
+              <div>
                 <h3 className="font-semibold text-sm sm:text-base md:text-lg">{cashAsset.name}</h3>
                 <p className="text-xs text-gray-600">현재 잔액</p>
               </div>
-              <div className="text-center sm:text-right">
+              <div className="text-right">
                 <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 break-words">
                   {formatCurrency(cashAsset.balance, cashAsset.currency)} {cashAsset.currency}
                 </p>
