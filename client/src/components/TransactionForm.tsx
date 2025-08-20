@@ -2616,6 +2616,27 @@ export default function TransactionForm() {
                   }
                 }
 
+                // KRW 거래인 경우 보유량 부족 검증
+                if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
+                  const assetArray = Array.isArray(assets?.data) ? assets.data : (assets || []);
+                  const krwCashAsset = assetArray.find((asset: any) => 
+                    asset.name === "KRW 현금" && asset.currency === "KRW"
+                  );
+                  const denomComposition = krwCashAsset?.metadata?.denominations || {};
+
+                  // 보유량 부족 여부 확인
+                  const hasShortage = Object.entries(krwBreakdown).some(([denom, count]) => {
+                    const requiredCount = parseInt(count.toString());
+                    const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+                    const availableCount = denomComposition[denomKey] || 0;
+                    return requiredCount > availableCount;
+                  });
+
+                  if (hasShortage) {
+                    return true;
+                  }
+                }
+
                 return false;
               })()}
               data-testid="button-submit-transaction"
