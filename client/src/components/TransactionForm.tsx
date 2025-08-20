@@ -1967,7 +1967,25 @@ export default function TransactionForm() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600 font-medium">고객이 받는 금액</span>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-teal-700">{totalAmount.toLocaleString()} {formData.toCurrency}</div>
+                          <div className="text-lg font-bold text-teal-700">{(() => {
+                            // 권종별로 정확한 환율 적용해서 계산
+                            const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                              if (amount && parseFloat(amount) > 0) {
+                                const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                                const totalFromCurrency = parseFloat(amount) * denomValue;
+                                
+                                const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                                const rate = formData.fromCurrency === "KRW" ? 
+                                  parseFloat(rateInfo?.mySellRate || "0") :
+                                  parseFloat(rateInfo?.myBuyRate || "0");
+                                
+                                return total + (totalFromCurrency * rate);
+                              }
+                              return total;
+                            }, 0);
+                            
+                            return Math.floor(calculatedTotal).toLocaleString();
+                          })()} {formData.toCurrency}</div>
                         </div>
                       </div>
                       
