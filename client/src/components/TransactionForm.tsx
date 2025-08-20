@@ -1255,7 +1255,7 @@ export default function TransactionForm() {
                             getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
                             getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
                           const calculatedAmount = totalFromDenominations * parseFloat(rate);
-                          return formData.toCurrency === "VND" ? formatVNDWithFloor(calculatedAmount) : calculatedAmount;
+                          return formData.toCurrency === "VND" ? Math.floor(calculatedAmount) : calculatedAmount;
                         })() : (parseFloat(formData.toAmount) || 0);
                         
                         // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
