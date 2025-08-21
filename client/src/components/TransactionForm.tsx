@@ -1525,8 +1525,8 @@ export default function TransactionForm() {
                           value={formData.customerName}
                           onChange={(e) => {
                             const value = e.target.value;
-                            // 한글, 영어, 공백만 허용
-                            if (/^[가-힣a-zA-Z\s]*$/.test(value)) {
+                            // 한글(완성형+조합형), 영어, 공백만 허용
+                            if (/^[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z\s]*$/.test(value)) {
                               setFormData({ ...formData, customerName: value });
                             }
                           }}
@@ -1542,8 +1542,8 @@ export default function TransactionForm() {
                           value={formData.customerPhone}
                           onChange={(e) => {
                             const value = e.target.value;
-                            // 한글, 영어, 공백만 허용
-                            if (/^[가-힣a-zA-Z\s]*$/.test(value)) {
+                            // 한글(완성형+조합형), 영어, 공백만 허용
+                            if (/^[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z\s]*$/.test(value)) {
                               setFormData({ ...formData, customerPhone: value });
                             }
                           }}
