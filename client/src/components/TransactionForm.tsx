@@ -415,6 +415,10 @@ export default function TransactionForm() {
     if (fromCurrency === "USD" && (toCurrency === "VND" || toCurrency === "KRW")) {
       return Math.round(rate).toLocaleString('ko-KR');
     }
+    // VND→KRW는 소수점 3자리까지 표기
+    else if (fromCurrency === "VND" && toCurrency === "KRW") {
+      return rate.toLocaleString('ko-KR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    }
     // 받는 권종에 따른 매매시세 표기 방식 (기존 로직)
     else if (toCurrency === "KRW") {
       // KRW: 소수점 2자리까지 표기
@@ -1471,9 +1475,7 @@ export default function TransactionForm() {
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
                                   매매시세 {displayRate > 0 ? (
-                                    formData.fromCurrency === "VND" && formData.toCurrency === "KRW" 
-                                      ? Math.round(displayRate).toLocaleString('ko-KR') 
-                                      : formatRate(displayRate, formData.fromCurrency, formData.toCurrency)
+                                    formatRate(displayRate, formData.fromCurrency, formData.toCurrency)
                                   ) : '0.00'}
                                 </div>
                               </div>
