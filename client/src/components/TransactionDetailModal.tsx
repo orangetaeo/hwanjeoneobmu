@@ -79,13 +79,15 @@ export default function TransactionDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Badge variant="outline" className="px-2 py-1">
-              {getTransactionTypeText(transaction.type)}
-            </Badge>
-            거래 상세
-          </DialogTitle>
+        <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Badge variant="outline" className="px-2 py-1">
+                {getTransactionTypeText(transaction.type)}
+              </Badge>
+              거래 상세
+            </DialogTitle>
+          </div>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto">
@@ -114,19 +116,19 @@ export default function TransactionDetailModal({
               <Separator />
 
               {/* 출금 → 입금 → 환율을 한 줄에 표시 */}
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between py-1">
                 <div className="text-center flex-1">
                   <div className="text-xs text-gray-500 mb-1">출금</div>
                   <div className="font-semibold text-sm">
                     {formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString())} {transaction.fromAssetName.includes('KRW') ? '원' : transaction.fromAssetName.includes('VND') ? '동' : transaction.fromAssetName.includes('USD') ? '$' : ''}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-500 mt-0.5">
                     {transaction.fromAssetName}
                   </div>
                 </div>
                 
-                <div className="px-2">
-                  <ArrowRight className="text-gray-400" size={16} />
+                <div className="px-1">
+                  <ArrowRight className="text-gray-400" size={14} />
                 </div>
                 
                 <div className="text-center flex-1">
@@ -134,15 +136,15 @@ export default function TransactionDetailModal({
                   <div className="font-semibold text-sm">
                     {formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString())} {transaction.toAssetName.includes('KRW') ? '원' : transaction.toAssetName.includes('VND') ? '동' : transaction.toAssetName.includes('USD') ? '$' : ''}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-500 mt-0.5">
                     {transaction.toAssetName}
                   </div>
                 </div>
 
                 {transaction.rate && parseFloat(transaction.rate.toString()) > 0 && (
                   <>
-                    <div className="px-2">
-                      <ArrowRight className="text-gray-400" size={16} />
+                    <div className="px-1">
+                      <ArrowRight className="text-gray-400" size={14} />
                     </div>
                     <div className="text-center flex-1">
                       <div className="text-xs text-gray-500 mb-1">적용 환율</div>
@@ -203,19 +205,10 @@ export default function TransactionDetailModal({
               <CardContent className="pt-0">
                 <div className="space-y-2">
                   {relatedTransactions.map((relatedTx: Transaction) => (
-                    <div key={relatedTx.id} className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? (
-                            <TrendingUp className="text-green-600 flex-shrink-0" size={18} />
-                          ) : (
-                            <TrendingDown className="text-red-600 flex-shrink-0" size={18} />
-                          )}
-                          <div className="font-medium text-sm">
-                            {relatedTx.toAssetName}
-                          </div>
-                        </div>
-                        <div className={`font-bold text-lg ${
+                    <div key={relatedTx.id} className="border rounded-lg p-2 bg-gray-50 dark:bg-gray-800 relative">
+                      {/* 중앙에 큰 금액 표시 */}
+                      <div className="text-center py-2">
+                        <div className={`font-bold text-xl ${
                           parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) 
                             ? 'text-green-600' 
                             : 'text-red-600'
@@ -224,16 +217,26 @@ export default function TransactionDetailModal({
                           {formatInputWithCommas(Math.abs(parseFloat(relatedTx.toAmount.toString()) - parseFloat(relatedTx.fromAmount.toString())).toString())}
                           {relatedTx.toAssetName.includes('VND') ? '동' : '원'}
                         </div>
+                        <div className="flex items-center justify-center gap-1 mt-1">
+                          {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? (
+                            <TrendingUp className="text-green-600 flex-shrink-0" size={14} />
+                          ) : (
+                            <TrendingDown className="text-red-600 flex-shrink-0" size={14} />
+                          )}
+                          <span className="font-medium text-xs text-gray-600">
+                            {relatedTx.toAssetName}
+                          </span>
+                        </div>
                       </div>
                       
                       {relatedTx.metadata && typeof relatedTx.metadata === 'object' && relatedTx.metadata !== null && 'denominationChanges' in relatedTx.metadata && (
-                        <div className="mt-2">
+                        <div className="mt-1">
                           <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">권종별 변동:</div>
-                          <div className="grid grid-cols-2 gap-1">
+                          <div className="grid grid-cols-3 gap-1">
                             {Object.entries(relatedTx.metadata.denominationChanges as Record<string, number>)
                               .filter(([_, count]) => count !== 0)
                               .map(([denom, count]) => (
-                                <div key={denom} className={`text-xs px-2 py-1 rounded border ${
+                                <div key={denom} className={`text-xs px-1 py-0.5 rounded border text-center ${
                                   count > 0 
                                     ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-600' 
                                     : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600'
@@ -245,7 +248,7 @@ export default function TransactionDetailModal({
                         </div>
                       )}
                       
-                      <div className="text-xs text-gray-500 mt-2">
+                      <div className="text-xs text-gray-500 mt-1 text-center">
                         {formatDateTime(relatedTx.timestamp)}
                       </div>
                     </div>
