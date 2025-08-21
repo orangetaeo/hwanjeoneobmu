@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Plus, Calculator, User, Trash2, Wallet, Banknote, CheckCircle, 
   ArrowRight, AlertCircle, TrendingUp, ArrowRightLeft, AlertTriangle,
-  RefreshCw, ArrowUpRight, ArrowDownLeft, Minus, Eye, EyeOff
+  RefreshCw, ArrowUpRight, ArrowDownLeft, Minus, Eye, EyeOff, Activity
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -621,7 +621,7 @@ export default function CardBasedTransactionForm({
   // 일일 정산 계산
   const calculateDailySettlement = () => {
     const today = new Date();
-    const todayTransactions = transactions.filter(tx => {
+    const todayTransactions = ([] as any[]).filter((tx: any) => {
       const txDate = new Date(tx.createdAt);
       return txDate.toDateString() === today.toDateString();
     });
@@ -630,7 +630,7 @@ export default function CardBasedTransactionForm({
     let totalVolume = 0;
     const currencyBreakdown: Record<string, { volume: number; revenue: number }> = {};
     
-    todayTransactions.forEach(tx => {
+    todayTransactions.forEach((tx: any) => {
       const amount = tx.amount || 0;
       totalVolume += amount;
       
@@ -1219,7 +1219,38 @@ export default function CardBasedTransactionForm({
           );
           
           if (shouldRollback) {
-            // TODO: 롤백 API 호출
+            // 성공한 거래들의 상태를 'cancelled'로 변경하여 롤백
+            try {
+              const successfulResults = results.filter(r => r.success);
+              
+              for (const result of successfulResults) {
+                if (result.transactionId) {
+                  const rollbackResponse = await fetch(`/api/transactions/${result.transactionId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'cancelled' })
+                  });
+                  
+                  if (!rollbackResponse.ok) {
+                    throw new Error(`거래 ${result.transactionId} 롤백 실패`);
+                  }
+                }
+              }
+
+              toast({
+                title: "롤백 완료",
+                description: `${successfulResults.length}개 성공 거래가 안전하게 롤백되었습니다.`,
+                variant: "default"
+              });
+            } catch (rollbackError) {
+              console.error('롤백 실패:', rollbackError);
+              toast({
+                title: "롤백 실패",
+                description: "수동 데이터 확인이 필요합니다. 관리자에게 문의하세요.",
+                variant: "destructive"
+              });
+            }
+            
             toast({
               title: "롤백 진행 중",
               description: "성공한 거래들을 롤백하고 있습니다...",
