@@ -78,8 +78,8 @@ export default function TransactionDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-4 border-b border-gray-200 dark:border-gray-700">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Badge variant="outline" className="px-2 py-1">
               {getTransactionTypeText(transaction.type)}
@@ -87,24 +87,25 @@ export default function TransactionDetailModal({
             거래 상세
           </DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4 mt-4">
+        
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-3 mt-3">
           {/* 메인 거래 정보 */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">거래 정보</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">거래 정보</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 pt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <CardContent className="space-y-2 pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <div className="text-sm text-gray-500">거래 ID</div>
+                  <div className="text-xs text-gray-500">거래 ID</div>
                   <div className="font-mono text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded">
                     {transaction.id}
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-gray-500">거래 시간</div>
-                  <div className="font-medium text-sm">
+                  <div className="text-xs text-gray-500">거래 시간</div>
+                  <div className="font-medium text-xs">
                     {formatDateTime(transaction.timestamp)}
                   </div>
                 </div>
@@ -112,49 +113,54 @@ export default function TransactionDetailModal({
 
               <Separator />
 
-              <div className="flex items-center justify-center py-3">
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-500 mb-1">출금</div>
-                    <div className="font-semibold text-lg">
-                      {formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString())} {transaction.fromAssetName.includes('KRW') ? '원' : transaction.fromAssetName.includes('VND') ? '동' : transaction.fromAssetName.includes('USD') ? '$' : ''}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {transaction.fromAssetName}
-                    </div>
+              {/* 출금 → 입금 → 환율을 한 줄에 표시 */}
+              <div className="flex items-center justify-between py-2">
+                <div className="text-center flex-1">
+                  <div className="text-xs text-gray-500 mb-1">출금</div>
+                  <div className="font-semibold text-sm">
+                    {formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString())} {transaction.fromAssetName.includes('KRW') ? '원' : transaction.fromAssetName.includes('VND') ? '동' : transaction.fromAssetName.includes('USD') ? '$' : ''}
                   </div>
-                  <ArrowRight className="text-gray-400" size={24} />
-                  <div className="text-center">
-                    <div className="text-sm text-gray-500 mb-1">입금</div>
-                    <div className="font-semibold text-lg">
-                      {formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString())} {transaction.toAssetName.includes('KRW') ? '원' : transaction.toAssetName.includes('VND') ? '동' : transaction.toAssetName.includes('USD') ? '$' : ''}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {transaction.toAssetName}
-                    </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {transaction.fromAssetName}
                   </div>
                 </div>
-              </div>
-
-              {transaction.rate && parseFloat(transaction.rate.toString()) > 0 && (
-                <>
-                  <Separator />
-                  <div className="text-center">
-                    <div className="text-sm text-gray-500 mb-1">적용 환율</div>
-                    <div className="font-semibold text-lg">
-                      {(() => {
-                        const rate = parseFloat(transaction.rate.toString());
-                        // KRW→VND인 경우 소숫점 2자리 표시
-                        if (transaction.fromAssetName.includes('KRW') && transaction.toAssetName.includes('VND')) {
-                          return rate.toFixed(2);
-                        }
-                        // 다른 통화간은 정수 표시
-                        return formatInputWithCommas(Math.floor(rate).toString());
-                      })()}
-                    </div>
+                
+                <div className="px-2">
+                  <ArrowRight className="text-gray-400" size={16} />
+                </div>
+                
+                <div className="text-center flex-1">
+                  <div className="text-xs text-gray-500 mb-1">입금</div>
+                  <div className="font-semibold text-sm">
+                    {formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString())} {transaction.toAssetName.includes('KRW') ? '원' : transaction.toAssetName.includes('VND') ? '동' : transaction.toAssetName.includes('USD') ? '$' : ''}
                   </div>
-                </>
-              )}
+                  <div className="text-xs text-gray-500 mt-1">
+                    {transaction.toAssetName}
+                  </div>
+                </div>
+
+                {transaction.rate && parseFloat(transaction.rate.toString()) > 0 && (
+                  <>
+                    <div className="px-2">
+                      <ArrowRight className="text-gray-400" size={16} />
+                    </div>
+                    <div className="text-center flex-1">
+                      <div className="text-xs text-gray-500 mb-1">적용 환율</div>
+                      <div className="font-semibold text-sm">
+                        {(() => {
+                          const rate = parseFloat(transaction.rate.toString());
+                          // KRW→VND인 경우 소숫점 2자리 표시
+                          if (transaction.fromAssetName.includes('KRW') && transaction.toAssetName.includes('VND')) {
+                            return rate.toFixed(2);
+                          }
+                          // 다른 통화간은 정수 표시
+                          return formatInputWithCommas(Math.floor(rate).toString());
+                        })()}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
               {transaction.profit && parseFloat(transaction.profit.toString()) !== 0 && (
                 <>
@@ -209,7 +215,7 @@ export default function TransactionDetailModal({
                             {relatedTx.toAssetName}
                           </div>
                         </div>
-                        <div className={`font-semibold text-sm ${
+                        <div className={`font-bold text-lg ${
                           parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) 
                             ? 'text-green-600' 
                             : 'text-red-600'
@@ -248,6 +254,7 @@ export default function TransactionDetailModal({
               </CardContent>
             </Card>
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

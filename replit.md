@@ -2,6 +2,12 @@
 
 This is a full-stack asset management and exchange tracking application for managing various financial assets including cash, bank accounts, and cryptocurrency holdings, and tracking exchange transactions. It provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
+## Recent Changes (August 21, 2025)
+- **거래 상세 모달 UI 개선 완성**: 고정 헤더(sticky header), 출금-입금-환율 한 줄 배치, 컴팩트 디자인, 자산 변동 내역 금액 강조 표시
+- **메인 거래만 리스트 표시 시스템**: 거래내역에서 메인 거래(cash_exchange, 계좌이체)만 표시하고 부가 거래(cash_change)는 상세 모달에서 표시
+- **거래 분류 시스템 완성**: isMainTransaction, parentTransactionId 필드로 메인 거래와 부가 거래 구분
+- **데이터베이스 스키마 확장**: 거래 테이블에 메인 거래 식별 필드 추가
+
 ## Recent Changes (August 20, 2025)
 - **확장된 계좌이체 시스템 완성**: 4가지 주요 계좌이체 패턴 완전 구현 (현금→KRW계좌, 현금→VND계좌, VND계좌→KRW계좌, KRW계좌→VND계좌)
 - **계좌 선택 UI 시스템**: 동적 계좌 선택 드롭다운과 잔액 표시 기능 구현
