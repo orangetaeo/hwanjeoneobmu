@@ -1940,10 +1940,8 @@ export default function CardBasedTransactionForm({
             />
           </div>
           
-          {/* 고객 계좌 정보 - 계좌이체 거래 시에만 표시 */}
-          {selectedTransactionType.includes('_to_') && (
-            selectedTransactionType.includes('_account') || outputCards.some(card => card.type === 'account')
-          ) && (
+          {/* 고객 계좌 정보 - 출금 카드 중 계좌가 있을 때 표시 */}
+          {outputCards.some(card => card.type === 'account') && (
             <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
               <div className="flex items-center mb-3">
                 <Banknote className="mr-2 text-orange-600" size={20} />
