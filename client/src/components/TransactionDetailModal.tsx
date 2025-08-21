@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react';
 import { Transaction } from '@/types';
 import { formatInputWithCommas } from '@/utils/helpers';
 import { useQuery } from '@tanstack/react-query';
@@ -78,14 +78,23 @@ export default function TransactionDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" showClose={false}>
         <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Badge variant="outline" className="px-2 py-1 text-xs">
-              {getTransactionTypeText(transaction.type)}
-            </Badge>
-            <span className="text-base">거래 상세</span>
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Badge variant="outline" className="px-2 py-1 text-xs">
+                {getTransactionTypeText(transaction.type)}
+              </Badge>
+              <span className="text-base">거래 상세</span>
+            </DialogTitle>
+            <button
+              onClick={onClose}
+              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </button>
+          </div>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto">
