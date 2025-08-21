@@ -1000,7 +1000,8 @@ export default function TransactionForm() {
       rate: formData.exchangeRate,
       fees: "0",
       profit: floorProfit.toString(),
-      memo: formData.memo,
+      memo: formData.transactionType === "cash_to_krw_account" ? 
+        formData.memo.replace(/\-/g, '') : formData.memo,
       metadata: {
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
@@ -1522,7 +1523,13 @@ export default function TransactionForm() {
                         <Input
                           placeholder="예금주명 입력 (필수)"
                           value={formData.customerName}
-                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // 한글, 영어, 공백만 허용
+                            if (/^[가-힣a-zA-Z\s]*$/.test(value)) {
+                              setFormData({ ...formData, customerName: value });
+                            }
+                          }}
                           data-testid="input-customer-name"
                           className="border-red-200 focus:border-red-400 mt-1"
                           required
@@ -1533,7 +1540,13 @@ export default function TransactionForm() {
                         <Input
                           placeholder="은행명 입력 (필수)"
                           value={formData.customerPhone}
-                          onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // 한글, 영어, 공백만 허용
+                            if (/^[가-힣a-zA-Z\s]*$/.test(value)) {
+                              setFormData({ ...formData, customerPhone: value });
+                            }
+                          }}
                           data-testid="input-customer-bank"
                           className="border-red-200 focus:border-red-400 mt-1"
                           required
@@ -1544,7 +1557,13 @@ export default function TransactionForm() {
                         <Input
                           placeholder="계좌번호 입력 (필수)"
                           value={formData.memo}
-                          onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // 숫자와 하이픈만 허용
+                            if (/^[0-9\-]*$/.test(value)) {
+                              setFormData({ ...formData, memo: value });
+                            }
+                          }}
                           data-testid="input-customer-account"
                           className="border-red-200 focus:border-red-400 mt-1"
                           required
@@ -2436,13 +2455,7 @@ export default function TransactionForm() {
                 </div>
                 
                 {/* 고객 계좌 정보는 받는 권종과 같은 줄로 이동됨 */}
-                {formData.transactionType === "cash_to_krw_account" ? (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="text-sm text-yellow-700">
-                      고객 계좌 정보는 우측에 입력해주세요
-                    </div>
-                  </div>
-                ) : (
+                {formData.transactionType !== "cash_to_krw_account" && (
                   // 기존 선택사항 정보
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2588,111 +2601,6 @@ export default function TransactionForm() {
                         </div>
                       </div>
                       
-                      {/* VND 권종별 분배 상세 */}
-                      {formData.toCurrency === "VND" && (() => {
-                        // 기본 분배 계산
-                        const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
-                          if (amount && parseFloat(amount) > 0) {
-                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                            return total + (parseFloat(amount) * denomValue);
-                          }
-                          return total;
-                        }, 0);
-
-                        // 권종별로 정확한 환율 적용해서 계산한 실제 금액 사용
-                        console.log("VND 분배용 targetAmount 계산 시작:");
-                        const targetAmount = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
-                          if (amount && parseFloat(amount) > 0) {
-                            const denomValue = getDenominationValue(formData.fromCurrency, denom);
-                            const totalFromCurrency = parseFloat(amount) * denomValue;
-                            
-                            const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
-                            const rate = formData.fromCurrency === "KRW" ? 
-                              parseFloat(rateInfo?.mySellRate || "0") :
-                              parseFloat(rateInfo?.myBuyRate || "0");
-                            
-                            const subtotal = totalFromCurrency * rate;
-                            console.log(`분배용: ${denom} ${amount}장 × ${denomValue} × ${rate} = ${subtotal}`);
-                            return total + subtotal;
-                          }
-                          return total;
-                        }, 0);
-                        console.log(`분배용 targetAmount: ${targetAmount}`);
-                        
-                        // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
-                        const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
-                        
-                        // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
-                        const actualBreakdown = (vndBreakdown && Object.keys(vndBreakdown).length > 0) 
-                          ? vndBreakdown 
-                          : (fixedBreakdown as Record<string, number>);
-
-                        // VND 분배가 있는 경우에만 표시
-                        const hasBreakdown = Object.entries(actualBreakdown).some(([denom, count]) => parseInt(count.toString()) > 0);
-                        
-                        if (hasBreakdown) {
-                          return (
-                            <div className="mt-2 pt-2 border-t border-gray-200/50">
-                              <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
-                              <div className="space-y-1">
-                                {Object.entries(actualBreakdown)
-                                  .filter(([denom, count]) => parseInt(count?.toString() || "0") > 0)
-                                  .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                                  .map(([denom, count]) => {
-                                    const denomValue = parseInt(denom);
-                                    const denomCount = parseInt(count?.toString() || "0");
-                                    const subtotal = denomValue * denomCount;
-                                    return (
-                                      <div key={denom} className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-600">
-                                          {formatNumber(denomValue.toString())} VND × {denomCount}장
-                                        </span>
-                                        <span className="text-gray-700 font-medium">
-                                          {formatNumber(subtotal.toString())} VND
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                      
-                      {/* KRW 권종별 분배 상세 */}
-                      {formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0 && (() => {
-                        // KRW 분배가 있는 경우에만 표시
-                        const hasBreakdown = Object.entries(krwBreakdown).some(([denom, count]) => count > 0);
-                        
-                        if (hasBreakdown) {
-                          return (
-                            <div className="mt-2 pt-2 border-t border-gray-200/50">
-                              <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
-                              <div className="space-y-1">
-                                {Object.entries(krwBreakdown)
-                                  .filter(([denom, count]) => count > 0)
-                                  .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                                  .map(([denom, count]) => {
-                                    const denomValue = parseInt(denom);
-                                    const subtotal = denomValue * count;
-                                    return (
-                                      <div key={denom} className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-600">
-                                          {formatNumber(denomValue.toString())} KRW × {count}장
-                                        </span>
-                                        <span className="text-gray-700 font-medium">
-                                          {formatNumber(subtotal.toString())} KRW
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
 
                       {/* KRW 보유량 부족 경고 */}
                       {formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0 && (() => {
@@ -2741,40 +2649,6 @@ export default function TransactionForm() {
                           );
                         }
 
-                        return null;
-                      })()}
-                      
-                      {/* USD 권종별 분배 상세 */}
-                      {formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0 && (() => {
-                        // USD 분배가 있는 경우에만 표시
-                        const hasBreakdown = Object.entries(usdBreakdown).some(([denom, count]) => count > 0);
-                        
-                        if (hasBreakdown) {
-                          return (
-                            <div className="mt-2 pt-2 border-t border-gray-200/50">
-                              <div className="text-xs text-gray-500 mb-2 font-medium">권종별 분배 내역:</div>
-                              <div className="space-y-1">
-                                {Object.entries(usdBreakdown)
-                                  .filter(([denom, count]) => count > 0)
-                                  .sort(([a], [b]) => parseInt(b) - parseInt(a))
-                                  .map(([denom, count]) => {
-                                    const denomValue = parseInt(denom);
-                                    const subtotal = denomValue * count;
-                                    return (
-                                      <div key={denom} className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-600">
-                                          ${denomValue} × {count}장
-                                        </span>
-                                        <span className="text-gray-700 font-medium">
-                                          ${subtotal}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            </div>
-                          );
-                        }
                         return null;
                       })()}
                     </div>
@@ -3061,6 +2935,17 @@ export default function TransactionForm() {
               disabled={(() => {
                 // 기존 비활성화 조건
                 if (createTransactionMutation.isPending) return true;
+
+                // 현금 -> KRW 계좌이체의 경우 고객 계좌 정보 필수 검증
+                if (formData.transactionType === "cash_to_krw_account") {
+                  const hasCustomerName = formData.customerName && formData.customerName.trim().length > 0;
+                  const hasBankName = formData.customerPhone && formData.customerPhone.trim().length > 0;
+                  const hasAccountNumber = formData.memo && formData.memo.trim().length > 0;
+                  
+                  if (!hasCustomerName || !hasBankName || !hasAccountNumber) {
+                    return true;
+                  }
+                }
 
                 // KRW→USD 거래시 버튼 활성화 조건 검증
                 if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
