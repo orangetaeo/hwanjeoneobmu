@@ -53,7 +53,7 @@ const CURRENCY_DENOMINATIONS = {
 // 거래 유형별 설정
 const TRANSACTION_TYPES = [
   { value: "cash_exchange", label: "현금 환전", icon: ArrowRightLeft },
-  { value: "cash_to_krw_account", label: "현금 → KRW 계좌이체(카카오뱅크 3333-03-1258874 예금주:김학태)", icon: Banknote },
+  { value: "cash_to_krw_account", label: "현금 → KRW 계좌이체", icon: Banknote },
   { value: "vnd_account_to_krw_account", label: "VND 계좌 → KRW 계좌이체", icon: TrendingUp },
   { value: "cash_to_vnd_account", label: "현금 → VND 계좌이체", icon: ArrowUpRight },
   { value: "krw_account_to_vnd_account", label: "KRW 계좌 → VND 계좌이체", icon: ArrowDownLeft }
@@ -1082,6 +1082,7 @@ export default function TransactionForm() {
             <div>
               <Label>거래 유형</Label>
               <Select 
+                key={`transaction-type-${formData.transactionType}`}
                 value={formData.transactionType} 
                 onValueChange={(value) => {
                   // 기본값 설정
@@ -1098,6 +1099,7 @@ export default function TransactionForm() {
                   }
                   
                   console.log('거래유형 변경:', value, newFormData);
+                  // 즉시 상태 업데이트
                   setFormData(newFormData);
                 }}
               >
@@ -1121,30 +1123,34 @@ export default function TransactionForm() {
                 <Select 
                   value={formData.fromCurrency} 
                   onValueChange={(value) => {
+                    console.log('fromCurrency 변경 전:', { transactionType: formData.transactionType, fromCurrency: formData.fromCurrency, toCurrency: formData.toCurrency, newFrom: value });
+                    
                     // 거래유형별 통화 자동 설정
                     let newToCurrency = formData.toCurrency;
+                    
+                    // cash_to_krw_account일 때는 항상 toCurrency를 KRW로 고정
                     if (formData.transactionType === "cash_to_krw_account") {
-                      // 현금 → KRW 계좌이체: 주는 통화를 KRW로 고정
                       newToCurrency = "KRW";
                     } else if (formData.transactionType === "vnd_account_to_krw_account") {
-                      // VND 계좌 → KRW 계좌: fromCurrency를 VND로, toCurrency를 KRW로 고정
                       newToCurrency = "KRW";
                     } else if (formData.transactionType === "cash_to_vnd_account") {
                       newToCurrency = "VND";
                     } else if (formData.transactionType === "krw_account_to_vnd_account") {
-                      // KRW 계좌 → VND 계좌: fromCurrency를 KRW로, toCurrency를 VND로 고정
                       newToCurrency = "VND";
                     } else {
-                      // 일반적인 경우: 받는 통화가 변경되었을 때 주는 통화가 동일하면 초기화
+                      // 일반 환전의 경우만 동일 통화 방지 로직 적용
                       newToCurrency = value === formData.toCurrency ? "" : formData.toCurrency;
                     }
-                    setFormData({ 
+                    const newFormData = { 
                       ...formData, 
                       fromCurrency: value, 
                       toCurrency: newToCurrency,
                       fromDenominations: [], 
                       denominationAmounts: {} 
-                    });
+                    };
+                    
+                    console.log('fromCurrency 변경 후:', newFormData);
+                    setFormData(newFormData);
                   }}
                 >
                   <SelectTrigger data-testid="select-from-currency">
@@ -1315,7 +1321,7 @@ export default function TransactionForm() {
                     )}
                     
                     {/* VND 계좌 선택 (cash_to_vnd_account용) */}
-                    {formData.transactionType === "cash_to_vnd_account" && formData.toCurrency === "VND" && (
+                    {(formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") && formData.toCurrency === "VND" && (
                       <div className="mt-2">
                         <Label className="text-sm">입금 계좌 선택</Label>
                         <Select value={formData.toAssetId} onValueChange={(value) => setFormData({ ...formData, toAssetId: value })}>
