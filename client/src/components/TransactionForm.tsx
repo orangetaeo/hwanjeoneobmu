@@ -386,15 +386,19 @@ export default function TransactionForm() {
 
   // 환율 포맷팅 함수
   const formatRate = (rate: number, fromCurrency: string, toCurrency: string) => {
-    // 받는 권종에 따른 매매시세 표기 방식
-    if (toCurrency === "KRW") {
+    // USD→VND와 USD→KRW는 정수만 표기
+    if (fromCurrency === "USD" && (toCurrency === "VND" || toCurrency === "KRW")) {
+      return Math.round(rate).toLocaleString('ko-KR');
+    }
+    // 받는 권종에 따른 매매시세 표기 방식 (기존 로직)
+    else if (toCurrency === "KRW") {
       // KRW: 소수점 2자리까지 표기
       return rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     } else if (toCurrency === "USD") {
       // USD: 정수만 표기
       return Math.round(rate).toLocaleString('ko-KR');
     } else if (toCurrency === "VND") {
-      // VND: 소수점 2자리까지 표기 (KRW→VND, USD→VND 환율 표시)
+      // VND: 소수점 2자리까지 표기 (KRW→VND 환율 표시)
       return rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     } else {
       return rate.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
