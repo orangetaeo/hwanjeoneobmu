@@ -1280,7 +1280,7 @@ export default function TransactionForm() {
                     )}
                     
                     {/* VND 계좌 선택 (cash_to_vnd_account 및 krw_account_to_vnd_account용) */}
-                    {(formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") && (
+                    {(formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") && formData.toCurrency === "VND" && (
                       <div className="mt-2">
                         <Label className="text-sm">입금 계좌 선택</Label>
                         <Select value={formData.toAssetId} onValueChange={(value) => setFormData({ ...formData, toAssetId: value })}>

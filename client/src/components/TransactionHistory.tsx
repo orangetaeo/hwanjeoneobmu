@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowUpDown, Calendar, Filter, Search, TrendingDown, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { Transaction } from '@/types';
 import { formatInputWithCommas, formatTransactionAmount, formatExchangeRate } from '@/utils/helpers';
+import TransactionDetailModal from './TransactionDetailModal';
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
@@ -18,6 +19,16 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const handleTransactionClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsDetailModalOpen(true);
+    if (onTransactionClick) {
+      onTransactionClick(transaction);
+    }
+  };
 
   const getTransactionTypeText = (type: string) => {
     switch (type) {
@@ -29,6 +40,16 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
         return '거래소 이동';
       case 'p2p_trade':
         return 'P2P 거래';
+      case 'cash_exchange':
+        return '현금 환전';
+      case 'cash_to_krw_account':
+        return '현금→KRW계좌';
+      case 'cash_to_vnd_account':
+        return '현금→VND계좌';
+      case 'vnd_account_to_krw_account':
+        return 'VND계좌→KRW계좌';
+      case 'krw_account_to_vnd_account':
+        return 'KRW계좌→VND계좌';
       case 'cash_change':
         return '현금 증감';
       case 'exchange':
@@ -39,6 +60,25 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
         return type;
     }
   };
+
+  // 메인 거래 타입 확인 함수
+  const isMainTransaction = (type: string) => {
+    const mainTransactionTypes = [
+      'cash_exchange',
+      'cash_to_krw_account', 
+      'cash_to_vnd_account',
+      'vnd_account_to_krw_account',
+      'krw_account_to_vnd_account',
+      'bank_to_exchange',
+      'exchange_purchase',
+      'exchange_transfer',
+      'p2p_trade'
+    ];
+    return mainTransactionTypes.includes(type);
+  };
+
+  // 메인 거래만 필터링
+  const mainTransactions = transactions.filter(transaction => isMainTransaction(transaction.type));
 
   const getTransactionTypeColor = (type: string) => {
     switch (type) {
@@ -73,7 +113,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
     }
   };
 
-  const filteredTransactions = transactions
+  const filteredTransactions = mainTransactions
     .filter(transaction => {
       const matchesSearch = 
         transaction.fromAssetName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,22 +133,22 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
           bValue = new Date(b.timestamp).getTime();
           break;
         case 'fromAmount':
-          aValue = a.fromAmount;
-          bValue = b.fromAmount;
+          aValue = parseFloat(a.fromAmount);
+          bValue = parseFloat(b.fromAmount);
           break;
         case 'toAmount':
-          aValue = a.toAmount;
-          bValue = b.toAmount;
+          aValue = parseFloat(a.toAmount);
+          bValue = parseFloat(b.toAmount);
           break;
         case 'profit':
-          aValue = a.profit;
-          bValue = b.profit;
+          aValue = parseFloat(a.profit || '0');
+          bValue = parseFloat(b.profit || '0');
           break;
         default:
           return 0;
       }
       
-      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      return sortOrder === 'asc' ? (aValue < bValue ? -1 : 1) : (bValue < aValue ? -1 : 1);
     });
 
   const formatDateTime = (timestamp: any) => {
@@ -204,7 +244,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
               <Card 
                 key={transaction.id} 
                 className="p-2 sm:p-4 hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
-                onClick={() => onTransactionClick?.(transaction)}
+                onClick={() => handleTransactionClick(transaction)}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -412,6 +452,13 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
           </div>
         </Card>
       )}
+
+      {/* 거래 상세 모달 */}
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+      />
     </div>
   );
 }

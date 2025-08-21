@@ -30,6 +30,8 @@ export const transactions = pgTable("transactions", {
   status: text("status").default("pending"), // 'pending', 'confirmed', 'cancelled' - 기본값 pending으로 변경
   memo: text("memo"),
   metadata: jsonb("metadata"), // 추가 정보 (거래소명, P2P 플랫폼 등)
+  parentTransactionId: varchar("parent_transaction_id"), // 관련 메인 거래 ID
+  isMainTransaction: text("is_main_transaction").default("true"), // 'true'는 메인 거래, 'false'는 부가 거래
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 

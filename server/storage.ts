@@ -61,6 +61,7 @@ export class DatabaseStorage implements IStorage {
     const transactionData = {
       ...transaction,
       status: (transaction.type === 'binance_p2p' || transaction.type === 'p2p_trade') ? 'pending' : 'confirmed',
+      isMainTransaction: this.isMainTransactionType(transaction.type) ? 'true' : 'false',
       userId
     };
     
@@ -76,7 +77,7 @@ export class DatabaseStorage implements IStorage {
       
       // confirmed 상태인 경우에만 자산 이동 처리
       if (transactionData.status === 'confirmed') {
-        await this.handleAssetMovement(userId, transaction);
+        await this.handleAssetMovement(userId, transaction, createdTransaction.id);
       }
       
       return createdTransaction;
@@ -91,7 +92,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  public async handleAssetMovement(userId: string, transaction: InsertTransaction | Transaction) {
+  // 메인 거래 타입인지 확인하는 헬퍼 함수
+  private isMainTransactionType(type: string): boolean {
+    const mainTransactionTypes = [
+      'cash_exchange',
+      'cash_to_krw_account', 
+      'cash_to_vnd_account',
+      'vnd_account_to_krw_account',
+      'krw_account_to_vnd_account',
+      'bank_to_exchange',
+      'exchange_purchase',
+      'exchange_transfer',
+      'p2p_trade'
+    ];
+    return mainTransactionTypes.includes(type);
+  }
+
+  public async handleAssetMovement(userId: string, transaction: InsertTransaction | Transaction, parentTransactionId?: string) {
     console.log('=== handleAssetMovement 시작 ===', {
       userId,
       transactionType: transaction.type,
@@ -142,7 +159,7 @@ export class DatabaseStorage implements IStorage {
       case 'cash_exchange':
         console.log('현금 환전 자산 이동 처리');
         // 현금 환전: fromCurrency 현금 감소, toCurrency 현금 증가 (권종별 분배 포함)
-        await this.moveAssetsCashExchange(userId, transaction);
+        await this.moveAssetsCashExchange(userId, transaction, parentTransactionId);
         break;
 
       case 'cash_to_krw_account':
@@ -623,7 +640,9 @@ export class DatabaseStorage implements IStorage {
       await db.insert(transactions).values({
         ...transaction,
         userId,
-        id: crypto.randomUUID()
+        id: crypto.randomUUID(),
+        parentTransactionId: undefined, // 자산 수정으로 인한 cash_change는 부모 없음
+        isMainTransaction: 'false' // cash_change는 부가 거래
       });
       
       console.log('현금 자산 수정으로 cash_change 거래 생성:', {
@@ -888,7 +907,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // 현금 환전 자산 이동 처리
-  private async moveAssetsCashExchange(userId: string, transaction: InsertTransaction | Transaction) {
+  private async moveAssetsCashExchange(userId: string, transaction: InsertTransaction | Transaction, parentTransactionId?: string) {
     console.log('=== 현금 환전 자산 이동 시작 ===');
     
     const fromAmount = parseFloat(transaction.fromAmount);
