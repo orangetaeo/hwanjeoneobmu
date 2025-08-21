@@ -1193,35 +1193,6 @@ export default function TransactionForm() {
                       권종별 총액 합계
                     </div>
                   </div>
-                ) : formData.transactionType === "cash_to_krw_account" ? (
-                  // 현금 → KRW 계좌이체: 단순 총액 입력
-                  <Input
-                    type="number"
-                    step="1000"
-                    placeholder="0"
-                    value={formData.fromAmount}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData({ ...formData, fromAmount: value });
-                      
-                      // 매도시세로 KRW 환산 계산
-                      if (value && parseFloat(value) > 0) {
-                        const rate = calculateAverageExchangeRate();
-                        if (rate > 0) {
-                          const krwAmount = Math.ceil((parseFloat(value) * rate) / 1000) * 1000; // 1000원 단위 올림
-                          setFormData(prev => ({ 
-                            ...prev, 
-                            toAmount: krwAmount.toString(),
-                            exchangeRate: rate.toString()
-                          }));
-                        }
-                      } else {
-                        setFormData(prev => ({ ...prev, toAmount: "0", exchangeRate: "" }));
-                      }
-                    }}
-                    data-testid="input-from-amount"
-                    className="mt-2 text-lg font-medium"
-                  />
                 ) : (
                   <Input
                     type="number"
@@ -1278,45 +1249,7 @@ export default function TransactionForm() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <Label>받는 권종 ({formData.fromCurrency})</Label>
-                {formData.transactionType === "cash_to_krw_account" ? (
-                  // 현금 → KRW 계좌이체: 매매시세 정보 표시
-                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mt-2">
-                    <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
-                      <span className="mr-2">📊</span>
-                      매매시세 정보
-                    </div>
-                    
-                    {(() => {
-                      const mainRate = getDenominationRate(formData.fromCurrency, formData.toCurrency, formData.fromCurrency === "VND" ? "500000" : "100");
-                      const sellRate = parseFloat(mainRate?.mySellRate || "0");
-                      const buyRate = parseFloat(mainRate?.myBuyRate || "0");
-                      const averageRate = (sellRate + buyRate) / 2;
-                      
-                      return (
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center p-2 bg-white rounded border">
-                            <span className="text-sm text-gray-600">매도시세</span>
-                            <span className="font-bold text-red-600">
-                              {sellRate > 0 ? sellRate.toFixed(3) : "N/A"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center p-2 bg-white rounded border">
-                            <span className="text-sm text-gray-600">매입시세</span>
-                            <span className="font-bold text-green-600">
-                              {buyRate > 0 ? buyRate.toFixed(3) : "N/A"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center p-2 bg-blue-50 rounded border border-blue-200">
-                            <span className="text-sm font-medium text-blue-700">평균시세</span>
-                            <span className="font-bold text-blue-700">
-                              {averageRate > 0 ? averageRate.toFixed(3) : "N/A"}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : (formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") ? (
+                {(formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") ? (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <Input
                       type="number"
