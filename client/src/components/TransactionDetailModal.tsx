@@ -218,8 +218,8 @@ export default function TransactionDetailModal({
             </CardContent>
           </Card>
 
-          {/* 자산 변동 내역 */}
-          {relatedTransactions.length > 0 && (
+          {/* 자산 변동 내역 - 현금 환전 거래에만 표시 */}
+          {relatedTransactions.length > 0 && transaction.type === 'cash_exchange' && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">자산 변동 내역</CardTitle>
