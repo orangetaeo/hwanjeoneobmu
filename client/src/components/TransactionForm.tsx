@@ -182,13 +182,23 @@ export default function TransactionForm() {
   // 권종별 VND → KRW 매매시세 계산 함수
   const getVndToKrwDisplayRate = useCallback((denomination: string) => {
     if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW" && Array.isArray(exchangeRates)) {
-      // 해당 권종의 VND → KRW 내 매입가 조회 (VND를 받는 상황이므로 매입가 사용)
-      const specificRate = exchangeRates.find((rate: any) => 
+      // 우선 해당 권종의 VND → KRW 환율 조회
+      let specificRate = exchangeRates.find((rate: any) => 
         rate.fromCurrency === "VND" && 
         rate.toCurrency === "KRW" && 
         rate.denomination === denomination &&
         rate.isActive === "true"
       );
+      
+      // 해당 권종 환율이 없으면 500000 권종 환율을 대표값으로 사용
+      if (!specificRate) {
+        specificRate = exchangeRates.find((rate: any) => 
+          rate.fromCurrency === "VND" && 
+          rate.toCurrency === "KRW" && 
+          rate.denomination === "500000" &&
+          rate.isActive === "true"
+        );
+      }
       
       if (specificRate) {
         const vndToKrwBuyRate = parseFloat(specificRate.myBuyRate);
