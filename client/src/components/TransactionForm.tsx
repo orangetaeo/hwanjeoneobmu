@@ -1097,6 +1097,7 @@ export default function TransactionForm() {
                     };
                   }
                   
+                  console.log('거래유형 변경:', value, newFormData);
                   setFormData(newFormData);
                 }}
               >
@@ -1123,8 +1124,8 @@ export default function TransactionForm() {
                     // 거래유형별 통화 자동 설정
                     let newToCurrency = formData.toCurrency;
                     if (formData.transactionType === "cash_to_krw_account") {
-                      // 현금 → KRW 계좌이체는 받는 통화를 VND로 유지 (사용자 요청사항)
-                      newToCurrency = formData.toCurrency || "VND";
+                      // 현금 → KRW 계좌이체: 주는 통화를 KRW로 고정
+                      newToCurrency = "KRW";
                     } else if (formData.transactionType === "vnd_account_to_krw_account") {
                       // VND 계좌 → KRW 계좌: fromCurrency를 VND로, toCurrency를 KRW로 고정
                       newToCurrency = "KRW";
@@ -1314,7 +1315,7 @@ export default function TransactionForm() {
                     )}
                     
                     {/* VND 계좌 선택 (cash_to_vnd_account용) */}
-                    {(formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") && formData.toCurrency === "VND" && (
+                    {formData.transactionType === "cash_to_vnd_account" && formData.toCurrency === "VND" && (
                       <div className="mt-2">
                         <Label className="text-sm">입금 계좌 선택</Label>
                         <Select value={formData.toAssetId} onValueChange={(value) => setFormData({ ...formData, toAssetId: value })}>
