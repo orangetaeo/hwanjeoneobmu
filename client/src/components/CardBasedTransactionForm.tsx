@@ -39,13 +39,33 @@ interface TransactionCard {
   errors?: string[];
 }
 
-// 거래 유형별 설정
+// 자동 거래 유형 결정 함수
+const determineTransactionType = (fromType: string, fromCurrency: string, toType: string, toCurrency: string): string => {
+  // 현금 → 계좌
+  if (fromType === 'cash' && toType === 'account') {
+    return toCurrency === 'KRW' ? 'cash_to_krw_account' : 'cash_to_vnd_account';
+  }
+  // 계좌 → 현금
+  if (fromType === 'account' && toType === 'cash') {
+    return fromCurrency === 'KRW' ? 'krw_account_to_cash' : 'vnd_account_to_cash';
+  }
+  // 계좌 → 계좌
+  if (fromType === 'account' && toType === 'account') {
+    return fromCurrency === 'VND' ? 'vnd_account_to_krw_account' : 'krw_account_to_vnd_account';
+  }
+  // 기본값: 현금 환전
+  return 'cash_exchange';
+};
+
+// 확장된 거래 유형 (계좌→현금 패턴 추가)
 const TRANSACTION_TYPES = [
   { value: "cash_exchange", label: "현금 환전", icon: ArrowRightLeft },
   { value: "cash_to_krw_account", label: "현금 → KRW 계좌이체", icon: Banknote },
-  { value: "vnd_account_to_krw_account", label: "VND 계좌 → KRW 계좌이체", icon: TrendingUp },
   { value: "cash_to_vnd_account", label: "현금 → VND 계좌이체", icon: ArrowUpRight },
-  { value: "krw_account_to_vnd_account", label: "KRW 계좌 → VND 계좌이체", icon: ArrowDownLeft }
+  { value: "krw_account_to_cash", label: "KRW 계좌 → 현금 출금", icon: ArrowDownLeft },
+  { value: "vnd_account_to_cash", label: "VND 계좌 → 현금 출금", icon: ArrowDownLeft },
+  { value: "vnd_account_to_krw_account", label: "VND 계좌 → KRW 계좌이체", icon: TrendingUp },
+  { value: "krw_account_to_vnd_account", label: "KRW 계좌 → VND 계좌이체", icon: TrendingUp }
 ];
 
 // 권종별 설정
@@ -89,7 +109,7 @@ export default function CardBasedTransactionForm({
     queryKey: ["/api/exchange-rates"],
   });
 
-  // 기본 폼 상태
+  // 기본 폼 상태 (거래 유형은 자동 결정됨)
   const [selectedTransactionType, setSelectedTransactionType] = useState('cash_exchange');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -279,7 +299,7 @@ export default function CardBasedTransactionForm({
 
   // 실시간 추천 시스템
   const generateRecommendations = (card: TransactionCard): { type: string; message: string; action?: () => void }[] => {
-    const recommendations = [];
+    const recommendations: { type: string; message: string; action?: () => void }[] = [];
     
     if (!card.amount || !card.currency) return recommendations;
     
@@ -532,7 +552,7 @@ export default function CardBasedTransactionForm({
         totalInputAmount,
         totalOutputAmount,
         cardCount: inputCards.length + outputCards.length,
-        currencies: [...new Set([...inputCards, ...outputCards].map(card => card.currency))],
+        currencies: Array.from(new Set([...inputCards, ...outputCards].map(card => card.currency))),
         estimatedTime: `${transactions.length * 2}분`,
         fees: calculateEstimatedFees(transactions)
       }
@@ -1087,8 +1107,13 @@ export default function CardBasedTransactionForm({
       const outputAmount = parseCommaFormattedNumber(outputCard.amount) || 0;
 
       if (inputAmount > 0 && outputAmount > 0) {
-        // 거래 타입 결정
-        let transactionType = selectedTransactionType;
+        // 거래 타입 자동 결정
+        let transactionType = determineTransactionType(
+          inputCard.type, 
+          inputCard.currency, 
+          outputCard.type, 
+          outputCard.currency
+        );
         
         // 환율 계산
         const exchangeRate = getExchangeRate(inputCard.currency, outputCard.currency);
@@ -1122,8 +1147,13 @@ export default function CardBasedTransactionForm({
         const allocatedInputAmount = inputAmount * outputRatio;
 
         if (allocatedInputAmount > 0 && outputAmount > 0) {
-          // 거래 타입 결정
-          let transactionType = selectedTransactionType;
+          // 거래 타입 자동 결정
+          let transactionType = determineTransactionType(
+            primaryInputCard.type, 
+            primaryInputCard.currency, 
+            outputCard.type, 
+            outputCard.currency
+          );
 
           // 환율 계산
           const exchangeRate = getExchangeRate(primaryInputCard.currency, outputCard.currency);
@@ -1221,7 +1251,7 @@ export default function CardBasedTransactionForm({
           if (shouldRollback) {
             // 성공한 거래들의 상태를 'cancelled'로 변경하여 롤백
             try {
-              const successfulResults = results.filter(r => r.success);
+              const successfulResults = successfulTransactions.filter((r: any) => r.success);
               
               for (const result of successfulResults) {
                 if (result.transactionId) {
@@ -1594,30 +1624,29 @@ export default function CardBasedTransactionForm({
         </CardHeader>
       </Card>
 
-      {/* 거래 유형 선택 */}
+      {/* 자동 거래 유형 상태 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center text-lg">
             <ArrowRightLeft className="mr-2" size={20} />
-            거래 유형
+            거래 유형 (자동 결정)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Select value={selectedTransactionType} onValueChange={setSelectedTransactionType}>
-            <SelectTrigger>
-              <SelectValue placeholder="거래 유형을 선택하세요" />
-            </SelectTrigger>
-            <SelectContent>
-              {TRANSACTION_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  <div className="flex items-center">
-                    <type.icon className="mr-2" size={16} />
-                    {type.label}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="flex items-center">
+              <CheckCircle className="mr-2 text-green-600" size={16} />
+              <span className="text-sm text-green-700 dark:text-green-300">
+                거래 유형은 선택한 통화에 따라 자동으로 결정됩니다
+              </span>
+            </div>
+            {(inputCards.length > 0 || outputCards.length > 0) && (
+              <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                감지된 패턴: {inputCards.map(c => `${c.type === 'cash' ? '현금' : '계좌'}(${c.currency})`).join(', ')} 
+                → {outputCards.map(c => `${c.type === 'cash' ? '현금' : '계좌'}(${c.currency})`).join(', ')}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -1687,7 +1716,7 @@ export default function CardBasedTransactionForm({
                 <Checkbox
                   id="autoCalculation"
                   checked={autoCalculation}
-                  onCheckedChange={setAutoCalculation}
+                  onCheckedChange={(checked) => setAutoCalculation(checked === true)}
                 />
                 <Label htmlFor="autoCalculation" className="text-xs">
                   자동 환율 계산
@@ -1699,7 +1728,7 @@ export default function CardBasedTransactionForm({
                 <Checkbox
                   id="showRecommendations"
                   checked={showRecommendations}
-                  onCheckedChange={setShowRecommendations}
+                  onCheckedChange={(checked) => setShowRecommendations(checked === true)}
                 />
                 <Label htmlFor="showRecommendations" className="text-xs">
                   실시간 추천 표시
@@ -1711,7 +1740,7 @@ export default function CardBasedTransactionForm({
                 <Checkbox
                   id="autoAdjustment"
                   checked={autoAdjustment}
-                  onCheckedChange={setAutoAdjustment}
+                  onCheckedChange={(checked) => setAutoAdjustment(checked === true)}
                 />
                 <Label htmlFor="autoAdjustment" className="text-xs">
                   자동 조정 활성화
@@ -1723,7 +1752,7 @@ export default function CardBasedTransactionForm({
                 <Checkbox
                   id="showExchangeRates"
                   checked={showExchangeRates}
-                  onCheckedChange={setShowExchangeRates}
+                  onCheckedChange={(checked) => setShowExchangeRates(checked === true)}
                 />
                 <Label htmlFor="showExchangeRates" className="text-xs">
                   환율 정보 표시
