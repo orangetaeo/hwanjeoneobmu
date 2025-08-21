@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -178,6 +178,25 @@ export default function TransactionForm() {
   const { data: exchangeRates = [], isLoading: isLoadingRates } = useQuery<any[]>({
     queryKey: ["/api/exchange-rates"],
   });
+
+  // VND → KRW 매매시세 계산 (컴포넌트 레벨에서 한 번만 계산)
+  const vndToKrwDisplayRate = useMemo(() => {
+    if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW" && Array.isArray(exchangeRates)) {
+      // USD → KRW 내 매도가 조회
+      const usdToKrwRate = exchangeRates.find((rate: any) => 
+        rate.fromCurrency === "USD" && 
+        rate.toCurrency === "KRW" && 
+        rate.isActive === "true"
+      );
+      
+      if (usdToKrwRate) {
+        const krwSellRate = parseFloat(usdToKrwRate.mySellRate);
+        console.log(`VND→KRW 컴포넌트 레벨 매매시세: ${krwSellRate}`);
+        return krwSellRate;
+      }
+    }
+    return 0;
+  }, [formData.fromCurrency, formData.toCurrency, exchangeRates]);
 
   // 환전상 시세 조회 (자동 환율 적용용)
   const fetchExchangeRate = async (fromCurrency: string, toCurrency: string, denomination: string, transactionType: 'buy' | 'sell') => {
@@ -1340,34 +1359,28 @@ export default function TransactionForm() {
                       const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom.value);
                       const isSelected = formData.fromDenominations.includes(denom.value);
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
-                      // VND → KRW의 경우 USD → KRW 내 매도가를 직접 사용
+                      // 매매시세 표시를 위한 변수 설정
                       let useRate = 0;
-                      let displayRate = 0; // 매매시세 박스에 표시할 값
+                      let displayRate = 0;
+                      
                       if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
-                        // USD → VND 내 매도가 조회 (환전 계산용)
+                        // VND → KRW의 경우 컴포넌트 레벨에서 계산한 값 사용
+                        displayRate = vndToKrwDisplayRate;
+                        
+                        // 환전 계산용 크로스 환율은 여전히 개별 계산
                         const usdToVndRate = exchangeRates?.find((rate: any) => 
                           rate.fromCurrency === "USD" && 
                           rate.toCurrency === "VND" && 
                           rate.isActive === "true"
                         );
-                        // USD → KRW 내 매도가 조회
-                        const usdToKrwRate = exchangeRates?.find((rate: any) => 
-                          rate.fromCurrency === "USD" && 
-                          rate.toCurrency === "KRW" && 
-                          rate.isActive === "true"
-                        );
-                        
-                        if (usdToVndRate && usdToKrwRate) {
+                        if (usdToVndRate && vndToKrwDisplayRate > 0) {
                           const vndSellRate = parseFloat(usdToVndRate.mySellRate);
-                          const krwSellRate = parseFloat(usdToKrwRate.mySellRate);
-                          useRate = krwSellRate / vndSellRate; // 환전 계산용 크로스 환율
-                          displayRate = krwSellRate; // 매매시세 박스에는 USD→KRW 내 매도가 원본값 표시
-                          console.log(`VND→KRW 설정: 계산용환율=${useRate}, 표시용=${displayRate}`);
+                          useRate = vndToKrwDisplayRate / vndSellRate;
                         }
                       } else {
                         // 기존 로직: 직접 환율 사용
                         useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
-                        displayRate = useRate; // 다른 통화는 동일값 사용
+                        displayRate = useRate;
                       }
                       
 
