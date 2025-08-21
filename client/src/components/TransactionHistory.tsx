@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown, Calendar, Filter, Search, TrendingDown, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { Transaction } from '@/types';
-import { formatInputWithCommas, formatTransactionAmount, formatExchangeRateByTransaction } from '@/utils/helpers';
+import { formatInputWithCommas, formatTransactionAmount, formatExchangeRateByTransaction, formatExchangeRate } from '@/utils/helpers';
 import TransactionDetailModal from './TransactionDetailModal';
 
 interface TransactionHistoryProps {
