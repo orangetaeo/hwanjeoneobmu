@@ -131,18 +131,16 @@ export const formatTransactionAmount = (amount: number | string, currency?: stri
 export const formatExchangeRateByTransaction = (rate: number, fromCurrency?: string, toCurrency?: string, transactionType?: string): string => {
   if (rate === null || rate === undefined || isNaN(rate)) return '0';
   
-  // KRW 현금 → VND 현금: 소숫점 2자리 표시
-  if (fromCurrency === 'KRW' && toCurrency === 'VND' && 
-      (transactionType === 'cash_exchange' || transactionType?.includes('cash'))) {
+  // KRW → VND 환율: 소숫점 2자리 표시 (현금 환전 포함)
+  if (fromCurrency === 'KRW' && toCurrency === 'VND') {
     return rate.toLocaleString('ko-KR', { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2 
     });
   }
   
-  // USD 현금 → VND 현금: 정수만 표시
-  if (fromCurrency === 'USD' && toCurrency === 'VND' && 
-      (transactionType === 'cash_exchange' || transactionType?.includes('cash'))) {
+  // USD → VND 환율: 정수만 표시 (현금 환전 포함)
+  if (fromCurrency === 'USD' && toCurrency === 'VND') {
     return Math.round(rate).toLocaleString('ko-KR');
   }
   
