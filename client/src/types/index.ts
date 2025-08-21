@@ -32,7 +32,7 @@ export interface BinanceAsset {
 
 export interface Transaction {
   id: string;
-  type: 'bank_to_exchange' | 'exchange_purchase' | 'exchange_transfer' | 'p2p_trade' | 'cash_change' | 'cash_exchange' | 'exchange' | 'transfer' | 'cash_to_vnd_account' | 'vnd_account_to_krw_account' | 'krw_account_to_vnd_account' | 'cash_to_krw_account';
+  type: 'bank_to_exchange' | 'exchange_purchase' | 'exchange_transfer' | 'p2p_trade' | 'cash_change' | 'cash_exchange' | 'exchange' | 'transfer';
   fromAssetType?: 'bank' | 'exchange' | 'binance' | 'cash';
   fromAssetId?: string;
   fromAssetName: string;

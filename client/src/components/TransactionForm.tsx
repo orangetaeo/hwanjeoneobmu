@@ -51,15 +51,13 @@ const CURRENCY_DENOMINATIONS = {
 };
 
 // 거래 유형별 설정
-type TransactionType = "cash_exchange" | "cash_to_krw_account" | "vnd_account_to_krw_account" | "cash_to_vnd_account" | "krw_account_to_vnd_account";
-
 const TRANSACTION_TYPES = [
   { value: "cash_exchange", label: "현금 환전", icon: ArrowRightLeft },
   { value: "cash_to_krw_account", label: "현금 → KRW 계좌이체(카카오뱅크 3333-03-1258874 예금주:김학태)", icon: Banknote },
   { value: "vnd_account_to_krw_account", label: "VND 계좌 → KRW 계좌이체", icon: TrendingUp },
   { value: "cash_to_vnd_account", label: "현금 → VND 계좌이체", icon: ArrowUpRight },
   { value: "krw_account_to_vnd_account", label: "KRW 계좌 → VND 계좌이체", icon: ArrowDownLeft }
-] as const;
+];
 
 export default function TransactionForm() {
   const { toast } = useToast();
@@ -67,7 +65,7 @@ export default function TransactionForm() {
 
   // 상태 관리
   const [formData, setFormData] = useState({
-    transactionType: "cash_exchange" as TransactionType,
+    transactionType: "cash_exchange",
     fromCurrency: "KRW",
     toCurrency: "VND",
     fromDenominations: [] as string[], // 여러 권종 선택
@@ -862,17 +860,7 @@ export default function TransactionForm() {
       return;
     }
 
-    // 현금 → KRW 계좌이체 고객 계좌 정보 필수 검증
-    if (formData.transactionType === "cash_to_krw_account") {
-      if (!formData.customerName || !formData.customerPhone || !formData.memo) {
-        toast({
-          variant: "destructive",
-          title: "고객 계좌 정보 누락",
-          description: "계좌명, 은행명, 계좌번호를 모두 입력하세요.",
-        });
-        return;
-      }
-    }
+    // 고객 정보는 선택사항이므로 검증 제거
 
     // 권종별 보유 수량 검증 (VND 분배)
     if (formData.toCurrency === "VND" && Object.keys(vndBreakdown).length > 0) {
@@ -1094,7 +1082,7 @@ export default function TransactionForm() {
               <Label>거래 유형</Label>
               <Select 
                 value={formData.transactionType} 
-                onValueChange={(value) => setFormData({ ...formData, transactionType: value as TransactionType })}
+                onValueChange={(value) => setFormData({ ...formData, transactionType: value })}
               >
                 <SelectTrigger data-testid="select-transaction-type">
                   <SelectValue placeholder="거래 유형 선택" />
@@ -1309,7 +1297,7 @@ export default function TransactionForm() {
                     )}
                     
                     {/* VND 계좌 선택 (cash_to_vnd_account용) */}
-                    {(formData.transactionType as TransactionType) === "cash_to_vnd_account" && formData.toCurrency === "VND" && (
+                    {formData.transactionType === "cash_to_vnd_account" && formData.toCurrency === "VND" && (
                       <div className="mt-2">
                         <Label className="text-sm">입금 계좌 선택</Label>
                         <Select value={formData.toAssetId} onValueChange={(value) => setFormData({ ...formData, toAssetId: value })}>
@@ -2435,7 +2423,7 @@ export default function TransactionForm() {
 
 
             {/* 고객 정보 */}
-            {(formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") && (
+            {(formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") && (
               <div className="p-4 bg-yellow-50 rounded-lg space-y-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
@@ -2447,8 +2435,14 @@ export default function TransactionForm() {
                   </Label>
                 </div>
                 
-                {/* 현금 → KRW 계좌이체가 아닌 경우에만 고객 정보 표시 */}
-                {formData.transactionType !== "cash_to_krw_account" && formData.transactionType ? (
+                {/* 고객 계좌 정보는 받는 권종과 같은 줄로 이동됨 */}
+                {formData.transactionType === "cash_to_krw_account" ? (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="text-sm text-yellow-700">
+                      고객 계좌 정보는 우측에 입력해주세요
+                    </div>
+                  </div>
+                ) : (
                   // 기존 선택사항 정보
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2470,7 +2464,9 @@ export default function TransactionForm() {
                       />
                     </div>
                   </div>
-                ) : null}
+                )}
+              </div>
+            )}
 
             {/* 메모 - cash_to_krw_account는 제외 (계좌번호 입력에 사용됨) */}
             {formData.transactionType !== "cash_to_krw_account" && (
@@ -2748,8 +2744,8 @@ export default function TransactionForm() {
                         return null;
                       })()}
                       
-                      {/* 현금 → KRW 계좌이체가 아닌 경우에만 USD 권종별 분배 표시 */}
-                      {formData.transactionType !== "cash_to_krw_account" && formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0 && (() => {
+                      {/* USD 권종별 분배 상세 */}
+                      {formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0 && (() => {
                         // USD 분배가 있는 경우에만 표시
                         const hasBreakdown = Object.entries(usdBreakdown).some(([denom, count]) => count > 0);
                         
@@ -2854,7 +2850,7 @@ export default function TransactionForm() {
                             return average.toFixed(2);
                           }
                           
-                          return calculateAverageExchangeRate().toFixed(2);
+                          return calculateAverageExchangeRate().toString();
                         })()}</div>
                         <div className="text-xs text-gray-500 mt-0.5">(매도시세 평균)</div>
                       </div>
@@ -3003,7 +2999,6 @@ export default function TransactionForm() {
               return null;
             })()}
 
-            <>
             {/* 금액 불일치 경고 */}
             {(() => {
               // VND 권종 분배가 있는 경우에만 검증
@@ -3059,17 +3054,249 @@ export default function TransactionForm() {
               }
               return null;
             })()}
-            
+
             <Button 
               type="submit" 
               className="w-full h-10 sm:h-12 text-sm sm:text-base font-medium" 
-              disabled={createTransactionMutation.isPending}
+              disabled={(() => {
+                // 기존 비활성화 조건
+                if (createTransactionMutation.isPending) return true;
+
+                // KRW→USD 거래시 버튼 활성화 조건 검증
+                if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                  const calculatedUSDTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      const totalFromCurrency = parseFloat(amount) * denomValue;
+                      const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                      const rate = parseFloat(rateInfo?.mySellRate || "0");
+                      if (rate > 0) {
+                        return total + (totalFromCurrency / rate);
+                      }
+                    }
+                    return total;
+                  }, 0);
+                  
+                  const expectedAmount = Math.ceil(calculatedUSDTotal);
+                  const actualAmount = parseFloat(formData.toAmount || "0");
+                  const totalFromAmount = calculateTotalFromAmount();
+                  
+                  console.log(`KRW→USD 버튼 검증: 계산 ${calculatedUSDTotal} → 올림 ${expectedAmount}, 실제 ${actualAmount}, 입력 ${totalFromAmount}`);
+                  
+                  return expectedAmount !== actualAmount || totalFromAmount === 0;
+                }
+                
+                // USD→KRW 거래시 버튼 활성화 조건 검증  
+                else if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                  const calculatedKRWTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      const totalFromCurrency = parseFloat(amount) * denomValue;
+                      const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                      const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                      if (rate > 0) {
+                        return total + (totalFromCurrency * rate);
+                      }
+                    }
+                    return total;
+                  }, 0);
+                  
+                  const expectedAmount = Math.ceil(calculatedKRWTotal / 1000) * 1000;
+                  const actualAmount = parseFloat(formData.toAmount || "0");
+                  const totalFromAmount = calculateTotalFromAmount();
+                  
+                  console.log(`USD→KRW 버튼 검증: 계산 ${calculatedKRWTotal} → 올림 ${expectedAmount}, 실제 ${actualAmount}, 입력 ${totalFromAmount}`);
+                  
+                  return expectedAmount !== actualAmount || totalFromAmount === 0;
+                }
+
+                // VND 거래인 경우 보유량 부족 검증
+                if (formData.toCurrency === "VND") {
+                  // 기본 분배 계산
+                  const totalFromDenominations = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                    if (amount && parseFloat(amount) > 0) {
+                      const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                      return total + (parseFloat(amount) * denomValue);
+                    }
+                    return total;
+                  }, 0);
+
+                  let targetAmount = 0;
+                  if (totalFromDenominations > 0) {
+                    const rate = formData.fromCurrency === "KRW" ? 
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                      getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                    const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                    targetAmount = Math.floor(calculatedAmount);
+                  } else {
+                    targetAmount = parseFloat(formData.toAmount) || 0;
+                  }
+                  
+                  // 실제로 고객이 받을 금액을 기준으로 분배 (vndOriginalAmount 사용)
+                  const fixedBreakdown = calculateVNDBreakdown(vndOriginalAmount > 0 ? vndOriginalAmount : targetAmount);
+                  
+                  // 실제 분배: 사용자 수정이 있으면 그것을 사용하고, 없으면 기본 분배 사용
+                  const actualBreakdown = (formData.vndBreakdown && Object.keys(formData.vndBreakdown).length > 0) 
+                    ? formData.vndBreakdown 
+                    : fixedBreakdown;
+
+                  // VND 현금 보유 상황 확인
+                  const vndCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                    asset.name === "VND 현금" && asset.currency === "VND" && asset.type === "cash"
+                  ) : null;
+                  const denomComposition = vndCashAsset?.metadata?.denominations || {};
+                  
+
+
+                  // 보유량 부족 여부 확인
+                  const hasShortage = Object.entries(actualBreakdown).some(([denom, count]) => {
+                    const requiredCount = parseInt(count.toString());
+                    const denomKey = denom.toString(); // 쉼표 없는 형태로 유지
+                    const availableCount = denomComposition[denomKey] || 0;
+                    console.log(`보유량 검증: ${denom} VND - 필요: ${requiredCount}장, 보유: ${availableCount}장`);
+                    return requiredCount > availableCount;
+                  });
+
+                  if (hasShortage) {
+                    return true;
+                  }
+
+                  // VND 권종 분배 금액 검증
+                  // 실제 분배 총액 계산
+                  const actualTotal = Object.entries(actualBreakdown).reduce((total, [denom, count]) => {
+                    const denomValue = parseInt(denom);
+                    const denomCount = parseInt(count.toString());
+                    return total + (denomValue * denomCount);
+                  }, 0);
+
+                  // 실제로 고객이 받을 금액 (vndOriginalAmount) 사용
+                  const expectedTotal = vndOriginalAmount > 0 ? vndOriginalAmount : (() => {
+                    if (totalFromDenominations > 0) {
+                      const rate = formData.fromCurrency === "KRW" ? 
+                        getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.mySellRate || "0" :
+                        getDenominationRate(formData.fromCurrency, formData.toCurrency, "50000")?.myBuyRate || "0";
+                      const calculatedAmount = totalFromDenominations * parseFloat(rate);
+                      return formatVNDWithFloor(calculatedAmount);
+                    } else {
+                      return parseFloat(formData.toAmount) || 0;
+                    }
+                  })();
+
+                  // 금액이 일치하지 않으면 비활성화
+                  if (Math.abs(actualTotal - expectedTotal) > 0) {
+                    return true;
+                  }
+                }
+
+                // USD 거래인 경우 보유량 부족 검증
+                if (formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0) {
+                  // USD 현금 보유 상황 확인
+                  const usdCashAsset = Array.isArray(assets) ? assets.find((asset: any) => 
+                    asset.name === "USD 현금" && asset.currency === "USD" && asset.type === "cash"
+                  ) : null;
+                  const denomComposition = usdCashAsset?.metadata?.denominations || {};
+
+                  // 보유량 부족 여부 확인
+                  const hasShortage = Object.entries(usdBreakdown).some(([denom, count]) => {
+                    const requiredCount = parseInt(count.toString());
+                    const availableCount = denomComposition[denom] || 0;
+                    return requiredCount > availableCount;
+                  });
+
+                  if (hasShortage) {
+                    return true;
+                  }
+
+                  // USD 분배 금액 검증 - KRW→USD는 올림 처리
+                  let expectedUSDTotal;
+                  if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
+                    // KRW→USD는 올림 처리하여 기대값 계산
+                    const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                      if (amount && parseFloat(amount) > 0) {
+                        const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                        const totalFromCurrency = parseFloat(amount) * denomValue;
+                        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                        const rate = parseFloat(rateInfo?.mySellRate || "0");
+                        if (rate > 0) {
+                          return total + (totalFromCurrency / rate);
+                        }
+                      }
+                      return total;
+                    }, 0);
+                    expectedUSDTotal = Math.ceil(calculatedTotal);
+                    console.log(`USD 버튼 활성화 검증: 계산값 ${calculatedTotal} → 올림 ${expectedUSDTotal}`);
+                  } else {
+                    expectedUSDTotal = Math.floor(parseFloat(formData.toAmount) || 0);
+                  }
+                  
+                  const actualUSDTotal = calculateTotalFromUSDBreakdown(usdBreakdown);
+                  console.log(`USD 버튼 활성화 검증: 기대값 ${expectedUSDTotal}, 실제값 ${actualUSDTotal}`);
+                  
+                  // 금액이 일치하지 않으면 비활성화
+                  if (actualUSDTotal !== expectedUSDTotal && expectedUSDTotal > 0) {
+                    console.log(`USD 금액 불일치로 버튼 비활성화: ${actualUSDTotal} !== ${expectedUSDTotal}`);
+                    return true;
+                  }
+                }
+
+                // KRW 거래인 경우 보유량 부족 검증
+                if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
+                  const assetArray = Array.isArray(assets) ? assets : [];
+                  const krwCashAsset = assetArray.find((asset: any) => 
+                    asset.name === "KRW 현금" && asset.currency === "KRW"
+                  );
+                  const denomComposition = krwCashAsset?.metadata?.denominations || {};
+
+                  // 보유량 부족 여부 확인
+                  const hasShortage = Object.entries(krwBreakdown).some(([denom, count]) => {
+                    const requiredCount = parseInt(count.toString());
+                    const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+                    const availableCount = denomComposition[denomKey] || 0;
+                    return requiredCount > availableCount;
+                  });
+
+                  if (hasShortage) {
+                    return true;
+                  }
+
+                  // KRW 분배 금액 검증 - USD→KRW는 올림 처리
+                  let expectedKRWTotal;
+                  if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
+                    // USD→KRW는 1000원 단위 올림 처리하여 기대값 계산
+                    const calculatedTotal = Object.entries(formData.denominationAmounts || {}).reduce((total, [denom, amount]) => {
+                      if (amount && parseFloat(amount) > 0) {
+                        const denomValue = getDenominationValue(formData.fromCurrency, denom);
+                        const totalFromCurrency = parseFloat(amount) * denomValue;
+                        const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom);
+                        const rate = parseFloat(rateInfo?.myBuyRate || "0");
+                        if (rate > 0) {
+                          return total + (totalFromCurrency * rate);
+                        }
+                      }
+                      return total;
+                    }, 0);
+                    expectedKRWTotal = Math.ceil(calculatedTotal / 1000) * 1000;
+                    console.log(`KRW 버튼 활성화 검증: 계산값 ${calculatedTotal} → 1000원 단위 올림 ${expectedKRWTotal}`);
+                  } else {
+                    expectedKRWTotal = Math.floor(parseFloat(formData.toAmount) || 0);
+                  }
+                  
+                  const actualKRWTotal = calculateTotalFromKRWBreakdown(krwBreakdown);
+                  console.log(`KRW 버튼 활성화 검증: 기대값 ${expectedKRWTotal}, 실제값 ${actualKRWTotal}`);
+                  
+                  // 금액이 일치하지 않으면 비활성화
+                  if (actualKRWTotal !== expectedKRWTotal && expectedKRWTotal > 0) {
+                    console.log(`KRW 금액 불일치로 버튼 비활성화: ${actualKRWTotal} !== ${expectedKRWTotal}`);
+                    return true;
+                  }
+                }
+
+                return false;
+              })()}
               data-testid="button-submit-transaction"
             >
               {createTransactionMutation.isPending ? "처리 중..." : "거래 확정"}
             </Button>
-            </>
-          </div>
           </form>
         </CardContent>
       </Card>
