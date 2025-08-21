@@ -111,7 +111,7 @@ export default function HomePage() {
     retryDelay: 1000,
     staleTime: 0,
     gcTime: 0,
-    cacheTime: 0,
+    gcTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true
   });
@@ -1330,6 +1330,7 @@ export default function HomePage() {
                   {[
                     { id: 'dashboard', label: '대시보드', icon: Home },
                     { id: 'new-transaction', label: '새거래', icon: Plus },
+                    { id: 'complex-transaction', label: '복합거래', icon: Calculator },
                     { id: 'assets', label: '자산 관리', icon: Wallet },
                     { id: 'exchange-operations', label: '거래소 운영', icon: Coins },
                     { id: 'transactions', label: '거래 내역', icon: List },
@@ -1503,7 +1504,7 @@ export default function HomePage() {
                 {currentView === 'complex-transaction' && (
                   <CardBasedTransactionForm 
                     onClose={() => setCurrentView('dashboard')} 
-                    assets={assetsData}
+                    assets={assetsData as any[]}
                   />
                 )}
                 {currentView === 'rates' && (
