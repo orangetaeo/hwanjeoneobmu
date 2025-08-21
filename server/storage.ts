@@ -694,13 +694,13 @@ export class DatabaseStorage implements IStorage {
         asset.name === 'Bithumb USDT' || 
         asset.name.includes('Bithumb')
       );
-      result = foundAsset;
+      result = foundAsset || undefined;
       
       console.log('빗썸 유연 검색 결과:', result);
     }
     
     console.log('getAssetByName 최종 결과:', result);
-    return result || undefined;
+    return result;
   }
 
   // Rates
