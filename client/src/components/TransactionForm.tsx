@@ -2777,76 +2777,80 @@ export default function TransactionForm() {
                           // 통화쌍별 환율 평균 계산
                           const rates: number[] = [];
                           
-                          // USD→KRW 환전: USD 권종별 매도시세 수집
-                          if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW" && Object.keys(usdBreakdown).length > 0) {
-                            Object.keys(usdBreakdown).forEach(denom => {
-                              const count = usdBreakdown[denom];
-                              if (count > 0) {
-                                const usdKrwRate = exchangeRates?.find((rate: any) => 
-                                  rate.fromCurrency === "USD" && 
-                                  rate.toCurrency === "KRW" && 
-                                  rate.denomination === denom
-                                );
-                                
-                                if (usdKrwRate?.mySellRate) {
-                                  rates.push(parseFloat(usdKrwRate.mySellRate));
+                          // VND→KRW 환전: VND 권종별 매매시세만 수집
+                          if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
+                            if (Object.keys(formData.denominationAmounts || {}).length > 0) {
+                              Object.keys(formData.denominationAmounts || {}).forEach(denom => {
+                                const count = parseFloat(formData.denominationAmounts[denom] || "0");
+                                if (count > 0) {
+                                  const vndToKrwRate = getVndToKrwDisplayRate(denom);
+                                  if (vndToKrwRate > 0) {
+                                    rates.push(vndToKrwRate);
+                                  }
                                 }
-                              }
-                            });
+                              });
+                            }
                           }
-                          
-                          // KRW→USD 환전: KRW 권종별 매도시세 수집
-                          if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD" && Object.keys(krwBreakdown).length > 0) {
-                            Object.keys(krwBreakdown).forEach(denom => {
-                              const count = krwBreakdown[denom];
-                              if (count > 0) {
-                                const krwUsdRate = exchangeRates?.find((rate: any) => 
-                                  rate.fromCurrency === "KRW" && 
-                                  rate.toCurrency === "USD" && 
-                                  rate.denomination === denom
-                                );
-                                
-                                if (krwUsdRate?.mySellRate) {
-                                  rates.push(parseFloat(krwUsdRate.mySellRate));
+                          // 다른 통화쌍들
+                          else {
+                            // USD→KRW 환전: USD 권종별 매도시세 수집
+                            if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW" && Object.keys(usdBreakdown).length > 0) {
+                              Object.keys(usdBreakdown).forEach(denom => {
+                                const count = usdBreakdown[denom];
+                                if (count > 0) {
+                                  const usdKrwRate = exchangeRates?.find((rate: any) => 
+                                    rate.fromCurrency === "USD" && 
+                                    rate.toCurrency === "KRW" && 
+                                    rate.denomination === denom
+                                  );
+                                  
+                                  if (usdKrwRate?.mySellRate) {
+                                    rates.push(parseFloat(usdKrwRate.mySellRate));
+                                  }
                                 }
-                              }
-                            });
-                          }
-                          
-                          // VND→KRW 환전: VND 권종별 매매시세 수집
-                          if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW" && Object.keys(formData.denominationAmounts || {}).length > 0) {
-                            Object.keys(formData.denominationAmounts || {}).forEach(denom => {
-                              const count = parseFloat(formData.denominationAmounts[denom] || "0");
-                              if (count > 0) {
-                                const vndToKrwRate = getVndToKrwDisplayRate(denom);
-                                if (vndToKrwRate > 0) {
-                                  rates.push(vndToKrwRate);
+                              });
+                            }
+                            
+                            // KRW→USD 환전: KRW 권종별 매도시세 수집
+                            if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD" && Object.keys(krwBreakdown).length > 0) {
+                              Object.keys(krwBreakdown).forEach(denom => {
+                                const count = krwBreakdown[denom];
+                                if (count > 0) {
+                                  const krwUsdRate = exchangeRates?.find((rate: any) => 
+                                    rate.fromCurrency === "KRW" && 
+                                    rate.toCurrency === "USD" && 
+                                    rate.denomination === denom
+                                  );
+                                  
+                                  if (krwUsdRate?.mySellRate) {
+                                    rates.push(parseFloat(krwUsdRate.mySellRate));
+                                  }
                                 }
-                              }
-                            });
-                          }
-                          
-                          // 기존 VND 환전: KRW→VND 매도시세 수집
-                          if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
-                            Object.keys(krwBreakdown).forEach(denom => {
-                              const count = krwBreakdown[denom];
-                              if (count > 0) {
-                                let searchDenom = denom.toString();
-                                if (denom === "5000" || denom === "1000") {
-                                  searchDenom = "5000_1000";
+                              });
+                            }
+                            
+                            // 기존 VND 환전: KRW→VND 매도시세 수집
+                            if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
+                              Object.keys(krwBreakdown).forEach(denom => {
+                                const count = krwBreakdown[denom];
+                                if (count > 0) {
+                                  let searchDenom = denom.toString();
+                                  if (denom === "5000" || denom === "1000") {
+                                    searchDenom = "5000_1000";
+                                  }
+                                  
+                                  const krwVndRate = exchangeRates?.find((rate: any) => 
+                                    rate.fromCurrency === "KRW" && 
+                                    rate.toCurrency === "VND" && 
+                                    rate.denomination === searchDenom
+                                  );
+                                  
+                                  if (krwVndRate?.myBuyRate) {
+                                    rates.push(parseFloat(krwVndRate.myBuyRate));
+                                  }
                                 }
-                                
-                                const krwVndRate = exchangeRates?.find((rate: any) => 
-                                  rate.fromCurrency === "KRW" && 
-                                  rate.toCurrency === "VND" && 
-                                  rate.denomination === searchDenom
-                                );
-                                
-                                if (krwVndRate?.myBuyRate) {
-                                  rates.push(parseFloat(krwVndRate.myBuyRate));
-                                }
-                              }
-                            });
+                              });
+                            }
                           }
                           
                           if (rates.length > 0) {
