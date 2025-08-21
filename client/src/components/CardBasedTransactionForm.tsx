@@ -230,29 +230,33 @@ export default function CardBasedTransactionForm({
       }
     }
     
-    // 일반 환율 조회
+    // 일반 환율 조회 (isActive 검증 개선)
     const rate = exchangeRates.find(rate => 
       rate.fromCurrency === fromCurrency && 
       rate.toCurrency === toCurrency &&
-      rate.isActive
+      (rate.isActive === true || rate.isActive === 'true')
     );
     
     if (rate) {
       return parseFloat(rate.myBuyRate) || parseFloat(rate.goldShopRate) || 1;
     }
     
-    // 역방향 환율 확인
+    // 역방향 환율 확인 (개선된 버전)
     const reverseRate = exchangeRates.find(rate => 
       rate.fromCurrency === toCurrency && 
       rate.toCurrency === fromCurrency &&
-      rate.isActive
+      (rate.isActive === true || rate.isActive === 'true')
     );
     
     if (reverseRate) {
-      const sellRate = parseFloat(reverseRate.mySellRate) || parseFloat(reverseRate.goldShopRate) || 1;
-      return 1 / sellRate;
+      const buyRate = parseFloat(reverseRate.myBuyRate || '0');
+      const sellRate = parseFloat(reverseRate.mySellRate || '0');
+      const goldRate = parseFloat(reverseRate.goldShopRate || '0');
+      const validRate = buyRate > 0 ? buyRate : (sellRate > 0 ? sellRate : (goldRate > 0 ? goldRate : 1));
+      return validRate > 0 ? 1 / validRate : 1;
     }
     
+    console.warn(`환율을 찾을 수 없습니다: ${fromCurrency} → ${toCurrency}`);
     return 1;
   };
 
@@ -291,10 +295,11 @@ export default function CardBasedTransactionForm({
     return breakdown;
   };
 
-  // VND Floor 차액 계산 함수
+  // VND Floor 차액 계산 함수 (일관성 개선)
   const calculateVNDFloorDifference = (originalAmount: number): number => {
+    if (originalAmount <= 0) return 0;
     const flooredAmount = Math.floor(originalAmount / 1000) * 1000;
-    return originalAmount - flooredAmount;
+    return Math.max(0, originalAmount - flooredAmount);
   };
 
   // 실시간 추천 시스템
@@ -878,7 +883,7 @@ export default function CardBasedTransactionForm({
     return breakdown;
   };
 
-  // 자동 환율 계산 함수
+  // 자동 환율 계산 함수 (개선된 버전)
   const calculateAutomaticAmount = (inputCard: TransactionCard, outputCard: TransactionCard) => {
     if (!autoCalculation || !inputCard.amount || inputCard.currency === outputCard.currency) {
       return '';
@@ -888,11 +893,20 @@ export default function CardBasedTransactionForm({
     if (inputAmount <= 0) return '';
 
     const rate = getExchangeRate(inputCard.currency, outputCard.currency);
+    if (!rate || rate <= 0) return '';
+    
     const calculatedAmount = inputAmount * rate;
     
-    // VND의 경우 Math.floor 적용
+    // 통화별 정확한 처리
     if (outputCard.currency === 'VND') {
+      // VND는 1000동 단위로 내림 처리
+      return (Math.floor(calculatedAmount / 1000) * 1000).toString();
+    } else if (outputCard.currency === 'KRW') {
+      // KRW는 정수 처리
       return Math.floor(calculatedAmount).toString();
+    } else if (outputCard.currency === 'USD') {
+      // USD는 소수점 2자리까지
+      return calculatedAmount.toFixed(2);
     }
     
     return Math.floor(calculatedAmount).toString();
@@ -946,16 +960,33 @@ export default function CardBasedTransactionForm({
     }));
   };
 
-  // 총 입금/출금 금액 계산
-  const totalInputAmount = inputCards.reduce((sum, card) => {
-    const amount = parseCommaFormattedNumber(card.amount) || 0;
-    return sum + amount;
-  }, 0);
+  // 통화별 총 금액 계산 (개선된 버전)
+  const calculateTotalByCurrency = (cards: TransactionCard[], currency: string) => {
+    return cards
+      .filter(card => card.currency === currency)
+      .reduce((sum, card) => {
+        const amount = parseCommaFormattedNumber(card.amount) || 0;
+        return sum + amount;
+      }, 0);
+  };
 
-  const totalOutputAmount = outputCards.reduce((sum, card) => {
-    const amount = parseCommaFormattedNumber(card.amount) || 0;
-    return sum + amount;
-  }, 0);
+  // 기본 통화로 통합 계산 (KRW 기준)
+  const calculateTotalInKRW = (cards: TransactionCard[]) => {
+    return cards.reduce((sum, card) => {
+      const amount = parseCommaFormattedNumber(card.amount) || 0;
+      if (amount <= 0) return sum;
+      
+      if (card.currency === 'KRW') {
+        return sum + amount;
+      } else {
+        const rate = getExchangeRate(card.currency, 'KRW');
+        return sum + (amount * rate);
+      }
+    }, 0);
+  };
+
+  const totalInputAmount = calculateTotalInKRW(inputCards);
+  const totalOutputAmount = calculateTotalInKRW(outputCards);
 
   // 통화별 계좌 필터링
   const getAccountsByCurrency = (currency: string) => {
@@ -1142,9 +1173,10 @@ export default function CardBasedTransactionForm({
         const outputAmount = parseCommaFormattedNumber(outputCard.amount) || 0;
         const inputAmount = parseCommaFormattedNumber(primaryInputCard.amount) || 0;
         
-        // 출금 비율에 따른 입금 할당
-        const outputRatio = outputAmount / totalOutputAmount;
-        const allocatedInputAmount = inputAmount * outputRatio;
+        // 환율을 적용하여 실제 필요한 입금 금액 계산
+        const exchangeRate = getExchangeRate(primaryInputCard.currency, outputCard.currency);
+        const requiredInputAmount = outputAmount / (exchangeRate || 1);
+        const allocatedInputAmount = Math.min(requiredInputAmount, inputAmount);
 
         if (allocatedInputAmount > 0 && outputAmount > 0) {
           // 거래 타입 자동 결정
@@ -1155,8 +1187,7 @@ export default function CardBasedTransactionForm({
             outputCard.currency
           );
 
-          // 환율 계산
-          const exchangeRate = getExchangeRate(primaryInputCard.currency, outputCard.currency);
+          // 환율은 이미 계산됨
 
           transactions.push({
             type: transactionType,
