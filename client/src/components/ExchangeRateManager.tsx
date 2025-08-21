@@ -61,13 +61,16 @@ const CURRENCY_DENOMINATIONS = {
     { value: "100000", label: "10만동" },
     { value: "50000", label: "5만동" },
     { value: "20000", label: "2만동" },
-    { value: "10000", label: "1만동" }
+    { value: "10000", label: "1만동" },
+    { value: "5000", label: "5천동" },
+    { value: "1000", label: "1천동" }
   ]
 };
 
 const CURRENCY_PAIRS = [
   { from: "USD", to: "VND", label: "USD → VND" },
   { from: "KRW", to: "VND", label: "KRW → VND" },
+  { from: "VND", to: "KRW", label: "VND → KRW" },
   { from: "USD", to: "KRW", label: "USD → KRW" },
   { from: "KRW", to: "USD", label: "KRW → USD" }
 ];
