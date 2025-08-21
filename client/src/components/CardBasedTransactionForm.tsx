@@ -883,13 +883,25 @@ export default function CardBasedTransactionForm({
     return breakdown;
   };
 
-  // 자동 환율 계산 함수 (개선된 버전)
+  // 자동 환율 계산 함수 (입금 카드 권종별 계산 지원)
   const calculateAutomaticAmount = (inputCard: TransactionCard, outputCard: TransactionCard) => {
-    if (!autoCalculation || !inputCard.amount || inputCard.currency === outputCard.currency) {
+    if (!autoCalculation || inputCard.currency === outputCard.currency) {
       return '';
     }
 
-    const inputAmount = parseCommaFormattedNumber(inputCard.amount);
+    let inputAmount = 0;
+    
+    // 입금 카드가 현금이고 권종별 수량이 있는 경우
+    if (inputCard.type === 'cash' && inputCard.denominations) {
+      Object.entries(inputCard.denominations).forEach(([denom, count]) => {
+        const denomValue = getDenominationValue(inputCard.currency, denom);
+        inputAmount += denomValue * count;
+      });
+    } else {
+      // 계좌 타입이거나 권종별 수량이 없는 경우
+      inputAmount = parseCommaFormattedNumber(inputCard.amount) || 0;
+    }
+    
     if (inputAmount <= 0) return '';
 
     const rate = getExchangeRate(inputCard.currency, outputCard.currency);
@@ -912,14 +924,24 @@ export default function CardBasedTransactionForm({
     return Math.floor(calculatedAmount).toString();
   };
 
-  // 카드 업데이트 함수들 (개선된 버전)
+  // 카드 업데이트 함수들 (입금 카드 권종별 계산 지원)
   const updateInputCard = (id: number, field: string, value: any) => {
     setInputCards(prev => prev.map(card => {
       if (card.id === id) {
         const updatedCard = { ...card, [field]: value };
         
+        // 현금 카드에서 권종별 수량 변경 시 총액 자동 계산
+        if (field === 'denominations' && updatedCard.type === 'cash') {
+          let totalAmount = 0;
+          Object.entries(updatedCard.denominations || {}).forEach(([denom, count]) => {
+            const denomValue = getDenominationValue(updatedCard.currency, denom);
+            totalAmount += denomValue * count;
+          });
+          updatedCard.amount = totalAmount.toString();
+        }
+        
         // 자동 계산이 활성화된 경우 출금 카드 업데이트
-        if (field === 'amount' && autoCalculation && outputCards.length > 0) {
+        if ((field === 'amount' || field === 'denominations') && autoCalculation && outputCards.length > 0) {
           const mainOutputCard = outputCards[0];
           const calculatedAmount = calculateAutomaticAmount(updatedCard, mainOutputCard);
           if (calculatedAmount) {
@@ -970,9 +992,21 @@ export default function CardBasedTransactionForm({
       }, 0);
   };
 
-  // 기본 통화로 통합 계산 (KRW 기준)
-  const calculateTotalInKRW = (cards: TransactionCard[]) => {
+  // 기본 통화로 통합 계산 (KRW 기준) - 입금 카드 권종별 환율 지원
+  const calculateTotalInKRW = (cards: TransactionCard[], isInputCard: boolean = false) => {
     return cards.reduce((sum, card) => {
+      // 입금 카드이면서 현금 타입일 때 권종별 환율 적용
+      if (isInputCard && card.type === 'cash' && card.denominations) {
+        let cardTotal = 0;
+        Object.entries(card.denominations).forEach(([denom, count]) => {
+          const rate = getExchangeRate(card.currency, 'KRW', denom);
+          const denomValue = getDenominationValue(card.currency, denom);
+          cardTotal += denomValue * count * rate;
+        });
+        return sum + cardTotal;
+      }
+      
+      // 계좌 타입이거나 출금 카드일 때 기존 방식
       const amount = parseCommaFormattedNumber(card.amount) || 0;
       if (amount <= 0) return sum;
       
@@ -985,8 +1019,8 @@ export default function CardBasedTransactionForm({
     }, 0);
   };
 
-  const totalInputAmount = calculateTotalInKRW(inputCards);
-  const totalOutputAmount = calculateTotalInKRW(outputCards);
+  const totalInputAmount = calculateTotalInKRW(inputCards, true);  // 입금 카드는 권종별 계산
+  const totalOutputAmount = calculateTotalInKRW(outputCards, false); // 출금 카드는 기존 방식
 
   // 통화별 계좌 필터링
   const getAccountsByCurrency = (currency: string) => {
@@ -1863,7 +1897,13 @@ export default function CardBasedTransactionForm({
                     {/* 유형 선택 */}
                     <div className="space-y-2">
                       <Label className="text-sm">유형</Label>
-                      <Select value={card.type} onValueChange={(value) => updateInputCard(card.id, 'type', value)}>
+                      <Select value={card.type} onValueChange={(value) => {
+                        // 타입 변경 시 기존 데이터 초기화
+                        updateInputCard(card.id, 'type', value);
+                        updateInputCard(card.id, 'amount', '');
+                        updateInputCard(card.id, 'denominations', {});
+                        updateInputCard(card.id, 'accountId', null);
+                      }}>
                         <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
@@ -1909,20 +1949,43 @@ export default function CardBasedTransactionForm({
                     </div>
                   )}
 
-                  {/* 금액 입력 */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">금액</Label>
-                    <Input
-                      type="text"
-                      placeholder="0"
-                      value={card.amount}
-                      onChange={(e) => {
-                        const formattedValue = formatInputWithCommas(e.target.value);
-                        updateInputCard(card.id, 'amount', formattedValue);
-                      }}
-                      className="text-lg font-semibold text-center"
-                    />
-                  </div>
+                  {/* 금액 입력 - 현금/계좌 타입별 다른 UI */}
+                  {card.type === 'cash' ? (
+                    /* 현금 입금: 권종별 수량 입력 */
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-sm font-medium">권종별 수량 (매입)</Label>
+                        <div className="text-xs text-gray-500">
+                          총액: {(() => {
+                            // 권종별 환율 적용한 총 매입가 계산
+                            let total = 0;
+                            Object.entries(card.denominations || {}).forEach(([denom, count]) => {
+                              const rate = getExchangeRate(card.currency, 'KRW', denom);
+                              const denomValue = getDenominationValue(card.currency, denom);
+                              total += denomValue * count * rate;
+                            });
+                            return formatCurrency(total, 'KRW');
+                          })()}
+                        </div>
+                      </div>
+                      {renderDenominationInputs(card, false)}
+                    </div>
+                  ) : (
+                    /* 계좌 입금: 총액 입력 */
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">금액</Label>
+                      <Input
+                        type="text"
+                        placeholder="0"
+                        value={card.amount}
+                        onChange={(e) => {
+                          const formattedValue = formatInputWithCommas(e.target.value);
+                          updateInputCard(card.id, 'amount', formattedValue);
+                        }}
+                        className="text-lg font-semibold text-center"
+                      />
+                    </div>
+                  )}
 
                   {/* 보유량 부족 경고 */}
                   {!validateInventory(card).isValid && (
