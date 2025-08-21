@@ -3,9 +3,10 @@
 This is a full-stack asset management and exchange tracking application for managing various financial assets including cash, bank accounts, and cryptocurrency holdings, and tracking exchange transactions. It provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
 ## Recent Changes (August 21, 2025)
-- **거래 상세 모달 UI 완전 개선**: 고정 헤더(sticky header), 출금-입금-환율 한 줄 배치, 컴팩트 디자인, 자산 변동 내역 금액 세로 중앙 강조 표시
-- **자산 변동 내역 모바일 최적화**: 고액권 우선 정렬, flex-wrap으로 모바일 줄바꿈 처리, whitespace-nowrap으로 텍스트 깨짐 방지
-- **권종별 변동 표시 개선**: 좌측에 큰 금액 세로 중앙 정렬, 우측에 권종별 변동 정보 horizontal wrap 배치, 시간 정보 제거
+- **거래 상세 모달 UI 완전 개선**: 커스텀 X버튼 구현으로 기본 X버튼 숨김, 헤더 padding 균등화(py-1.5), 출금-입금-환율 한 줄 배치, 컴팩트 디자인
+- **자산 변동 내역 최적화**: 고액권 우선 정렬, 좌측 큰 금액 세로 중앙 정렬(min-h-[80px]), flex-wrap 모바일 줄바꿈, whitespace-nowrap 텍스트 깨짐 방지
+- **X버튼 중복 문제 해결**: CSS 선택자 [&>button]:hidden으로 기본 X버튼 숨김, 커스텀 X버튼을 "거래 상세"와 같은 줄에 정확 배치
+- **권종별 변동 표시 완성**: 우측에 권종별 변동 정보 horizontal wrap 배치, 시간 정보 제거로 깔끔한 디자인
 - **메인 거래만 리스트 표시 시스템**: 거래내역에서 메인 거래(cash_exchange, 계좌이체)만 표시하고 부가 거래(cash_change)는 상세 모달에서 표시
 - **거래 분류 시스템 완성**: isMainTransaction, parentTransactionId 필드로 메인 거래와 부가 거래 구분
 - **데이터베이스 스키마 확장**: 거래 테이블에 메인 거래 식별 필드 추가

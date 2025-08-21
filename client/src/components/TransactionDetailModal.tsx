@@ -78,8 +78,8 @@ export default function TransactionDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" showClose={false}>
-        <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col [&>button]:hidden">
+        <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 py-1.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
               <Badge variant="outline" className="px-2 py-1 text-xs">
