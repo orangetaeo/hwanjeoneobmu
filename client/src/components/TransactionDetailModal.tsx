@@ -241,7 +241,12 @@ export default function TransactionDetailModal({
                           }`}>
                             {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? '+' : ''}
                             {formatInputWithCommas(Math.abs(parseFloat(relatedTx.toAmount.toString()) - parseFloat(relatedTx.fromAmount.toString())).toString())}
-                            {relatedTx.toAssetName.includes('VND') ? '동' : '원'}
+                            {(() => {
+                              if (relatedTx.toAssetName.includes('USD')) return '달러';
+                              if (relatedTx.toAssetName.includes('VND')) return '동';
+                              if (relatedTx.toAssetName.includes('KRW')) return '원';
+                              return '';
+                            })()}
                           </div>
                           <div className="flex items-center justify-center gap-1 mt-1">
                             {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? (
@@ -271,7 +276,12 @@ export default function TransactionDetailModal({
                                       ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-600' 
                                       : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600'
                                   }`}>
-                                    {formatInputWithCommas(denom)}{relatedTx.toAssetName.includes('VND') ? '동' : '원'} × {count > 0 ? '+' : ''}{count}
+                                    {formatInputWithCommas(denom)}{(() => {
+                                      if (relatedTx.toAssetName.includes('USD')) return '달러';
+                                      if (relatedTx.toAssetName.includes('VND')) return '동';
+                                      if (relatedTx.toAssetName.includes('KRW')) return '원';
+                                      return '';
+                                    })()} × {count > 0 ? '+' : ''}{count}
                                   </div>
                                 ))}
                             </div>
