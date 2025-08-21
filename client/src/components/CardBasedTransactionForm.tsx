@@ -120,6 +120,16 @@ export default function CardBasedTransactionForm({
   const [memo, setMemo] = useState('');
   const [inputCards, setInputCards] = useState<TransactionCard[]>([]);
   const [outputCards, setOutputCards] = useState<TransactionCard[]>([]);
+  
+  // 고객 계좌 정보 상태
+  const [customerAccountInfo, setCustomerAccountInfo] = useState({
+    bankName: '',
+    accountNumber: '',
+    accountHolder: ''
+  });
+  
+  // 익명 거래 설정
+  const [isAnonymousTransaction, setIsAnonymousTransaction] = useState(false);
 
   // UI 상태
   const [collapsedCards, setCollapsedCards] = useState<Set<number>>(new Set());
@@ -1122,8 +1132,26 @@ export default function CardBasedTransactionForm({
   const validateTransaction = () => {
     const errors: string[] = [];
 
-    if (!customerName.trim()) {
-      errors.push('고객명을 입력해주세요');
+    // 계좌이체 거래인지 확인
+    const isAccountTransfer = selectedTransactionType.includes('_to_') && 
+      (selectedTransactionType.includes('_account') || outputCards.some(card => card.type === 'account'));
+    
+    // 익명 거래가 아니고 계좌이체인 경우에만 고객 정보 필수
+    if (!isAnonymousTransaction && isAccountTransfer && !customerName.trim()) {
+      errors.push('계좌이체 거래 시 고객명이 필요합니다');
+    }
+    
+    // 계좌이체 거래인 경우 고객 계좌 정보 필수
+    if (isAccountTransfer) {
+      if (!customerAccountInfo.bankName.trim()) {
+        errors.push('수신 은행명을 입력해주세요');
+      }
+      if (!customerAccountInfo.accountNumber.trim()) {
+        errors.push('수신 계좌번호를 입력해주세요');
+      }
+      if (!customerAccountInfo.accountHolder.trim()) {
+        errors.push('수신 예금주명을 입력해주세요');
+      }
     }
 
     if (inputCards.length === 0) {
@@ -1172,7 +1200,20 @@ export default function CardBasedTransactionForm({
   // 스마트 버튼 활성화 로직
   const isSubmitButtonEnabled = useMemo(() => {
     if (inputCards.length === 0 || outputCards.length === 0) return false;
-    if (!customerName.trim()) return false;
+    
+    // 계좌이체 거래인지 확인
+    const isAccountTransfer = selectedTransactionType.includes('_to_') && 
+      (selectedTransactionType.includes('_account') || outputCards.some(card => card.type === 'account'));
+    
+    // 익명 거래가 아니고 계좌이체인 경우에만 고객명 필수
+    if (!isAnonymousTransaction && isAccountTransfer && !customerName.trim()) return false;
+    
+    // 계좌이체인 경우 고객 계좌 정보 필수
+    if (isAccountTransfer) {
+      if (!customerAccountInfo.bankName.trim() || !customerAccountInfo.accountNumber.trim() || !customerAccountInfo.accountHolder.trim()) {
+        return false;
+      }
+    }
     
     // 모든 카드에 금액이 입력되어 있는지 확인
     const allInputsHaveAmount = inputCards.every(card => 
@@ -1223,6 +1264,30 @@ export default function CardBasedTransactionForm({
         // 환율 계산
         const exchangeRate = getExchangeRate(inputCard.currency, outputCard.currency);
 
+        // 계좌이체 거래인지 확인
+        const isAccountTransfer = transactionType.includes('_to_') && 
+          (transactionType.includes('_account') || outputCard.type === 'account');
+        
+        // 메타데이터 구성
+        const metadata: any = {
+          transferType: transactionType,
+          denominationAmounts: outputCard.denominations || {},
+          customer: {
+            name: isAnonymousTransaction ? '' : customerName,
+            phone: isAnonymousTransaction ? '' : customerPhone,
+            isAnonymous: isAnonymousTransaction
+          }
+        };
+        
+        // 계좌이체인 경우 고객 계좌 정보 추가
+        if (isAccountTransfer) {
+          metadata.customerAccount = {
+            bankName: customerAccountInfo.bankName,
+            accountNumber: customerAccountInfo.accountNumber,
+            accountHolder: customerAccountInfo.accountHolder
+          };
+        }
+
         transactions.push({
           type: transactionType,
           fromCurrency: inputCard.currency,
@@ -1236,7 +1301,8 @@ export default function CardBasedTransactionForm({
           fromAccountId: inputCard.accountId || null,
           toAccountId: outputCard.accountId || null,
           denominations: outputCard.denominations || {},
-          isMainTransaction: true
+          isMainTransaction: true,
+          metadata: metadata
         });
       }
     } else {
@@ -1263,6 +1329,30 @@ export default function CardBasedTransactionForm({
 
           // 환율은 이미 계산됨
 
+          // 계좌이체 거래인지 확인
+          const isAccountTransfer = transactionType.includes('_to_') && 
+            (transactionType.includes('_account') || outputCard.type === 'account');
+          
+          // 메타데이터 구성
+          const metadata: any = {
+            transferType: transactionType,
+            denominationAmounts: outputCard.denominations || {},
+            customer: {
+              name: isAnonymousTransaction ? '' : customerName,
+              phone: isAnonymousTransaction ? '' : customerPhone,
+              isAnonymous: isAnonymousTransaction
+            }
+          };
+          
+          // 계좌이체인 경우 고객 계좌 정보 추가
+          if (isAccountTransfer) {
+            metadata.customerAccount = {
+              bankName: customerAccountInfo.bankName,
+              accountNumber: customerAccountInfo.accountNumber,
+              accountHolder: customerAccountInfo.accountHolder
+            };
+          }
+
           transactions.push({
             type: transactionType,
             fromCurrency: primaryInputCard.currency,
@@ -1277,7 +1367,8 @@ export default function CardBasedTransactionForm({
             toAccountId: outputCard.accountId || null,
             denominations: outputCard.denominations || {},
             isMainTransaction: index === 0,
-            parentTransactionId: index === 0 ? null : 'main'
+            parentTransactionId: index === 0 ? null : 'main',
+            metadata: metadata
           });
         }
       });
@@ -1408,6 +1499,8 @@ export default function CardBasedTransactionForm({
       setMemo('');
       setInputCards([]);
       setOutputCards([]);
+      setCustomerAccountInfo({ bankName: '', accountNumber: '', accountHolder: '' });
+      setIsAnonymousTransaction(false);
 
       // 잠시 후 홈으로 이동
       setTimeout(() => {
@@ -1792,29 +1885,50 @@ export default function CardBasedTransactionForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="customerName">고객명 *</Label>
-              <Input
-                id="customerName"
-                placeholder="고객명을 입력하세요"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className={customerName ? "border-green-300 bg-green-50" : ""}
-                data-testid="input-customer-name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customerPhone">연락처</Label>
-              <Input
-                id="customerPhone"
-                placeholder="연락처를 입력하세요"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                data-testid="input-customer-phone"
-              />
-            </div>
+          {/* 익명 거래 옵션 */}
+          <div className="flex items-center space-x-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+            <Checkbox
+              id="anonymousTransaction"
+              checked={isAnonymousTransaction}
+              onCheckedChange={(checked) => {
+                setIsAnonymousTransaction(checked === true);
+                if (checked === true) {
+                  setCustomerName('');
+                  setCustomerPhone('');
+                }
+              }}
+            />
+            <Label htmlFor="anonymousTransaction" className="text-sm font-medium">
+              익명 거래 (고객 정보 입력 생략)
+            </Label>
           </div>
+          
+          {/* 고객 정보 입력 - 익명 거래가 아닌 경우만 표시 */}
+          {!isAnonymousTransaction && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">고객명</Label>
+                <Input
+                  id="customerName"
+                  placeholder="고객명을 입력하세요"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className={customerName ? "border-green-300 bg-green-50" : ""}
+                  data-testid="input-customer-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="customerPhone">연락처</Label>
+                <Input
+                  id="customerPhone"
+                  placeholder="연락처를 입력하세요"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  data-testid="input-customer-phone"
+                />
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="memo">메모</Label>
             <Textarea
@@ -1825,6 +1939,56 @@ export default function CardBasedTransactionForm({
               data-testid="textarea-memo"
             />
           </div>
+          
+          {/* 고객 계좌 정보 - 계좌이체 거래 시에만 표시 */}
+          {selectedTransactionType.includes('_to_') && (
+            selectedTransactionType.includes('_account') || outputCards.some(card => card.type === 'account')
+          ) && (
+            <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+              <div className="flex items-center mb-3">
+                <Banknote className="mr-2 text-orange-600" size={20} />
+                <Label className="text-base font-semibold text-orange-800">고객 계좌 정보 (필수)</Label>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bankName">수신 은행명</Label>
+                  <Input
+                    id="bankName"
+                    placeholder="예: 신한은행"
+                    value={customerAccountInfo.bankName}
+                    onChange={(e) => setCustomerAccountInfo(prev => ({...prev, bankName: e.target.value}))}
+                    className={customerAccountInfo.bankName ? "border-green-300 bg-green-50" : ""}
+                    data-testid="input-bank-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accountNumber">수신 계좌번호</Label>
+                  <Input
+                    id="accountNumber"
+                    placeholder="예: 110-123-456789"
+                    value={customerAccountInfo.accountNumber}
+                    onChange={(e) => setCustomerAccountInfo(prev => ({...prev, accountNumber: e.target.value}))}
+                    className={customerAccountInfo.accountNumber ? "border-green-300 bg-green-50" : ""}
+                    data-testid="input-account-number"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accountHolder">수신 예금주명</Label>
+                  <Input
+                    id="accountHolder"
+                    placeholder="예: 김철수"
+                    value={customerAccountInfo.accountHolder}
+                    onChange={(e) => setCustomerAccountInfo(prev => ({...prev, accountHolder: e.target.value}))}
+                    className={customerAccountInfo.accountHolder ? "border-green-300 bg-green-50" : ""}
+                    data-testid="input-account-holder"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-orange-600 bg-white p-2 rounded border">
+                📝 참고: 실제 계좌이체를 위해 정확한 계좌 정보를 입력해 주세요. 이 정보는 거래 기록에 저장됩니다.
+              </div>
+            </div>
+          )}
           
           {/* 시스템 설정 옵션들 */}
           <div className="space-y-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">

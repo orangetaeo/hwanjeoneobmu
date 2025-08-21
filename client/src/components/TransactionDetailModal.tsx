@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, X, Banknote } from 'lucide-react';
 import { Transaction } from '@/types';
 import { formatInputWithCommas, getCurrencyDisplayName } from '@/utils/helpers';
 import { useQuery } from '@tanstack/react-query';
@@ -211,6 +211,42 @@ export default function TransactionDetailModal({
                     <div className="text-sm text-gray-500 mb-1">메모</div>
                     <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded text-sm">
                       {transaction.memo}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* 고객 계좌 정보 - 계좌이체 거래인 경우에만 표시 */}
+              {transaction.metadata && typeof transaction.metadata === 'object' && 
+                transaction.metadata !== null && 'customerAccount' in transaction.metadata && (
+                <>
+                  <Separator />
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-2">
+                      <Banknote size={16} />
+                      수신 계좌 정보
+                    </div>
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border border-orange-200 dark:border-orange-800">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <span className="text-orange-700 dark:text-orange-400 font-medium">은행:</span>
+                          <div className="font-semibold">
+                            {(transaction.metadata as any).customerAccount.bankName}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-orange-700 dark:text-orange-400 font-medium">계좌번호:</span>
+                          <div className="font-semibold font-mono">
+                            {(transaction.metadata as any).customerAccount.accountNumber}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-orange-700 dark:text-orange-400 font-medium">예금주:</span>
+                          <div className="font-semibold">
+                            {(transaction.metadata as any).customerAccount.accountHolder}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>
