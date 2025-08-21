@@ -135,11 +135,21 @@ export default function TransactionDetailModal({
                 <div className="text-center flex-1">
                   <div className="text-xs text-gray-500 mb-1">출금</div>
                   <div className="font-semibold text-sm">
-                    {formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString())} {(() => {
-                      if (transaction.fromAssetName.includes('USD')) return '달러';
-                      if (transaction.fromAssetName.includes('KRW')) return '원';
-                      if (transaction.fromAssetName.includes('VND')) return '동';
-                      return '';
+                    {(() => {
+                      // USD 거래인 경우 실제 권종 분배 기준으로 계산
+                      if (transaction.fromAssetName.includes('USD') && transaction.metadata && 
+                          typeof transaction.metadata === 'object' && transaction.metadata !== null &&
+                          'denominationAmounts' in transaction.metadata) {
+                        const denominationAmounts = transaction.metadata.denominationAmounts as Record<string, string>;
+                        const actualAmount = Object.entries(denominationAmounts)
+                          .reduce((sum, [denom, count]) => sum + (parseInt(denom) * parseInt(count)), 0);
+                        return formatInputWithCommas(actualAmount.toString()) + ' 달러';
+                      }
+                      // KRW/VND 거래의 경우도 동일한 로직 적용 가능
+                      const suffix = transaction.fromAssetName.includes('USD') ? '달러' : 
+                                   transaction.fromAssetName.includes('KRW') ? '원' : 
+                                   transaction.fromAssetName.includes('VND') ? '동' : '';
+                      return formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString()) + ' ' + suffix;
                     })()}
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">
@@ -154,11 +164,30 @@ export default function TransactionDetailModal({
                 <div className="text-center flex-1">
                   <div className="text-xs text-gray-500 mb-1">입금</div>
                   <div className="font-semibold text-sm">
-                    {formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString())} {(() => {
-                      if (transaction.toAssetName.includes('USD')) return '달러';
-                      if (transaction.toAssetName.includes('KRW')) return '원';
-                      if (transaction.toAssetName.includes('VND')) return '동';
-                      return '';
+                    {(() => {
+                      // VND 거래인 경우 실제 권종 분배 기준으로 계산
+                      if (transaction.toAssetName.includes('VND') && transaction.metadata && 
+                          typeof transaction.metadata === 'object' && transaction.metadata !== null &&
+                          'vndBreakdown' in transaction.metadata) {
+                        const vndBreakdown = transaction.metadata.vndBreakdown as Record<string, number>;
+                        const actualAmount = Object.entries(vndBreakdown)
+                          .reduce((sum, [denom, count]) => sum + (parseInt(denom) * count), 0);
+                        return formatInputWithCommas(actualAmount.toString()) + ' 동';
+                      }
+                      // KRW 거래인 경우도 실제 권종 분배 기준으로 계산
+                      if (transaction.toAssetName.includes('KRW') && transaction.metadata && 
+                          typeof transaction.metadata === 'object' && transaction.metadata !== null &&
+                          'krwBreakdown' in transaction.metadata) {
+                        const krwBreakdown = transaction.metadata.krwBreakdown as Record<string, number>;
+                        const actualAmount = Object.entries(krwBreakdown)
+                          .reduce((sum, [denom, count]) => sum + (parseInt(denom) * count), 0);
+                        return formatInputWithCommas(actualAmount.toString()) + ' 원';
+                      }
+                      // 기본값: 원래 금액 사용
+                      const suffix = transaction.toAssetName.includes('USD') ? '달러' : 
+                                   transaction.toAssetName.includes('KRW') ? '원' : 
+                                   transaction.toAssetName.includes('VND') ? '동' : '';
+                      return formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString()) + ' ' + suffix;
                     })()}
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">
