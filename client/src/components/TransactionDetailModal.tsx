@@ -205,51 +205,56 @@ export default function TransactionDetailModal({
               <CardContent className="pt-0">
                 <div className="space-y-2">
                   {relatedTransactions.map((relatedTx: Transaction) => (
-                    <div key={relatedTx.id} className="border rounded-lg p-2 bg-gray-50 dark:bg-gray-800 relative">
-                      {/* 중앙에 큰 금액 표시 */}
-                      <div className="text-center py-2">
-                        <div className={`font-bold text-xl ${
-                          parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) 
-                            ? 'text-green-600' 
-                            : 'text-red-600'
-                        }`}>
-                          {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? '+' : ''}
-                          {formatInputWithCommas(Math.abs(parseFloat(relatedTx.toAmount.toString()) - parseFloat(relatedTx.fromAmount.toString())).toString())}
-                          {relatedTx.toAssetName.includes('VND') ? '동' : '원'}
-                        </div>
-                        <div className="flex items-center justify-center gap-1 mt-1">
-                          {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? (
-                            <TrendingUp className="text-green-600 flex-shrink-0" size={14} />
-                          ) : (
-                            <TrendingDown className="text-red-600 flex-shrink-0" size={14} />
-                          )}
-                          <span className="font-medium text-xs text-gray-600">
-                            {relatedTx.toAssetName}
-                          </span>
+                    <div key={relatedTx.id} className="border rounded-lg bg-gray-50 dark:bg-gray-800 relative flex">
+                      {/* 좌측: 큰 금액 표시 (세로 중앙 정렬) */}
+                      <div className="flex items-center justify-center p-3 flex-shrink-0 border-r border-gray-200 dark:border-gray-600">
+                        <div className="text-center">
+                          <div className={`font-bold text-xl ${
+                            parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? '+' : ''}
+                            {formatInputWithCommas(Math.abs(parseFloat(relatedTx.toAmount.toString()) - parseFloat(relatedTx.fromAmount.toString())).toString())}
+                            {relatedTx.toAssetName.includes('VND') ? '동' : '원'}
+                          </div>
+                          <div className="flex items-center justify-center gap-1 mt-1">
+                            {parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) ? (
+                              <TrendingUp className="text-green-600 flex-shrink-0" size={12} />
+                            ) : (
+                              <TrendingDown className="text-red-600 flex-shrink-0" size={12} />
+                            )}
+                            <span className="font-medium text-xs text-gray-600">
+                              {relatedTx.toAssetName}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       
-                      {relatedTx.metadata && typeof relatedTx.metadata === 'object' && relatedTx.metadata !== null && 'denominationChanges' in relatedTx.metadata && (
-                        <div className="mt-1">
-                          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">권종별 변동:</div>
-                          <div className="grid grid-cols-3 gap-1">
-                            {Object.entries(relatedTx.metadata.denominationChanges as Record<string, number>)
-                              .filter(([_, count]) => count !== 0)
-                              .map(([denom, count]) => (
-                                <div key={denom} className={`text-xs px-1 py-0.5 rounded border text-center ${
-                                  count > 0 
-                                    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-600' 
-                                    : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600'
-                                }`}>
-                                  {formatInputWithCommas(denom)}{relatedTx.toAssetName.includes('VND') ? '동' : '원'} × {count > 0 ? '+' : ''}{count}
-                                </div>
-                              ))}
+                      {/* 우측: 권종별 변동과 시간 */}
+                      <div className="flex-1 p-2">
+                        {relatedTx.metadata && typeof relatedTx.metadata === 'object' && relatedTx.metadata !== null && 'denominationChanges' in relatedTx.metadata && (
+                          <div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">권종별 변동:</div>
+                            <div className="grid grid-cols-2 gap-1">
+                              {Object.entries(relatedTx.metadata.denominationChanges as Record<string, number>)
+                                .filter(([_, count]) => count !== 0)
+                                .map(([denom, count]) => (
+                                  <div key={denom} className={`text-xs px-1 py-0.5 rounded border text-center ${
+                                    count > 0 
+                                      ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-600' 
+                                      : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600'
+                                  }`}>
+                                    {formatInputWithCommas(denom)}{relatedTx.toAssetName.includes('VND') ? '동' : '원'} × {count > 0 ? '+' : ''}{count}
+                                  </div>
+                                ))}
+                            </div>
                           </div>
+                        )}
+                        
+                        <div className="text-xs text-gray-500 mt-2">
+                          {formatDateTime(relatedTx.timestamp)}
                         </div>
-                      )}
-                      
-                      <div className="text-xs text-gray-500 mt-1 text-center">
-                        {formatDateTime(relatedTx.timestamp)}
                       </div>
                     </div>
                   ))}
