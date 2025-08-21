@@ -152,10 +152,10 @@ export default function CardBasedTransactionForm({
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  // 자동 포커스 기능 - 출금 카드에 계좌가 추가될 때 고객 계좌 정보 첫 필드에 포커스
+  // 자동 포커스 기능 - 출금 카드에서 실제 계좌를 선택했을 때 고객 계좌 정보 첫 필드에 포커스
   useEffect(() => {
-    const hasAccountOutput = outputCards.some(card => card.type === 'account');
-    if (hasAccountOutput && bankNameInputRef.current) {
+    const hasSelectedAccount = outputCards.some(card => card.type === 'account' && card.accountId);
+    if (hasSelectedAccount && bankNameInputRef.current) {
       // 약간의 딜레이를 줘서 DOM이 완전히 렌더링된 후 포커스
       setTimeout(() => {
         bankNameInputRef.current?.focus();
