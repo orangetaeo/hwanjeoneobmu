@@ -1340,10 +1340,11 @@ export default function TransactionForm() {
                       const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom.value);
                       const isSelected = formData.fromDenominations.includes(denom.value);
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
-                      // VND → KRW의 경우 USD 기준 크로스 환율 계산
+                      // VND → KRW의 경우 USD → KRW 내 매도가를 직접 사용
                       let useRate = 0;
+                      let displayRate = 0; // 매매시세 박스에 표시할 값
                       if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
-                        // USD → VND 내 매도가 조회
+                        // USD → VND 내 매도가 조회 (환전 계산용)
                         const usdToVndRate = exchangeRates?.find((rate: any) => 
                           rate.fromCurrency === "USD" && 
                           rate.toCurrency === "VND" && 
@@ -1359,12 +1360,14 @@ export default function TransactionForm() {
                         if (usdToVndRate && usdToKrwRate) {
                           const vndSellRate = parseFloat(usdToVndRate.mySellRate);
                           const krwSellRate = parseFloat(usdToKrwRate.mySellRate);
-                          useRate = krwSellRate / vndSellRate; // 크로스 환율: KRW매도가 / VND매도가
-                          console.log(`VND→KRW 크로스 환율 계산: ${krwSellRate} / ${vndSellRate} = ${useRate}`);
+                          useRate = krwSellRate / vndSellRate; // 환전 계산용 크로스 환율
+                          displayRate = krwSellRate; // 매매시세 박스에는 USD→KRW 내 매도가 원본값 표시
+                          console.log(`VND→KRW 설정: 계산용환율=${useRate}, 표시용=${displayRate}`);
                         }
                       } else {
                         // 기존 로직: 직접 환율 사용
                         useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                        displayRate = useRate; // 다른 통화는 동일값 사용
                       }
                       
 
@@ -1449,7 +1452,11 @@ export default function TransactionForm() {
                             ) && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
-                                  매매시세 {useRate > 0 ? formatRate(useRate, formData.fromCurrency, formData.toCurrency) : '0.00'}
+                                  매매시세 {displayRate > 0 ? (
+                                    formData.fromCurrency === "VND" && formData.toCurrency === "KRW" 
+                                      ? Math.round(displayRate).toLocaleString('ko-KR') 
+                                      : formatRate(displayRate, formData.fromCurrency, formData.toCurrency)
+                                  ) : '0.00'}
                                 </div>
                               </div>
                             )}
