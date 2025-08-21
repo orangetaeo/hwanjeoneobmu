@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -179,20 +179,24 @@ export default function TransactionForm() {
     queryKey: ["/api/exchange-rates"],
   });
 
-  // VND → KRW 매매시세 계산 (컴포넌트 레벨에서 한 번만 계산)
-  const vndToKrwDisplayRate = useMemo(() => {
+  // 권종별 VND → KRW 매매시세 계산 함수
+  const getVndToKrwDisplayRate = useCallback((denomination: string) => {
     if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW" && Array.isArray(exchangeRates)) {
-      // USD → VND 내 매입가 조회 (VND를 매입하는 가격)
-      const usdToVndRate = exchangeRates.find((rate: any) => 
+      // 해당 권종의 USD → VND 내 매입가 조회
+      const specificRate = exchangeRates.find((rate: any) => 
         rate.fromCurrency === "USD" && 
         rate.toCurrency === "VND" && 
+        rate.denomination === denomination &&
         rate.isActive === "true"
       );
       
-      if (usdToVndRate) {
-        const vndBuyRate = parseFloat(usdToVndRate.myBuyRate);
-        console.log(`VND→KRW 컴포넌트 레벨 매매시세 (VND 매입가): ${vndBuyRate}`);
+      if (specificRate) {
+        const vndBuyRate = parseFloat(specificRate.myBuyRate);
+        console.log(`권종별 VND→KRW 매매시세 (${denomination}: ${vndBuyRate})`);
         return vndBuyRate;
+      } else {
+        console.log(`권종 ${denomination}의 환율 정보 없음`);
+        return 0;
       }
     }
     return 0;
@@ -1364,18 +1368,19 @@ export default function TransactionForm() {
                       let displayRate = 0;
                       
                       if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
-                        // VND → KRW의 경우 컴포넌트 레벨에서 계산한 값 사용
-                        displayRate = vndToKrwDisplayRate;
+                        // VND → KRW의 경우 권종별 매매시세 사용
+                        displayRate = getVndToKrwDisplayRate(denom.value);
                         
-                        // 환전 계산용 크로스 환율은 여전히 개별 계산
-                        const usdToVndRate = exchangeRates?.find((rate: any) => 
+                        // 환전 계산용 크로스 환율은 해당 권종의 매도가 사용
+                        const specificRate = exchangeRates?.find((rate: any) => 
                           rate.fromCurrency === "USD" && 
                           rate.toCurrency === "VND" && 
+                          rate.denomination === denom.value &&
                           rate.isActive === "true"
                         );
-                        if (usdToVndRate && vndToKrwDisplayRate > 0) {
-                          const vndSellRate = parseFloat(usdToVndRate.mySellRate);
-                          useRate = vndToKrwDisplayRate / vndSellRate;
+                        if (specificRate && displayRate > 0) {
+                          const vndSellRate = parseFloat(specificRate.mySellRate);
+                          useRate = displayRate / vndSellRate;
                         }
                       } else {
                         // 기존 로직: 직접 환율 사용
