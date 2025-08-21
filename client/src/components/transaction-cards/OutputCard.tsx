@@ -30,11 +30,13 @@ export default function OutputCard({
   const [showDenominations, setShowDenominations] = useState(false);
   const { CURRENCY_DENOMINATIONS, calculateVndDistribution } = useTransactionCalculations(exchangeRates);
 
-  // 비율 변경 시 금액 자동 계산
+  // 비율 변경 시 금액 자동 계산 (무한 루프 방지)
   useEffect(() => {
     if (totalInputAmount > 0) {
       const calculatedAmount = (totalInputAmount * output.percentage) / 100;
-      onUpdate({ amount: calculatedAmount });
+      if (Math.abs(output.amount - calculatedAmount) > 0.01) { // 오차 범위 내에서만 업데이트
+        onUpdate({ amount: calculatedAmount });
+      }
     }
   }, [output.percentage, totalInputAmount]);
 
