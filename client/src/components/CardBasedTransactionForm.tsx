@@ -1511,43 +1511,52 @@ export default function CardBasedTransactionForm({
 
   // 권종별 분배 UI 렌더링 (개선된 버전)
   const renderDenominationInputs = (card: TransactionCard, isOutput: boolean) => {
-    if (card.type !== 'cash' || !card.currency || !card.amount) return null;
+    if (card.type !== 'cash' || !card.currency) return null;
+    
+    // 출금 카드는 금액이 있어야 분배 표시, 입금 카드는 권종별 수량 입력이 우선
+    if (isOutput && !card.amount) return null;
     
     const denominations = CURRENCY_DENOMINATIONS[card.currency as keyof typeof CURRENCY_DENOMINATIONS];
     if (!denominations) return null;
 
-    const amount = parseCommaFormattedNumber(card.amount);
-    if (amount <= 0) return null;
+    // 출금 카드만 금액 검증, 입금 카드는 권종별 수량으로 금액 생성
+    if (isOutput) {
+      const amount = parseCommaFormattedNumber(card.amount);
+      if (amount <= 0) return null;
+    }
 
     return (
       <div className="space-y-3">
         {/* 권종별 분배 섹션 */}
         <div className="p-3 bg-white rounded-lg border">
           <div className="flex items-center justify-between mb-3">
-            <Label className="text-sm font-medium text-gray-700">권종별 분배</Label>
+            <Label className="text-sm font-medium text-gray-700">
+              {isOutput ? '권종별 분배' : '권종별 수량 (매입)'}
+            </Label>
             <div className="flex items-center space-x-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  let newDenoms: Record<string, number> = {};
-                  if (card.currency === 'VND') {
-                    newDenoms = calculateVNDBreakdown(amount);
-                  } else if (card.currency === 'KRW') {
-                    newDenoms = calculateKRWBreakdown(amount);
-                  } else if (card.currency === 'USD') {
-                    newDenoms = calculateUSDBreakdown(amount);
-                  }
-                  if (isOutput) {
+              {isOutput && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const amount = parseCommaFormattedNumber(card.amount);
+                    let newDenoms: Record<string, number> = {};
+                    if (card.currency === 'VND') {
+                      newDenoms = calculateVNDBreakdown(amount);
+                    } else if (card.currency === 'KRW') {
+                      newDenoms = calculateKRWBreakdown(amount);
+                    } else if (card.currency === 'USD') {
+                      newDenoms = calculateUSDBreakdown(amount);
+                    }
                     updateOutputCard(card.id, 'denominations', newDenoms);
-                  }
-                }}
-                className="h-7 px-2 text-xs"
-              >
-                <RefreshCw size={12} className="mr-1" />
-                자동분배
-              </Button>
+                  }}
+                  className="h-7 px-2 text-xs"
+                >
+                  <RefreshCw size={12} className="mr-1" />
+                  자동분배
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="ghost"
@@ -1597,6 +1606,8 @@ export default function CardBasedTransactionForm({
                           if (isOutput) {
                             updateOutputCard(card.id, 'denominations', newDenoms);
                             if (autoAdjustment) handleAutoAdjustment({ ...card, denominations: newDenoms });
+                          } else {
+                            updateInputCard(card.id, 'denominations', newDenoms);
                           }
                         }}
                       >
@@ -1612,6 +1623,8 @@ export default function CardBasedTransactionForm({
                           if (isOutput) {
                             updateOutputCard(card.id, 'denominations', newDenoms);
                             if (autoAdjustment) handleAutoAdjustment({ ...card, denominations: newDenoms });
+                          } else {
+                            updateInputCard(card.id, 'denominations', newDenoms);
                           }
                         }}
                         className={`h-6 w-12 text-center text-xs ${
@@ -1629,6 +1642,8 @@ export default function CardBasedTransactionForm({
                           if (isOutput) {
                             updateOutputCard(card.id, 'denominations', newDenoms);
                             if (autoAdjustment) handleAutoAdjustment({ ...card, denominations: newDenoms });
+                          } else {
+                            updateInputCard(card.id, 'denominations', newDenoms);
                           }
                         }}
                       >
@@ -1646,16 +1661,28 @@ export default function CardBasedTransactionForm({
             <div className="mt-3 p-2 bg-gray-50 rounded border-t">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">권종별 총액:</span>
-                <span className={`font-bold ${
-                  Object.entries(card.denominations).reduce((sum, [denom, count]) => 
-                    sum + (parseInt(denom) * count), 0
-                  ) === amount ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {Object.entries(card.denominations).reduce((sum, [denom, count]) => 
+                <span className="font-bold text-blue-600">
+                  {Object.entries(card.denominations || {}).reduce((sum, [denom, count]) => 
                     sum + (parseInt(denom) * count), 0
                   ).toLocaleString()} {card.currency}
                 </span>
               </div>
+              {!isOutput && (
+                <div className="flex justify-between items-center text-sm mt-1">
+                  <span className="text-gray-600">총 매입가:</span>
+                  <span className="font-bold text-green-600">
+                    {(() => {
+                      let total = 0;
+                      Object.entries(card.denominations || {}).forEach(([denom, count]) => {
+                        const rate = getExchangeRate(card.currency, 'KRW', denom);
+                        const denomValue = parseInt(denom);
+                        total += denomValue * count * rate;
+                      });
+                      return formatCurrency(total, 'KRW');
+                    })()} KRW
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
