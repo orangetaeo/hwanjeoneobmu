@@ -148,6 +148,39 @@ export default function TransactionForm() {
       }
     }
     
+    // VND→KRW 거래의 경우 권종별 매매시세의 평균 계산
+    if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
+      if (Array.isArray(exchangeRates)) {
+        // 입력된 권종들의 매매시세 수집
+        const enteredDenominations = Object.keys(formData.denominationAmounts || {}).filter(denom => 
+          formData.denominationAmounts[denom] && parseFloat(formData.denominationAmounts[denom]) > 0
+        );
+        
+        if (enteredDenominations.length > 0) {
+          const rates: number[] = [];
+          
+          enteredDenominations.forEach(denomination => {
+            const displayRate = getVndToKrwDisplayRate(denomination);
+            if (displayRate > 0) {
+              rates.push(displayRate);
+            }
+          });
+          
+          if (rates.length > 0) {
+            const avgRate = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+            console.log(`VND→KRW 평균 매매시세 계산: ${rates.join(', ')} → 평균: ${avgRate}`);
+            return avgRate;
+          }
+        }
+        
+        // 입력된 권종이 없으면 기본값으로 500000 권종 환율 사용
+        const defaultRate = getVndToKrwDisplayRate("500000");
+        if (defaultRate > 0) {
+          return defaultRate;
+        }
+      }
+    }
+    
     // 기존 로직: 실제 거래 금액 기준 계산
     const totalFromAmount = calculateTotalFromAmount();
     const totalToAmount = parseFloat(formData.toAmount);
@@ -2780,6 +2813,19 @@ export default function TransactionForm() {
                             });
                           }
                           
+                          // VND→KRW 환전: VND 권종별 매매시세 수집
+                          if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW" && Object.keys(formData.denominationAmounts || {}).length > 0) {
+                            Object.keys(formData.denominationAmounts || {}).forEach(denom => {
+                              const count = parseFloat(formData.denominationAmounts[denom] || "0");
+                              if (count > 0) {
+                                const vndToKrwRate = getVndToKrwDisplayRate(denom);
+                                if (vndToKrwRate > 0) {
+                                  rates.push(vndToKrwRate);
+                                }
+                              }
+                            });
+                          }
+                          
                           // 기존 VND 환전: KRW→VND 매도시세 수집
                           if (formData.toCurrency === "KRW" && Object.keys(krwBreakdown).length > 0) {
                             Object.keys(krwBreakdown).forEach(denom => {
@@ -2805,7 +2851,14 @@ export default function TransactionForm() {
                           
                           if (rates.length > 0) {
                             const average = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
-                            return average.toFixed(2);
+                            console.log(`거래 확인 적용 환율 평균 계산: ${rates.join(', ')} → 평균: ${average}`);
+                            
+                            // VND→KRW는 소수점 3자리, 나머지는 소수점 2자리
+                            if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
+                              return average.toFixed(3);
+                            } else {
+                              return average.toFixed(2);
+                            }
                           }
                           
                           return calculateAverageExchangeRate().toString();
