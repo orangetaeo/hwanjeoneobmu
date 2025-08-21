@@ -865,8 +865,11 @@ export default function TransactionForm() {
       if (vndCashAsset?.metadata?.denominations) {
         const denomComposition = vndCashAsset.metadata.denominations;
         for (const [denom, requiredCount] of Object.entries(vndBreakdown)) {
-          const denomKey = parseInt(denom).toLocaleString(); // 쉼표 포함 형태로 변환
+          // 권종 키를 숫자 형태 그대로 사용 (API 데이터가 "50000" 형태로 저장됨)
+          const denomKey = denom; // 쉼표 없는 숫자 형태로 사용
           const availableCount = denomComposition[denomKey] || 0;
+          console.log(`VND 권종 검증: ${denom} - 필요: ${requiredCount}장, 보유: ${availableCount}장`);
+          
           if (requiredCount > availableCount) {
             toast({
               variant: "destructive",
