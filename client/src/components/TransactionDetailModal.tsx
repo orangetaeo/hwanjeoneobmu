@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react';
 import { Transaction } from '@/types';
-import { formatInputWithCommas } from '@/utils/helpers';
+import { formatInputWithCommas, getCurrencyDisplayName } from '@/utils/helpers';
 import { useQuery } from '@tanstack/react-query';
 
 interface TransactionDetailModalProps {
@@ -27,17 +27,25 @@ export default function TransactionDetailModal({
   const getRelatedTransactions = () => {
     if (!transaction || !allTransactions || !Array.isArray(allTransactions)) return [];
     
-    // 메인 거래와 같은 시간대(±30초)의 cash_change 거래들을 찾음
+    // 메인 거래와 직접 연관된 cash_change 거래들만 찾음
     const transactionTime = new Date(transaction.timestamp).getTime();
-    const timeWindow = 30000; // 30초
+    const timeWindow = 5000; // 5초로 축소하여 더 정확한 연관성 확보
     
     return allTransactions.filter((t: Transaction) => {
       if (t.id === transaction.id) return false; // 자기 자신 제외
+      if (t.type !== 'cash_change') return false; // cash_change만
       
       const tTime = new Date(t.timestamp).getTime();
       const timeDiff = Math.abs(transactionTime - tTime);
       
-      return timeDiff <= timeWindow && t.type === 'cash_change';
+      // 시간 윈도우 내에 있고, 거래와 관련된 자산명이 일치하는 경우만
+      if (timeDiff <= timeWindow) {
+        const isFromAssetRelated = t.fromAssetName === transaction.fromAssetName || t.toAssetName === transaction.fromAssetName;
+        const isToAssetRelated = t.fromAssetName === transaction.toAssetName || t.toAssetName === transaction.toAssetName;
+        return isFromAssetRelated || isToAssetRelated;
+      }
+      
+      return false;
     });
   };
 
@@ -127,7 +135,12 @@ export default function TransactionDetailModal({
                 <div className="text-center flex-1">
                   <div className="text-xs text-gray-500 mb-1">출금</div>
                   <div className="font-semibold text-sm">
-                    {formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString())} {transaction.fromAssetName.includes('KRW') ? '원' : transaction.fromAssetName.includes('VND') ? '동' : transaction.fromAssetName.includes('USD') ? '$' : ''}
+                    {formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString())} {(() => {
+                      if (transaction.fromAssetName.includes('USD')) return '달러';
+                      if (transaction.fromAssetName.includes('KRW')) return '원';
+                      if (transaction.fromAssetName.includes('VND')) return '동';
+                      return '';
+                    })()}
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">
                     {transaction.fromAssetName}
@@ -141,7 +154,12 @@ export default function TransactionDetailModal({
                 <div className="text-center flex-1">
                   <div className="text-xs text-gray-500 mb-1">입금</div>
                   <div className="font-semibold text-sm">
-                    {formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString())} {transaction.toAssetName.includes('KRW') ? '원' : transaction.toAssetName.includes('VND') ? '동' : transaction.toAssetName.includes('USD') ? '$' : ''}
+                    {formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString())} {(() => {
+                      if (transaction.toAssetName.includes('USD')) return '달러';
+                      if (transaction.toAssetName.includes('KRW')) return '원';
+                      if (transaction.toAssetName.includes('VND')) return '동';
+                      return '';
+                    })()}
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">
                     {transaction.toAssetName}

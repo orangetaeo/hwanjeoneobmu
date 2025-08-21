@@ -35,6 +35,22 @@ export const handleDecimalInput = (value: string, setter: (value: string) => voi
   }
 };
 
+// 통화 표시 함수 추가
+export const getCurrencyDisplayName = (currency: string): string => {
+  switch (currency) {
+    case 'USD':
+      return '달러';
+    case 'KRW':
+      return '원';
+    case 'VND':
+      return '동';
+    case 'USDT':
+      return 'USDT';
+    default:
+      return currency;
+  }
+};
+
 export const formatInputWithCommas = (value: string): string => {
   if (!value) return '';
   
