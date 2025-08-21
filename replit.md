@@ -3,6 +3,12 @@
 This is a full-stack asset management and exchange tracking application for managing various financial assets including cash, bank accounts, and cryptocurrency holdings, and tracking exchange transactions. It provides a comprehensive dashboard for portfolio management with real-time exchange rate monitoring and detailed cash denomination tracking. The business vision is to offer a robust, user-friendly platform for efficient financial asset tracking and exchange management, targeting individuals and small businesses involved in multi-currency and crypto transactions.
 
 ## Recent Changes (August 21, 2025)
+- **데이터 무결성 완전 해결**: 모든 거래 정보에서 계산 로직 제거, 저장된 데이터 그대로 표시 원칙 확립
+- **통화 단위 표시 통일**: USD→달러, KRW→원, VND→동으로 모든 UI에서 일관성 있게 표시
+- **거래 상세 모달 개선**: TransactionDetailModal과 TransactionHistory에서 formatTransactionAmount 대신 직접 포맷팅 사용
+- **자산 변동 내역 조건부 표시**: 현금 환전(cash_exchange) 거래에만 자산 변동 내역 표시, 계좌이체는 숨김
+- **거래 ID 219aa404 데이터 정정**: 실제 VND 권종 분배 기준으로 2,533,333동→2,533,000동 수정
+- **helpers.ts 수정**: formatTransactionAmount에서 Math.round를 Math.floor로 변경하여 정확한 값 표시
 - **거래 상세 모달 UI 완전 개선**: 커스텀 X버튼 구현으로 기본 X버튼 숨김, 헤더 padding 균등화(py-1.5), 출금-입금-환율 한 줄 배치, 컴팩트 디자인
 - **자산 변동 내역 최적화**: 고액권 우선 정렬, 좌측 큰 금액 세로 중앙 정렬(min-h-[80px]), flex-wrap 모바일 줄바꿈, whitespace-nowrap 텍스트 깨짐 방지
 - **X버튼 중복 문제 해결**: CSS 선택자 [&>button]:hidden으로 기본 X버튼 숨김, 커스텀 X버튼을 "거래 상세"와 같은 줄에 정확 배치
