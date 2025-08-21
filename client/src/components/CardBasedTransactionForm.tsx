@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calculator, User, Trash2, Wallet, Banknote } from 'lucide-react';
+import { Plus, Calculator, User, Trash2, Wallet, Banknote, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 interface CardBasedTransactionFormProps {
   onClose: () => void;
@@ -17,6 +19,9 @@ export default function CardBasedTransactionForm({
   onClose, 
   assets 
 }: CardBasedTransactionFormProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   // 환율 데이터 조회
   const { data: exchangeRates = [] } = useQuery<any[]>({
     queryKey: ["/api/exchange-rates"],
@@ -124,6 +129,244 @@ export default function CardBasedTransactionForm({
       asset.type === 'bank_account' && 
       asset.currency === currency
     );
+  };
+
+  // 거래 유효성 검증
+  const validateTransaction = () => {
+    const errors: string[] = [];
+
+    if (!customerName.trim()) {
+      errors.push('고객명을 입력해주세요');
+    }
+
+    if (inputCards.length === 0) {
+      errors.push('최소 1개의 입금 카드가 필요합니다');
+    }
+
+    if (outputCards.length === 0) {
+      errors.push('최소 1개의 출금 카드가 필요합니다');
+    }
+
+    // 입금 카드 검증
+    inputCards.forEach((card, index) => {
+      if (!card.amount || parseFloat(card.amount) <= 0) {
+        errors.push(`입금 카드 ${index + 1}: 금액을 입력해주세요`);
+      }
+      if (card.type === 'account' && !card.accountId) {
+        errors.push(`입금 카드 ${index + 1}: 계좌를 선택해주세요`);
+      }
+    });
+
+    // 출금 카드 검증
+    outputCards.forEach((card, index) => {
+      if (!card.amount || parseFloat(card.amount) <= 0) {
+        errors.push(`출금 카드 ${index + 1}: 금액을 입력해주세요`);
+      }
+      if (card.type === 'account' && !card.accountId) {
+        errors.push(`출금 카드 ${index + 1}: 계좌를 선택해주세요`);
+      }
+    });
+
+    return errors;
+  };
+
+  // VND 권종별 분배 계산
+  const calculateVNDDenominations = (amount: number) => {
+    const denominations: Record<number, number> = {
+      500000: 0, 200000: 0, 100000: 0, 50000: 0, 
+      20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0
+    };
+
+    let remaining = Math.floor(amount);
+    const denoms = [500000, 200000, 100000, 50000, 20000, 10000, 5000, 2000, 1000];
+
+    for (const denom of denoms) {
+      if (remaining >= denom) {
+        denominations[denom] = Math.floor(remaining / denom);
+        remaining = remaining % denom;
+      }
+    }
+
+    return denominations;
+  };
+
+  // 복합 거래를 단일 거래들로 분해 (개선된 버전)
+  const decomposeComplexTransaction = () => {
+    const transactions: any[] = [];
+
+    // 입금/출금 카드가 각각 1개인 간단한 케이스
+    if (inputCards.length === 1 && outputCards.length === 1) {
+      const inputCard = inputCards[0];
+      const outputCard = outputCards[0];
+      const inputAmount = parseFloat(inputCard.amount) || 0;
+      const outputAmount = parseFloat(outputCard.amount) || 0;
+
+      if (inputAmount > 0 && outputAmount > 0) {
+        // 거래 타입 결정
+        let transactionType = '';
+        if (inputCard.type === 'cash' && outputCard.type === 'cash') {
+          transactionType = 'cash_exchange';
+        } else if (inputCard.type === 'cash' && outputCard.type === 'account') {
+          transactionType = outputCard.currency === 'KRW' ? 'cash_to_krw_account' : 'cash_to_vnd_account';
+        } else if (inputCard.type === 'account' && outputCard.type === 'cash') {
+          transactionType = inputCard.currency === 'KRW' ? 'krw_account_to_cash' : 'vnd_account_to_cash';
+        } else if (inputCard.type === 'account' && outputCard.type === 'account') {
+          if (inputCard.currency === 'VND' && outputCard.currency === 'KRW') {
+            transactionType = 'vnd_account_to_krw_account';
+          } else if (inputCard.currency === 'KRW' && outputCard.currency === 'VND') {
+            transactionType = 'krw_account_to_vnd_account';
+          } else {
+            transactionType = 'account_to_account';
+          }
+        }
+
+        // 환율 계산
+        const exchangeRate = getExchangeRate(inputCard.currency, outputCard.currency);
+
+        // VND 권종 분배 (출금이 VND 현금인 경우)
+        let denominations = {};
+        if (outputCard.type === 'cash' && outputCard.currency === 'VND') {
+          denominations = calculateVNDDenominations(outputAmount);
+        }
+
+        transactions.push({
+          type: transactionType,
+          fromCurrency: inputCard.currency,
+          toCurrency: outputCard.currency,
+          fromAmount: Math.floor(inputAmount),
+          toAmount: Math.floor(outputAmount),
+          exchangeRate: exchangeRate,
+          customerName,
+          customerPhone,
+          memo: memo || `복합거래 (${inputCard.currency}→${outputCard.currency})`,
+          fromAccountId: inputCard.accountId || null,
+          toAccountId: outputCard.accountId || null,
+          denominations
+        });
+      }
+    } else {
+      // 복잡한 케이스: 여러 입금/출금 조합
+      // 각 출금 카드별로 거래 생성 (입금은 첫 번째 카드 기준)
+      const primaryInputCard = inputCards[0];
+      
+      outputCards.forEach((outputCard) => {
+        const outputAmount = parseFloat(outputCard.amount) || 0;
+        const inputAmount = parseFloat(primaryInputCard.amount) || 0;
+        
+        // 출금 비율에 따른 입금 할당
+        const outputRatio = outputAmount / totalOutputAmount;
+        const allocatedInputAmount = inputAmount * outputRatio;
+
+        if (allocatedInputAmount > 0 && outputAmount > 0) {
+          // 거래 타입 결정
+          let transactionType = '';
+          if (primaryInputCard.type === 'cash' && outputCard.type === 'cash') {
+            transactionType = 'cash_exchange';
+          } else if (primaryInputCard.type === 'cash' && outputCard.type === 'account') {
+            transactionType = outputCard.currency === 'KRW' ? 'cash_to_krw_account' : 'cash_to_vnd_account';
+          } else if (primaryInputCard.type === 'account' && outputCard.type === 'cash') {
+            transactionType = primaryInputCard.currency === 'KRW' ? 'krw_account_to_cash' : 'vnd_account_to_cash';
+          } else if (primaryInputCard.type === 'account' && outputCard.type === 'account') {
+            transactionType = 'account_to_account';
+          }
+
+          // 환율 계산
+          const exchangeRate = getExchangeRate(primaryInputCard.currency, outputCard.currency);
+
+          // VND 권종 분배
+          let denominations = {};
+          if (outputCard.type === 'cash' && outputCard.currency === 'VND') {
+            denominations = calculateVNDDenominations(outputAmount);
+          }
+
+          transactions.push({
+            type: transactionType,
+            fromCurrency: primaryInputCard.currency,
+            toCurrency: outputCard.currency,
+            fromAmount: Math.floor(allocatedInputAmount),
+            toAmount: Math.floor(outputAmount),
+            exchangeRate: exchangeRate,
+            customerName,
+            customerPhone,
+            memo: memo || `복합거래 ${outputCard.currency} 출금`,
+            fromAccountId: primaryInputCard.accountId || null,
+            toAccountId: outputCard.accountId || null,
+            denominations
+          });
+        }
+      });
+    }
+
+    return transactions;
+  };
+
+  // 거래 처리 mutation
+  const processTransactionMutation = useMutation({
+    mutationFn: async (transactionData: any) => {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transactionData),
+      });
+      if (!response.ok) {
+        throw new Error('거래 처리 실패');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/assets'] });
+    },
+  });
+
+  // 거래 실행
+  const handleSubmit = async () => {
+    const validationErrors = validateTransaction();
+    
+    if (validationErrors.length > 0) {
+      toast({
+        title: "입력 오류",
+        description: validationErrors[0],
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const transactions = decomposeComplexTransaction();
+      
+      // 각 거래를 순차적으로 처리
+      for (const transaction of transactions) {
+        await processTransactionMutation.mutateAsync(transaction);
+      }
+
+      toast({
+        title: "거래 완료",
+        description: `${transactions.length}개의 거래가 성공적으로 처리되었습니다.`,
+      });
+
+      // 폼 초기화
+      setCustomerName('');
+      setCustomerPhone('');
+      setMemo('');
+      setInputCards([]);
+      setOutputCards([]);
+
+      // 잠시 후 홈으로 이동
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+
+    } catch (error) {
+      console.error('거래 처리 실패:', error);
+      toast({
+        title: "거래 실패",
+        description: "거래 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -389,6 +632,25 @@ export default function CardBasedTransactionForm({
                     환율: {inputCards[0].currency} → {card.currency} = {getExchangeRate(inputCards[0].currency, card.currency).toFixed(2)}
                   </div>
                 )}
+
+                {/* VND 권종 분배 미리보기 */}
+                {card.type === 'cash' && card.currency === 'VND' && card.amount && parseFloat(card.amount) > 0 && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                    <div className="font-medium text-blue-800 mb-1">VND 권종 분배</div>
+                    <div className="text-blue-700">
+                      {(() => {
+                        const denoms = calculateVNDDenominations(parseFloat(card.amount));
+                        const parts: string[] = [];
+                        Object.entries(denoms).forEach(([denom, count]) => {
+                          if (count > 0) {
+                            parts.push(`${parseInt(denom).toLocaleString()}×${count}`);
+                          }
+                        });
+                        return parts.length > 0 ? parts.join(', ') : '분배 없음';
+                      })()}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -463,10 +725,22 @@ export default function CardBasedTransactionForm({
           취소
         </Button>
         <Button 
+          onClick={handleSubmit}
+          disabled={
+            inputCards.length === 0 || 
+            outputCards.length === 0 || 
+            processTransactionMutation.isPending
+          }
           data-testid="button-submit-transaction"
-          disabled={inputCards.length === 0 || outputCards.length === 0}
         >
-          거래 실행
+          {processTransactionMutation.isPending ? (
+            <>
+              <CheckCircle className="mr-2 h-4 w-4 animate-spin" />
+              처리중...
+            </>
+          ) : (
+            '거래 실행'
+          )}
         </Button>
       </div>
     </div>
