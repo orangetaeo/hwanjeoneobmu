@@ -3001,6 +3001,8 @@ export default function TransactionForm() {
               return null;
             })()}
 
+            {/* Adjacent JSX elements wrapped in fragment */}
+            <>
             {/* 금액 불일치 경고 */}
             {(() => {
               // VND 권종 분배가 있는 경우에만 검증
@@ -3306,6 +3308,7 @@ export default function TransactionForm() {
             >
               {createTransactionMutation.isPending ? "처리 중..." : "거래 확정"}
             </Button>
+            </>
           </div>
           </form>
         </CardContent>
