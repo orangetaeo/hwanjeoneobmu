@@ -1419,7 +1419,8 @@ export default function TransactionForm() {
                               (formData.fromCurrency === "KRW" && formData.toCurrency === "VND") || 
                               (formData.fromCurrency === "USD" && formData.toCurrency === "VND") ||
                               (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") ||
-                              (formData.fromCurrency === "KRW" && formData.toCurrency === "USD")
+                              (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") ||
+                              (formData.fromCurrency === "VND" && formData.toCurrency === "KRW")
                             ) && (
                               <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-center min-w-[150px] flex-shrink-0">
                                 <div className="text-sm font-bold text-red-700 whitespace-nowrap">
