@@ -251,10 +251,6 @@ export default function TransactionDetailModal({
                             </div>
                           </div>
                         )}
-                        
-                        <div className="text-xs text-gray-500 mt-2">
-                          {formatDateTime(relatedTx.timestamp)}
-                        </div>
                       </div>
                     </div>
                   ))}
