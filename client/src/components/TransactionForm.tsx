@@ -1340,7 +1340,32 @@ export default function TransactionForm() {
                       const rateInfo = getDenominationRate(formData.fromCurrency, formData.toCurrency, denom.value);
                       const isSelected = formData.fromDenominations.includes(denom.value);
                       const hasData = formData.denominationAmounts[denom.value] && parseFloat(formData.denominationAmounts[denom.value]) > 0;
-                      const useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                      // VND → KRW의 경우 USD 기준 크로스 환율 계산
+                      let useRate = 0;
+                      if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
+                        // USD → VND 내 매도가 조회
+                        const usdToVndRate = exchangeRates?.find((rate: any) => 
+                          rate.fromCurrency === "USD" && 
+                          rate.toCurrency === "VND" && 
+                          rate.isActive === "true"
+                        );
+                        // USD → KRW 내 매도가 조회
+                        const usdToKrwRate = exchangeRates?.find((rate: any) => 
+                          rate.fromCurrency === "USD" && 
+                          rate.toCurrency === "KRW" && 
+                          rate.isActive === "true"
+                        );
+                        
+                        if (usdToVndRate && usdToKrwRate) {
+                          const vndSellRate = parseFloat(usdToVndRate.mySellRate);
+                          const krwSellRate = parseFloat(usdToKrwRate.mySellRate);
+                          useRate = krwSellRate / vndSellRate; // 크로스 환율: KRW매도가 / VND매도가
+                          console.log(`VND→KRW 크로스 환율 계산: ${krwSellRate} / ${vndSellRate} = ${useRate}`);
+                        }
+                      } else {
+                        // 기존 로직: 직접 환율 사용
+                        useRate = formData.fromCurrency === "KRW" ? parseFloat(rateInfo?.mySellRate || "0") : parseFloat(rateInfo?.myBuyRate || "0");
+                      }
                       
 
                       
