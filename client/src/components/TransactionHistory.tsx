@@ -274,14 +274,24 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                         <div className="flex justify-between sm:block">
                           <span className="text-gray-500 text-xs sm:text-sm">보낸 금액</span>
                           <span className="font-medium text-sm sm:text-base">
-                            {formatTransactionAmount(transaction.fromAmount, transaction.fromCurrency, transaction.fromAssetName)}
+                            {formatInputWithCommas(Math.floor(parseFloat(transaction.fromAmount.toString())).toString())} {(() => {
+                              if (transaction.fromAssetName.includes('USD')) return '달러';
+                              if (transaction.fromAssetName.includes('KRW')) return '원';
+                              if (transaction.fromAssetName.includes('VND')) return '동';
+                              return '';
+                            })()}
                           </span>
                         </div>
                         
                         <div className="flex justify-between sm:block">
                           <span className="text-gray-500 text-xs sm:text-sm">받은 금액</span>
                           <span className="font-medium text-sm sm:text-base">
-                            {formatTransactionAmount(transaction.toAmount, transaction.toCurrency, transaction.toAssetName)}
+                            {formatInputWithCommas(Math.floor(parseFloat(transaction.toAmount.toString())).toString())} {(() => {
+                              if (transaction.toAssetName.includes('USD')) return '달러';
+                              if (transaction.toAssetName.includes('KRW')) return '원';
+                              if (transaction.toAssetName.includes('VND')) return '동';
+                              return '';
+                            })()}
                           </span>
                         </div>
                         

@@ -122,7 +122,7 @@ export const formatCurrency = (amount: number | string, currency: string): strin
   return num.toFixed(2);
 };
 
-// 거래내역용 금액 포맷팅 함수 (암호화폐 여부에 따라 다르게 처리)
+// 거래내역용 금액 포맷팅 함수 - 저장된 데이터를 그대로 표시 (계산 없음)
 export const formatTransactionAmount = (amount: number | string, currency?: string, assetName?: string): string => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   
@@ -139,8 +139,8 @@ export const formatTransactionAmount = (amount: number | string, currency?: stri
     return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   
-  // 일반 통화는 정수로 표시
-  return Math.round(num).toLocaleString();
+  // 일반 통화는 저장된 데이터 그대로 표시 (Math.round 제거)
+  return Math.floor(num).toLocaleString();
 };
 
 // 거래 유형별 환율 표시 포맷팅 함수
