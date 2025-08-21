@@ -468,7 +468,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                   <Label>금은방 시세 (참고용) <span className="text-red-500">*</span></Label>
                   <Input
                     type="text"
-                    placeholder={formData.fromCurrency === 'KRW' ? "예: 19.20" : "예: 26,100"}
+                    placeholder={formData.fromCurrency === 'KRW' ? "예: 19.200" : "예: 26,100"}
                     value={formatNumberInput(formData.goldShopRate, formData.fromCurrency)}
                     onChange={(e) => {
                       let value = e.target.value.replace(/,/g, ''); // 콤마 제거
@@ -476,14 +476,14 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                         // USD는 정수만 허용
                         value = value.replace(/[^0-9]/g, '');
                       } else {
-                        // KRW는 소숫점 2자리까지 허용
+                        // KRW는 소숫점 3자리까지 허용
                         value = value.replace(/[^0-9.]/g, '');
                         
-                        // 소숫점 2자리 제한
+                        // 소숫점 3자리 제한
                         if (value.includes('.')) {
                           const parts = value.split('.');
-                          if (parts[1] && parts[1].length > 2) {
-                            value = parts[0] + '.' + parts[1].substring(0, 2);
+                          if (parts[1] && parts[1].length > 3) {
+                            value = parts[0] + '.' + parts[1].substring(0, 3);
                           }
                         }
                       }
@@ -499,7 +499,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Label>내 매입가 (고객 → 나) <span className="text-red-500">*</span></Label>
                     <Input
                       type="text"
-                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.00" : "예: 26,000"}
+                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.000" : "예: 26,000"}
                       value={formatNumberInput(formData.myBuyRate, formData.fromCurrency)}
                       onChange={(e) => {
                         let value = e.target.value.replace(/,/g, ''); // 콤마 제거
@@ -507,14 +507,14 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                           // USD는 정수만 허용
                           value = value.replace(/[^0-9]/g, '');
                         } else {
-                          // KRW는 소숫점 2자리까지 허용
+                          // KRW는 소숫점 3자리까지 허용
                           value = value.replace(/[^0-9.]/g, '');
                           
-                          // 소숫점 2자리 제한
+                          // 소숫점 3자리 제한
                           if (value.includes('.')) {
                             const parts = value.split('.');
-                            if (parts[1] && parts[1].length > 2) {
-                              value = parts[0] + '.' + parts[1].substring(0, 2);
+                            if (parts[1] && parts[1].length > 3) {
+                              value = parts[0] + '.' + parts[1].substring(0, 3);
                             }
                           }
                         }
@@ -555,7 +555,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                     <Label>내 매도가 (나 → 고객) <span className="text-red-500">*</span></Label>
                     <Input
                       type="text"
-                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.40" : "예: 26,200"}
+                      placeholder={formData.fromCurrency === 'KRW' ? "예: 19.400" : "예: 26,200"}
                       value={formatNumberInput(formData.mySellRate, formData.fromCurrency)}
                       onChange={(e) => {
                         let value = e.target.value.replace(/,/g, ''); // 콤마 제거
@@ -563,14 +563,14 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
                           // USD는 정수만 허용
                           value = value.replace(/[^0-9]/g, '');
                         } else {
-                          // KRW는 소숫점 2자리까지 허용
+                          // KRW는 소숫점 3자리까지 허용
                           value = value.replace(/[^0-9.]/g, '');
                           
-                          // 소숫점 2자리 제한
+                          // 소숫점 3자리 제한
                           if (value.includes('.')) {
                             const parts = value.split('.');
-                            if (parts[1] && parts[1].length > 2) {
-                              value = parts[0] + '.' + parts[1].substring(0, 2);
+                            if (parts[1] && parts[1].length > 3) {
+                              value = parts[0] + '.' + parts[1].substring(0, 3);
                             }
                           }
                         }
