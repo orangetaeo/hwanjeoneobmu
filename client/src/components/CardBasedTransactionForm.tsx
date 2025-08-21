@@ -48,7 +48,6 @@ export default function CardBasedTransactionForm({
       type: 'cash', 
       currency: 'KRW',
       amount: '',
-      percentage: inputCards.length === 0 ? 100 : Math.round(100 / (outputCards.length + 1)),
       accountId: '',
       denominations: {}
     };
@@ -113,26 +112,11 @@ export default function CardBasedTransactionForm({
     return 1; // 기본값
   };
 
-  // 비율 기반 출금 금액 자동 계산 (환율 적용)
-  useEffect(() => {
-    if (totalInputAmount > 0) {
-      setOutputCards(prev => prev.map(card => {
-        // 입금 통화 (주로 첫 번째 입금 카드 기준)
-        const inputCurrency = inputCards.length > 0 ? inputCards[0].currency : 'VND';
-        const outputCurrency = card.currency;
-        
-        // 환율 적용
-        const exchangeRate = getExchangeRate(inputCurrency, outputCurrency);
-        const convertedAmount = totalInputAmount * exchangeRate;
-        const allocatedAmount = Math.floor((convertedAmount * card.percentage) / 100);
-        
-        return {
-          ...card,
-          amount: allocatedAmount.toString()
-        };
-      }));
-    }
-  }, [totalInputAmount, exchangeRates, inputCards]);
+  // 총 출금 금액 계산
+  const totalOutputAmount = outputCards.reduce((sum, card) => {
+    const amount = parseFloat(card.amount) || 0;
+    return sum + amount;
+  }, 0);
 
   // 통화별 계좌 필터링
   const getAccountsByCurrency = (currency: string) => {
@@ -388,26 +372,14 @@ export default function CardBasedTransactionForm({
                   </div>
                 )}
 
-                {/* 비율 입력 */}
+                {/* 금액 입력 */}
                 <div className="space-y-2">
-                  <Label>비율 (%)</Label>
+                  <Label>금액</Label>
                   <Input
                     type="number"
-                    min="0"
-                    max="100"
                     placeholder="0"
-                    value={card.percentage}
-                    onChange={(e) => updateOutputCard(card.id, 'percentage', parseInt(e.target.value) || 0)}
-                  />
-                </div>
-
-                {/* 계산된 금액 표시 */}
-                <div className="space-y-2">
-                  <Label>계산된 금액</Label>
-                  <Input
-                    value={`${card.amount} ${card.currency}`}
-                    readOnly
-                    className="bg-gray-50"
+                    value={card.amount}
+                    onChange={(e) => updateOutputCard(card.id, 'amount', e.target.value)}
                   />
                 </div>
 
@@ -451,10 +423,8 @@ export default function CardBasedTransactionForm({
               <span className="ml-2 font-medium">{totalInputAmount.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-gray-600">총 비율:</span>
-              <span className="ml-2 font-medium">
-                {outputCards.reduce((sum, card) => sum + card.percentage, 0)}%
-              </span>
+              <span className="text-gray-600">총 출금:</span>
+              <span className="ml-2 font-medium">{totalOutputAmount.toLocaleString()}</span>
             </div>
           </div>
           
@@ -477,10 +447,11 @@ export default function CardBasedTransactionForm({
             </div>
           )}
 
-          {/* 비율 검증 경고 */}
-          {outputCards.length > 0 && outputCards.reduce((sum, card) => sum + card.percentage, 0) !== 100 && (
-            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-sm">
-              ⚠️ 출금 비율의 총합이 100%가 아닙니다. ({outputCards.reduce((sum, card) => sum + card.percentage, 0)}%)
+          {/* 금액 차이 표시 */}
+          {inputCards.length > 0 && outputCards.length > 0 && totalInputAmount !== totalOutputAmount && (
+            <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-orange-800 text-sm">
+              💰 입출금 차액: {(totalInputAmount - totalOutputAmount).toLocaleString()} 
+              {totalInputAmount > totalOutputAmount ? ' (잔액)' : ' (부족)'}
             </div>
           )}
         </CardContent>
