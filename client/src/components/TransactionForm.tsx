@@ -325,6 +325,8 @@ export default function TransactionForm() {
     return total;
   };
 
+
+
   // 특정 권종의 환율 정보 조회
   const getDenominationRate = (fromCurrency: string, toCurrency: string, denomination: string) => {
     if (!Array.isArray(exchangeRates)) return null;
@@ -660,7 +662,7 @@ export default function TransactionForm() {
 
   // 권종별 금액이 변경될 때 총액 업데이트 및 환율 자동 설정
   useEffect(() => {
-    if (formData.transactionType === "cash_exchange") {
+    if (formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account") {
       const total = calculateTotalFromAmount();
       setFormData(prev => ({ ...prev, fromAmount: total.toString() }));
       
@@ -1131,9 +1133,19 @@ export default function TransactionForm() {
                     <SelectValue placeholder="통화 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="KRW">KRW (한국 원)</SelectItem>
-                    <SelectItem value="USD">USD (미국 달러)</SelectItem>
-                    <SelectItem value="VND">VND (베트남 동)</SelectItem>
+                    {/* cash_to_krw_account인 경우 KRW 제외 */}
+                    {formData.transactionType === "cash_to_krw_account" ? (
+                      <>
+                        <SelectItem value="USD">USD (미국 달러)</SelectItem>
+                        <SelectItem value="VND">VND (베트남 동)</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="KRW">KRW (한국 원)</SelectItem>
+                        <SelectItem value="USD">USD (미국 달러)</SelectItem>
+                        <SelectItem value="VND">VND (베트남 동)</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1172,7 +1184,7 @@ export default function TransactionForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
-                {(formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "cash_to_vnd_account") ? (
+                {(formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_vnd_account") ? (
                   <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg mt-2">
                     <div className="text-xl font-bold text-green-700">
                       {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
@@ -1181,6 +1193,35 @@ export default function TransactionForm() {
                       권종별 총액 합계
                     </div>
                   </div>
+                ) : formData.transactionType === "cash_to_krw_account" ? (
+                  // 현금 → KRW 계좌이체: 단순 총액 입력
+                  <Input
+                    type="number"
+                    step="1000"
+                    placeholder="0"
+                    value={formData.fromAmount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, fromAmount: value });
+                      
+                      // 매도시세로 KRW 환산 계산
+                      if (value && parseFloat(value) > 0) {
+                        const rate = calculateAverageExchangeRate();
+                        if (rate > 0) {
+                          const krwAmount = Math.ceil((parseFloat(value) * rate) / 1000) * 1000; // 1000원 단위 올림
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            toAmount: krwAmount.toString(),
+                            exchangeRate: rate.toString()
+                          }));
+                        }
+                      } else {
+                        setFormData(prev => ({ ...prev, toAmount: "0", exchangeRate: "" }));
+                      }
+                    }}
+                    data-testid="input-from-amount"
+                    className="mt-2 text-lg font-medium"
+                  />
                 ) : (
                   <Input
                     type="number"
@@ -1237,7 +1278,45 @@ export default function TransactionForm() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <Label>받는 권종 ({formData.fromCurrency})</Label>
-                {(formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") ? (
+                {formData.transactionType === "cash_to_krw_account" ? (
+                  // 현금 → KRW 계좌이체: 매매시세 정보 표시
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mt-2">
+                    <div className="text-sm font-medium text-orange-700 mb-3 flex items-center">
+                      <span className="mr-2">📊</span>
+                      매매시세 정보
+                    </div>
+                    
+                    {(() => {
+                      const mainRate = getDenominationRate(formData.fromCurrency, formData.toCurrency, formData.fromCurrency === "VND" ? "500000" : "100");
+                      const sellRate = parseFloat(mainRate?.mySellRate || "0");
+                      const buyRate = parseFloat(mainRate?.myBuyRate || "0");
+                      const averageRate = (sellRate + buyRate) / 2;
+                      
+                      return (
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center p-2 bg-white rounded border">
+                            <span className="text-sm text-gray-600">매도시세</span>
+                            <span className="font-bold text-red-600">
+                              {sellRate > 0 ? sellRate.toFixed(3) : "N/A"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white rounded border">
+                            <span className="text-sm text-gray-600">매입시세</span>
+                            <span className="font-bold text-green-600">
+                              {buyRate > 0 ? buyRate.toFixed(3) : "N/A"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-blue-50 rounded border border-blue-200">
+                            <span className="text-sm font-medium text-blue-700">평균시세</span>
+                            <span className="font-bold text-blue-700">
+                              {averageRate > 0 ? averageRate.toFixed(3) : "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : (formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") ? (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <Input
                       type="number"
@@ -1913,8 +1992,8 @@ export default function TransactionForm() {
                 </div>
               )}
               
-              {/* KRW 권종별 분배 - VND→KRW 환전용 및 계좌이체용 (VND 분배 패턴 복사) */}
-              {formData.toCurrency === "KRW" && (formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account") && (
+              {/* KRW 권종별 분배 - 현금 환전용만 (계좌이체는 제외) */}
+              {formData.toCurrency === "KRW" && (formData.transactionType === "cash_exchange" || formData.transactionType === "vnd_account_to_krw_account") && (
                 <div>
                   <Label className="text-base font-medium">권종별 분배</Label>
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mt-2">
@@ -2363,48 +2442,95 @@ export default function TransactionForm() {
 
 
 
-            {/* 고객 정보 (선택사항) */}
+            {/* 고객 정보 */}
             {(formData.transactionType === "cash_exchange" || formData.transactionType === "foreign_to_account" || formData.transactionType === "cash_to_krw_account" || formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "vnd_account_to_krw_account" || formData.transactionType === "krw_account_to_vnd_account") && (
               <div className="p-4 bg-yellow-50 rounded-lg space-y-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  <Label>고객 정보 (선택사항)</Label>
+                  <Label>
+                    {formData.transactionType === "cash_to_krw_account" ? 
+                      "고객 계좌 정보 (필수)" : 
+                      "고객 정보 (선택사항)"
+                    }
+                  </Label>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>고객명</Label>
-                    <Input
-                      placeholder="고객 이름 (선택사항)"
-                      value={formData.customerName}
-                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                      data-testid="input-customer-name"
-                    />
+                {formData.transactionType === "cash_to_krw_account" ? (
+                  // 현금 → KRW 계좌이체: 계좌 정보 필수
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-red-600">계좌명 (예금주명) *</Label>
+                      <Input
+                        placeholder="예금주명 입력 (필수)"
+                        value={formData.customerName}
+                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                        data-testid="input-customer-name"
+                        className="border-red-200 focus:border-red-400"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-red-600">은행명 *</Label>
+                      <Input
+                        placeholder="은행명 입력 (필수)"
+                        value={formData.customerPhone}
+                        onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                        data-testid="input-customer-bank"
+                        className="border-red-200 focus:border-red-400"
+                        required
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label className="text-red-600">계좌번호 *</Label>
+                      <Input
+                        placeholder="계좌번호 입력 (필수)"
+                        value={formData.memo}
+                        onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+                        data-testid="input-customer-account"
+                        className="border-red-200 focus:border-red-400"
+                        required
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label>연락처</Label>
-                    <Input
-                      placeholder="휴대폰 번호 (선택사항)"
-                      value={formData.customerPhone}
-                      onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                      data-testid="input-customer-phone"
-                    />
+                ) : (
+                  // 기존 선택사항 정보
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label>고객명</Label>
+                      <Input
+                        placeholder="고객 이름 (선택사항)"
+                        value={formData.customerName}
+                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                        data-testid="input-customer-name"
+                      />
+                    </div>
+                    <div>
+                      <Label>연락처</Label>
+                      <Input
+                        placeholder="휴대폰 번호 (선택사항)"
+                        value={formData.customerPhone}
+                        onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                        data-testid="input-customer-phone"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
-            {/* 메모 */}
-            <div>
-              <Label>거래 메모 (선택사항)</Label>
-              <Textarea
-                placeholder="특이사항이나 참고사항을 입력하세요"
-                value={formData.memo}
-                onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
-                data-testid="textarea-memo"
-                rows={3}
-              />
-            </div>
+            {/* 메모 - cash_to_krw_account는 제외 (계좌번호 입력에 사용됨) */}
+            {formData.transactionType !== "cash_to_krw_account" && (
+              <div>
+                <Label>거래 메모 (선택사항)</Label>
+                <Textarea
+                  placeholder="특이사항이나 참고사항을 입력하세요"
+                  value={formData.memo}
+                  onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+                  data-testid="textarea-memo"
+                  rows={3}
+                />
+              </div>
+            )}
 
             {/* 거래 확인 */}
             {(() => {
@@ -2415,8 +2541,11 @@ export default function TransactionForm() {
               console.log("권종별 입력:", formData.denominationAmounts);
               console.log("총 권종별 합계:", calculateTotalFromAmount());
               
-              const hasFromAmount = formData.fromAmount || calculateTotalFromAmount() > 0;
-              const hasToAmount = formData.toAmount;
+              // cash_to_krw_account는 권종별 선택이 없으므로 다른 로직 적용
+              const hasFromAmount = formData.transactionType === "cash_to_krw_account" ? 
+                formData.fromAmount && parseFloat(formData.fromAmount) > 0 : 
+                (formData.fromAmount || calculateTotalFromAmount() > 0);
+              const hasToAmount = formData.toAmount && parseFloat(formData.toAmount) > 0;
               const hasExchangeRate = formData.exchangeRate;
               
               console.log("표시 조건:", { hasFromAmount, hasToAmount, hasExchangeRate });
@@ -2439,7 +2568,12 @@ export default function TransactionForm() {
                     <div className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-white/40">
                       <span className="text-sm text-gray-600 font-medium">고객이 주는 금액</span>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-emerald-700">{calculateTotalFromAmount().toLocaleString()} {formData.fromCurrency}</div>
+                        <div className="text-lg font-bold text-emerald-700">
+                          {formData.transactionType === "cash_to_krw_account" ? 
+                            parseFloat(formData.fromAmount || "0").toLocaleString() : 
+                            calculateTotalFromAmount().toLocaleString()
+                          } {formData.fromCurrency}
+                        </div>
                       </div>
                     </div>
                     
