@@ -1,8 +1,8 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { Transaction } from '@/types';
 import { formatInputWithCommas } from '@/utils/helpers';
 import { useQuery } from '@tanstack/react-query';
@@ -80,18 +80,12 @@ export default function TransactionDetailModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <Badge variant="outline" className="px-2 py-1 text-xs">
-                {getTransactionTypeText(transaction.type)}
-              </Badge>
-              <span className="text-base">거래 상세</span>
-            </DialogTitle>
-            <DialogClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </DialogClose>
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <Badge variant="outline" className="px-2 py-1 text-xs">
+              {getTransactionTypeText(transaction.type)}
+            </Badge>
+            <span className="text-base">거래 상세</span>
+          </DialogTitle>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto">
