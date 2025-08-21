@@ -26,6 +26,7 @@ This is a full-stack asset management and exchange tracking application for mana
 - **수익 표시 규칙 정리**: 수익 금액은 정수 표시 (Math.round), 수익률은 소수점 2자리 표시 (toFixed(2))
 - **수익 금액 디자인 강화**: 배경색, 테두리, 그림자 효과로 시각적 강조, 다크 모드 지원, 그라데이션 배경 적용
 - **데이터 갱신 시스템**: 윈도우 포커스 시 즉시 갱신, 마운트 시 항상 갱신으로 수동 새로고침 방식 적용
+- **VND 권종 재고 검증 시스템 수정**: API 데이터 키 형태 불일치 문제 해결, 권종 키를 숫자 형태 그대로 사용하여 정확한 보유량 확인
 
 # User Preferences
 
