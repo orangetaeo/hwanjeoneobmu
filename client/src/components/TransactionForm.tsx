@@ -860,7 +860,17 @@ export default function TransactionForm() {
       return;
     }
 
-    // 고객 정보는 선택사항이므로 검증 제거
+    // 현금 → KRW 계좌이체 고객 계좌 정보 필수 검증
+    if (formData.transactionType === "cash_to_krw_account") {
+      if (!formData.customerName || !formData.customerPhone || !formData.memo) {
+        toast({
+          variant: "destructive",
+          title: "고객 계좌 정보 누락",
+          description: "계좌명, 은행명, 계좌번호를 모두 입력하세요.",
+        });
+        return;
+      }
+    }
 
     // 권종별 보유 수량 검증 (VND 분배)
     if (formData.toCurrency === "VND" && Object.keys(vndBreakdown).length > 0) {
@@ -2435,14 +2445,8 @@ export default function TransactionForm() {
                   </Label>
                 </div>
                 
-                {/* 고객 계좌 정보는 받는 권종과 같은 줄로 이동됨 */}
-                {formData.transactionType === "cash_to_krw_account" ? (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="text-sm text-yellow-700">
-                      고객 계좌 정보는 우측에 입력해주세요
-                    </div>
-                  </div>
-                ) : (
+                {/* 현금 → KRW 계좌이체가 아닌 경우에만 고객 정보 표시 */}
+                {formData.transactionType !== "cash_to_krw_account" && formData.transactionType ? (
                   // 기존 선택사항 정보
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2464,9 +2468,7 @@ export default function TransactionForm() {
                       />
                     </div>
                   </div>
-                )}
-              </div>
-            )}
+                ) : null}
 
             {/* 메모 - cash_to_krw_account는 제외 (계좌번호 입력에 사용됨) */}
             {formData.transactionType !== "cash_to_krw_account" && (
@@ -2744,8 +2746,8 @@ export default function TransactionForm() {
                         return null;
                       })()}
                       
-                      {/* USD 권종별 분배 상세 */}
-                      {formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0 && (() => {
+                      {/* 현금 → KRW 계좌이체가 아닌 경우에만 USD 권종별 분배 표시 */}
+                      {formData.transactionType !== "cash_to_krw_account" && formData.toCurrency === "USD" && Object.keys(usdBreakdown).length > 0 && (() => {
                         // USD 분배가 있는 경우에만 표시
                         const hasBreakdown = Object.entries(usdBreakdown).some(([denom, count]) => count > 0);
                         
@@ -2850,7 +2852,7 @@ export default function TransactionForm() {
                             return average.toFixed(2);
                           }
                           
-                          return calculateAverageExchangeRate().toString();
+                          return calculateAverageExchangeRate().toFixed(2);
                         })()}</div>
                         <div className="text-xs text-gray-500 mt-0.5">(매도시세 평균)</div>
                       </div>
@@ -3061,6 +3063,13 @@ export default function TransactionForm() {
               disabled={(() => {
                 // 기존 비활성화 조건
                 if (createTransactionMutation.isPending) return true;
+
+                // 현금 → KRW 계좌이체 고객 정보 필수 검증
+                if (formData.transactionType === "cash_to_krw_account") {
+                  if (!formData.customerName || !formData.customerPhone || !formData.memo) {
+                    return true;
+                  }
+                }
 
                 // KRW→USD 거래시 버튼 활성화 조건 검증
                 if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
@@ -3297,6 +3306,7 @@ export default function TransactionForm() {
             >
               {createTransactionMutation.isPending ? "처리 중..." : "거래 확정"}
             </Button>
+          </div>
           </form>
         </CardContent>
       </Card>
