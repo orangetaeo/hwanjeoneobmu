@@ -1,8 +1,8 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react';
 import { Transaction } from '@/types';
 import { formatInputWithCommas } from '@/utils/helpers';
 import { useQuery } from '@tanstack/react-query';
@@ -82,11 +82,15 @@ export default function TransactionDetailModal({
         <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
-              <Badge variant="outline" className="px-2 py-1">
+              <Badge variant="outline" className="px-2 py-1 text-xs">
                 {getTransactionTypeText(transaction.type)}
               </Badge>
-              거래 상세
+              <span className="text-base">거래 상세</span>
             </DialogTitle>
+            <DialogClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
           </div>
         </DialogHeader>
         
@@ -207,7 +211,7 @@ export default function TransactionDetailModal({
                   {relatedTransactions.map((relatedTx: Transaction) => (
                     <div key={relatedTx.id} className="border rounded-lg bg-gray-50 dark:bg-gray-800 relative flex">
                       {/* 좌측: 큰 금액 표시 (세로 중앙 정렬) */}
-                      <div className="flex items-center justify-center p-2 flex-shrink-0 border-r border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center justify-center py-3 px-2 flex-shrink-0 border-r border-gray-200 dark:border-gray-600 min-h-[80px]">
                         <div className="text-center">
                           <div className={`font-bold text-lg ${
                             parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) 
