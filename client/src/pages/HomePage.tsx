@@ -11,7 +11,8 @@ import {
   Plus,
   Coins,
   Menu,
-  X
+  X,
+  Calculator
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 // Firebase는 실시간 환율 전용으로 제한 - 데이터 저장은 PostgreSQL 사용
@@ -31,6 +32,7 @@ import ExchangeRateManager from '@/components/ExchangeRateManager';
 import ExchangeOperations from '@/components/ExchangeOperations';
 import CashTransactionHistory from '@/components/CashTransactionHistory';
 import CashChangeDetailModal from '@/components/CashChangeDetailModal';
+import CardBasedTransactionForm from '@/components/CardBasedTransactionForm';
 import Modal from '@/components/Modal';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +62,8 @@ export default function HomePage() {
   useEffect(() => {
     if (location === '/new-transaction') {
       setCurrentView('new-transaction');
+    } else if (location === '/complex-transaction') {
+      setCurrentView('complex-transaction');
     } else if (location === '/assets') {
       setCurrentView('assets');
     } else if (location === '/exchange-operations') {
@@ -1103,15 +1107,17 @@ export default function HomePage() {
               
               {currentView === 'dashboard' && <Home className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'new-transaction' && <Plus className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {currentView === 'complex-transaction' && <Calculator className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'assets' && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'exchange-operations' && <Coins className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'transactions' && <List className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'rates' && <TrendingUp className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               {currentView === 'exchange-rates' && <DollarSign className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
-              {!['dashboard', 'new-transaction', 'assets', 'exchange-operations', 'transactions', 'rates', 'exchange-rates'].includes(currentView) && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
+              {!['dashboard', 'new-transaction', 'complex-transaction', 'assets', 'exchange-operations', 'transactions', 'rates', 'exchange-rates'].includes(currentView) && <Wallet className="text-primary w-5 h-5 lg:w-6 lg:h-6" />}
               <h1 className="text-base lg:text-xl font-bold text-gray-900">
                 {currentView === 'dashboard' ? '대시보드' :
                  currentView === 'new-transaction' ? '새거래' :
+                 currentView === 'complex-transaction' ? '복합거래' :
                  currentView === 'assets' ? '자산 관리' :
                  currentView === 'exchange-operations' ? '거래소 운영' :
                  currentView === 'transactions' ? '거래 내역' :
@@ -1176,6 +1182,17 @@ export default function HomePage() {
                   >
                     <Plus className="w-5 h-5 mr-3" />
                     새거래
+                  </Button>
+                </li>
+                <li>
+                  <Button 
+                    variant="ghost" 
+                    className={`w-full justify-start ${currentView === 'complex-transaction' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => { setCurrentView('complex-transaction'); setIsMobileMenuOpen(false); }}
+                    data-testid="mobile-menu-complex-transaction"
+                  >
+                    <Calculator className="w-5 h-5 mr-3" />
+                    복합거래
                   </Button>
                 </li>
                 <li>
@@ -1482,6 +1499,12 @@ export default function HomePage() {
                 )}
                 {currentView === 'new-transaction' && (
                   <TransactionForm />
+                )}
+                {currentView === 'complex-transaction' && (
+                  <CardBasedTransactionForm 
+                    onClose={() => setCurrentView('dashboard')} 
+                    assets={assetsData}
+                  />
                 )}
                 {currentView === 'rates' && (
                   <RateManager
