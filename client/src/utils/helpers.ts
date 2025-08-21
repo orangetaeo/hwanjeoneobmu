@@ -129,35 +129,53 @@ export const formatTransactionAmount = (amount: number | string, currency?: stri
 
 // 거래 유형별 환율 표시 포맷팅 함수
 export const formatExchangeRateByTransaction = (rate: number, fromCurrency?: string, toCurrency?: string, transactionType?: string): string => {
-  console.log('formatExchangeRateByTransaction called:', { rate, fromCurrency, toCurrency, transactionType });
-  
   if (rate === null || rate === undefined || isNaN(rate)) return '0';
   
-  // KRW → VND 환율: 소숫점 2자리 표시 (현금 환전 포함)
-  if (fromCurrency === 'KRW' && toCurrency === 'VND') {
-    const result = rate.toLocaleString('ko-KR', { 
+  // 거래 유형별 통화 추출 로직
+  let actualFromCurrency = fromCurrency;
+  let actualToCurrency = toCurrency;
+  
+  // 거래 유형에서 통화 정보 추출
+  if (!fromCurrency || !toCurrency) {
+    if (transactionType === 'cash_exchange') {
+      // 환율 값으로 통화 유형 추정
+      if (rate > 1000) {
+        // USD → VND (큰 값)
+        actualFromCurrency = 'USD';
+        actualToCurrency = 'VND';
+      } else if (rate > 10) {
+        // KRW → VND (중간 값)
+        actualFromCurrency = 'KRW';
+        actualToCurrency = 'VND';
+      } else {
+        // VND → KRW (작은 값)
+        actualFromCurrency = 'VND';
+        actualToCurrency = 'KRW';
+      }
+    }
+  }
+  
+  // KRW → VND 환율: 소숫점 2자리 표시
+  if (actualFromCurrency === 'KRW' && actualToCurrency === 'VND') {
+    return rate.toLocaleString('ko-KR', { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2 
     });
-    console.log('KRW to VND formatting result:', result);
-    return result;
   }
   
-  // USD → VND 환율: 정수만 표시 (현금 환전 포함)
-  if (fromCurrency === 'USD' && toCurrency === 'VND') {
-    const result = Math.round(rate).toLocaleString('ko-KR');
-    console.log('USD to VND formatting result:', result);
-    return result;
+  // USD → VND 환율: 정수만 표시
+  if (actualFromCurrency === 'USD' && actualToCurrency === 'VND') {
+    return Math.round(rate).toLocaleString('ko-KR');
   }
   
   // USD/KRW 환율은 정수로 표시
-  if ((fromCurrency === 'USD' && toCurrency === 'KRW') || 
-      (fromCurrency === 'KRW' && toCurrency === 'USD')) {
+  if ((actualFromCurrency === 'USD' && actualToCurrency === 'KRW') || 
+      (actualFromCurrency === 'KRW' && actualToCurrency === 'USD')) {
     return Math.round(rate).toLocaleString('ko-KR');
   }
   
   // VND → KRW 환율은 소숫점 2자리까지 표시  
-  if (fromCurrency === 'VND' && toCurrency === 'KRW') {
+  if (actualFromCurrency === 'VND' && actualToCurrency === 'KRW') {
     return rate.toLocaleString('ko-KR', { 
       minimumFractionDigits: 0,
       maximumFractionDigits: 2 
@@ -165,12 +183,10 @@ export const formatExchangeRateByTransaction = (rate: number, fromCurrency?: str
   }
   
   // 기본값: 소숫점 2자리까지
-  const defaultResult = rate.toLocaleString('ko-KR', { 
+  return rate.toLocaleString('ko-KR', { 
     minimumFractionDigits: 0,
     maximumFractionDigits: 2 
   });
-  console.log('Default formatting result:', defaultResult);
-  return defaultResult;
 };
 
 // 환율 표시 포맷팅 (매매시세 기준, 통화별 소숫점 규칙 적용) - 기존 함수 유지

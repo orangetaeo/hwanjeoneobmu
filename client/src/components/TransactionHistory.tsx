@@ -288,7 +288,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                         <div className="flex justify-between sm:block">
                           <span className="text-gray-500 text-xs sm:text-sm">환율/가격</span>
                           <span className="font-medium text-sm sm:text-base">
-                            {formatExchangeRateByTransaction(transaction.rate, transaction.fromCurrency, transaction.toCurrency, transaction.type)}
+                            {formatExchangeRateByTransaction(parseFloat(transaction.rate), transaction.fromCurrency, transaction.toCurrency, transaction.type)}
                           </span>
                         </div>
 
