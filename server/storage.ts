@@ -706,7 +706,7 @@ export class DatabaseStorage implements IStorage {
         asset.name === 'Bithumb USDT' || 
         asset.name.includes('Bithumb')
       );
-      result = foundAsset || undefined;
+      result = foundAsset;
       
       console.log('빗썸 유연 검색 결과:', result);
     }

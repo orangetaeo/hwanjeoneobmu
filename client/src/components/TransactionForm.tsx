@@ -9,8 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { AlertTriangle, Calculator, ArrowRightLeft, RefreshCw, User, Banknote, TrendingUp, AlertCircle, ArrowUpRight, ArrowDownLeft, BarChart3, CheckCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  determineTransactionRateType,
+  getExchangeRatePair,
+  getExchangeShopRate,
+  calculateWeightedExchangeRate
+} from '@/utils/helpers';
 
 interface Asset {
   id: string;
@@ -98,94 +104,74 @@ export default function TransactionForm() {
     setUsdBreakdown({});
   }, [formData.fromCurrency, formData.toCurrency, JSON.stringify(formData.denominationAmounts)]);
 
-  // 권종별 환율의 평균 계산
+  // 권종별 환율의 평균 계산 (환전상 시세 적용)
   const calculateAverageExchangeRate = () => {
-    // VND→USD 거래의 경우 USD→VND 권종별 환율의 평균 계산
-    if (formData.fromCurrency === "VND" && formData.toCurrency === "USD") {
-      if (Array.isArray(exchangeRates)) {
-        const usdToVndRates = exchangeRates.filter((rate: any) => 
-          rate.fromCurrency === "USD" && 
-          rate.toCurrency === "VND"
-        );
-        
-        if (usdToVndRates.length > 0) {
-          const avgRate = usdToVndRates.reduce((sum, rate) => sum + parseFloat(rate.myBuyRate), 0) / usdToVndRates.length;
-          return avgRate;
-        }
+    try {
+      // 매수/매도 타입 자동 판별
+      const rateType = determineTransactionRateType(formData.transactionType, formData.fromCurrency, formData.toCurrency);
+      
+      // 환율 쌍 결정
+      const ratePair = getExchangeRatePair(formData.fromCurrency, formData.toCurrency);
+      
+      if (!Array.isArray(exchangeRates)) {
+        console.warn('환율 데이터가 배열이 아닙니다');
+        return parseFloat(formData.exchangeRate) || 0;
       }
-    }
-    
-    // USD→KRW 거래의 경우 USD→KRW 권종별 환율의 평균 계산
-    if (formData.fromCurrency === "USD" && formData.toCurrency === "KRW") {
-      if (Array.isArray(exchangeRates)) {
-        const usdToKrwRates = exchangeRates.filter((rate: any) => 
-          rate.fromCurrency === "USD" && 
-          rate.toCurrency === "KRW"
-        );
-        
-        if (usdToKrwRates.length > 0) {
-          const avgRate = usdToKrwRates.reduce((sum, rate) => sum + parseFloat(rate.mySellRate), 0) / usdToKrwRates.length;
-          return avgRate;
-        }
+      
+      // 해당 통화쌍의 모든 활성 환율 조회
+      const validRates = exchangeRates.filter((rate: any) => 
+        rate.fromCurrency === ratePair.fromCurrency && 
+        rate.toCurrency === ratePair.toCurrency &&
+        (rate.isActive === true || rate.isActive === 'true')
+      );
+      
+      if (validRates.length === 0) {
+        console.warn(`활성 환율 없음: ${ratePair.fromCurrency} → ${ratePair.toCurrency}`);
+        return parseFloat(formData.exchangeRate) || 0;
       }
-    }
-    
-    // KRW→USD 거래의 경우 KRW→USD 권종별 환율의 평균 계산
-    if (formData.fromCurrency === "KRW" && formData.toCurrency === "USD") {
-      if (Array.isArray(exchangeRates)) {
-        const krwToUsdRates = exchangeRates.filter((rate: any) => 
-          rate.fromCurrency === "KRW" && 
-          rate.toCurrency === "USD"
-        );
+      
+      // 매수/매도에 따라 적절한 환율 선택하여 평균 계산
+      let totalRate = 0;
+      let validCount = 0;
+      
+      validRates.forEach((rate: any) => {
+        const rateValue = rateType === 'buy' 
+          ? parseFloat(rate.myBuyRate || '0')
+          : parseFloat(rate.mySellRate || '0');
         
-        if (krwToUsdRates.length > 0) {
-          const avgRate = krwToUsdRates.reduce((sum, rate) => sum + parseFloat(rate.mySellRate), 0) / krwToUsdRates.length;
-          return avgRate;
+        if (rateValue > 0) {
+          totalRate += rateValue;
+          validCount++;
         }
+      });
+      
+      if (validCount === 0) {
+        console.warn(`유효한 ${rateType} 환율 없음: ${ratePair.fromCurrency} → ${ratePair.toCurrency}`);
+        return parseFloat(formData.exchangeRate) || 0;
       }
-    }
-    
-    // VND→KRW 거래의 경우 권종별 매매시세의 평균 계산
-    if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
-      if (Array.isArray(exchangeRates)) {
-        // 입력된 권종들의 매매시세 수집
-        const enteredDenominations = Object.keys(formData.denominationAmounts || {}).filter(denom => 
-          formData.denominationAmounts[denom] && parseFloat(formData.denominationAmounts[denom]) > 0
-        );
-        
-        if (enteredDenominations.length > 0) {
-          const rates: number[] = [];
-          
-          enteredDenominations.forEach(denomination => {
-            const displayRate = getVndToKrwDisplayRate(denomination);
-            if (displayRate > 0) {
-              rates.push(displayRate);
-            }
-          });
-          
-          if (rates.length > 0) {
-            const avgRate = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
-            console.log(`VND→KRW 평균 매매시세 계산: ${rates.join(', ')} → 평균: ${avgRate}`);
-            return avgRate;
-          }
-        }
-        
-        // 입력된 권종이 없으면 기본값으로 500000 권종 환율 사용
-        const defaultRate = getVndToKrwDisplayRate("500000");
-        if (defaultRate > 0) {
-          return defaultRate;
-        }
+      
+      let avgRate = totalRate / validCount;
+      
+      // 환율 방향 조정 (필요한 경우 역환율 계산)
+      if (ratePair.fromCurrency !== formData.fromCurrency) {
+        avgRate = 1 / avgRate;
       }
+      
+      console.log(`환전상 평균 시세 계산: ${formData.fromCurrency}→${formData.toCurrency} (${rateType}) = ${avgRate} (${validCount}개 환율 평균)`);
+      return avgRate;
+      
+    } catch (error) {
+      console.error('평균 환율 계산 중 오류:', error);
+      
+      // 기존 로직: 실제 거래 금액 기준 계산 (fallback)
+      const totalFromAmount = calculateTotalFromAmount();
+      const totalToAmount = parseFloat(formData.toAmount);
+      
+      if (totalFromAmount > 0 && totalToAmount > 0) {
+        return totalToAmount / totalFromAmount;
+      }
+      return parseFloat(formData.exchangeRate) || 0;
     }
-    
-    // 기존 로직: 실제 거래 금액 기준 계산
-    const totalFromAmount = calculateTotalFromAmount();
-    const totalToAmount = parseFloat(formData.toAmount);
-    
-    if (totalFromAmount > 0 && totalToAmount > 0) {
-      return totalToAmount / totalFromAmount;
-    }
-    return parseFloat(formData.exchangeRate) || 0;
   };
 
   // VND 원본 계산값 저장 (내림 전)
@@ -310,7 +296,75 @@ export default function TransactionForm() {
     }
   });
 
-  // 자동 환율 적용
+  // 권종별 가중평균 환율 자동 적용
+  const handleWeightedExchangeRate = async () => {
+    if (!formData.fromCurrency || !formData.toCurrency) {
+      toast({
+        variant: "destructive",
+        title: "환율 조회 실패",
+        description: "통화를 먼저 선택하세요.",
+      });
+      return;
+    }
+
+    try {
+      // 입력된 권종별 수량 확인
+      const denominationAmounts = Object.fromEntries(
+        Object.entries(formData.denominationAmounts).map(([denom, qty]) => [
+          denom, 
+          parseFloat(qty as string) || 0
+        ])
+      );
+      
+      const hasValidAmounts = Object.values(denominationAmounts).some(amount => amount > 0);
+      
+      if (!hasValidAmounts) {
+        toast({
+          variant: "destructive",
+          title: "권종별 환율 조회 실패",
+          description: "권종별 수량을 먼저 입력하세요.",
+        });
+        return;
+      }
+
+      // 새로운 권종별 가중평균 환율 계산 함수 사용
+      const weightedRateResult = await calculateWeightedExchangeRate(
+        formData.transactionType,
+        formData.fromCurrency,
+        formData.toCurrency,
+        denominationAmounts
+      );
+
+      if (weightedRateResult) {
+        setCalculatedData({
+          exchangeRate: weightedRateResult.rate,
+          rateSource: weightedRateResult.source,
+          isAutoCalculated: true
+        });
+        setFormData({ ...formData, exchangeRate: weightedRateResult.rate.toString() });
+        
+        toast({
+          title: "권종별 환율 적용 완료",
+          description: `${weightedRateResult.source}`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "권종별 환율 조회 실패",
+          description: "해당 조건의 권종별 환율을 찾을 수 없습니다.",
+        });
+      }
+    } catch (error) {
+      console.error('권종별 가중평균 환율 조회 중 오류:', error);
+      toast({
+        variant: "destructive",
+        title: "권종별 환율 조회 실패",
+        description: "권종별 환율 조회 중 오류가 발생했습니다.",
+      });
+    }
+  };
+
+  // 자동 환율 적용 (기본 환율)
   const handleAutoExchangeRate = async () => {
     if (!formData.fromCurrency || !formData.toCurrency) {
       toast({
@@ -321,36 +375,59 @@ export default function TransactionForm() {
       return;
     }
 
-    // 거래 유형에 따른 buy/sell 결정
-    const transactionType = formData.fromCurrency === "VND" ? "sell" : "buy";
-    
-    // 선택된 권종 중 첫 번째를 기준으로 환율 조회
-    const denomination = formData.fromDenominations.length > 0 ? formData.fromDenominations[0] : "50000";
-    
-    const rate = await fetchExchangeRate(
-      formData.fromCurrency,
-      formData.toCurrency,
-      denomination,
-      transactionType
-    );
-
-    if (rate) {
-      setCalculatedData({
-        exchangeRate: rate.rate,
-        rateSource: rate.source,
-        isAutoCalculated: true
-      });
-      setFormData({ ...formData, exchangeRate: rate.rate.toString() });
+    try {
+      // 선택된 권종 중 첫 번째를 기준으로 환율 조회
+      const denomination = formData.fromDenominations.length > 0 ? formData.fromDenominations[0] : "50000";
       
-      toast({
-        title: "환율 적용 완료",
-        description: `${rate.source} 환율이 적용되었습니다.`,
-      });
-    } else {
+      // 새로운 환전상 시세 조회 함수 사용
+      const rateResult = await getExchangeShopRate(
+        formData.transactionType,
+        formData.fromCurrency,
+        formData.toCurrency,
+        denomination
+      );
+
+      if (rateResult) {
+        setCalculatedData({
+          exchangeRate: rateResult.rate,
+          rateSource: rateResult.source,
+          isAutoCalculated: true
+        });
+        setFormData({ ...formData, exchangeRate: rateResult.rate.toString() });
+        
+        toast({
+          title: "환율 적용 완료",
+          description: `${rateResult.source} 환율이 적용되었습니다.`,
+        });
+      } else {
+        // fallback: 기존 평균 환율 계산 사용
+        const avgRate = calculateAverageExchangeRate();
+        if (avgRate > 0) {
+          setCalculatedData({
+            exchangeRate: avgRate,
+            rateSource: "환전상 평균 시세",
+            isAutoCalculated: true
+          });
+          setFormData({ ...formData, exchangeRate: avgRate.toString() });
+          
+          toast({
+            title: "환율 적용 완료",
+            description: "환전상 평균 시세가 적용되었습니다.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "환율 조회 실패",
+            description: "해당 조건의 환율을 찾을 수 없습니다.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('자동 환율 조회 중 오류:', error);
       toast({
         variant: "destructive",
         title: "환율 조회 실패",
-        description: "해당 조건의 환율을 찾을 수 없습니다.",
+        description: "환율 조회 중 오류가 발생했습니다.",
       });
     }
   };
@@ -2480,6 +2557,51 @@ export default function TransactionForm() {
                   data-testid="textarea-memo"
                   rows={3}
                 />
+              </div>
+            )}
+
+            {/* 권종별 환율 자동 적용 버튼 */}
+            {formData.fromCurrency && formData.toCurrency && Object.keys(formData.denominationAmounts).some(key => parseFloat(formData.denominationAmounts[key] || "0") > 0) && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                  <Label className="text-base font-medium text-blue-800">환율 자동 적용</Label>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAutoExchangeRate}
+                    className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-100"
+                    data-testid="button-auto-exchange-rate"
+                  >
+                    <Calculator className="w-4 h-4 mr-2" />
+                    기본 환율 적용
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleWeightedExchangeRate}
+                    className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-100"
+                    data-testid="button-weighted-exchange-rate"
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    권종별 가중평균 환율
+                  </Button>
+                </div>
+                {calculatedData.isAutoCalculated && calculatedData.rateSource && (
+                  <div className="mt-3 p-2 bg-green-100 border border-green-200 rounded text-sm">
+                    <div className="flex items-center gap-2 text-green-800">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="font-medium">적용된 환율: {calculatedData.exchangeRate.toFixed(4)}</span>
+                    </div>
+                    <div className="text-green-700 text-xs mt-1">
+                      출처: {calculatedData.rateSource}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -19,7 +19,11 @@ import {
   formatInputWithCommas, 
   parseCommaFormattedNumber, 
   formatCurrency,
-  formatTransactionAmount 
+  formatTransactionAmount,
+  determineTransactionRateType,
+  getExchangeRatePair,
+  getExchangeShopRate,
+  calculateWeightedExchangeRate
 } from '@/utils/helpers';
 
 interface CardBasedTransactionFormProps {
@@ -218,46 +222,82 @@ export default function CardBasedTransactionForm({
     return rate;
   };
 
-  // 환율 조회 함수 (개선된 버전)
+  // 환율 조회 함수 (환전상 시세 적용)
   const getExchangeRate = (fromCurrency: string, toCurrency: string, denomination?: string): number => {
     if (fromCurrency === toCurrency) return 1;
     
-    // 권종별 환율 우선 조회
-    if (denomination) {
-      const denomRate = getDenominationRate(fromCurrency, toCurrency, denomination);
-      if (denomRate) {
-        return parseFloat(denomRate.myBuyRate) || parseFloat(denomRate.mySellRate) || 1;
+    try {
+      // 매수/매도 타입 자동 판별
+      const rateType = determineTransactionRateType(selectedTransactionType, fromCurrency, toCurrency);
+      
+      // 환율 쌍 결정
+      const ratePair = getExchangeRatePair(fromCurrency, toCurrency);
+      
+      // 권종별 환율 우선 조회
+      if (denomination) {
+        const denomRate = getDenominationRate(ratePair.fromCurrency, ratePair.toCurrency, denomination);
+        if (denomRate) {
+          // 매수/매도에 따라 적절한 환율 선택
+          const rate = rateType === 'buy' 
+            ? parseFloat(denomRate.myBuyRate || '0')
+            : parseFloat(denomRate.mySellRate || '0');
+          
+          if (rate > 0) {
+            // 환율 방향 조정 (필요한 경우 역환율 계산)
+            let finalRate = rate;
+            if (ratePair.fromCurrency !== fromCurrency) {
+              finalRate = 1 / rate;
+            }
+            
+            console.log(`환전상 시세 적용: ${fromCurrency}→${toCurrency} ${denomination} (${rateType}) = ${finalRate}`);
+            return finalRate;
+          }
+        }
       }
+      
+      // 일반 환율 조회 (권종별 환율이 없는 경우)
+      const rate = exchangeRates.find(rate => 
+        rate.fromCurrency === ratePair.fromCurrency && 
+        rate.toCurrency === ratePair.toCurrency &&
+        (rate.isActive === true || rate.isActive === 'true')
+      );
+      
+      if (rate) {
+        // 매수/매도에 따라 적절한 환율 선택
+        const rateValue = rateType === 'buy' 
+          ? parseFloat(rate.myBuyRate || '0')
+          : parseFloat(rate.mySellRate || '0');
+        
+        if (rateValue > 0) {
+          // 환율 방향 조정
+          let finalRate = rateValue;
+          if (ratePair.fromCurrency !== fromCurrency) {
+            finalRate = 1 / rateValue;
+          }
+          
+          console.log(`환전상 일반 시세 적용: ${fromCurrency}→${toCurrency} (${rateType}) = ${finalRate}`);
+          return finalRate;
+        }
+        
+        // fallback: goldShopRate 사용
+        const goldRate = parseFloat(rate.goldShopRate || '0');
+        if (goldRate > 0) {
+          let finalRate = goldRate;
+          if (ratePair.fromCurrency !== fromCurrency) {
+            finalRate = 1 / goldRate;
+          }
+          console.log(`금은방 시세 fallback 적용: ${fromCurrency}→${toCurrency} = ${finalRate}`);
+          return finalRate;
+        }
+      }
+      
+      console.warn(`환전상 시세를 찾을 수 없습니다: ${fromCurrency} → ${toCurrency} (${rateType})`);
+      return 1;
+      
+    } catch (error) {
+      console.error('환율 조회 중 오류:', error);
+      return 1;
     }
-    
-    // 일반 환율 조회 (isActive 검증 개선)
-    const rate = exchangeRates.find(rate => 
-      rate.fromCurrency === fromCurrency && 
-      rate.toCurrency === toCurrency &&
-      (rate.isActive === true || rate.isActive === 'true')
-    );
-    
-    if (rate) {
-      return parseFloat(rate.myBuyRate) || parseFloat(rate.goldShopRate) || 1;
-    }
-    
-    // 역방향 환율 확인 (개선된 버전)
-    const reverseRate = exchangeRates.find(rate => 
-      rate.fromCurrency === toCurrency && 
-      rate.toCurrency === fromCurrency &&
-      (rate.isActive === true || rate.isActive === 'true')
-    );
-    
-    if (reverseRate) {
-      const buyRate = parseFloat(reverseRate.myBuyRate || '0');
-      const sellRate = parseFloat(reverseRate.mySellRate || '0');
-      const goldRate = parseFloat(reverseRate.goldShopRate || '0');
-      const validRate = buyRate > 0 ? buyRate : (sellRate > 0 ? sellRate : (goldRate > 0 ? goldRate : 1));
-      return validRate > 0 ? 1 / validRate : 1;
-    }
-    
-    console.warn(`환율을 찾을 수 없습니다: ${fromCurrency} → ${toCurrency}`);
-    return 1;
   };
 
   // 권종 가치 계산 함수
