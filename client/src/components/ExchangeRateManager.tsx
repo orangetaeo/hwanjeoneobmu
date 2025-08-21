@@ -255,7 +255,7 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
     saveMutation.mutate(cleanedFormData);
   };
 
-  // 숫자 포맷팅 함수 (USD, KRW는 정수, 기타는 소수점)
+  // 숫자 포맷팅 함수 (USD, KRW는 정수, VND는 소수점 3자리)
   const formatRate = (rate: string | null, currency: string = 'VND') => {
     if (!rate || rate === '') return "-";
     const num = parseFloat(rate);
@@ -267,8 +267,8 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
       return Math.round(num).toLocaleString('ko-KR');
     }
     
-    // 기타 통화는 소숫점 2자리까지
-    return num.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+    // VND는 소숫점 3자리까지
+    return num.toLocaleString('ko-KR', { maximumFractionDigits: 3, minimumFractionDigits: 3 });
   };
 
   // 변동률 표시 함수
@@ -289,8 +289,16 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
   const formatDenomination = (denomination: string | null, fromCurrency: string) => {
     if (!denomination) return "";
     
-    const symbol = fromCurrency === 'KRW' ? '₩' : '$';
     const formattedDenom = denomination.replace(/_/g, ',');
+    
+    // VND는 동 표시와 천단위 콤마 적용
+    if (fromCurrency === 'VND') {
+      const numbers = formattedDenom.split(',').map(num => {
+        const parsed = parseInt(num);
+        return parsed >= 1000 ? parsed.toLocaleString('ko-KR') : num;
+      });
+      return '₫' + numbers.join(',');
+    }
     
     // KRW는 천단위 콤마 적용
     if (fromCurrency === 'KRW') {
@@ -298,9 +306,11 @@ export default function ExchangeRateManager({ realTimeRates }: { realTimeRates?:
         const parsed = parseInt(num);
         return parsed >= 1000 ? parsed.toLocaleString('ko-KR') : num;
       });
-      return symbol + numbers.join(',');
+      return '₩' + numbers.join(',');
     }
     
+    // USD 등 기타 통화는 달러 기호
+    const symbol = '$';
     return symbol + formattedDenom;
   };
 
