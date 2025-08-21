@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowUpDown, Calendar, Filter, Search, TrendingDown, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { Transaction } from '@/types';
-import { formatInputWithCommas, formatTransactionAmount, formatExchangeRate } from '@/utils/helpers';
+import { formatInputWithCommas, formatTransactionAmount, formatExchangeRateByTransaction } from '@/utils/helpers';
 import TransactionDetailModal from './TransactionDetailModal';
 
 interface TransactionHistoryProps {
@@ -133,16 +133,16 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
           bValue = new Date(b.timestamp).getTime();
           break;
         case 'fromAmount':
-          aValue = parseFloat(a.fromAmount);
-          bValue = parseFloat(b.fromAmount);
+          aValue = parseFloat(a.fromAmount.toString());
+          bValue = parseFloat(b.fromAmount.toString());
           break;
         case 'toAmount':
-          aValue = parseFloat(a.toAmount);
-          bValue = parseFloat(b.toAmount);
+          aValue = parseFloat(a.toAmount.toString());
+          bValue = parseFloat(b.toAmount.toString());
           break;
         case 'profit':
-          aValue = parseFloat(a.profit || '0');
-          bValue = parseFloat(b.profit || '0');
+          aValue = parseFloat((a.profit || '0').toString());
+          bValue = parseFloat((b.profit || '0').toString());
           break;
         default:
           return 0;
@@ -288,7 +288,7 @@ export default function TransactionHistory({ transactions, onTransactionClick }:
                         <div className="flex justify-between sm:block">
                           <span className="text-gray-500 text-xs sm:text-sm">환율/가격</span>
                           <span className="font-medium text-sm sm:text-base">
-                            {formatExchangeRate(transaction.rate, transaction.fromCurrency, transaction.toCurrency)}
+                            {formatExchangeRateByTransaction(transaction.rate, transaction.fromCurrency, transaction.toCurrency, transaction.type)}
                           </span>
                         </div>
 
