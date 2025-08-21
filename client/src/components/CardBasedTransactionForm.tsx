@@ -1304,18 +1304,19 @@ export default function CardBasedTransactionForm({
 
         transactions.push({
           type: transactionType,
-          fromCurrency: inputCard.currency,
-          toCurrency: outputCard.currency,
-          fromAmount: Math.floor(inputAmount),
-          toAmount: Math.floor(outputAmount),
-          exchangeRate: exchangeRate,
+          fromAssetType: inputCard.type === 'cash' ? 'cash' : (inputCard.type === 'account' ? 'bank' : inputCard.type),
+          fromAssetId: inputCard.accountId || null,
+          fromAssetName: inputCard.type === 'cash' ? `${inputCard.currency} 현금` : (assets.find(a => a.id === inputCard.accountId)?.name || ''),
+          toAssetType: outputCard.type === 'cash' ? 'cash' : (outputCard.type === 'account' ? 'bank' : outputCard.type),
+          toAssetId: outputCard.accountId || null,
+          toAssetName: outputCard.type === 'cash' ? `${outputCard.currency} 현금` : (assets.find(a => a.id === outputCard.accountId)?.name || ''),
+          fromAmount: Math.floor(inputAmount).toString(),
+          toAmount: Math.floor(outputAmount).toString(),
+          rate: exchangeRate?.toString() || '1',
           customerName,
           customerPhone,
           memo: memo || `복합거래 (${inputCard.currency}→${outputCard.currency})`,
-          fromAccountId: inputCard.accountId || null,
-          toAccountId: outputCard.accountId || null,
-          denominations: outputCard.denominations || {},
-          isMainTransaction: true,
+          isMainTransaction: 'true',
           metadata: metadata
         });
       }
@@ -1369,18 +1370,19 @@ export default function CardBasedTransactionForm({
 
           transactions.push({
             type: transactionType,
-            fromCurrency: primaryInputCard.currency,
-            toCurrency: outputCard.currency,
-            fromAmount: Math.floor(allocatedInputAmount),
-            toAmount: Math.floor(outputAmount),
-            exchangeRate: exchangeRate,
+            fromAssetType: primaryInputCard.type === 'cash' ? 'cash' : (primaryInputCard.type === 'account' ? 'bank' : primaryInputCard.type),
+            fromAssetId: primaryInputCard.accountId || null,
+            fromAssetName: primaryInputCard.type === 'cash' ? `${primaryInputCard.currency} 현금` : (assets.find(a => a.id === primaryInputCard.accountId)?.name || ''),
+            toAssetType: outputCard.type === 'cash' ? 'cash' : (outputCard.type === 'account' ? 'bank' : outputCard.type),
+            toAssetId: outputCard.accountId || null,
+            toAssetName: outputCard.type === 'cash' ? `${outputCard.currency} 현금` : (assets.find(a => a.id === outputCard.accountId)?.name || ''),
+            fromAmount: Math.floor(allocatedInputAmount).toString(),
+            toAmount: Math.floor(outputAmount).toString(),
+            rate: exchangeRate?.toString() || '1',
             customerName,
             customerPhone,
             memo: memo || `복합거래 ${outputCard.currency} 출금 ${index + 1}`,
-            fromAccountId: primaryInputCard.accountId || null,
-            toAccountId: outputCard.accountId || null,
-            denominations: outputCard.denominations || {},
-            isMainTransaction: index === 0,
+            isMainTransaction: index === 0 ? 'true' : 'false',
             parentTransactionId: index === 0 ? null : 'main',
             metadata: metadata
           });
