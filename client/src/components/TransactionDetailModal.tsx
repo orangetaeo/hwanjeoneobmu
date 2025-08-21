@@ -207,9 +207,9 @@ export default function TransactionDetailModal({
                   {relatedTransactions.map((relatedTx: Transaction) => (
                     <div key={relatedTx.id} className="border rounded-lg bg-gray-50 dark:bg-gray-800 relative flex">
                       {/* 좌측: 큰 금액 표시 (세로 중앙 정렬) */}
-                      <div className="flex items-center justify-center p-3 flex-shrink-0 border-r border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center justify-center p-2 flex-shrink-0 border-r border-gray-200 dark:border-gray-600">
                         <div className="text-center">
-                          <div className={`font-bold text-xl ${
+                          <div className={`font-bold text-lg ${
                             parseFloat(relatedTx.toAmount.toString()) > parseFloat(relatedTx.fromAmount.toString()) 
                               ? 'text-green-600' 
                               : 'text-red-600'
@@ -231,16 +231,17 @@ export default function TransactionDetailModal({
                         </div>
                       </div>
                       
-                      {/* 우측: 권종별 변동과 시간 */}
+                      {/* 우측: 권종별 변동 */}
                       <div className="flex-1 p-2">
                         {relatedTx.metadata && typeof relatedTx.metadata === 'object' && relatedTx.metadata !== null && 'denominationChanges' in relatedTx.metadata && (
                           <div>
                             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">권종별 변동:</div>
-                            <div className="grid grid-cols-2 gap-1">
+                            <div className="flex flex-wrap gap-1">
                               {Object.entries(relatedTx.metadata.denominationChanges as Record<string, number>)
                                 .filter(([_, count]) => count !== 0)
+                                .sort(([a], [b]) => parseInt(b) - parseInt(a)) // 고액권부터 정렬
                                 .map(([denom, count]) => (
-                                  <div key={denom} className={`text-xs px-1 py-0.5 rounded border text-center ${
+                                  <div key={denom} className={`text-xs px-1 py-0.5 rounded border whitespace-nowrap ${
                                     count > 0 
                                       ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-600' 
                                       : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600'
