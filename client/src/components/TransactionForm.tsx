@@ -1082,7 +1082,8 @@ export default function TransactionForm() {
             <div>
               <Label>거래 유형</Label>
               <Select 
-                value={formData.transactionType || ""} 
+                key={`transaction-${formData.transactionType || 'empty'}`}
+                value={formData.transactionType} 
                 onValueChange={(value) => {
                   // 기본값 설정
                   let newFormData = { ...formData, transactionType: value };
@@ -1103,9 +1104,7 @@ export default function TransactionForm() {
                 }}
               >
                 <SelectTrigger data-testid="select-transaction-type">
-                  <SelectValue placeholder="거래 유형 선택">
-                    {formData.transactionType ? TRANSACTION_TYPES.find(t => t.value === formData.transactionType)?.label : ""}
-                  </SelectValue>
+                  <SelectValue placeholder="거래 유형 선택" />
                 </SelectTrigger>
                 <SelectContent>
                   {TRANSACTION_TYPES.map((type) => (
@@ -1122,7 +1121,8 @@ export default function TransactionForm() {
               <div>
                 <Label>받는 통화 (From)</Label>
                 <Select 
-                  value={formData.fromCurrency || ""} 
+                  key={`from-${formData.fromCurrency || 'empty'}-${formData.transactionType || 'none'}`}
+                  value={formData.fromCurrency} 
                   onValueChange={(value) => {
                     console.log('fromCurrency 변경 전:', { transactionType: formData.transactionType, fromCurrency: formData.fromCurrency, toCurrency: formData.toCurrency, newFrom: value });
                     
@@ -1155,9 +1155,7 @@ export default function TransactionForm() {
                   }}
                 >
                   <SelectTrigger data-testid="select-from-currency">
-                    <SelectValue placeholder="통화 선택">
-                      {formData.fromCurrency || ""}
-                    </SelectValue>
+                      <SelectValue placeholder="통화 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     {/* cash_to_krw_account인 경우 KRW 제외 */}
@@ -1179,15 +1177,14 @@ export default function TransactionForm() {
               <div>
                 <Label>주는 통화 (To)</Label>
                 <Select 
-                  value={formData.toCurrency || ""} 
+                  key={`to-${formData.toCurrency || 'empty'}-${formData.transactionType || 'none'}`}
+                  value={formData.toCurrency} 
                   onValueChange={(value) => {
                     setFormData({ ...formData, toCurrency: value, toDenomination: "" });
                   }}
                 >
                   <SelectTrigger data-testid="select-to-currency">
-                    <SelectValue placeholder="통화 선택">
-                      {formData.toCurrency || ""}
-                    </SelectValue>
+                      <SelectValue placeholder="통화 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     {formData.transactionType === "cash_to_krw_account" || formData.transactionType === "vnd_account_to_krw_account" ? (
