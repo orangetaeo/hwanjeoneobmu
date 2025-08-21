@@ -2857,9 +2857,9 @@ export default function TransactionForm() {
                             const average = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
                             console.log(`거래 확인 적용 환율 평균 계산: ${rates.join(', ')} → 평균: ${average}`);
                             
-                            // VND→KRW는 소수점 3자리, 나머지는 소수점 2자리
+                            // VND→KRW는 소수점 4자리, 나머지는 소수점 2자리
                             if (formData.fromCurrency === "VND" && formData.toCurrency === "KRW") {
-                              return average.toFixed(3);
+                              return average.toFixed(4);
                             } else {
                               return average.toFixed(2);
                             }
