@@ -80,7 +80,7 @@ export default function TransactionDetailModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col [&>button]:hidden">
         <DialogHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10 py-1.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between px-1">
             <DialogTitle className="flex items-center gap-2">
               <Badge variant="outline" className="px-2 py-1 text-xs">
                 {getTransactionTypeText(transaction.type)}
@@ -89,7 +89,7 @@ export default function TransactionDetailModal({
             </DialogTitle>
             <button
               onClick={onClose}
-              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none px-1"
+              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
             >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
