@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -128,6 +128,9 @@ export default function CardBasedTransactionForm({
     accountHolder: ''
   });
   
+  // 자동 포커스를 위한 ref
+  const bankNameInputRef = useRef<HTMLInputElement>(null);
+  
   // 익명 거래 설정
   const [isAnonymousTransaction, setIsAnonymousTransaction] = useState(false);
 
@@ -148,6 +151,17 @@ export default function CardBasedTransactionForm({
   const [approvalStep, setApprovalStep] = useState(0); // 0: 입력, 1: 검토, 2: 승인, 3: 실행
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  // 자동 포커스 기능 - 출금 카드에 계좌가 추가될 때 고객 계좌 정보 첫 필드에 포커스
+  useEffect(() => {
+    const hasAccountOutput = outputCards.some(card => card.type === 'account');
+    if (hasAccountOutput && bankNameInputRef.current) {
+      // 약간의 딜레이를 줘서 DOM이 완전히 렌더링된 후 포커스
+      setTimeout(() => {
+        bankNameInputRef.current?.focus();
+      }, 100);
+    }
+  }, [outputCards]);
 
   // 카드 추가 함수들
   const addInputCard = () => {
@@ -1940,53 +1954,6 @@ export default function CardBasedTransactionForm({
             />
           </div>
           
-          {/* 고객 계좌 정보 - 출금 카드 중 계좌가 있을 때 표시 */}
-          {outputCards.some(card => card.type === 'account') && (
-            <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
-              <div className="flex items-center mb-3">
-                <Banknote className="mr-2 text-orange-600" size={20} />
-                <Label className="text-base font-semibold text-orange-800">고객 계좌 정보 (필수)</Label>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bankName">수신 은행명</Label>
-                  <Input
-                    id="bankName"
-                    placeholder="예: 신한은행"
-                    value={customerAccountInfo.bankName}
-                    onChange={(e) => setCustomerAccountInfo(prev => ({...prev, bankName: e.target.value}))}
-                    className={customerAccountInfo.bankName ? "border-green-300 bg-green-50" : ""}
-                    data-testid="input-bank-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accountNumber">수신 계좌번호</Label>
-                  <Input
-                    id="accountNumber"
-                    placeholder="예: 110-123-456789"
-                    value={customerAccountInfo.accountNumber}
-                    onChange={(e) => setCustomerAccountInfo(prev => ({...prev, accountNumber: e.target.value}))}
-                    className={customerAccountInfo.accountNumber ? "border-green-300 bg-green-50" : ""}
-                    data-testid="input-account-number"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accountHolder">수신 예금주명</Label>
-                  <Input
-                    id="accountHolder"
-                    placeholder="예: 김철수"
-                    value={customerAccountInfo.accountHolder}
-                    onChange={(e) => setCustomerAccountInfo(prev => ({...prev, accountHolder: e.target.value}))}
-                    className={customerAccountInfo.accountHolder ? "border-green-300 bg-green-50" : ""}
-                    data-testid="input-account-holder"
-                  />
-                </div>
-              </div>
-              <div className="mt-3 text-xs text-orange-600 bg-white p-2 rounded border">
-                📝 참고: 실제 계좌이체를 위해 정확한 계좌 정보를 입력해 주세요. 이 정보는 거래 기록에 저장됩니다.
-              </div>
-            </div>
-          )}
           
           {/* 시스템 설정 옵션들 */}
           <div className="space-y-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
@@ -2542,6 +2509,147 @@ export default function CardBasedTransactionForm({
             </Card>
           )}
         </div>
+        
+        {/* 출금 카드와 고객 계좌 정보 연결 화살표 */}
+        {outputCards.some(card => card.type === 'account') && (
+          <div className="flex flex-col items-center py-2">
+            <div className="animate-bounce">
+              <ArrowDownLeft className="text-orange-500" size={24} />
+            </div>
+            <div className="text-xs text-orange-600 font-medium">계좌 이체 정보 입력</div>
+          </div>
+        )}
+
+        {/* 고객 계좌 정보 - 출금 카드에 계좌가 있을 때 바로 표시 */}
+        {outputCards.some(card => card.type === 'account') && (
+          <div className="border border-orange-200 rounded-lg p-4 bg-gradient-to-br from-orange-50 to-yellow-50 transform transition-all duration-500 animate-in slide-in-from-top-4 shadow-sm hover:shadow-md">
+            <div className="flex items-center mb-3">
+              <div className="bg-orange-100 p-1 rounded-full mr-3">
+                <Banknote className="text-orange-600" size={18} />
+              </div>
+              <Label className="text-base font-semibold text-orange-800">고객 계좌 정보 (필수)</Label>
+              <div className="ml-auto flex items-center gap-2">
+                {(() => {
+                  const completedFields = [
+                    customerAccountInfo.bankName,
+                    customerAccountInfo.accountNumber,
+                    customerAccountInfo.accountHolder
+                  ].filter(field => field.trim()).length;
+                  
+                  return (
+                    <div className="flex items-center text-xs">
+                      <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                        <div 
+                          className="bg-orange-500 h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${(completedFields / 3) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-orange-600 font-medium">{completedFields}/3</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+            {/* 모바일 최적화: 스택 레이아웃과 더 큰 터치 영역 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bankName" className="text-sm font-medium text-orange-800">
+                  수신 은행명 <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  ref={bankNameInputRef}
+                  id="bankName"
+                  placeholder="예: 신한은행"
+                  value={customerAccountInfo.bankName}
+                  onChange={(e) => setCustomerAccountInfo(prev => ({...prev, bankName: e.target.value}))}
+                  className={`h-12 text-base ${customerAccountInfo.bankName ? "border-green-300 bg-green-50 shadow-sm" : "border-orange-200"} focus:border-orange-400 focus:ring-orange-200 transition-all duration-200`}
+                  data-testid="input-bank-name"
+                />
+                {customerAccountInfo.bankName && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle size={12} />
+                    입력 완료
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="accountNumber" className="text-sm font-medium text-orange-800">
+                  수신 계좌번호 <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="accountNumber"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="예: 110-123-456789"
+                  value={customerAccountInfo.accountNumber}
+                  onChange={(e) => setCustomerAccountInfo(prev => ({...prev, accountNumber: e.target.value}))}
+                  className={`h-12 text-base ${customerAccountInfo.accountNumber ? "border-green-300 bg-green-50 shadow-sm" : "border-orange-200"} focus:border-orange-400 focus:ring-orange-200 transition-all duration-200`}
+                  data-testid="input-account-number"
+                />
+                {customerAccountInfo.accountNumber && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle size={12} />
+                    입력 완료
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <Label htmlFor="accountHolder" className="text-sm font-medium text-orange-800">
+                  수신 예금주명 <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="accountHolder"
+                  placeholder="예: 김철수"
+                  value={customerAccountInfo.accountHolder}
+                  onChange={(e) => setCustomerAccountInfo(prev => ({...prev, accountHolder: e.target.value}))}
+                  className={`h-12 text-base ${customerAccountInfo.accountHolder ? "border-green-300 bg-green-50 shadow-sm" : "border-orange-200"} focus:border-orange-400 focus:ring-orange-200 transition-all duration-200`}
+                  data-testid="input-account-holder"
+                />
+                {customerAccountInfo.accountHolder && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle size={12} />
+                    입력 완료
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* 모바일에서 완성도 표시 */}
+            <div className="block sm:hidden mt-3">
+              <div className="flex items-center justify-between p-2 bg-orange-100 rounded-lg">
+                <span className="text-sm font-medium text-orange-800">입력 진행도</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 bg-orange-200 rounded-full h-2">
+                    <div 
+                      className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${([customerAccountInfo.bankName, customerAccountInfo.accountNumber, customerAccountInfo.accountHolder].filter(f => f.trim()).length / 3) * 100}%` 
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-orange-700">
+                    {[customerAccountInfo.bankName, customerAccountInfo.accountNumber, customerAccountInfo.accountHolder].filter(f => f.trim()).length}/3
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-white rounded border-l-4 border-l-orange-400">
+              <div className="flex items-start gap-2">
+                <div className="bg-orange-100 p-1 rounded-full">
+                  <CheckCircle className="text-orange-600" size={12} />
+                </div>
+                <div className="text-xs text-orange-700">
+                  <div className="font-medium mb-1">📝 중요 안내사항</div>
+                  <div>• 실제 계좌이체를 위해 정확한 정보를 입력해 주세요</div>
+                  <div>• 입력된 정보는 거래 기록에 안전하게 저장됩니다</div>
+                  <div>• 계좌번호는 대시(-) 포함하여 입력 가능합니다</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 카드 연결 시각화 */}
