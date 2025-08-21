@@ -1083,7 +1083,21 @@ export default function TransactionForm() {
               <Label>거래 유형</Label>
               <Select 
                 value={formData.transactionType} 
-                onValueChange={(value) => setFormData({ ...formData, transactionType: value })}
+                onValueChange={(value) => {
+                  // 기본값 설정
+                  let newFormData = { ...formData, transactionType: value };
+                  
+                  // 현금 → KRW 계좌이체 선택 시 기본값 설정
+                  if (value === "cash_to_krw_account") {
+                    newFormData = {
+                      ...newFormData,
+                      toCurrency: "VND", // 받는 통화 VND로 기본 설정
+                      fromAssetId: "kakao" // 출금 계좌 카카오뱅크로 기본 설정
+                    };
+                  }
+                  
+                  setFormData(newFormData);
+                }}
               >
                 <SelectTrigger data-testid="select-transaction-type">
                   <SelectValue placeholder="거래 유형 선택" />
