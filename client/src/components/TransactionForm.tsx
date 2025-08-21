@@ -1098,7 +1098,6 @@ export default function TransactionForm() {
                     };
                   }
                   
-                  console.log('거래유형 변경:', value, newFormData);
                   // 즉시 상태 업데이트
                   setFormData(newFormData);
                 }}
@@ -1124,8 +1123,6 @@ export default function TransactionForm() {
                   key={`from-${formData.fromCurrency || 'empty'}-${formData.transactionType || 'none'}`}
                   value={formData.fromCurrency} 
                   onValueChange={(value) => {
-                    console.log('fromCurrency 변경 전:', { transactionType: formData.transactionType, fromCurrency: formData.fromCurrency, toCurrency: formData.toCurrency, newFrom: value });
-                    
                     // 거래유형별 통화 자동 설정
                     let newToCurrency = formData.toCurrency;
                     
@@ -1150,7 +1147,6 @@ export default function TransactionForm() {
                       denominationAmounts: {} 
                     };
                     
-                    console.log('fromCurrency 변경 후:', newFormData);
                     setFormData(newFormData);
                   }}
                 >
