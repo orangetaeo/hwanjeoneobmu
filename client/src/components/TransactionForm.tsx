@@ -1184,7 +1184,8 @@ export default function TransactionForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-base font-medium">받는 금액 ({formData.fromCurrency})</Label>
-                {(formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_vnd_account") ? (
+                {/* 현금 → KRW 계좌이체도 현금환전과 동일한 UI 사용 */}
+                {(formData.transactionType === "cash_exchange" || formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "cash_to_krw_account") ? (
                   <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg mt-2">
                     <div className="text-xl font-bold text-green-700">
                       {formatNumber(calculateTotalFromAmount())} {formData.fromCurrency}
@@ -1245,7 +1246,7 @@ export default function TransactionForm() {
               </div>
             </div>
 
-            {/* 권종 선택 - 모바일 최적화 */}
+            {/* 권종 선택 및 고객 계좌 정보 - 모바일 최적화 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <Label>받는 권종 ({formData.fromCurrency})</Label>
@@ -1295,8 +1296,8 @@ export default function TransactionForm() {
                       </div>
                     )}
                     
-                    {/* VND 계좌 선택 (cash_to_vnd_account 및 krw_account_to_vnd_account용) */}
-                    {(formData.transactionType === "cash_to_vnd_account" || formData.transactionType === "krw_account_to_vnd_account") && formData.toCurrency === "VND" && (
+                    {/* VND 계좌 선택 (cash_to_vnd_account용) */}
+                    {formData.transactionType === "cash_to_vnd_account" && formData.toCurrency === "VND" && (
                       <div className="mt-2">
                         <Label className="text-sm">입금 계좌 선택</Label>
                         <Select value={formData.toAssetId} onValueChange={(value) => setFormData({ ...formData, toAssetId: value })}>
@@ -1506,8 +1507,54 @@ export default function TransactionForm() {
 
               </div>
 
-              {/* VND 권종별 분배 - 받는 권종 오른쪽에 배치 */}
-              {formData.toCurrency === "VND" && (
+              {/* 현금 → KRW 계좌이체에서 고객 계좌 정보 표시 */}
+              {formData.transactionType === "cash_to_krw_account" ? (
+                <div>
+                  <Label className="text-base font-medium">고객 계좌 정보 (필수)</Label>
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg mt-2">
+                    <div className="text-sm font-medium text-red-700 mb-3 flex items-center">
+                      <span className="mr-2">📋</span>
+                      계좌이체 필수 정보
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-red-600">계좌명 (예금주명) *</Label>
+                        <Input
+                          placeholder="예금주명 입력 (필수)"
+                          value={formData.customerName}
+                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                          data-testid="input-customer-name"
+                          className="border-red-200 focus:border-red-400 mt-1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-red-600">은행명 *</Label>
+                        <Input
+                          placeholder="은행명 입력 (필수)"
+                          value={formData.customerPhone}
+                          onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                          data-testid="input-customer-bank"
+                          className="border-red-200 focus:border-red-400 mt-1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-red-600">계좌번호 *</Label>
+                        <Input
+                          placeholder="계좌번호 입력 (필수)"
+                          value={formData.memo}
+                          onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+                          data-testid="input-customer-account"
+                          className="border-red-200 focus:border-red-400 mt-1"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : /* VND 권종별 분배 - 받는 권종 오른쪽에 배치 */
+              formData.toCurrency === "VND" ? (
                 <div>
                   <Label className="text-base font-medium">권종별 분배</Label>
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mt-2">
@@ -1923,7 +1970,7 @@ export default function TransactionForm() {
                     </div>
                   </div>
                 </div>
-              )}
+              ) : null}
               
               {/* KRW 권종별 분배 - 현금 환전용만 (계좌이체는 제외) */}
               {formData.toCurrency === "KRW" && (formData.transactionType === "cash_exchange" || formData.transactionType === "vnd_account_to_krw_account") && (
@@ -2388,41 +2435,11 @@ export default function TransactionForm() {
                   </Label>
                 </div>
                 
+                {/* 고객 계좌 정보는 받는 권종과 같은 줄로 이동됨 */}
                 {formData.transactionType === "cash_to_krw_account" ? (
-                  // 현금 → KRW 계좌이체: 계좌 정보 필수
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-red-600">계좌명 (예금주명) *</Label>
-                      <Input
-                        placeholder="예금주명 입력 (필수)"
-                        value={formData.customerName}
-                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                        data-testid="input-customer-name"
-                        className="border-red-200 focus:border-red-400"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-red-600">은행명 *</Label>
-                      <Input
-                        placeholder="은행명 입력 (필수)"
-                        value={formData.customerPhone}
-                        onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                        data-testid="input-customer-bank"
-                        className="border-red-200 focus:border-red-400"
-                        required
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Label className="text-red-600">계좌번호 *</Label>
-                      <Input
-                        placeholder="계좌번호 입력 (필수)"
-                        value={formData.memo}
-                        onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
-                        data-testid="input-customer-account"
-                        className="border-red-200 focus:border-red-400"
-                        required
-                      />
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="text-sm text-yellow-700">
+                      고객 계좌 정보는 우측에 입력해주세요
                     </div>
                   </div>
                 ) : (
