@@ -34,7 +34,10 @@ export default function OutputCard({
   useEffect(() => {
     if (totalInputAmount > 0) {
       const calculatedAmount = (totalInputAmount * output.percentage) / 100;
+      console.log('🔍 Auto-calculating output amount:', { totalInputAmount, percentage: output.percentage, calculatedAmount, currentAmount: output.amount });
+      
       if (Math.abs(output.amount - calculatedAmount) > 0.01) { // 오차 범위 내에서만 업데이트
+        console.log('🔄 Updating output amount from', output.amount, 'to', calculatedAmount, 'typeof:', typeof calculatedAmount);
         onUpdate({ amount: calculatedAmount });
       }
     }
