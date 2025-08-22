@@ -508,6 +508,21 @@ export default function CardBasedTransactionForm({
           adjustToAvailableInventory(card);
         }
       });
+      
+      // 보상 분배 추천 추가
+      if (validation.errors.length > 0) {
+        recommendations.push({
+          type: 'info',
+          message: '재고 부족 시 자동 보상을 받으시겠습니까?',
+          action: () => {
+            checkInventoryWithCompensation();
+            toast({
+              title: "보상 분배 적용",
+              description: "재고 부족 시 자동 보상 시스템을 실행했습니다.",
+            });
+          }
+        });
+      }
     }
     
     return recommendations;
@@ -774,6 +789,12 @@ export default function CardBasedTransactionForm({
     
     // 완전히 조정 가능한 경우에만 업데이트
     updateOutputCard(card.id, 'denominations', adjustedDenoms);
+    
+    // 자동분배 후 재고 검증 실행
+    setTimeout(() => {
+      checkInventoryWithCompensation();
+    }, 300);
+    
     toast({
       title: "자동 조정 완료",
       description: "보유량에 맞춰 권종을 조정했습니다.",
@@ -1363,9 +1384,8 @@ export default function CardBasedTransactionForm({
     // 권종별 입력 변경 시 실시간 재고 검증 및 보상 시스템 실행
     if (field === 'denominations') {
       setTimeout(() => {
-        console.log("⚡ 권종별 입력 변경으로 인한 실시간 재고 검증 시작");
         checkInventoryWithCompensation();
-      }, 100); // UI 업데이트 후 실행
+      }, 200); // UI 업데이트 완료 후 실행
     }
   };
 
@@ -1612,49 +1632,54 @@ export default function CardBasedTransactionForm({
     }));
   };
 
-  // 개선된 재고 검증 및 자동 보상 시스템
+  // 개선된 재고 검증 및 자동 보상 시스템 (중복 방지 포함)
   const checkInventoryWithCompensation = () => {
-    console.log("🔍 재고 부족 검증 시작:", outputCards);
     let hasShortage = false;
+    const processedShortages = new Set<string>(); // 중복 방지용
     
     outputCards.forEach(card => {
       if (card.type === 'cash' && !card.isCompensation) {
-        console.log(`📦 카드 검증 중: ${card.currency}`, card);
         const validation = validateInventory(card);
-        console.log(`📋 검증 결과:`, validation);
         
         if (!validation.isValid && validation.errors.length > 0) {
-          console.log("❌ 재고 부족 감지된 에러들:", validation.errors);
           // 재고 부족 에러에서 세부 정보 추출
           validation.errors.forEach(error => {
-            console.log(`🔍 에러 메시지 분석: "${error}"`);
             // 권종별 부족 패턴 매치: "1 달러권이 1장 부족합니다", "50,000 원권이 2장 부족합니다" 등
             const shortageMatch = error.match(/(\d+(?:,\d+)*)\s*(?:달러|원|동)?권이 (\d+)장 부족합니다/);
-            console.log("🎯 패턴 매치 결과:", shortageMatch);
             if (shortageMatch) {
               const denom = shortageMatch[1].replace(/,/g, ''); // 숫자 부분만 추출
               const shortfall = parseInt(shortageMatch[2]);
-              console.log(`💡 부족 정보 추출: denom=${denom}, shortfall=${shortfall}`);
+              
+              // 중복 보상 방지 체크
+              const shortageKey = `${card.id}-${denom}-${shortfall}`;
+              if (processedShortages.has(shortageKey)) {
+                return;
+              }
+              
+              // 이미 이 카드에 대한 보상카드가 존재하는지 확인
+              const existingCompensation = outputCards.find(outCard => 
+                outCard.isCompensation && outCard.originalCardId === card.id
+              );
+              
+              if (existingCompensation) {
+                return;
+              }
+              
+              processedShortages.add(shortageKey);
               
               // 자동 보상 시도 - 직접 보상 카드 생성
               const compensationCurrency = getCompensationCurrency(card.currency);
               const compensationAmount = calculateCompensationAmount(card, { denom, shortfall }, compensationCurrency);
-              console.log(`🔄 보상 정보: ${compensationCurrency} ${compensationAmount}`);
               
               // 보상 카드 생성
               createCompensationCard(compensationCurrency, compensationAmount, card, { denom, shortfall });
               hasShortage = true;
-            } else {
-              console.log("❌ 패턴 매치 실패 - 에러 메시지 형식 확인 필요");
             }
           });
-        } else {
-          console.log("✅ 재고 검증 통과");
         }
       }
     });
     
-    console.log("🏁 재고 부족 검증 완료, hasShortage:", hasShortage);
     return hasShortage;
   };
 
