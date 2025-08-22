@@ -2971,13 +2971,13 @@ export default function CardBasedTransactionForm({
               <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-0">
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <span className="text-gray-600 block text-xs">입금 카드</span>
-                  <div className="text-xs font-bold text-green-700">
+                  <div className="text-sm font-bold text-green-700">
                     {totalInputAmount > 0 ? `${totalInputAmount.toLocaleString()} 원` : '0 원'}
                   </div>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm md:hidden">
                   <span className="text-gray-600 block text-xs">출금 카드</span>
-                  <div className="text-xs font-bold text-blue-700">
+                  <div className="text-sm font-bold text-blue-700">
                     {Object.entries(outputTotalsByCurrency).length > 0 ? 
                       Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
                         <div key={currency}>
@@ -2991,7 +2991,7 @@ export default function CardBasedTransactionForm({
               </div>
               <div className="hidden md:block text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">출금 카드</span>
-                <div className="text-xs font-bold text-blue-700">
+                <div className="text-sm font-bold text-blue-700">
                   {Object.entries(outputTotalsByCurrency).length > 0 ? 
                     Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
                       <div key={currency}>
