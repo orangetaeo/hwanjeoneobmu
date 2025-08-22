@@ -1242,47 +1242,6 @@ export default function CardBasedTransactionForm({
     
     return (
       <div className="relative my-6">
-        {/* 연결선 SVG */}
-        <svg 
-          className="absolute inset-0 w-full h-20 pointer-events-none z-10"
-          style={{ top: '-10px' }}
-        >
-          {connections.map((connection, index) => {
-            const fromX = (connection.from + 0.5) * (100 / Math.max(inputCards.length, 1));
-            const toX = (connection.to + 0.5) * (100 / Math.max(outputCards.length, 1));
-            
-            return (
-              <g key={index}>
-                {/* 곡선 연결선 */}
-                <path
-                  d={`M ${fromX}% 10 Q 50% 50 ${toX}% 70`}
-                  stroke={connection.relationship === 'exchange' ? '#3b82f6' : '#10b981'}
-                  strokeWidth="2"
-                  fill="none"
-                  strokeDasharray={connection.relationship === 'transfer' ? '5,5' : '0'}
-                  className="drop-shadow-sm"
-                />
-                
-                {/* 화살표 */}
-                <polygon
-                  points={`${toX - 1}%,66 ${toX + 1}%,66 ${toX}%,74`}
-                  fill={connection.relationship === 'exchange' ? '#3b82f6' : '#10b981'}
-                />
-                
-                {/* 환율 라벨 */}
-                <text
-                  x="50%"
-                  y="35"
-                  textAnchor="middle"
-                  className="text-xs font-medium fill-gray-600"
-                  style={{ fontSize: '10px' }}
-                >
-                  {connection.rate.toFixed(2)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
         
         {/* 연결 정보 표시 */}
         <div className="relative z-0 pt-3 bg-gradient-to-r from-blue-50 to-green-50 p-3 rounded-lg border">
