@@ -2829,12 +2829,27 @@ export default function CardBasedTransactionForm({
           {inputCards.map((card, index) => (
             <Card key={card.id} className={`border-2 transition-all duration-200 ${getCardTheme(true, card.currency)}`}>
               <CardHeader className="pb-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex items-center space-x-2 flex-1">
                     {card.type === 'cash' ? <Banknote className="text-green-600" size={18} /> : <Wallet className="text-green-600" size={18} />}
-                    <span className="font-semibold text-green-800">입금 카드 #{index + 1}</span>
+                    <span className="font-semibold text-green-800">입금카드 #{index + 1}</span>
                     {validateInventory(card).isValid && card.amount && (
                       <CheckCircle className="text-green-500" size={16} />
+                    )}
+                    
+                    {/* 접힌 상태일 때 총 합계 표시 */}
+                    {collapsedCards.has(card.id) && (
+                      <div className="ml-4 flex-1 text-right">
+                        <span className="font-bold text-green-700">
+                          총 {(() => {
+                            const totalAmount = card.amount ? 
+                              parseCommaFormattedNumber(card.amount) : 
+                              Object.entries(card.denominations || {}).reduce((sum, [denom, count]) => 
+                                sum + (parseInt(denom) * count), 0);
+                            return totalAmount ? totalAmount.toLocaleString() : '0';
+                          })()} {card.currency === 'VND' ? '동' : card.currency === 'USD' ? '달러' : '원'}
+                        </span>
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center space-x-1">
@@ -3022,8 +3037,8 @@ export default function CardBasedTransactionForm({
               card.isCompensated ? 'border-green-400 bg-green-50 dark:bg-green-900/20' : ''
             }`}>
               <CardHeader className="pb-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
+                <div className="flex justify-between items-center w-full">
+                  <div className="flex items-center space-x-2 flex-1">
                     {card.type === 'cash' ? <Banknote className={
                       card.isCompensation ? "text-orange-600" : 
                       card.isCompensated ? "text-green-600" : "text-blue-600"
@@ -3035,8 +3050,8 @@ export default function CardBasedTransactionForm({
                       card.isCompensation ? "text-orange-800" : 
                       card.isCompensated ? "text-green-800" : "text-blue-800"
                     }`}>
-                      {card.isCompensation ? `🔄 보상 카드 #${index + 1}` : 
-                       card.isCompensated ? `✅ 보상됨 #${index + 1}` : `출금 카드 #${index + 1}`}
+                      {card.isCompensation ? `보상카드 #${index + 1}` : 
+                       card.isCompensated ? `보상됨 #${index + 1}` : `출금카드 #${index + 1}`}
                     </span>
                     {validateInventory(card).isValid && card.amount && (
                       <CheckCircle className={
@@ -3053,6 +3068,24 @@ export default function CardBasedTransactionForm({
                       <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
                         보상완료
                       </Badge>
+                    )}
+                    
+                    {/* 접힌 상태일 때 총 합계 표시 */}
+                    {collapsedCards.has(card.id) && (
+                      <div className="ml-4 flex-1 text-right">
+                        <span className={`font-bold ${
+                          card.isCompensation ? "text-orange-700" : 
+                          card.isCompensated ? "text-green-700" : "text-blue-700"
+                        }`}>
+                          총 {(() => {
+                            const totalAmount = card.amount ? 
+                              parseCommaFormattedNumber(card.amount) : 
+                              Object.entries(card.denominations || {}).reduce((sum, [denom, count]) => 
+                                sum + (parseInt(denom) * count), 0);
+                            return totalAmount ? totalAmount.toLocaleString() : '0';
+                          })()} {card.currency === 'VND' ? '동' : card.currency === 'USD' ? '달러' : '원'}
+                        </span>
+                      </div>
                     )}
                   </div>
                   
