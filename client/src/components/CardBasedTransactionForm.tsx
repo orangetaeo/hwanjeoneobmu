@@ -3831,6 +3831,37 @@ export default function CardBasedTransactionForm({
             )}
           </div>
         )}
+
+        {/* 테스트 버튼들 (개발용) */}
+        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+          <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-3">보상 시스템 테스트</h3>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={testUSDtoVNDCompensation}
+              className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            >
+              USD→VND 보상 테스트
+            </button>
+            <button
+              onClick={testVNDtoKRWCompensation}
+              className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            >
+              VND→KRW 보상 테스트
+            </button>
+            <button
+              onClick={testKRWtoVNDCompensation}
+              className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            >
+              KRW→VND 보상 테스트
+            </button>
+            <button
+              onClick={runAllCompensationTests}
+              className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
+            >
+              전체 테스트
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
