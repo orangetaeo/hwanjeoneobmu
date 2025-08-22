@@ -1523,6 +1523,15 @@ export default function CardBasedTransactionForm({
     }
   };
 
+  // 보상 통화 결정
+  const getCompensationCurrency = (originalCurrency: string): string => {
+    if (originalCurrency === 'USD') return 'VND';
+    if (originalCurrency === 'VND') return 'KRW';
+    if (originalCurrency === 'KRW') return 'VND';
+    return 'VND'; // 기본값
+  };
+
+
   // 보상용 새 출금카드 생성 (권종별 분배 포함)
   const createCompensationCard = (currency: string, amount: number, originalCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }) => {
     // 보상 금액에 대한 권종별 분배 자동 계산
@@ -1606,16 +1615,19 @@ export default function CardBasedTransactionForm({
         if (!validation.isValid && validation.errors.length > 0) {
           // 재고 부족 에러에서 세부 정보 추출
           validation.errors.forEach(error => {
-            const shortageMatch = error.match(/(.+)권이 (\d+)장 부족합니다/);
+            // 권종별 부족 패턴 매치: "1 달러권이 1장 부족합니다", "50,000 원권이 2장 부족합니다" 등
+            const shortageMatch = error.match(/(\d+(?:,\d+)*)\s*(?:달러|원|동)?권이 (\d+)장 부족합니다/);
             if (shortageMatch) {
-              const denom = shortageMatch[1].replace(/,/g, '');
+              const denom = shortageMatch[1].replace(/,/g, ''); // 숫자 부분만 추출
               const shortfall = parseInt(shortageMatch[2]);
               
-              // 자동 보상 시도
-              const compensated = handleInventoryShortage(card, { denom, shortfall });
-              if (compensated) {
-                hasShortage = true;
-              }
+              // 자동 보상 시도 - 직접 보상 카드 생성
+              const compensationCurrency = getCompensationCurrency(card.currency);
+              const compensationAmount = calculateCompensationAmount(card, { denom, shortfall }, compensationCurrency);
+              
+              // 보상 카드 생성
+              createCompensationCard(compensationCurrency, compensationAmount, card, { denom, shortfall });
+              hasShortage = true;
             }
           });
         }
