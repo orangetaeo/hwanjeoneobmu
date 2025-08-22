@@ -1359,6 +1359,14 @@ export default function CardBasedTransactionForm({
       }
       return card;
     }));
+    
+    // 권종별 입력 변경 시 실시간 재고 검증 및 보상 시스템 실행
+    if (field === 'denominations') {
+      setTimeout(() => {
+        console.log("⚡ 권종별 입력 변경으로 인한 실시간 재고 검증 시작");
+        checkInventoryWithCompensation();
+      }, 100); // UI 업데이트 후 실행
+    }
   };
 
   // 통화별 총 금액 계산 (개선된 버전)
@@ -1606,34 +1614,47 @@ export default function CardBasedTransactionForm({
 
   // 개선된 재고 검증 및 자동 보상 시스템
   const checkInventoryWithCompensation = () => {
+    console.log("🔍 재고 부족 검증 시작:", outputCards);
     let hasShortage = false;
     
     outputCards.forEach(card => {
       if (card.type === 'cash' && !card.isCompensation) {
+        console.log(`📦 카드 검증 중: ${card.currency}`, card);
         const validation = validateInventory(card);
+        console.log(`📋 검증 결과:`, validation);
         
         if (!validation.isValid && validation.errors.length > 0) {
+          console.log("❌ 재고 부족 감지된 에러들:", validation.errors);
           // 재고 부족 에러에서 세부 정보 추출
           validation.errors.forEach(error => {
+            console.log(`🔍 에러 메시지 분석: "${error}"`);
             // 권종별 부족 패턴 매치: "1 달러권이 1장 부족합니다", "50,000 원권이 2장 부족합니다" 등
             const shortageMatch = error.match(/(\d+(?:,\d+)*)\s*(?:달러|원|동)?권이 (\d+)장 부족합니다/);
+            console.log("🎯 패턴 매치 결과:", shortageMatch);
             if (shortageMatch) {
               const denom = shortageMatch[1].replace(/,/g, ''); // 숫자 부분만 추출
               const shortfall = parseInt(shortageMatch[2]);
+              console.log(`💡 부족 정보 추출: denom=${denom}, shortfall=${shortfall}`);
               
               // 자동 보상 시도 - 직접 보상 카드 생성
               const compensationCurrency = getCompensationCurrency(card.currency);
               const compensationAmount = calculateCompensationAmount(card, { denom, shortfall }, compensationCurrency);
+              console.log(`🔄 보상 정보: ${compensationCurrency} ${compensationAmount}`);
               
               // 보상 카드 생성
               createCompensationCard(compensationCurrency, compensationAmount, card, { denom, shortfall });
               hasShortage = true;
+            } else {
+              console.log("❌ 패턴 매치 실패 - 에러 메시지 형식 확인 필요");
             }
           });
+        } else {
+          console.log("✅ 재고 검증 통과");
         }
       }
     });
     
+    console.log("🏁 재고 부족 검증 완료, hasShortage:", hasShortage);
     return hasShortage;
   };
 
