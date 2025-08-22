@@ -3665,7 +3665,7 @@ export default function CardBasedTransactionForm({
                 </span>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                <span className="text-gray-600 block text-sm font-medium">출금카드1</span>
+                <span className="text-gray-600 block text-sm font-medium">출금카드</span>
                 <div className="space-y-1">
                   {(() => {
                     // 보상카드가 아닌 일반 출금카드만 계산
