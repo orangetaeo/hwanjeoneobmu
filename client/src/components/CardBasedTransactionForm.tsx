@@ -541,10 +541,45 @@ export default function CardBasedTransactionForm({
           type: 'info',
           message: '재고 부족 시 자동 보상을 받으시겠습니까?',
           action: () => {
+            // 1. 부족한 권종의 입력된 숫자를 0으로 만들기
+            validation.errors.forEach(error => {
+              if (error.includes('부족')) {
+                // 해당 카드에서 부족한 권종을 0으로 설정
+                const cardId = card.id;
+                const newDenominations = { ...card.denominations };
+                
+                // 부족한 권종들을 찾아서 0으로 설정
+                Object.entries(card.denominations || {}).forEach(([denom, count]) => {
+                  const denomValue = getDenominationValue(card.currency, denom);
+                  const denomKey = card.currency === 'KRW' ? 
+                    denomValue.toLocaleString() : denom;
+                  const cashAsset = assets?.find((asset: any) => 
+                    asset.name === `${card.currency} 현금` && 
+                    asset.currency === card.currency && 
+                    asset.type === 'cash'
+                  );
+                  const availableCount = cashAsset?.metadata?.denominations?.[denomKey] || 0;
+                  
+                  if (count > availableCount) {
+                    newDenominations[denom] = 0;
+                  }
+                });
+                
+                updateOutputCard(cardId, 'denominations', newDenominations);
+              }
+            });
+            
+            // 2. 첫 번째 출금카드 접기
+            if (outputCards.length > 0) {
+              toggleCardCollapse(outputCards[0].id);
+            }
+            
+            // 3. 자동 보상 시스템 실행
             checkInventoryWithCompensation();
+            
             toast({
               title: "보상 분배 적용",
-              description: "재고 부족 시 자동 보상 시스템을 실행했습니다.",
+              description: "부족한 권종을 제거하고 출금카드를 접었습니다. 보상카드를 확인해주세요.",
             });
           }
         });
