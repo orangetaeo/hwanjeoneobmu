@@ -1019,6 +1019,8 @@ export default function CardBasedTransactionForm({
 
   // 자동 환율 계산 함수 (입금 카드 권종별 계산 지원)
   const calculateAutomaticAmount = (inputCard: TransactionCard, outputCard: TransactionCard) => {
+    console.log('🧮 calculateAutomaticAmount called:', { autoCalculation, inputCurrency: inputCard.currency, outputCurrency: outputCard.currency });
+    
     if (!autoCalculation || inputCard.currency === outputCard.currency) {
       return '';
     }
@@ -1080,8 +1082,12 @@ export default function CardBasedTransactionForm({
           const mainOutputCard = outputCards[0];
           const calculatedAmount = calculateAutomaticAmount(updatedCard, mainOutputCard);
           if (calculatedAmount) {
+            console.log('💡 Before formatting:', { calculatedAmount, typeof: typeof calculatedAmount });
+            const formattedAmount = formatInputWithCommas(calculatedAmount.toString());
+            console.log('💡 After formatting:', { formattedAmount, typeof: typeof formattedAmount });
+            
             setOutputCards(prevOutput => prevOutput.map((outCard, index) => 
-              index === 0 ? { ...outCard, amount: formatInputWithCommas(calculatedAmount.toString()) } : outCard
+              index === 0 ? { ...outCard, amount: formattedAmount } : outCard
             ));
           }
         }
