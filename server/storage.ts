@@ -957,15 +957,16 @@ export class DatabaseStorage implements IStorage {
       const currentMetadata = fromAsset.metadata as any || {};
       const currentDenominations = currentMetadata.denominations || {};
       
-      // 권종별 수량 증가 (고객이 준 돈)
+      // 권종별 수량 증가 (고객이 준 돈) - 정규화된 키 사용
       const updatedDenominations = { ...currentDenominations };
       for (const [denomination, amount] of Object.entries(denominationAmounts)) {
         if (amount && parseFloat(amount as string) > 0) {
-          const currentQty = updatedDenominations[denomination] || 0;
+          const normalizedKey = this.normalizeDenominationKey(denomination);
+          const currentQty = updatedDenominations[normalizedKey] || 0;
           const addQty = parseInt(amount as string);
-          updatedDenominations[denomination] = currentQty + addQty;
+          updatedDenominations[normalizedKey] = currentQty + addQty;
           
-          console.log(`받은 ${denomination} 권종: ${currentQty} → ${updatedDenominations[denomination]} (${addQty}장 증가)`);
+          console.log(`받은 ${normalizedKey} 권종: ${currentQty} → ${updatedDenominations[normalizedKey]} (${addQty}장 증가)`);
         }
       }
       
@@ -1178,15 +1179,16 @@ export class DatabaseStorage implements IStorage {
       const currentMetadata = fromAsset.metadata as any || {};
       const currentDenominations = currentMetadata.denominations || {};
       
-      // 권종별 수량 증가
+      // 권종별 수량 증가 - 정규화된 키 사용 (현금→KRW계좌)
       const updatedDenominations = { ...currentDenominations };
       for (const [denomination, amount] of Object.entries(denominationAmounts)) {
         if (amount && parseFloat(amount as string) > 0) {
-          const currentQty = updatedDenominations[denomination] || 0;
+          const normalizedKey = this.normalizeDenominationKey(denomination);
+          const currentQty = updatedDenominations[normalizedKey] || 0;
           const addQty = parseInt(amount as string);
-          updatedDenominations[denomination] = currentQty + addQty;
+          updatedDenominations[normalizedKey] = currentQty + addQty;
           
-          console.log(`현금 권종 증가: ${denomination} ${currentQty} → ${updatedDenominations[denomination]} (+${addQty}장)`);
+          console.log(`현금 권종 증가: ${normalizedKey} ${currentQty} → ${updatedDenominations[normalizedKey]} (+${addQty}장)`);
         }
       }
       
@@ -1384,15 +1386,16 @@ export class DatabaseStorage implements IStorage {
       const currentMetadata = toAsset.metadata as any || {};
       const currentDenominations = currentMetadata.denominations || {};
       
-      // 권종별 수량 증가
+      // 권종별 수량 증가 - 정규화된 키 사용 (KRW계좌→현금)
       const updatedDenominations = { ...currentDenominations };
       for (const [denomination, amount] of Object.entries(denominationAmounts)) {
         if (amount && parseFloat(amount as string) > 0) {
-          const currentQty = updatedDenominations[denomination] || 0;
+          const normalizedKey = this.normalizeDenominationKey(denomination);
+          const currentQty = updatedDenominations[normalizedKey] || 0;
           const addQty = parseInt(amount as string);
-          updatedDenominations[denomination] = currentQty + addQty;
+          updatedDenominations[normalizedKey] = currentQty + addQty;
           
-          console.log(`현금 권종 증가: ${denomination} ${currentQty} → ${updatedDenominations[denomination]} (+${addQty}장)`);
+          console.log(`현금 권종 증가: ${normalizedKey} ${currentQty} → ${updatedDenominations[normalizedKey]} (+${addQty}장)`);
         }
       }
       
@@ -1460,15 +1463,16 @@ export class DatabaseStorage implements IStorage {
       const currentMetadata = toAsset.metadata as any || {};
       const currentDenominations = currentMetadata.denominations || {};
       
-      // 권종별 수량 증가
+      // 권종별 수량 증가 - 정규화된 키 사용 (VND계좌→현금)
       const updatedDenominations = { ...currentDenominations };
       for (const [denomination, amount] of Object.entries(denominationAmounts)) {
         if (amount && parseFloat(amount as string) > 0) {
-          const currentQty = updatedDenominations[denomination] || 0;
+          const normalizedKey = this.normalizeDenominationKey(denomination);
+          const currentQty = updatedDenominations[normalizedKey] || 0;
           const addQty = parseInt(amount as string);
-          updatedDenominations[denomination] = currentQty + addQty;
+          updatedDenominations[normalizedKey] = currentQty + addQty;
           
-          console.log(`VND 현금 권종 증가: ${denomination} ${currentQty} → ${updatedDenominations[denomination]} (+${addQty}장)`);
+          console.log(`VND 현금 권종 증가: ${normalizedKey} ${currentQty} → ${updatedDenominations[normalizedKey]} (+${addQty}장)`);
         }
       }
       
@@ -1578,6 +1582,31 @@ export class DatabaseStorage implements IStorage {
     }
 
     console.log('=== 현금 자산 권종 데이터 정리 완료 ===');
+  }
+
+  // 권종 키 정규화 함수 (콤마 제거, 표준화)
+  private normalizeDenominationKey(key: string): string {
+    // 콤마 제거하고 숫자만 남기기
+    const normalized = key.replace(/,/g, '').replace(/[^0-9]/g, '');
+    return normalized;
+  }
+
+  // 권종 데이터 정규화 함수
+  private normalizeDenominations(denominations: Record<string, any>): Record<string, number> {
+    const normalized: Record<string, number> = {};
+    
+    for (const [key, value] of Object.entries(denominations)) {
+      const normalizedKey = this.normalizeDenominationKey(key);
+      if (normalizedKey && value) {
+        const qty = parseInt(value as string) || 0;
+        if (qty > 0) {
+          // 이미 정규화된 키가 있으면 합산
+          normalized[normalizedKey] = (normalized[normalizedKey] || 0) + qty;
+        }
+      }
+    }
+    
+    return normalized;
   }
 }
 
