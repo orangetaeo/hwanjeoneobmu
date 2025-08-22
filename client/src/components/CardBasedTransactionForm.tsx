@@ -3788,119 +3788,122 @@ export default function CardBasedTransactionForm({
                   </div>
                 )}
                 
-                {/* USD 권종별 분배 미리보기 (파란 박스) */}
-                {(() => {
-                  const shouldShowUSD = showExchangeRates && outputCards.some(card => 
-                    card.currency === 'USD' && 
-                    card.amount && 
-                    parseCommaFormattedNumber(card.amount) > 0 &&
-                    card.denominations &&
-                    Object.keys(card.denominations).length > 0
-                  );
-                  return shouldShowUSD;
-                })() && (
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="text-sm font-medium text-blue-700 mb-3 flex items-center gap-2">
-                      <span>💰</span>
-                      <span>권종별 분배 (USD)</span>
-                    </div>
-                    {(() => {
-                      const usdCard = outputCards.find(card => card.currency === 'USD' && card.amount);
-                      if (!usdCard) return null;
-                      
-                      const targetAmount = parseCommaFormattedNumber(usdCard.amount);
-                      if (targetAmount > 0 && usdCard.denominations && Object.keys(usdCard.denominations).length > 0) {
-                        const breakdown = usdCard.denominations;
-                        const denomOrder = ['100', '50', '20', '10', '5', '1'];
+                {/* USD, VND 권종별 분배 미리보기 (1줄 2열 배치) */}
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* USD 권종별 분배 미리보기 (파란 박스) */}
+                  {(() => {
+                    const shouldShowUSD = showExchangeRates && outputCards.some(card => 
+                      card.currency === 'USD' && 
+                      card.amount && 
+                      parseCommaFormattedNumber(card.amount) > 0 &&
+                      card.denominations &&
+                      Object.keys(card.denominations).length > 0
+                    );
+                    return shouldShowUSD;
+                  })() && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="text-sm font-medium text-blue-700 mb-3 flex items-center gap-2">
+                        <span>💰</span>
+                        <span>권종별 분배 (USD)</span>
+                      </div>
+                      {(() => {
+                        const usdCard = outputCards.find(card => card.currency === 'USD' && card.amount);
+                        if (!usdCard) return null;
                         
-                        return (
-                          <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-sm">
-                            {denomOrder.map(denom => {
-                              const count = breakdown[denom] || 0;
-                              if (count === 0) return null;
-                              const amount = parseInt(denom) * count;
-                              return (
-                                <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
-                                  <span className="text-blue-600 font-medium">
-                                    {formatDenomination(denom, 'USD')}
-                                  </span>
-                                  <div className="text-right">
-                                    <div className="text-blue-800 font-bold">{count}장</div>
-                                    <div className="text-xs text-blue-600">${amount.toLocaleString()}</div>
+                        const targetAmount = parseCommaFormattedNumber(usdCard.amount);
+                        if (targetAmount > 0 && usdCard.denominations && Object.keys(usdCard.denominations).length > 0) {
+                          const breakdown = usdCard.denominations;
+                          const denomOrder = ['100', '50', '20', '10', '5', '1'];
+                          
+                          return (
+                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-sm">
+                              {denomOrder.map(denom => {
+                                const count = breakdown[denom] || 0;
+                                if (count === 0) return null;
+                                const amount = parseInt(denom) * count;
+                                return (
+                                  <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
+                                    <span className="text-blue-600 font-medium">
+                                      {formatDenomination(denom, 'USD')}
+                                    </span>
+                                    <div className="text-right">
+                                      <div className="text-blue-800 font-bold">{count}장</div>
+                                      <div className="text-xs text-blue-600">${amount.toLocaleString()}</div>
+                                    </div>
                                   </div>
+                                );
+                              })}
+                              <div className="col-span-2 border-t border-blue-300 pt-2 mt-2">
+                                <div className="flex justify-between items-center bg-blue-100 rounded-md px-2 py-1.5">
+                                  <span className="font-bold text-blue-900">총 지급액:</span>
+                                  <span className="font-bold text-blue-900 text-lg">${targetAmount.toLocaleString()}</span>
                                 </div>
-                              );
-                            })}
-                            <div className="col-span-2 border-t border-blue-300 pt-2 mt-2">
-                              <div className="flex justify-between items-center bg-blue-100 rounded-md px-2 py-1.5">
-                                <span className="font-bold text-blue-900">총 지급액:</span>
-                                <span className="font-bold text-blue-900 text-lg">${targetAmount.toLocaleString()}</span>
                               </div>
                             </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </div>
-                )}
-                
-                {/* VND 권종별 분배 미리보기 (빨간 박스) */}
-                {(() => {
-                  const shouldShowVND = showExchangeRates && outputCards.some(card => 
-                    card.currency === 'VND' && 
-                    card.amount && 
-                    parseCommaFormattedNumber(card.amount) > 0 &&
-                    card.denominations &&
-                    Object.keys(card.denominations).length > 0
-                  );
-                  return shouldShowVND;
-                })() && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="text-sm font-medium text-red-700 mb-3 flex items-center gap-2">
-                      <span>💰</span>
-                      <span>권종별 분배 (VND)</span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
-                    {(() => {
-                      const vndCard = outputCards.find(card => card.currency === 'VND' && card.amount);
-                      if (!vndCard) return null;
-                      
-                      const targetAmount = parseCommaFormattedNumber(vndCard.amount);
-                      if (targetAmount > 0 && vndCard.denominations && Object.keys(vndCard.denominations).length > 0) {
-                        const breakdown = vndCard.denominations;
-                        const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
+                  )}
+                  
+                  {/* VND 권종별 분배 미리보기 (빨간 박스) */}
+                  {(() => {
+                    const shouldShowVND = showExchangeRates && outputCards.some(card => 
+                      card.currency === 'VND' && 
+                      card.amount && 
+                      parseCommaFormattedNumber(card.amount) > 0 &&
+                      card.denominations &&
+                      Object.keys(card.denominations).length > 0
+                    );
+                    return shouldShowVND;
+                  })() && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="text-sm font-medium text-red-700 mb-3 flex items-center gap-2">
+                        <span>💰</span>
+                        <span>권종별 분배 (VND)</span>
+                      </div>
+                      {(() => {
+                        const vndCard = outputCards.find(card => card.currency === 'VND' && card.amount);
+                        if (!vndCard) return null;
                         
-                        return (
-                          <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-sm">
-                            {denomOrder.map(denom => {
-                              const count = breakdown[denom] || 0;
-                              if (count === 0) return null;
-                              const amount = parseInt(denom) * count;
-                              return (
-                                <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
-                                  <span className="text-red-600 font-medium">
-                                    {formatDenomination(denom, 'VND')}
-                                  </span>
-                                  <div className="text-right">
-                                    <div className="text-red-800 font-bold">{count}장</div>
-                                    <div className="text-xs text-red-600">{amount.toLocaleString()}동</div>
+                        const targetAmount = parseCommaFormattedNumber(vndCard.amount);
+                        if (targetAmount > 0 && vndCard.denominations && Object.keys(vndCard.denominations).length > 0) {
+                          const breakdown = vndCard.denominations;
+                          const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
+                          
+                          return (
+                            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-sm">
+                              {denomOrder.map(denom => {
+                                const count = breakdown[denom] || 0;
+                                if (count === 0) return null;
+                                const amount = parseInt(denom) * count;
+                                return (
+                                  <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
+                                    <span className="text-red-600 font-medium">
+                                      {formatDenomination(denom, 'VND')}
+                                    </span>
+                                    <div className="text-right">
+                                      <div className="text-red-800 font-bold">{count}장</div>
+                                      <div className="text-xs text-red-600">{amount.toLocaleString()}동</div>
+                                    </div>
                                   </div>
+                                );
+                              })}
+                              <div className="col-span-2 border-t border-red-300 pt-2 mt-2">
+                                <div className="flex justify-between items-center bg-red-100 rounded-md px-2 py-1.5">
+                                  <span className="font-bold text-red-900">총 지급액:</span>
+                                  <span className="font-bold text-red-900 text-lg">{targetAmount.toLocaleString()}동</span>
                                 </div>
-                              );
-                            })}
-                            <div className="col-span-2 border-t border-red-300 pt-2 mt-2">
-                              <div className="flex justify-between items-center bg-red-100 rounded-md px-2 py-1.5">
-                                <span className="font-bold text-red-900">총 지급액:</span>
-                                <span className="font-bold text-red-900 text-lg">{targetAmount.toLocaleString()}동</span>
                               </div>
                             </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </div>
-                )}
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
