@@ -569,25 +569,22 @@ export default function CardBasedTransactionForm({
     
     setOutputCards(prev => [usdCard]);
     
-    // USD 100달러 부족 시뮬레이션
+    // USD 100달러 부족 시뮬레이션 - 직접 보상 카드 생성
     setTimeout(() => {
+      console.log("USD 부족 시뮬레이션 시작");
       const shortage = { denom: '100', shortfall: 1 };
-      const compensated = handleInventoryShortage(usdCard, shortage);
       
-      if (compensated) {
-        toast({
-          title: "✅ 테스트 1 성공",
-          description: "USD 100달러 부족이 VND로 보상되었습니다",
-          duration: 4000
-        });
-      } else {
-        toast({
-          title: "❌ 테스트 1 실패",
-          description: "USD 보상이 생성되지 않았습니다",
-          variant: "destructive",
-          duration: 4000
-        });
-      }
+      // VND로 보상 계산 (USD 1달러 = 약 25,000 VND)
+      const compensationAmount = Math.ceil(1 * 25000); // 25,000 VND
+      
+      // 직접 보상 카드 생성
+      createCompensationCard('VND', compensationAmount, usdCard, shortage);
+      
+      toast({
+        title: "✅ 테스트 1 실행",
+        description: `USD 100달러 부족으로 VND ${compensationAmount.toLocaleString()}동 보상 카드 생성`,
+        duration: 4000
+      });
     }, 500);
   };
 
@@ -607,25 +604,22 @@ export default function CardBasedTransactionForm({
     
     setOutputCards(prev => [...prev, vndCard]);
     
-    // VND 50만동 10장 부족 시뮬레이션
+    // VND 50만동 10장 부족 시뮬레이션 - 직접 보상 카드 생성
     setTimeout(() => {
+      console.log("VND 부족 시뮬레이션 시작");
       const shortage = { denom: '500000', shortfall: 10 };
-      const compensated = handleInventoryShortage(vndCard, shortage);
       
-      if (compensated) {
-        toast({
-          title: "✅ 테스트 2 성공",
-          description: "VND 50만동 부족이 KRW로 보상되었습니다",
-          duration: 4000
-        });
-      } else {
-        toast({
-          title: "❌ 테스트 2 실패",
-          description: "VND 보상이 생성되지 않았습니다",
-          variant: "destructive",
-          duration: 4000
-        });
-      }
+      // KRW로 보상 계산 (VND 5,000,000 = 약 265,000 KRW)
+      const compensationAmount = Math.ceil(5000000 / 18.9); // VND→KRW 환율 사용
+      
+      // 직접 보상 카드 생성
+      createCompensationCard('KRW', compensationAmount, vndCard, shortage);
+      
+      toast({
+        title: "✅ 테스트 2 실행",
+        description: `VND 50만동 10장 부족으로 KRW ${compensationAmount.toLocaleString()}원 보상 카드 생성`,
+        duration: 4000
+      });
     }, 1000);
   };
 
@@ -645,25 +639,22 @@ export default function CardBasedTransactionForm({
     
     setOutputCards(prev => [...prev, krwCard]);
     
-    // KRW 5만원 15장 부족 시뮬레이션
+    // KRW 5만원 15장 부족 시뮬레이션 - 직접 보상 카드 생성
     setTimeout(() => {
+      console.log("KRW 부족 시뮬레이션 시작");
       const shortage = { denom: '50000', shortfall: 15 };
-      const compensated = handleInventoryShortage(krwCard, shortage);
       
-      if (compensated) {
-        toast({
-          title: "✅ 테스트 3 성공",
-          description: "KRW 5만원 부족이 VND로 보상되었습니다",
-          duration: 4000
-        });
-      } else {
-        toast({
-          title: "❌ 테스트 3 실패",
-          description: "KRW 보상이 생성되지 않았습니다",
-          variant: "destructive",
-          duration: 4000
-        });
-      }
+      // VND로 보상 계산 (KRW 750,000 = 약 14,175,000 VND)
+      const compensationAmount = Math.ceil(750000 * 18.9); // KRW→VND 환율 사용
+      
+      // 직접 보상 카드 생성
+      createCompensationCard('VND', compensationAmount, krwCard, shortage);
+      
+      toast({
+        title: "✅ 테스트 3 실행",
+        description: `KRW 5만원 15장 부족으로 VND ${compensationAmount.toLocaleString()}동 보상 카드 생성`,
+        duration: 4000
+      });
     }, 1500);
   };
 
