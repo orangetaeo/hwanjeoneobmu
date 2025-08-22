@@ -23,7 +23,8 @@ import {
   determineTransactionRateType,
   getExchangeRatePair,
   getExchangeShopRate,
-  calculateWeightedExchangeRate
+  calculateWeightedExchangeRate,
+  formatDenomination
 } from '@/utils/helpers';
 import { addCommas } from '@/lib/utils';
 
@@ -46,6 +47,8 @@ interface TransactionCard {
   isCompensation?: boolean; // 보상용 카드인지 여부
   isCompensated?: boolean; // 이미 보상 처리된 카드인지 여부
   originalCardId?: string; // 보상 시 원본 카드 ID
+  originalCurrency?: string; // 원본 카드의 통화
+  originalAmount?: string; // 원본 카드의 금액
   compensationReason?: string; // 보상 사유
   compensationInfo?: {
     currency: string;
@@ -3191,7 +3194,7 @@ export default function CardBasedTransactionForm({
                                         const amount = parseInt(denom) * count;
                                         return (
                                           <div key={denom} className="flex justify-between">
-                                            <span>{denom === '500000' ? '50만동' : denom === '200000' ? '20만동' : denom === '100000' ? '10만동' : denom === '50000' ? '5만동' : denom === '20000' ? '2만동' : denom === '10000' ? '1만동' : denom === '5000' ? '5천동' : denom === '1000' ? '1천동' : `${denom}동`}: {count}장</span>
+                                            <span>{formatDenomination(denom, 'VND')}: {count}장</span>
                                             <span className="font-medium text-green-700">
                                               {amount.toLocaleString()}동
                                             </span>
@@ -3230,7 +3233,7 @@ export default function CardBasedTransactionForm({
                                         const amount = parseInt(denom) * count;
                                         return (
                                           <div key={denom} className="flex justify-between">
-                                            <span>{denom === '500000' ? '50만동' : denom === '200000' ? '20만동' : denom === '100000' ? '10만동' : denom === '50000' ? '5만동' : denom === '20000' ? '2만동' : denom === '10000' ? '1만동' : denom === '5000' ? '5천동' : denom === '1000' ? '1천동' : `${denom}동`}: {count}장</span>
+                                            <span>{formatDenomination(denom, 'VND')}: {count}장</span>
                                             <span className="font-medium text-blue-700">
                                               {amount.toLocaleString()}동
                                             </span>
@@ -3279,14 +3282,7 @@ export default function CardBasedTransactionForm({
                                         return (
                                           <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
                                             <span className="text-emerald-600 font-medium">
-                                              {denom === '500000' ? '50만동' : 
-                                               denom === '200000' ? '20만동' : 
-                                               denom === '100000' ? '10만동' : 
-                                               denom === '50000' ? '5만동' : 
-                                               denom === '20000' ? '2만동' : 
-                                               denom === '10000' ? '1만동' : 
-                                               denom === '5000' ? '5천동' : 
-                                               denom === '1000' ? '1천동' : `${denom}동`}
+                                              {formatDenomination(denom, 'VND')}
                                             </span>
                                             <div className="text-right">
                                               <div className="text-emerald-800 font-bold">{count}장</div>

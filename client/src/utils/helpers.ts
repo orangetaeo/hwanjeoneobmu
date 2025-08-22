@@ -399,6 +399,41 @@ export const formatExchangeRateByTransaction = (rate: number, fromCurrency?: str
   });
 };
 
+// 권종별 표시 형식 포맷팅
+export const formatDenomination = (denom: string, currency: string): string => {
+  switch (currency) {
+    case 'VND':
+      switch (denom) {
+        case '500000': return '50만동';
+        case '200000': return '20만동';
+        case '100000': return '10만동';
+        case '50000': return '5만동';
+        case '20000': return '2만동';
+        case '10000': return '1만동';
+        case '5000': return '5천동';
+        case '1000': return '1천동';
+        default: return `${denom}동`;
+      }
+    case 'USD':
+      switch (denom) {
+        case '100': return '100달러';
+        case '50': return '50달러';
+        case '20_10': return '20/10달러';
+        case '5_2_1': return '5/2/1달러';
+        default: return `${denom}달러`;
+      }
+    case 'KRW':
+      switch (denom) {
+        case '50000': return '5만원';
+        case '10000': return '1만원';
+        case '5000_1000': return '5천/1천원';
+        default: return `${denom}원`;
+      }
+    default:
+      return `${denom} ${currency}`;
+  }
+};
+
 // 환율 표시 포맷팅 (매매시세 기준, 통화별 소숫점 규칙 적용) - 기존 함수 유지
 export const formatExchangeRate = (rate: number, fromCurrency?: string, toCurrency?: string): string => {
   if (rate === null || rate === undefined || isNaN(rate)) return '0';
