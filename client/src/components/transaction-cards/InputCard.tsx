@@ -52,7 +52,6 @@ export default function InputCard({
       )
     );
 
-    console.log('🔸 InputCard - Updating amount:', { totalAmount, typeof: typeof totalAmount, denominations: updatedDenominations });
     
     onUpdate({
       denominations: updatedDenominations,

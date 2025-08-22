@@ -34,10 +34,7 @@ export default function OutputCard({
   useEffect(() => {
     if (totalInputAmount > 0) {
       const calculatedAmount = (totalInputAmount * output.percentage) / 100;
-      console.log('🔍 Auto-calculating output amount:', { totalInputAmount, percentage: output.percentage, calculatedAmount, currentAmount: output.amount });
-      
       if (Math.abs(output.amount - calculatedAmount) > 0.01) { // 오차 범위 내에서만 업데이트
-        console.log('🔄 Updating output amount from', output.amount, 'to', calculatedAmount, 'typeof:', typeof calculatedAmount);
         onUpdate({ amount: calculatedAmount });
       }
     }
@@ -81,8 +78,6 @@ export default function OutputCard({
 
   // 권종별 수량 업데이트
   const updateDenomination = (denomination: string, count: string) => {
-    console.log('updateDenomination called:', { denomination, count, outputId: output.id });
-    
     const updatedDenominations = {
       ...output.denominations,
       [denomination]: parseInt(count) || 0
@@ -98,19 +93,13 @@ export default function OutputCard({
     Object.entries(updatedDenominations).forEach(([denom, count]) => {
       const denomValue = parseInt(denom.replace(/,/g, ''));
       totalAmount += denomValue * count;
-      console.log('Calculating denomination:', { denom, count, denomValue, totalAmount });
     });
 
-    console.log('Final totalAmount:', totalAmount, 'typeof:', typeof totalAmount);
-    console.log('Before update - current output.amount:', output.amount, 'typeof:', typeof output.amount);
-    
     // 총액을 숫자로 업데이트
     onUpdate({ 
       denominations: updatedDenominations, 
       amount: totalAmount 
     });
-    
-    console.log('After update called');
   };
 
   return (
@@ -247,10 +236,7 @@ export default function OutputCard({
                       type="number"
                       placeholder="0"
                       value={output.denominations?.[denom.value] || ''}
-                      onChange={(e) => {
-                        console.log('Input onChange triggered:', { denom: denom.value, value: e.target.value });
-                        updateDenomination(denom.value, e.target.value);
-                      }}
+                      onChange={(e) => updateDenomination(denom.value, e.target.value)}
                       data-testid={`input-output-denomination-${output.id}-${denom.value}`}
                     />
                   </div>

@@ -1019,7 +1019,6 @@ export default function CardBasedTransactionForm({
 
   // 자동 환율 계산 함수 (입금 카드 권종별 계산 지원)
   const calculateAutomaticAmount = (inputCard: TransactionCard, outputCard: TransactionCard) => {
-    console.log('🧮 calculateAutomaticAmount called:', { autoCalculation, inputCurrency: inputCard.currency, outputCurrency: outputCard.currency });
     
     if (!autoCalculation || inputCard.currency === outputCard.currency) {
       return '';
@@ -1082,9 +1081,7 @@ export default function CardBasedTransactionForm({
           const mainOutputCard = outputCards[0];
           const calculatedAmount = calculateAutomaticAmount(updatedCard, mainOutputCard);
           if (calculatedAmount) {
-            console.log('💡 Before formatting:', { calculatedAmount, typeof: typeof calculatedAmount });
             const formattedAmount = formatInputWithCommas(calculatedAmount.toString());
-            console.log('💡 After formatting:', { formattedAmount, typeof: typeof formattedAmount });
             
             setOutputCards(prevOutput => prevOutput.map((outCard, index) => 
               index === 0 ? { ...outCard, amount: formattedAmount } : outCard
@@ -1174,7 +1171,6 @@ export default function CardBasedTransactionForm({
   const totalInputAmount = calculateTotalInKRW(inputCards, true);  // 입금 카드는 권종별 계산
   const totalOutputAmount = calculateTotalInKRW(outputCards, false); // 출금 카드는 기존 방식
   
-  console.log('🔥 CardBasedTransactionForm - totalInputAmount:', { totalInputAmount, inputCards: inputCards.length, outputCards: outputCards.length });
 
   // 통화별 출금 총액 계산 (KRW 환산 없이)
   const outputTotalsByCurrency = outputCards.reduce<Record<string, number>>((totals, card) => {
