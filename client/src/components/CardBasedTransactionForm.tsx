@@ -219,6 +219,17 @@ export default function CardBasedTransactionForm({
 
   // 카드 추가 함수들
   const addInputCard = () => {
+    // 입금카드 중복 추가 방지
+    if (inputCards.length >= 1) {
+      toast({
+        title: "입금카드 추가 제한",
+        description: "입금카드는 하나만 생성할 수 있습니다",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+    
     const newCard: TransactionCard = {
       id: Date.now(),
       type: 'cash',
@@ -505,10 +516,30 @@ export default function CardBasedTransactionForm({
   // 단축키로 보상 시스템 테스트
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      // Ctrl + Shift + T로 테스트 보상 시나리오 실행
+      // Ctrl + Shift + T로 전체 테스트 실행
       if (event.ctrlKey && event.shiftKey && event.key === 'T') {
         event.preventDefault();
-        testCompensationScenario();
+        runAllCompensationTests();
+      }
+      // Ctrl + Shift + 1로 USD→VND 테스트
+      if (event.ctrlKey && event.shiftKey && event.key === '1') {
+        event.preventDefault();
+        testUSDtoVNDCompensation();
+      }
+      // Ctrl + Shift + 2로 VND→KRW 테스트
+      if (event.ctrlKey && event.shiftKey && event.key === '2') {
+        event.preventDefault();
+        testVNDtoKRWCompensation();
+      }
+      // Ctrl + Shift + 3으로 KRW→VND 테스트
+      if (event.ctrlKey && event.shiftKey && event.key === '3') {
+        event.preventDefault();
+        testKRWtoVNDCompensation();
+      }
+      // Ctrl + Shift + 4로 무한루프 방지 테스트
+      if (event.ctrlKey && event.shiftKey && event.key === '4') {
+        event.preventDefault();
+        testInfiniteLoopPrevention();
       }
     };
     
@@ -516,31 +547,188 @@ export default function CardBasedTransactionForm({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
-  // 테스트용 보상 시나리오
+  // 다양한 테스트 시나리오
   const testCompensationScenario = () => {
-    if (outputCards.length === 0) {
-      toast({
-        title: "테스트 시나리오",
-        description: "우선 출금 카드를 추가하세요",
-        variant: "destructive"
-      });
-      return;
-    }
+    // 시나리오 1: USD 100달러 부족 → VND 보상
+    testUSDtoVNDCompensation();
+  };
+
+  const testUSDtoVNDCompensation = () => {
+    console.log("🧪 테스트 시나리오 1: USD 부족 → VND 보상");
     
-    const firstCard = outputCards[0];
-    if (firstCard.currency === 'USD') {
-      // USD 1달러 부족 시나리오 시뮬레이션
-      const testShortage = { denom: '1', shortfall: 1 };
-      const compensated = handleInventoryShortage(firstCard, testShortage);
+    // USD 출금카드 생성
+    const usdCard: TransactionCard = {
+      id: `test-usd-${Date.now()}`,
+      type: 'cash',
+      currency: 'USD',
+      amount: '100',
+      denominations: { '100': 1 }, // 100달러 1장 요구
+      isValid: false,
+      errors: []
+    };
+    
+    setOutputCards(prev => [usdCard]);
+    
+    // USD 100달러 부족 시뮬레이션
+    setTimeout(() => {
+      const shortage = { denom: '100', shortfall: 1 };
+      const compensated = handleInventoryShortage(usdCard, shortage);
       
       if (compensated) {
         toast({
-          title: "테스트 성공",
-          description: "USD 1달러 부족 시나리오가 VND로 보상되었습니다",
-          duration: 3000
+          title: "✅ 테스트 1 성공",
+          description: "USD 100달러 부족이 VND로 보상되었습니다",
+          duration: 4000
+        });
+      } else {
+        toast({
+          title: "❌ 테스트 1 실패",
+          description: "USD 보상이 생성되지 않았습니다",
+          variant: "destructive",
+          duration: 4000
         });
       }
-    }
+    }, 500);
+  };
+
+  const testVNDtoKRWCompensation = () => {
+    console.log("🧪 테스트 시나리오 2: VND 부족 → KRW 보상");
+    
+    // VND 출금카드 생성
+    const vndCard: TransactionCard = {
+      id: `test-vnd-${Date.now()}`,
+      type: 'cash',
+      currency: 'VND',
+      amount: '10000000',
+      denominations: { '500000': 20 }, // 50만동 20장 요구
+      isValid: false,
+      errors: []
+    };
+    
+    setOutputCards(prev => [...prev, vndCard]);
+    
+    // VND 50만동 10장 부족 시뮬레이션
+    setTimeout(() => {
+      const shortage = { denom: '500000', shortfall: 10 };
+      const compensated = handleInventoryShortage(vndCard, shortage);
+      
+      if (compensated) {
+        toast({
+          title: "✅ 테스트 2 성공",
+          description: "VND 50만동 부족이 KRW로 보상되었습니다",
+          duration: 4000
+        });
+      } else {
+        toast({
+          title: "❌ 테스트 2 실패",
+          description: "VND 보상이 생성되지 않았습니다",
+          variant: "destructive",
+          duration: 4000
+        });
+      }
+    }, 1000);
+  };
+
+  const testKRWtoVNDCompensation = () => {
+    console.log("🧪 테스트 시나리오 3: KRW 부족 → VND 보상");
+    
+    // KRW 출금카드 생성
+    const krwCard: TransactionCard = {
+      id: `test-krw-${Date.now()}`,
+      type: 'cash',
+      currency: 'KRW',
+      amount: '1000000',
+      denominations: { '50000': 20 }, // 5만원 20장 요구
+      isValid: false,
+      errors: []
+    };
+    
+    setOutputCards(prev => [...prev, krwCard]);
+    
+    // KRW 5만원 15장 부족 시뮬레이션
+    setTimeout(() => {
+      const shortage = { denom: '50000', shortfall: 15 };
+      const compensated = handleInventoryShortage(krwCard, shortage);
+      
+      if (compensated) {
+        toast({
+          title: "✅ 테스트 3 성공",
+          description: "KRW 5만원 부족이 VND로 보상되었습니다",
+          duration: 4000
+        });
+      } else {
+        toast({
+          title: "❌ 테스트 3 실패",
+          description: "KRW 보상이 생성되지 않았습니다",
+          variant: "destructive",
+          duration: 4000
+        });
+      }
+    }, 1500);
+  };
+
+  const testInfiniteLoopPrevention = () => {
+    console.log("🧪 테스트 시나리오 4: 무한루프 방지");
+    
+    // 이미 보상된 카드 생성
+    const compensatedCard: TransactionCard = {
+      id: `test-compensated-${Date.now()}`,
+      type: 'cash',
+      currency: 'USD',
+      amount: '50',
+      denominations: { '50': 1 },
+      isCompensated: true,
+      isValid: false,
+      errors: []
+    };
+    
+    setOutputCards(prev => [...prev, compensatedCard]);
+    
+    // 이미 보상된 카드에 다시 보상 시도
+    setTimeout(() => {
+      const shortage = { denom: '50', shortfall: 1 };
+      const compensated = handleInventoryShortage(compensatedCard, shortage);
+      
+      if (!compensated) {
+        toast({
+          title: "✅ 테스트 4 성공",
+          description: "무한루프 방지 시스템이 정상 작동합니다",
+          duration: 4000
+        });
+      } else {
+        toast({
+          title: "❌ 테스트 4 실패",
+          description: "무한루프 방지가 작동하지 않았습니다",
+          variant: "destructive",
+          duration: 4000
+        });
+      }
+    }, 2000);
+  };
+
+  const runAllCompensationTests = () => {
+    console.log("🚀 전체 보상 시스템 테스트 시작");
+    setOutputCards([]); // 초기화
+    
+    toast({
+      title: "🧪 보상 시스템 테스트 시작",
+      description: "4가지 시나리오를 순차적으로 테스트합니다",
+      duration: 3000
+    });
+    
+    // 순차적으로 테스트 실행
+    setTimeout(() => testUSDtoVNDCompensation(), 500);
+    setTimeout(() => testVNDtoKRWCompensation(), 2000);
+    setTimeout(() => testKRWtoVNDCompensation(), 4000);
+    setTimeout(() => testInfiniteLoopPrevention(), 6000);
+    
+    setTimeout(() => {
+      toast({
+        title: "🎯 테스트 완료",
+        description: "모든 보상 시스템 테스트가 완료되었습니다",
+        duration: 5000
+      });
+    }, 8000);
   };
 
   // 보유량에 맞춰 자동 조정하는 함수
@@ -2386,11 +2574,14 @@ export default function CardBasedTransactionForm({
               variant="outline" 
               size="sm" 
               onClick={addInputCard}
-              className="border-green-300 text-green-700 hover:bg-green-50"
+              disabled={inputCards.length >= 1}
+              className={`border-green-300 text-green-700 hover:bg-green-50 ${
+                inputCards.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
               data-testid="button-add-input"
             >
               <Plus className="mr-1" size={16} />
-              추가
+              {inputCards.length >= 1 ? '입금카드 제한' : '추가'}
             </Button>
           </div>
           
