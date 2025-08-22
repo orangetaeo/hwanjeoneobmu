@@ -3709,8 +3709,8 @@ export default function CardBasedTransactionForm({
               </div>
             </div>
             
-            {/* 위험도 평가 표시 */}
-            {inputCards.length > 0 && outputCards.length > 0 && (() => {
+            {/* 위험도 평가 표시 - 숨김 */}
+            {false && inputCards.length > 0 && outputCards.length > 0 && (() => {
               const risk = assessTransactionRisk();
               return (
                 <div className={`mt-4 p-3 rounded-lg border ${
@@ -3982,12 +3982,15 @@ export default function CardBasedTransactionForm({
                   <div className="text-gray-600 text-xs">통화 종류</div>
                   <div className="font-bold text-blue-600">{preview.summary.currencies.length}개</div>
                 </div>
-                <div className="p-3 bg-white rounded border">
-                  <div className="text-gray-600 text-xs">예상 수익</div>
-                  <div className="font-bold text-green-600">
-                    {formatCurrency(preview.summary.fees, 'KRW')}
+                {/* 예상 수익 - 숨김 */}
+                {false && (
+                  <div className="p-3 bg-white rounded border">
+                    <div className="text-gray-600 text-xs">예상 수익</div>
+                    <div className="font-bold text-green-600">
+                      {formatCurrency(preview.summary.fees, 'KRW')}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               
               {/* 개별 거래 목록 */}
@@ -4081,18 +4084,20 @@ export default function CardBasedTransactionForm({
                       ))}
                     </div>
                     
-                    {/* 총 수익 요약 */}
-                    <div className="p-3 bg-gradient-to-r from-green-100 to-blue-100 border-2 border-green-300 rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-green-800">총 예상 수익</span>
-                        <span className="text-xl font-bold text-green-700">
-                          {formatCurrency(feeAnalysis.breakdown.total, 'KRW')}
-                        </span>
+                    {/* 총 수익 요약 - 숨김 */}
+                    {false && (
+                      <div className="p-3 bg-gradient-to-r from-green-100 to-blue-100 border-2 border-green-300 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-green-800">총 예상 수익</span>
+                          <span className="text-xl font-bold text-green-700">
+                            {formatCurrency(feeAnalysis.breakdown.total, 'KRW')}
+                          </span>
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          수익률: {((feeAnalysis.breakdown.total / (totalInputAmount || 1)) * 100).toFixed(2)}%
+                        </div>
                       </div>
-                      <div className="text-xs text-green-600 mt-1">
-                        수익률: {((feeAnalysis.breakdown.total / (totalInputAmount || 1)) * 100).toFixed(2)}%
-                      </div>
-                    </div>
+                    )}
                   </div>
                 );
               })()}
