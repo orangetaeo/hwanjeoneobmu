@@ -1167,6 +1167,8 @@ export default function CardBasedTransactionForm({
 
   const totalInputAmount = calculateTotalInKRW(inputCards, true);  // 입금 카드는 권종별 계산
   const totalOutputAmount = calculateTotalInKRW(outputCards, false); // 출금 카드는 기존 방식
+  
+  console.log('🔥 CardBasedTransactionForm - totalInputAmount:', { totalInputAmount, inputCards: inputCards.length, outputCards: outputCards.length });
 
   // 통화별 출금 총액 계산 (KRW 환산 없이)
   const outputTotalsByCurrency = outputCards.reduce<Record<string, number>>((totals, card) => {
