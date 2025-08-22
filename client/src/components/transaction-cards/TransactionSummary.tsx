@@ -57,11 +57,11 @@ export default function TransactionSummary({
             ) : (
               <div className="space-y-1">
                 {inputs.map((input, index) => (
-                  <div key={input.id} className="flex justify-between items-center">
-                    <span className="text-sm">
-                      {input.type === 'cash' ? '현금' : '계좌'}카드 1개
+                  <div key={input.id} className="flex justify-between items-center bg-green-50 px-2 py-1 rounded">
+                    <span className="text-sm font-medium text-green-700">
+                      💰 {input.type === 'cash' ? '현금' : '계좌'}카드
                     </span>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="bg-green-100 text-green-800">
                       {input.amount.toLocaleString()} {input.currency === 'USD' ? '달러' : input.currency === 'KRW' ? '원' : input.currency === 'VND' ? '동' : input.currency}
                     </Badge>
                   </div>
@@ -84,17 +84,17 @@ export default function TransactionSummary({
                   return (
                     <>
                       {normalCards.map((output, index) => (
-                        <div key={output.id} className="flex justify-between items-center">
-                          <span className="text-sm">출금카드 1개</span>
-                          <Badge variant="outline">
+                        <div key={output.id} className="flex justify-between items-center bg-blue-50 px-2 py-1 rounded">
+                          <span className="text-sm font-medium text-blue-700">💳 출금카드</span>
+                          <Badge variant="outline" className="bg-blue-100 text-blue-800">
                             {output.amount.toLocaleString()} {output.currency === 'USD' ? '달러' : output.currency === 'KRW' ? '원' : output.currency === 'VND' ? '동' : output.currency}
                           </Badge>
                         </div>
                       ))}
                       {compensationCards.map((output, index) => (
-                        <div key={output.id} className="flex justify-between items-center">
-                          <span className="text-sm">보상카드 1개</span>
-                          <Badge variant="outline">
+                        <div key={output.id} className="flex justify-between items-center bg-yellow-50 px-2 py-1 rounded">
+                          <span className="text-sm font-medium text-yellow-700">🔄 보상카드</span>
+                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
                             {output.amount.toLocaleString()} {output.currency === 'USD' ? '달러' : output.currency === 'KRW' ? '원' : output.currency === 'VND' ? '동' : output.currency}
                           </Badge>
                         </div>

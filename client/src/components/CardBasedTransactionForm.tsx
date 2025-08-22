@@ -1218,7 +1218,7 @@ export default function CardBasedTransactionForm({
                     {(() => {
                       // 보상카드인 경우 원래 통화와 금액 표시
                       if (conn.toCard.isCompensation && conn.toCard.originalCurrency && conn.toCard.originalAmount) {
-                        return `${conn.toCard.originalAmount} ${conn.toCard.originalCurrency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency}`;
+                        return `보상카드: ${conn.toCard.originalAmount} ${conn.toCard.originalCurrency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency} (재고 부족)`;
                       }
                       // 일반 카드 표시
                       return `${formatCurrency(conn.inputAmount, conn.fromCard.currency)} ${conn.fromCard.currency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency}`;
@@ -3070,11 +3070,19 @@ export default function CardBasedTransactionForm({
                             <span className="text-lg font-bold text-blue-900">
                               {(() => {
                                 const rate = getExchangeRate(inputCards[0].currency, card.currency);
+                                
                                 // KRW → USD의 경우 역환율로 표시 (1400 형태)
                                 if (inputCards[0].currency === 'KRW' && card.currency === 'USD') {
                                   const inverseRate = 1 / rate;
-                                  return Math.round(inverseRate).toLocaleString();
+                                  return `1 USD = ${Math.round(inverseRate).toLocaleString()} KRW`;
                                 }
+                                
+                                // USD → KRW의 경우 일반 표시
+                                if (inputCards[0].currency === 'USD' && card.currency === 'KRW') {
+                                  return `1 USD = ${Math.round(rate).toLocaleString()} KRW`;
+                                }
+                                
+                                // 기타 통화 쌍
                                 return rate.toLocaleString('ko-KR', {
                                   minimumFractionDigits: card.currency === 'VND' ? 0 : 2,
                                   maximumFractionDigits: card.currency === 'VND' ? 0 : 2
@@ -3173,7 +3181,7 @@ export default function CardBasedTransactionForm({
                                         const amount = parseInt(denom) * count;
                                         return (
                                           <div key={denom} className="flex justify-between">
-                                            <span>{formatDenomination(denom, 'VND')}: {count}장</span>
+                                            <span>{denom === '500000' ? '50만동' : denom === '200000' ? '20만동' : denom === '100000' ? '10만동' : denom === '50000' ? '5만동' : denom === '20000' ? '2만동' : denom === '10000' ? '1만동' : denom === '5000' ? '5천동' : denom === '1000' ? '1천동' : `${denom}동`}: {count}장</span>
                                             <span className="font-medium text-green-700">
                                               {amount.toLocaleString()}동
                                             </span>
@@ -3233,6 +3241,45 @@ export default function CardBasedTransactionForm({
                             </div>
                           )}
                         </div>
+                        )}
+                        
+                        {/* 권종별 분배 미리보기 (환율 정보와 함께 표시) */}
+                        {showSellRates && card.currency === 'VND' && card.amount && (
+                          <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg">
+                            <div className="text-xs font-medium text-emerald-700 mb-2">💰 예상 권종별 분배</div>
+                            {(() => {
+                              const targetAmount = parseCommaFormattedNumber(card.amount);
+                              if (targetAmount > 0) {
+                                const breakdown = calculateVNDBreakdown(targetAmount);
+                                const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
+                                
+                                return (
+                                  <div className="grid grid-cols-2 gap-1 text-xs">
+                                    {denomOrder.map(denom => {
+                                      const count = breakdown[denom] || 0;
+                                      if (count === 0) return null;
+                                      const amount = parseInt(denom) * count;
+                                      return (
+                                        <div key={denom} className="flex justify-between bg-white rounded px-1 py-0.5">
+                                          <span className="text-emerald-600">{denom === '500000' ? '50만동' : denom === '200000' ? '20만동' : denom === '100000' ? '10만동' : denom === '50000' ? '5만동' : denom === '20000' ? '2만동' : denom === '10000' ? '1만동' : denom === '5000' ? '5천동' : denom === '1000' ? '1천동' : `${denom}동`}: {count}장</span>
+                                          <span className="font-medium text-emerald-800">
+                                            {amount.toLocaleString()}동
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                    <div className="col-span-2 border-t border-emerald-300 pt-1 mt-1 bg-emerald-100 rounded px-1">
+                                      <div className="flex justify-between font-bold text-emerald-900">
+                                        <span>총 지급액:</span>
+                                        <span>{targetAmount.toLocaleString()}동</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return <div className="text-emerald-600 text-xs">금액을 입력하세요</div>;
+                            })()}
+                          </div>
                         )}
                       </div>
                       
