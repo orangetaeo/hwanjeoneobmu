@@ -2196,8 +2196,8 @@ export default function CardBasedTransactionForm({
               <h3 className="text-xl font-bold text-green-700">입금</h3>
               <Badge variant="secondary">{inputCards.length}개</Badge>
               {totalInputAmount > 0 && (
-                <Badge className="bg-green-100 text-green-800">
-                  총 {formatCurrency(totalInputAmount, inputCards[0]?.currency || 'KRW')}
+                <Badge className="bg-green-100 text-green-800 text-sm font-bold">
+                  총 {totalInputAmount.toLocaleString()} {inputCards[0]?.currency === 'VND' ? '동' : inputCards[0]?.currency === 'USD' ? '달러' : '원'}
                 </Badge>
               )}
             </div>
@@ -2381,8 +2381,8 @@ export default function CardBasedTransactionForm({
               <h3 className="text-xl font-bold text-blue-700">출금</h3>
               <Badge variant="secondary">{outputCards.length}개</Badge>
               {Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
-                <Badge key={currency} className="bg-blue-100 text-blue-800">
-                  {formatCurrency(amount, currency)}
+                <Badge key={currency} className="bg-blue-100 text-blue-800 text-sm font-bold">
+                  {amount.toLocaleString()} {currency === 'VND' ? '동' : currency === 'USD' ? '달러' : '원'}
                 </Badge>
               ))}
             </div>
