@@ -595,7 +595,7 @@ export default function CardBasedTransactionForm({
             
             // 3. 자동 보상 시스템 실행 (이미 보상 카드가 없을 때만)
             const hasCompensationCard = outputCards.some(card => card.isCompensation);
-            if (!hasCompensationCard) {
+            if (!hasCompensationCard && !isCreatingCompensation.current) {
               checkInventoryWithCompensation();
             }
             
@@ -873,9 +873,12 @@ export default function CardBasedTransactionForm({
     // 완전히 조정 가능한 경우에만 업데이트
     updateOutputCard(card.id, 'denominations', adjustedDenoms);
     
-    // 자동분배 후 재고 검증 실행
+    // 자동분배 후 재고 검증 실행 (보상카드가 없을 때만)
     setTimeout(() => {
-      checkInventoryWithCompensation();
+      const hasCompensationCard = outputCards.some(card => card.isCompensation);
+      if (!hasCompensationCard && !isCreatingCompensation.current) {
+        checkInventoryWithCompensation();
+      }
     }, 300);
     
     toast({
@@ -1481,10 +1484,13 @@ export default function CardBasedTransactionForm({
       return card;
     }));
     
-    // 권종별 입력 변경 시 실시간 재고 검증 및 보상 시스템 실행
+    // 권종별 입력 변경 시 실시간 재고 검증 (보상카드가 없을 때만)
     if (field === 'denominations') {
       setTimeout(() => {
-        checkInventoryWithCompensation();
+        const hasCompensationCard = outputCards.some(card => card.isCompensation);
+        if (!hasCompensationCard && !isCreatingCompensation.current) {
+          checkInventoryWithCompensation();
+        }
       }, 200); // UI 업데이트 완료 후 실행
     }
   };
@@ -1821,8 +1827,8 @@ export default function CardBasedTransactionForm({
               createCompensationCard(compensationCurrency, compensationAmount, card, { denom, shortfall });
               hasShortage = true;
               
-              // 첫 번째 부족한 권종에 대해서만 보상 생성하고 루프 종료
-              break;
+              // 첫 번째 부족한 권종에 대해서만 보상 생성하고 함수 종료
+              return hasShortage;
             }
           });
         }
@@ -1869,7 +1875,7 @@ export default function CardBasedTransactionForm({
     
     // 재고 부족 시 자동 보상 시스템 실행 (검증 전에, 이미 보상카드가 없을 때만)
     const hasCompensationCard = outputCards.some(card => card.isCompensation);
-    if (!hasCompensationCard) {
+    if (!hasCompensationCard && !isCreatingCompensation.current) {
       checkInventoryWithCompensation();
     }
     
