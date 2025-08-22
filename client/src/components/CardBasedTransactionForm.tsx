@@ -3657,7 +3657,7 @@ export default function CardBasedTransactionForm({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">총 입금</span>
                 <span className="text-lg font-bold text-green-600">
@@ -3676,6 +3676,12 @@ export default function CardBasedTransactionForm({
                     <span className="text-lg font-bold text-blue-600">-</span>
                   }
                 </div>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                <span className="text-gray-600 block text-xs">보상 금액</span>
+                <span className="text-lg font-bold text-orange-600">
+                  25,000 동
+                </span>
               </div>
             </div>
             
