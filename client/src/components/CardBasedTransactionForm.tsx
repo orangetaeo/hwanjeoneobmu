@@ -3665,16 +3665,27 @@ export default function CardBasedTransactionForm({
                 </span>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                <span className="text-gray-600 block text-sm font-medium">총 출금</span>
+                <span className="text-gray-600 block text-sm font-medium">출금카드1</span>
                 <div className="space-y-1">
-                  {Object.entries(outputTotalsByCurrency).length > 0 ? 
-                    Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
-                      <div key={currency} className="text-lg font-bold text-blue-600">
-                        {amount.toLocaleString()} {currency === 'VND' ? '동' : currency === 'USD' ? '달러' : '원'}
-                      </div>
-                    )) : 
-                    <span className="text-lg font-bold text-blue-600">-</span>
-                  }
+                  {(() => {
+                    // 보상카드가 아닌 일반 출금카드만 계산
+                    const nonCompensationCards = outputCards.filter(card => !card.isCompensation);
+                    const nonCompensationTotals: Record<string, number> = {};
+                    
+                    nonCompensationCards.forEach(card => {
+                      const amount = parseCommaFormattedNumber(card.amount) || 0;
+                      const currency = card.currency;
+                      nonCompensationTotals[currency] = (nonCompensationTotals[currency] || 0) + amount;
+                    });
+                    
+                    return Object.entries(nonCompensationTotals).length > 0 ? 
+                      Object.entries(nonCompensationTotals).map(([currency, amount]) => (
+                        <div key={currency} className="text-lg font-bold text-blue-600">
+                          {amount.toLocaleString()} {currency === 'VND' ? '동' : currency === 'USD' ? '달러' : '원'}
+                        </div>
+                      )) : 
+                      <span className="text-lg font-bold text-blue-600">-</span>;
+                  })()}
                 </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
