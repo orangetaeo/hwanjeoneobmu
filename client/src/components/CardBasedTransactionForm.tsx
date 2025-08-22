@@ -135,6 +135,9 @@ export default function CardBasedTransactionForm({
   const [inputCards, setInputCards] = useState<TransactionCard[]>([]);
   const [outputCards, setOutputCards] = useState<TransactionCard[]>([]);
   
+  // 보상카드 생성 중복 방지를 위한 ref
+  const isCreatingCompensation = useRef(false);
+  
   // 고객 계좌 정보 상태
   const [customerAccountInfo, setCustomerAccountInfo] = useState({
     bankName: '',
@@ -1659,6 +1662,32 @@ export default function CardBasedTransactionForm({
 
   // 보상용 새 출금카드 생성 (권종별 분배 포함)
   const createCompensationCard = (currency: string, amount: number, originalCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }) => {
+    // 전역 중복 방지 체크
+    if (isCreatingCompensation.current) {
+      console.log('이미 보상카드 생성 중입니다. 중복 생성을 방지합니다.');
+      return;
+    }
+    
+    // 중복 보상 카드 생성 방지 - 이미 같은 원본 카드에 대한 보상 카드가 있는지 확인
+    const existingCompensation = outputCards.find(card => 
+      card.isCompensation && card.originalCardId === originalCard.id
+    );
+    
+    if (existingCompensation) {
+      console.log(`원본 카드 ${originalCard.id}에 대한 보상 카드가 이미 존재합니다.`);
+      return;
+    }
+    
+    // 전체 보상카드 존재 여부 체크
+    const totalCompensationCards = outputCards.filter(card => card.isCompensation).length;
+    if (totalCompensationCards > 0) {
+      console.log('이미 다른 보상카드가 존재합니다. 추가 생성을 중지합니다.');
+      return;
+    }
+    
+    // 보상카드 생성 시작 플래그 설정
+    isCreatingCompensation.current = true;
+    
     // 보상 금액에 대한 권종별 분배 자동 계산
     const compensationDenominations = calculateOptimalDenominations(currency, amount);
     
@@ -1675,8 +1704,15 @@ export default function CardBasedTransactionForm({
       compensationReason: `${originalCard.currency} ${shortageInfo.denom}권 ${shortageInfo.shortfall}장 부족으로 인한 보상`
     };
     
+    console.log(`보상 카드 생성: ${currency} ${amount} (원본: ${originalCard.id})`);
+    
     // 보상 카드를 출금 카드 목록에 추가
     setOutputCards(prev => [...prev, newCard]);
+    
+    // 보상카드 생성 완료 후 플래그 해제 (약간의 지연 후)
+    setTimeout(() => {
+      isCreatingCompensation.current = false;
+    }, 500);
     
     // 사용자에게 명확한 보상 흐름 알림
     const originalAmount = parseCommaFormattedNumber(originalCard.amount) || 0;
@@ -1780,9 +1816,13 @@ export default function CardBasedTransactionForm({
               const compensationCurrency = getCompensationCurrency(card.currency);
               const compensationAmount = calculateCompensationAmount(card, { denom, shortfall }, compensationCurrency);
               
-              // 보상 카드 생성
+              // 보상 카드 생성 (중복 체크 포함)
+              console.log(`재고 부족 감지: ${card.currency} ${denom}권 ${shortfall}장 부족`);
               createCompensationCard(compensationCurrency, compensationAmount, card, { denom, shortfall });
               hasShortage = true;
+              
+              // 첫 번째 부족한 권종에 대해서만 보상 생성하고 루프 종료
+              break;
             }
           });
         }
