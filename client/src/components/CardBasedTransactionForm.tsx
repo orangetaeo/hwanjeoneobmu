@@ -590,8 +590,11 @@ export default function CardBasedTransactionForm({
               toggleCardCollapse(outputCards[0].id);
             }
             
-            // 3. 자동 보상 시스템 실행
-            checkInventoryWithCompensation();
+            // 3. 자동 보상 시스템 실행 (이미 보상 카드가 없을 때만)
+            const hasCompensationCard = outputCards.some(card => card.isCompensation);
+            if (!hasCompensationCard) {
+              checkInventoryWithCompensation();
+            }
             
             toast({
               title: "보상 분배 적용",
@@ -1736,6 +1739,13 @@ export default function CardBasedTransactionForm({
     let hasShortage = false;
     const processedShortages = new Set<string>(); // 중복 방지용
     
+    // 이미 보상 카드가 존재하면 추가 보상 중단
+    const existingCompensationCards = outputCards.filter(card => card.isCompensation);
+    if (existingCompensationCards.length > 0) {
+      console.log('이미 보상 카드가 존재합니다. 추가 보상을 중단합니다.');
+      return false;
+    }
+    
     outputCards.forEach(card => {
       if (card.type === 'cash' && !card.isCompensation) {
         const validation = validateInventory(card);
@@ -1817,8 +1827,11 @@ export default function CardBasedTransactionForm({
   const validateTransaction = () => {
     const errors: string[] = [];
     
-    // 재고 부족 시 자동 보상 시스템 실행 (검증 전에)
-    checkInventoryWithCompensation();
+    // 재고 부족 시 자동 보상 시스템 실행 (검증 전에, 이미 보상카드가 없을 때만)
+    const hasCompensationCard = outputCards.some(card => card.isCompensation);
+    if (!hasCompensationCard) {
+      checkInventoryWithCompensation();
+    }
     
     // 권종별 총액과 목표 금액 일치 검증 추가
     const amountValidationErrors = validateOutputCardAmounts();
