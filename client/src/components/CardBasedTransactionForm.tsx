@@ -3692,22 +3692,27 @@ export default function CardBasedTransactionForm({
                 
                 {/* USD 권종별 분배 미리보기 (파란 박스) */}
                 {(() => {
-                  const shouldShowUSD = showExchangeRates && outputCards.some(card => card.currency === 'USD' && card.amount && parseCommaFormattedNumber(card.amount) > 0);
-                  console.log('USD 박스 표시 조건:', { showExchangeRates, outputCards: outputCards.map(c => ({ currency: c.currency, amount: c.amount })), shouldShowUSD });
+                  const shouldShowUSD = showExchangeRates && outputCards.some(card => 
+                    card.currency === 'USD' && 
+                    card.amount && 
+                    parseCommaFormattedNumber(card.amount) > 0 &&
+                    card.denominations &&
+                    Object.keys(card.denominations).length > 0
+                  );
                   return shouldShowUSD;
                 })() && (
                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="text-sm font-medium text-blue-700 mb-3 flex items-center gap-2">
                       <span>💰</span>
-                      <span>예상 권종별 분배 (KRW → USD)</span>
+                      <span>권종별 분배 (USD)</span>
                     </div>
                     {(() => {
                       const usdCard = outputCards.find(card => card.currency === 'USD' && card.amount);
                       if (!usdCard) return null;
                       
                       const targetAmount = parseCommaFormattedNumber(usdCard.amount);
-                      if (targetAmount > 0) {
-                        const breakdown = calculateUSDBreakdown(targetAmount);
+                      if (targetAmount > 0 && usdCard.denominations && Object.keys(usdCard.denominations).length > 0) {
+                        const breakdown = usdCard.denominations;
                         const denomOrder = ['100', '50', '20', '10', '5', '1'];
                         
                         return (
@@ -3744,22 +3749,27 @@ export default function CardBasedTransactionForm({
                 
                 {/* VND 권종별 분배 미리보기 (빨간 박스) */}
                 {(() => {
-                  const shouldShowVND = showExchangeRates && outputCards.some(card => card.currency === 'VND' && card.amount && parseCommaFormattedNumber(card.amount) > 0);
-                  console.log('VND 박스 표시 조건:', { showExchangeRates, outputCards: outputCards.map(c => ({ currency: c.currency, amount: c.amount })), shouldShowVND });
+                  const shouldShowVND = showExchangeRates && outputCards.some(card => 
+                    card.currency === 'VND' && 
+                    card.amount && 
+                    parseCommaFormattedNumber(card.amount) > 0 &&
+                    card.denominations &&
+                    Object.keys(card.denominations).length > 0
+                  );
                   return shouldShowVND;
                 })() && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <div className="text-sm font-medium text-red-700 mb-3 flex items-center gap-2">
                       <span>💰</span>
-                      <span>예상 권종별 분배 (KRW → VND)</span>
+                      <span>권종별 분배 (VND)</span>
                     </div>
                     {(() => {
                       const vndCard = outputCards.find(card => card.currency === 'VND' && card.amount);
                       if (!vndCard) return null;
                       
                       const targetAmount = parseCommaFormattedNumber(vndCard.amount);
-                      if (targetAmount > 0) {
-                        const breakdown = calculateVNDBreakdown(targetAmount);
+                      if (targetAmount > 0 && vndCard.denominations && Object.keys(vndCard.denominations).length > 0) {
+                        const breakdown = vndCard.denominations;
                         const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
                         
                         return (
