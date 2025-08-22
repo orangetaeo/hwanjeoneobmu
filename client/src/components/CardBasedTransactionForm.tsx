@@ -1701,7 +1701,7 @@ export default function CardBasedTransactionForm({
       id: `compensation-${Date.now()}`,
       type: 'cash',
       currency: currency,
-      amount: amount.toLocaleString(), // 콤마 포함한 형태로 저장
+      amount: addCommas(amount.toString()), // 콤마 포함한 형태로 저장
       denominations: compensationDenominations,
       isCompensation: true,
       originalCardId: originalCard.id,
@@ -3187,7 +3187,7 @@ export default function CardBasedTransactionForm({
                         updateOutputCard(card.id, 'amount', formattedValue);
                       }}
                       className="text-lg font-semibold text-center"
-                      readOnly={autoCalculation && inputCards.length > 0 && index === 0}
+                      readOnly={card.isCompensation || (autoCalculation && inputCards.length > 0 && index === 0)}
                     />
                   </div>
 
