@@ -2836,7 +2836,16 @@ export default function CardBasedTransactionForm({
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(balanceTracking).map(([key, balance]) => {
+                {Object.entries(balanceTracking)
+                  .sort(([keyA], [keyB]) => {
+                    // KRW 현금 먼저, 그 다음 VND 현금, 나머지는 알파벳 순서
+                    if (keyA.includes('KRW_cash')) return -1;
+                    if (keyB.includes('KRW_cash')) return 1;
+                    if (keyA.includes('VND_cash')) return -1;
+                    if (keyB.includes('VND_cash')) return 1;
+                    return keyA.localeCompare(keyB);
+                  })
+                  .map(([key, balance]) => {
                   if (balance.change === 0) return null;
                   
                   const [currency, type] = key.split('_');
@@ -2924,19 +2933,19 @@ export default function CardBasedTransactionForm({
                   <div className="space-y-1">
                     <div className="text-gray-600">총 입금 금액:</div>
                     <div className="font-medium text-green-600">
-                      {Object.values(balanceTracking)
-                        .filter(b => b.change > 0)
-                        .reduce((sum, b) => sum + Math.abs(b.change), 0)
-                        .toLocaleString()} {Object.values(balanceTracking).find(b => b.change > 0)?.currency || 'KRW'}
+                      {Object.entries(balanceTracking)
+                        .filter(([key, b]) => b.change > 0)
+                        .reduce((sum, [key, b]) => sum + Math.abs(b.change), 0)
+                        .toLocaleString()} {Object.entries(balanceTracking).find(([key, b]) => b.change > 0)?.[0].split('_')[0] || 'KRW'}
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-gray-600">총 출금 금액:</div>
                     <div className="font-medium text-red-600">
-                      {Object.values(balanceTracking)
-                        .filter(b => b.change < 0)
-                        .reduce((sum, b) => sum + Math.abs(b.change), 0)
-                        .toLocaleString()} {Object.values(balanceTracking).find(b => b.change < 0)?.currency || 'KRW'}
+                      {Object.entries(balanceTracking)
+                        .filter(([key, b]) => b.change < 0)
+                        .reduce((sum, [key, b]) => sum + Math.abs(b.change), 0)
+                        .toLocaleString()} {Object.entries(balanceTracking).find(([key, b]) => b.change < 0)?.[0].split('_')[0] || 'KRW'}
                     </div>
                   </div>
                 </div>
