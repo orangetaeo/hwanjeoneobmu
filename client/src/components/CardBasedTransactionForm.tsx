@@ -1534,8 +1534,11 @@ export default function CardBasedTransactionForm({
 
   // 보상용 새 출금카드 생성 (권종별 분배 포함)
   const createCompensationCard = (currency: string, amount: number, originalCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }) => {
+    console.log(`보상 카드 생성 시작: ${currency} ${amount}`);
+    
     // 보상 금액에 대한 권종별 분배 자동 계산
     const compensationDenominations = calculateOptimalDenominations(currency, amount);
+    console.log('보상 카드 권종별 분배:', compensationDenominations);
     
     const newCard: TransactionCard = {
       id: `compensation-${Date.now()}`,
@@ -1548,8 +1551,14 @@ export default function CardBasedTransactionForm({
       compensationReason: `${originalCard.currency} ${shortageInfo.denom}권 ${shortageInfo.shortfall}장 부족으로 인한 보상`
     };
     
+    console.log('생성된 보상 카드:', newCard);
+    
     // 보상 카드를 출금 카드 목록에 추가
-    setOutputCards(prev => [...prev, newCard]);
+    setOutputCards(prev => {
+      const updated = [...prev, newCard];
+      console.log('업데이트된 출금 카드 목록:', updated);
+      return updated;
+    });
     
     // 사용자에게 알림
     toast({
