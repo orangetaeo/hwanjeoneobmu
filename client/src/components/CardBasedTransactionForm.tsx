@@ -33,15 +33,25 @@ interface CardBasedTransactionFormProps {
 }
 
 interface TransactionCard {
-  id: number;
+  id: string;
   type: 'cash' | 'account';
   currency: string;
   amount: string;
-  accountId: string;
+  accountId?: string;
   denominations: Record<string, number>;
   transactionType?: string;
   isValid?: boolean;
   errors?: string[];
+  // 보상 시스템 관련 필드
+  isCompensation?: boolean; // 보상용 카드인지 여부
+  isCompensated?: boolean; // 이미 보상 처리된 카드인지 여부
+  originalCardId?: string; // 보상 시 원본 카드 ID
+  compensationReason?: string; // 보상 사유
+  compensationInfo?: {
+    currency: string;
+    amount: number;
+  }; // 보상 정보
+  percentage?: number; // 비율 기반 분배 시 사용
 }
 
 // 자동 거래 유형 결정 함수
@@ -490,6 +500,47 @@ export default function CardBasedTransactionForm({
     }
     
     return recommendations;
+  };
+
+  // 단축키로 보상 시스템 테스트
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Ctrl + Shift + T로 테스트 보상 시나리오 실행
+      if (event.ctrlKey && event.shiftKey && event.key === 'T') {
+        event.preventDefault();
+        testCompensationScenario();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  // 테스트용 보상 시나리오
+  const testCompensationScenario = () => {
+    if (outputCards.length === 0) {
+      toast({
+        title: "테스트 시나리오",
+        description: "우선 출금 카드를 추가하세요",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const firstCard = outputCards[0];
+    if (firstCard.currency === 'USD') {
+      // USD 1달러 부족 시나리오 시뮬레이션
+      const testShortage = { denom: '1', shortfall: 1 };
+      const compensated = handleInventoryShortage(firstCard, testShortage);
+      
+      if (compensated) {
+        toast({
+          title: "테스트 성공",
+          description: "USD 1달러 부족 시나리오가 VND로 보상되었습니다",
+          duration: 3000
+        });
+      }
+    }
   };
 
   // 보유량에 맞춰 자동 조정하는 함수
@@ -1237,6 +1288,133 @@ export default function CardBasedTransactionForm({
     return { isValid: errors.length === 0, errors };
   };
 
+  // 다중 출금카드 보상 시스템 - 재고 부족 시 다른 통화로 보상
+  const handleInventoryShortage = (shortageCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }) => {
+    // 무한 루프 방지: 한 번만 보상 허용
+    if (shortageCard.isCompensated) {
+      console.log('이미 보상 처리된 카드입니다');
+      return false;
+    }
+
+    // 보상 가능한 통화 우선순위 (VND 우선)
+    const compensationCurrencies = ['VND', 'KRW', 'USD'].filter(curr => curr !== shortageCard.currency);
+    
+    for (const compensationCurrency of compensationCurrencies) {
+      // 해당 통화 재고 확인
+      const cashAsset = assets.find(asset => 
+        asset.name === `${compensationCurrency} 현금` && 
+        asset.currency === compensationCurrency && 
+        asset.type === 'cash'
+      );
+      
+      if (cashAsset && cashAsset.balance > 0) {
+        const compensationAmount = calculateCompensationAmount(shortageCard, shortageInfo, compensationCurrency);
+        
+        if (compensationAmount > 0) {
+          // 보상용 새 출금카드 생성
+          createCompensationCard(compensationCurrency, compensationAmount, shortageCard, shortageInfo);
+          
+          // 원래 카드에 보상 표시
+          markCardAsCompensated(shortageCard.id, compensationCurrency, compensationAmount);
+          
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  // 보상 금액 계산 (올림 처리 포함)
+  const calculateCompensationAmount = (shortageCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }, compensationCurrency: string): number => {
+    // 부족한 금액 계산
+    const shortfallValue = getDenominationValue(shortageCard.currency, shortageInfo.denom) * shortageInfo.shortfall;
+    
+    // 환율 적용
+    const exchangeRate = getExchangeRate(shortageCard.currency, compensationCurrency);
+    const baseCompensationAmount = shortfallValue * exchangeRate;
+    
+    // 올림 처리로 손실 최소화 (베트남동의 경우 1000동 단위로 올림)
+    if (compensationCurrency === 'VND') {
+      return Math.ceil(baseCompensationAmount / 1000) * 1000;
+    } else if (compensationCurrency === 'KRW') {
+      return Math.ceil(baseCompensationAmount / 1000) * 1000;
+    } else {
+      return Math.ceil(baseCompensationAmount);
+    }
+  };
+
+  // 보상용 새 출금카드 생성
+  const createCompensationCard = (currency: string, amount: number, originalCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }) => {
+    const newCard: TransactionCard = {
+      id: `compensation-${Date.now()}`,
+      type: 'cash',
+      currency: currency,
+      amount: amount.toString(),
+      denominations: {},
+      isCompensation: true,
+      originalCardId: originalCard.id,
+      compensationReason: `${originalCard.currency} ${shortageInfo.denom}권 ${shortageInfo.shortfall}장 부족으로 인한 보상`
+    };
+    
+    // 보상 카드를 출금 카드 목록에 추가
+    setOutputCards(prev => [...prev, newCard]);
+    
+    // 사용자에게 알림
+    toast({
+      title: "재고 부족 보상",
+      description: `${originalCard.currency} ${shortageInfo.denom}권 부족으로 ${currency} ${amount.toLocaleString()}으로 보상합니다.`,
+      duration: 5000,
+    });
+  };
+
+  // 카드를 보상 처리된 것으로 표시
+  const markCardAsCompensated = (cardId: string, compensationCurrency: string, compensationAmount: number) => {
+    setOutputCards(prev => prev.map(card => {
+      if (card.id === cardId) {
+        return {
+          ...card,
+          isCompensated: true,
+          compensationInfo: {
+            currency: compensationCurrency,
+            amount: compensationAmount
+          }
+        };
+      }
+      return card;
+    }));
+  };
+
+  // 개선된 재고 검증 및 자동 보상 시스템
+  const checkInventoryWithCompensation = () => {
+    let hasShortage = false;
+    
+    outputCards.forEach(card => {
+      if (card.type === 'cash' && !card.isCompensation) {
+        const validation = validateInventory(card);
+        
+        if (!validation.isValid && validation.errors.length > 0) {
+          // 재고 부족 에러에서 세부 정보 추출
+          validation.errors.forEach(error => {
+            const shortageMatch = error.match(/(.+)권이 (\d+)장 부족합니다/);
+            if (shortageMatch) {
+              const denom = shortageMatch[1].replace(/,/g, '');
+              const shortfall = parseInt(shortageMatch[2]);
+              
+              // 자동 보상 시도
+              const compensated = handleInventoryShortage(card, { denom, shortfall });
+              if (compensated) {
+                hasShortage = true;
+              }
+            }
+          });
+        }
+      }
+    });
+    
+    return hasShortage;
+  };
+
   // 출금 카드 권종별 총액과 목표 금액 일치 검증
   const validateOutputCardAmounts = () => {
     const errors: string[] = [];
@@ -1271,6 +1449,9 @@ export default function CardBasedTransactionForm({
   // 전체 거래 유효성 검증
   const validateTransaction = () => {
     const errors: string[] = [];
+    
+    // 재고 부족 시 자동 보상 시스템 실행 (검증 전에)
+    checkInventoryWithCompensation();
     
     // 권종별 총액과 목표 금액 일치 검증 추가
     const amountValidationErrors = validateOutputCardAmounts();
@@ -2399,16 +2580,61 @@ export default function CardBasedTransactionForm({
           </div>
           
           {outputCards.map((card, index) => (
-            <Card key={card.id} className={`border-2 transition-all duration-200 ${getCardTheme(false, card.currency)}`}>
+            <Card key={card.id} className={`border-2 transition-all duration-200 ${getCardTheme(false, card.currency)} ${
+              card.isCompensation ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20' : 
+              card.isCompensated ? 'border-green-400 bg-green-50 dark:bg-green-900/20' : ''
+            }`}>
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
-                    {card.type === 'cash' ? <Banknote className="text-blue-600" size={18} /> : <Wallet className="text-blue-600" size={18} />}
-                    <span className="font-semibold text-blue-800">출금 카드 #{index + 1}</span>
+                    {card.type === 'cash' ? <Banknote className={
+                      card.isCompensation ? "text-orange-600" : 
+                      card.isCompensated ? "text-green-600" : "text-blue-600"
+                    } size={18} /> : <Wallet className={
+                      card.isCompensation ? "text-orange-600" : 
+                      card.isCompensated ? "text-green-600" : "text-blue-600"
+                    } size={18} />}
+                    <span className={`font-semibold ${
+                      card.isCompensation ? "text-orange-800" : 
+                      card.isCompensated ? "text-green-800" : "text-blue-800"
+                    }`}>
+                      {card.isCompensation ? `🔄 보상 카드 #${index + 1}` : 
+                       card.isCompensated ? `✅ 보상됨 #${index + 1}` : `출금 카드 #${index + 1}`}
+                    </span>
                     {validateInventory(card).isValid && card.amount && (
-                      <CheckCircle className="text-blue-500" size={16} />
+                      <CheckCircle className={
+                        card.isCompensation ? "text-orange-500" : 
+                        card.isCompensated ? "text-green-500" : "text-blue-500"
+                      } size={16} />
+                    )}
+                    {card.isCompensation && (
+                      <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300">
+                        자동보상
+                      </Badge>
+                    )}
+                    {card.isCompensated && (
+                      <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                        보상완료
+                      </Badge>
                     )}
                   </div>
+                  
+                  {/* 보상 카드 세부 정보 */}
+                  {card.isCompensation && card.compensationReason && (
+                    <div className="mt-2 p-2 bg-orange-100 border border-orange-200 rounded text-xs text-orange-800">
+                      <div className="font-semibold">보상 사유:</div>
+                      <div>{card.compensationReason}</div>
+                    </div>
+                  )}
+                  
+                  {/* 보상된 카드 세부 정보 */}
+                  {card.isCompensated && card.compensationInfo && (
+                    <div className="mt-2 p-2 bg-green-100 border border-green-200 rounded text-xs text-green-800">
+                      <div className="font-semibold">보상 완료:</div>
+                      <div>{card.compensationInfo.currency} {card.compensationInfo.amount.toLocaleString()}으로 보상되었습니다</div>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center space-x-1">
                     <Button 
                       variant="ghost" 
