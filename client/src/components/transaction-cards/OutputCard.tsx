@@ -9,6 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Trash2, ChevronDown, ChevronUp, ArrowDownRight, Percent } from 'lucide-react';
 import { TransactionOutput } from '@/types/cardTransaction';
 import { useTransactionCalculations } from '@/hooks/useTransactionCalculations';
+import { getDenominationValue } from '@/utils/helpers';
 
 interface OutputCardProps {
   output: TransactionOutput;
@@ -88,7 +89,19 @@ export default function OutputCard({
       delete updatedDenominations[denomination];
     }
 
-    onUpdate({ denominations: updatedDenominations });
+    // 권종별 총액 계산
+    let totalAmount = 0;
+    Object.entries(updatedDenominations).forEach(([denom, count]) => {
+      const denomValue = getDenominationValue(output.currency, denom);
+      totalAmount += denomValue * count;
+    });
+
+    // 총액을 콤마 포맷팅하여 업데이트
+    const formattedAmount = totalAmount.toLocaleString();
+    onUpdate({ 
+      denominations: updatedDenominations, 
+      amount: formattedAmount 
+    });
   };
 
   return (

@@ -1327,6 +1327,11 @@ export default function CardBasedTransactionForm({
         errors.push(`출금 카드 ${index + 1}: 계좌를 선택해주세요`);
       }
       
+      // 현금 출금 카드의 경우 권종별 분배 필수
+      if (card.type === 'cash' && (!card.denominations || Object.keys(card.denominations).length === 0)) {
+        errors.push(`출금 카드 ${index + 1}: 현금 출금 시 권종별 분배가 필요합니다`);
+      }
+      
       // 보유 수량 검증 (출금의 경우)
       const validation = validateInventory(card);
       if (!validation.isValid) {
