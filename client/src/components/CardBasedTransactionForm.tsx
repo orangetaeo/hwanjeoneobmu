@@ -3661,7 +3661,7 @@ export default function CardBasedTransactionForm({
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">총 입금</span>
                 <span className="text-lg font-bold text-green-600">
-                  {formatCurrency(totalInputAmount, inputCards[0]?.currency || 'KRW')}
+                  {totalInputAmount.toLocaleString()} {inputCards[0]?.currency === 'VND' ? '동' : inputCards[0]?.currency === 'USD' ? '달러' : '원'}
                 </span>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
@@ -3670,7 +3670,7 @@ export default function CardBasedTransactionForm({
                   {Object.entries(outputTotalsByCurrency).length > 0 ? 
                     Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
                       <div key={currency} className="text-lg font-bold text-blue-600">
-                        {formatCurrency(amount, currency)}
+                        {amount.toLocaleString()} {currency === 'VND' ? '동' : currency === 'USD' ? '달러' : '원'}
                       </div>
                     )) : 
                     <span className="text-lg font-bold text-blue-600">-</span>
@@ -3692,7 +3692,7 @@ export default function CardBasedTransactionForm({
                     }, 0);
                     
                     const currency = compensationCards[0]?.currency || 'VND';
-                    return formatCurrency(totalCompensation, currency);
+                    return `${totalCompensation.toLocaleString()} ${currency === 'VND' ? '동' : currency === 'USD' ? '달러' : '원'}`;
                   })()}
                 </span>
               </div>
