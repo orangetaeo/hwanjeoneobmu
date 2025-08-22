@@ -78,6 +78,8 @@ export default function OutputCard({
 
   // 권종별 수량 업데이트
   const updateDenomination = (denomination: string, count: string) => {
+    console.log('updateDenomination called:', { denomination, count, outputId: output.id });
+    
     const updatedDenominations = {
       ...output.denominations,
       [denomination]: parseInt(count) || 0
@@ -93,8 +95,11 @@ export default function OutputCard({
     Object.entries(updatedDenominations).forEach(([denom, count]) => {
       const denomValue = parseInt(denom.replace(/,/g, ''));
       totalAmount += denomValue * count;
+      console.log('Calculating denomination:', { denom, count, denomValue, totalAmount });
     });
 
+    console.log('Final totalAmount:', totalAmount);
+    
     // 총액을 숫자로 업데이트
     onUpdate({ 
       denominations: updatedDenominations, 
@@ -251,7 +256,7 @@ export default function OutputCard({
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">출금 금액:</span>
             <Badge variant="secondary" className="text-sm">
-  {typeof output.amount === 'number' ? output.amount.toLocaleString() : parseFloat(output.amount.toString().replace(/,/g, '')).toLocaleString()} {output.currency}
+              {Number(output.amount).toLocaleString()} {output.currency}
             </Badge>
           </div>
         </div>
