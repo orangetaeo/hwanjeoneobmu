@@ -2928,7 +2928,7 @@ export default function CardBasedTransactionForm({
               {/* 잔고 변화 요약 */}
               <div className="mt-4 p-3 bg-white rounded-lg border">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">💡 잔고 변화 요약</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="space-y-1">
                     <div className="text-gray-600">총 입금 금액:</div>
                     <div className="font-medium text-green-600">
