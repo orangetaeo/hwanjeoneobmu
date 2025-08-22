@@ -1525,11 +1525,8 @@ export default function CardBasedTransactionForm({
 
   // 보상용 새 출금카드 생성 (권종별 분배 포함)
   const createCompensationCard = (currency: string, amount: number, originalCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }) => {
-    console.log(`보상 카드 생성 시작: ${currency} ${amount}`);
-    
     // 보상 금액에 대한 권종별 분배 자동 계산
     const compensationDenominations = calculateOptimalDenominations(currency, amount);
-    console.log('보상 카드 권종별 분배:', compensationDenominations);
     
     const newCard: TransactionCard = {
       id: `compensation-${Date.now()}`,
@@ -1542,14 +1539,8 @@ export default function CardBasedTransactionForm({
       compensationReason: `${originalCard.currency} ${shortageInfo.denom}권 ${shortageInfo.shortfall}장 부족으로 인한 보상`
     };
     
-    console.log('생성된 보상 카드:', newCard);
-    
     // 보상 카드를 출금 카드 목록에 추가
-    setOutputCards(prev => {
-      const updated = [...prev, newCard];
-      console.log('업데이트된 출금 카드 목록:', updated);
-      return updated;
-    });
+    setOutputCards(prev => [...prev, newCard]);
     
     // 사용자에게 알림
     toast({
@@ -1584,7 +1575,6 @@ export default function CardBasedTransactionForm({
       }
     }
     
-    console.log(`보상 권종별 분배 계산: ${currency} ${amount} → `, denominations);
     return denominations;
   };
 
@@ -3823,36 +3813,6 @@ export default function CardBasedTransactionForm({
           </div>
         )}
 
-        {/* 테스트 버튼들 (개발용) */}
-        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-          <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-3">보상 시스템 테스트</h3>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={testUSDtoVNDCompensation}
-              className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
-            >
-              USD→VND 보상 테스트
-            </button>
-            <button
-              onClick={testVNDtoKRWCompensation}
-              className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
-            >
-              VND→KRW 보상 테스트
-            </button>
-            <button
-              onClick={testKRWtoVNDCompensation}
-              className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
-            >
-              KRW→VND 보상 테스트
-            </button>
-            <button
-              onClick={runAllCompensationTests}
-              className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
-            >
-              전체 테스트
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
