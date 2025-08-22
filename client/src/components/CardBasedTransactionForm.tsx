@@ -448,6 +448,8 @@ export default function CardBasedTransactionForm({
     return breakdown;
   };
 
+
+
   // VND Floor 차액 계산 함수 (일관성 개선)
   const calculateVNDFloorDifference = (originalAmount: number): number => {
     if (originalAmount <= 0) return 0;
@@ -3688,10 +3690,58 @@ export default function CardBasedTransactionForm({
                   </div>
                 )}
                 
-                {/* 권종별 분배 미리보기 (파란 박스 - 올바른 위치) */}
-                {showExchangeRates && outputCards.some(card => card.currency === 'VND' && card.amount) && (
+                {/* USD 권종별 분배 미리보기 (파란 박스) */}
+                {showExchangeRates && outputCards.some(card => card.currency === 'USD' && card.amount) && (
                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="text-sm font-medium text-blue-700 mb-3 flex items-center gap-2">
+                      <span>💰</span>
+                      <span>예상 권종별 분배 (KRW → USD)</span>
+                    </div>
+                    {(() => {
+                      const usdCard = outputCards.find(card => card.currency === 'USD' && card.amount);
+                      if (!usdCard) return null;
+                      
+                      const targetAmount = parseCommaFormattedNumber(usdCard.amount);
+                      if (targetAmount > 0) {
+                        const breakdown = calculateUSDBreakdown(targetAmount);
+                        const denomOrder = ['100', '50', '20', '10', '5', '1'];
+                        
+                        return (
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            {denomOrder.map(denom => {
+                              const count = breakdown[denom] || 0;
+                              if (count === 0) return null;
+                              const amount = parseInt(denom) * count;
+                              return (
+                                <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
+                                  <span className="text-blue-600 font-medium">
+                                    {formatDenomination(denom, 'USD')}
+                                  </span>
+                                  <div className="text-right">
+                                    <div className="text-blue-800 font-bold">{count}장</div>
+                                    <div className="text-xs text-blue-600">${amount.toLocaleString()}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <div className="col-span-2 border-t border-blue-300 pt-2 mt-2">
+                              <div className="flex justify-between items-center bg-blue-100 rounded-md px-2 py-1.5">
+                                <span className="font-bold text-blue-900">총 지급액:</span>
+                                <span className="font-bold text-blue-900 text-lg">${targetAmount.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                )}
+                
+                {/* VND 권종별 분배 미리보기 (빨간 박스) */}
+                {showExchangeRates && outputCards.some(card => card.currency === 'VND' && card.amount) && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="text-sm font-medium text-red-700 mb-3 flex items-center gap-2">
                       <span>💰</span>
                       <span>예상 권종별 분배 (KRW → VND)</span>
                     </div>
@@ -3712,20 +3762,20 @@ export default function CardBasedTransactionForm({
                               const amount = parseInt(denom) * count;
                               return (
                                 <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
-                                  <span className="text-blue-600 font-medium">
+                                  <span className="text-red-600 font-medium">
                                     {formatDenomination(denom, 'VND')}
                                   </span>
                                   <div className="text-right">
-                                    <div className="text-blue-800 font-bold">{count}장</div>
-                                    <div className="text-xs text-blue-600">{amount.toLocaleString()}동</div>
+                                    <div className="text-red-800 font-bold">{count}장</div>
+                                    <div className="text-xs text-red-600">{amount.toLocaleString()}동</div>
                                   </div>
                                 </div>
                               );
                             })}
-                            <div className="col-span-2 border-t border-blue-300 pt-2 mt-2">
-                              <div className="flex justify-between items-center bg-blue-100 rounded-md px-2 py-1.5">
-                                <span className="font-bold text-blue-900">총 지급액:</span>
-                                <span className="font-bold text-blue-900 text-lg">{targetAmount.toLocaleString()}동</span>
+                            <div className="col-span-2 border-t border-red-300 pt-2 mt-2">
+                              <div className="flex justify-between items-center bg-red-100 rounded-md px-2 py-1.5">
+                                <span className="font-bold text-red-900">총 지급액:</span>
+                                <span className="font-bold text-red-900 text-lg">{targetAmount.toLocaleString()}동</span>
                               </div>
                             </div>
                           </div>
