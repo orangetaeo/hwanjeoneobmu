@@ -2922,15 +2922,21 @@ export default function CardBasedTransactionForm({
                 <h4 className="text-sm font-medium text-gray-700 mb-2">💡 잔고 변화 요약</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div className="space-y-1">
-                    <div className="text-gray-600">총 입금 건수:</div>
+                    <div className="text-gray-600">총 입금 금액:</div>
                     <div className="font-medium text-green-600">
-                      {Object.values(balanceTracking).filter(b => b.change > 0).length}건
+                      {Object.values(balanceTracking)
+                        .filter(b => b.change > 0)
+                        .reduce((sum, b) => sum + Math.abs(b.change), 0)
+                        .toLocaleString()} {Object.values(balanceTracking).find(b => b.change > 0)?.currency || 'KRW'}
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <div className="text-gray-600">총 출금 건수:</div>
+                    <div className="text-gray-600">총 출금 금액:</div>
                     <div className="font-medium text-red-600">
-                      {Object.values(balanceTracking).filter(b => b.change < 0).length}건
+                      {Object.values(balanceTracking)
+                        .filter(b => b.change < 0)
+                        .reduce((sum, b) => sum + Math.abs(b.change), 0)
+                        .toLocaleString()} {Object.values(balanceTracking).find(b => b.change < 0)?.currency || 'KRW'}
                     </div>
                   </div>
                 </div>
@@ -2954,13 +2960,15 @@ export default function CardBasedTransactionForm({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-              <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                <span className="text-gray-600 block text-xs">입금 카드</span>
-                <span className="text-2xl font-bold text-green-700">{inputCards.length}</span>
-              </div>
-              <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                <span className="text-gray-600 block text-xs">출금 카드</span>
-                <span className="text-2xl font-bold text-blue-700">{outputCards.length}</span>
+              <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-0 col-span-1 md:col-span-2">
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <span className="text-gray-600 block text-xs">입금 카드</span>
+                  <span className="text-2xl font-bold text-green-700">{inputCards.length}</span>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                  <span className="text-gray-600 block text-xs">출금 카드</span>
+                  <span className="text-2xl font-bold text-blue-700">{outputCards.length}</span>
+                </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">총 입금</span>
