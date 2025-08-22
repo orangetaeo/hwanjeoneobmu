@@ -2971,34 +2971,34 @@ export default function CardBasedTransactionForm({
               <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-0">
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <span className="text-gray-600 block text-xs">입금 카드</span>
-                  <div className="text-sm font-bold text-green-700">
-                    {totalInputAmount > 0 ? formatCurrency(totalInputAmount, inputCards[0]?.currency || 'KRW') : '0 KRW'}
+                  <div className="text-xs font-bold text-green-700">
+                    {totalInputAmount > 0 ? `${totalInputAmount.toLocaleString()} ${inputCards[0]?.currency === 'KRW' ? '원' : inputCards[0]?.currency === 'VND' ? '동' : inputCards[0]?.currency || 'KRW'}` : '0 원'}
                   </div>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm md:hidden">
                   <span className="text-gray-600 block text-xs">출금 카드</span>
-                  <div className="text-sm font-bold text-blue-700">
+                  <div className="text-xs font-bold text-blue-700">
                     {Object.entries(outputTotalsByCurrency).length > 0 ? 
                       Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
                         <div key={currency}>
-                          {formatCurrency(amount, currency)}
+                          {amount.toLocaleString()} {currency === 'KRW' ? '원' : currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency}
                         </div>
                       )) : 
-                      <span>0 VND</span>
+                      <span>0 동</span>
                     }
                   </div>
                 </div>
               </div>
               <div className="hidden md:block text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">출금 카드</span>
-                <div className="text-sm font-bold text-blue-700">
+                <div className="text-xs font-bold text-blue-700">
                   {Object.entries(outputTotalsByCurrency).length > 0 ? 
                     Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
                       <div key={currency}>
-                        {formatCurrency(amount, currency)}
+                        {amount.toLocaleString()} {currency === 'KRW' ? '원' : currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency}
                       </div>
                     )) : 
-                    <span>0 VND</span>
+                    <span>0 동</span>
                   }
                 </div>
               </div>
