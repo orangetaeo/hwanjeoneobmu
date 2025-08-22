@@ -3772,7 +3772,15 @@ export default function CardBasedTransactionForm({
                         <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                           <span className="font-medium">{inputCurrency} → {output.currency}:</span>
                           <span className="font-bold text-indigo-600">
-                            {rate > 0 ? rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '환율 확인 중'}
+                            {rate > 0 ? (() => {
+                              // KRW → USD의 경우 역환율로 표시 (1 USD = X KRW)
+                              if (inputCurrency === 'KRW' && output.currency === 'USD') {
+                                const inverseRate = 1 / rate;
+                                return Math.round(inverseRate).toLocaleString();
+                              }
+                              // 다른 환율은 기존 형식 유지
+                              return rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            })() : '환율 확인 중'}
                           </span>
                         </div>
                       );
