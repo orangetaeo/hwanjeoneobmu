@@ -9,7 +9,6 @@ import { Slider } from '@/components/ui/slider';
 import { Trash2, ChevronDown, ChevronUp, ArrowDownRight, Percent } from 'lucide-react';
 import { TransactionOutput } from '@/types/cardTransaction';
 import { useTransactionCalculations } from '@/hooks/useTransactionCalculations';
-import { getDenominationValue } from '@/utils/helpers';
 
 interface OutputCardProps {
   output: TransactionOutput;
@@ -92,15 +91,14 @@ export default function OutputCard({
     // 권종별 총액 계산
     let totalAmount = 0;
     Object.entries(updatedDenominations).forEach(([denom, count]) => {
-      const denomValue = getDenominationValue(output.currency, denom);
+      const denomValue = parseInt(denom.replace(/,/g, ''));
       totalAmount += denomValue * count;
     });
 
-    // 총액을 콤마 포맷팅하여 업데이트
-    const formattedAmount = totalAmount.toLocaleString();
+    // 총액을 숫자로 업데이트
     onUpdate({ 
       denominations: updatedDenominations, 
-      amount: formattedAmount 
+      amount: totalAmount 
     });
   };
 
@@ -253,7 +251,7 @@ export default function OutputCard({
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">출금 금액:</span>
             <Badge variant="secondary" className="text-sm">
-              {output.amount.toLocaleString()} {output.currency}
+  {typeof output.amount === 'number' ? output.amount.toLocaleString() : parseFloat(output.amount.toString().replace(/,/g, '')).toLocaleString()} {output.currency}
             </Badge>
           </div>
         </div>
