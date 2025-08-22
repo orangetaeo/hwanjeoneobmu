@@ -541,7 +541,7 @@ export default function CardBasedTransactionForm({
           type: 'info',
           message: '재고 부족 시 자동 보상을 받으시겠습니까?',
           action: () => {
-            // 1. 부족한 권종의 입력된 숫자를 0으로 만들기
+            // 1. 부족한 권종의 입력된 숫자를 0으로 만들고 총액 재계산
             validation.errors.forEach(error => {
               if (error.includes('부족')) {
                 // 해당 카드에서 부족한 권종을 0으로 설정
@@ -565,7 +565,23 @@ export default function CardBasedTransactionForm({
                   }
                 });
                 
+                // 권종별 총액 다시 계산
+                let newTotalAmount = 0;
+                Object.entries(newDenominations).forEach(([denom, count]) => {
+                  const denomValue = getDenominationValue(card.currency, denom);
+                  newTotalAmount += denomValue * count;
+                });
+                
+                // 권종별 분배와 총액을 함께 업데이트
                 updateOutputCard(cardId, 'denominations', newDenominations);
+                
+                // VND의 경우 floor 처리 적용
+                if (card.currency === 'VND') {
+                  const flooredAmount = Math.floor(newTotalAmount / 1000) * 1000;
+                  updateOutputCard(cardId, 'amount', flooredAmount.toLocaleString());
+                } else {
+                  updateOutputCard(cardId, 'amount', newTotalAmount.toLocaleString());
+                }
               }
             });
             
@@ -579,7 +595,7 @@ export default function CardBasedTransactionForm({
             
             toast({
               title: "보상 분배 적용",
-              description: "부족한 권종을 제거하고 출금카드를 접었습니다. 보상카드를 확인해주세요.",
+              description: "부족한 권종을 제거하고 총액을 재계산했습니다. 보상카드를 확인해주세요.",
             });
           }
         });
