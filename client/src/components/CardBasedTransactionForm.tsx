@@ -25,6 +25,7 @@ import {
   getExchangeShopRate,
   calculateWeightedExchangeRate
 } from '@/utils/helpers';
+import { addCommas } from '@/lib/utils';
 
 interface CardBasedTransactionFormProps {
   onClose: () => void;
@@ -1068,7 +1069,7 @@ export default function CardBasedTransactionForm({
             totalAmount += denomValue * count;
           });
           // 권종별 계산 결과를 천단위 콤마 포맷팅 적용
-          updatedCard.amount = formatNumberWithCommas(totalAmount.toString());
+          updatedCard.amount = addCommas(totalAmount.toString());
         }
         
         // 자동 계산이 활성화된 경우 출금 카드 업데이트
