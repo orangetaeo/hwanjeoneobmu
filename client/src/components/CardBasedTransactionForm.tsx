@@ -1081,7 +1081,7 @@ export default function CardBasedTransactionForm({
           const calculatedAmount = calculateAutomaticAmount(updatedCard, mainOutputCard);
           if (calculatedAmount) {
             setOutputCards(prevOutput => prevOutput.map((outCard, index) => 
-              index === 0 ? { ...outCard, amount: calculatedAmount } : outCard
+              index === 0 ? { ...outCard, amount: formatInputWithCommas(calculatedAmount.toString()) } : outCard
             ));
           }
         }
