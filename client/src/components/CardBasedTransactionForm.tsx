@@ -3089,27 +3089,6 @@ export default function CardBasedTransactionForm({
                     )}
                   </div>
                   
-                  {/* 보상 카드 세부 정보 - 명확한 흐름 표시 */}
-                  {card.isCompensation && card.originalCurrency && card.originalAmount && (
-                    <div className="mt-2 p-2 bg-orange-100 border border-orange-200 rounded text-xs text-orange-800">
-                      <div className="font-semibold">보상 흐름:</div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <span className="font-medium">{card.originalAmount} {card.originalCurrency}</span>
-                        <span>→</span>
-                        <span className="text-red-600 font-medium">(재고부족)</span>
-                        <span>→</span>
-                        <span className="font-medium">{card.amount} {card.currency} 보상</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* 보상된 카드 세부 정보 */}
-                  {card.isCompensated && card.compensationInfo && (
-                    <div className="mt-2 p-2 bg-green-100 border border-green-200 rounded text-xs text-green-800">
-                      <div className="font-semibold">보상 완료:</div>
-                      <div>{card.compensationInfo.currency} {card.compensationInfo.amount.toLocaleString()}으로 보상되었습니다</div>
-                    </div>
-                  )}
                   
                   <div className="flex items-center space-x-1">
                     <Button 
