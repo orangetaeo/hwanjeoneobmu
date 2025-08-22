@@ -3814,7 +3814,7 @@ export default function CardBasedTransactionForm({
                         const denomOrder = ['100', '50', '20', '10', '5', '1'];
                         
                         return (
-                          <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-sm">
                             {denomOrder.map(denom => {
                               const count = breakdown[denom] || 0;
                               if (count === 0) return null;
@@ -3871,7 +3871,7 @@ export default function CardBasedTransactionForm({
                         const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
                         
                         return (
-                          <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-sm">
                             {denomOrder.map(denom => {
                               const count = breakdown[denom] || 0;
                               if (count === 0) return null;
