@@ -938,7 +938,7 @@ export default function CardBasedTransactionForm({
         </svg>
         
         {/* 연결 정보 표시 */}
-        <div className="relative z-20 pt-16 bg-gradient-to-r from-blue-50 to-green-50 p-3 rounded-lg border">
+        <div className="relative z-20 pt-3 bg-gradient-to-r from-blue-50 to-green-50 p-3 rounded-lg border">
           <div className="text-center">
             <div className="text-sm font-medium text-gray-700 mb-2">💫 카드 연결 흐름</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -2960,15 +2960,19 @@ export default function CardBasedTransactionForm({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-              <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-0 col-span-1 md:col-span-2">
+              <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-0">
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <span className="text-gray-600 block text-xs">입금 카드</span>
                   <span className="text-2xl font-bold text-green-700">{inputCards.length}</span>
                 </div>
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                <div className="text-center p-3 bg-white rounded-lg shadow-sm md:hidden">
                   <span className="text-gray-600 block text-xs">출금 카드</span>
                   <span className="text-2xl font-bold text-blue-700">{outputCards.length}</span>
                 </div>
+              </div>
+              <div className="hidden md:block text-center p-3 bg-white rounded-lg shadow-sm">
+                <span className="text-gray-600 block text-xs">출금 카드</span>
+                <span className="text-2xl font-bold text-blue-700">{outputCards.length}</span>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">총 입금</span>
