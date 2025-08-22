@@ -3782,7 +3782,7 @@ export default function CardBasedTransactionForm({
                                 const amount = parseInt(denom) * count;
                                 return (
                                   <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
-                                    <span className="text-blue-600 font-medium text-xl">
+                                    <span className="text-blue-600 font-medium">
                                       {formatDenomination(denom, 'USD')}
                                     </span>
                                     <div className="text-right">
