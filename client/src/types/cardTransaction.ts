@@ -23,6 +23,12 @@ export interface TransactionOutput {
   // 계좌의 경우 계좌 정보
   accountId?: string;
   accountName?: string;
+  // 보상카드 정보
+  isCompensation?: boolean;
+  originalCurrency?: string;
+  originalAmount?: string;
+  originalCardId?: string;
+  compensationReason?: string;
 }
 
 export interface ComplexTransaction {

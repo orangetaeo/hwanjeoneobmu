@@ -1215,7 +1215,14 @@ export default function CardBasedTransactionForm({
                     {conn.fromCard.currency} → {conn.toCard.currency}
                   </span>
                   <span className="font-medium">
-                    {formatCurrency(conn.inputAmount, conn.fromCard.currency)} {conn.fromCard.currency} → {formatCurrency(conn.outputAmount, conn.toCard.currency)} {conn.toCard.currency}
+                    {(() => {
+                      // 보상카드인 경우 원래 통화와 금액 표시
+                      if (conn.toCard.isCompensation && conn.toCard.originalCurrency && conn.toCard.originalAmount) {
+                        return `${conn.toCard.originalAmount} ${conn.toCard.originalCurrency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency}`;
+                      }
+                      // 일반 카드 표시
+                      return `${formatCurrency(conn.inputAmount, conn.fromCard.currency)} ${conn.fromCard.currency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency}`;
+                    })()}
                   </span>
                 </div>
               ))}
@@ -1589,6 +1596,8 @@ export default function CardBasedTransactionForm({
       denominations: compensationDenominations,
       isCompensation: true,
       originalCardId: originalCard.id,
+      originalCurrency: originalCard.currency,
+      originalAmount: `${getDenominationValue(originalCard.currency, shortageInfo.denom) * shortageInfo.shortfall}`,
       compensationReason: `${originalCard.currency} ${shortageInfo.denom}권 ${shortageInfo.shortfall}장 부족으로 인한 보상`
     };
     
@@ -3061,9 +3070,10 @@ export default function CardBasedTransactionForm({
                             <span className="text-lg font-bold text-blue-900">
                               {(() => {
                                 const rate = getExchangeRate(inputCards[0].currency, card.currency);
-                                // KRW → USD의 경우 특별 처리
+                                // KRW → USD의 경우 역환율로 표시 (1400 형태)
                                 if (inputCards[0].currency === 'KRW' && card.currency === 'USD') {
-                                  return rate >= 0.001 ? rate.toFixed(4) : rate.toFixed(6);
+                                  const inverseRate = 1 / rate;
+                                  return Math.round(inverseRate).toLocaleString();
                                 }
                                 return rate.toLocaleString('ko-KR', {
                                   minimumFractionDigits: card.currency === 'VND' ? 0 : 2,
@@ -3142,6 +3152,84 @@ export default function CardBasedTransactionForm({
                                   </span>
                                 </div>
                               </div>
+                            </div>
+                          )}
+                          
+                          {/* 권종별 분배 미리보기 (USD 환전 시) */}
+                          {inputCards[0].currency === 'USD' && card.currency === 'VND' && card.amount && (
+                            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <div className="text-xs font-medium text-green-700 mb-2">💰 예상 권종별 분배</div>
+                              {(() => {
+                                const targetAmount = parseCommaFormattedNumber(card.amount);
+                                if (targetAmount > 0) {
+                                  const breakdown = calculateVNDBreakdown(targetAmount);
+                                  const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
+                                  
+                                  return (
+                                    <div className="grid grid-cols-2 gap-1 text-xs">
+                                      {denomOrder.map(denom => {
+                                        const count = breakdown[denom] || 0;
+                                        if (count === 0) return null;
+                                        const amount = parseInt(denom) * count;
+                                        return (
+                                          <div key={denom} className="flex justify-between">
+                                            <span>{formatDenomination(denom, 'VND')}: {count}장</span>
+                                            <span className="font-medium text-green-700">
+                                              {amount.toLocaleString()}동
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                      <div className="col-span-2 border-t border-green-300 pt-1 mt-1">
+                                        <div className="flex justify-between font-medium text-green-800">
+                                          <span>총계:</span>
+                                          <span>{targetAmount.toLocaleString()}동</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          )}
+                          
+                          {/* 권종별 분배 미리보기 (KRW 환전 시) */}
+                          {inputCards[0].currency === 'KRW' && card.currency === 'VND' && card.amount && (
+                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div className="text-xs font-medium text-blue-700 mb-2">💰 예상 권종별 분배</div>
+                              {(() => {
+                                const targetAmount = parseCommaFormattedNumber(card.amount);
+                                if (targetAmount > 0) {
+                                  const breakdown = calculateVNDBreakdown(targetAmount);
+                                  const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
+                                  
+                                  return (
+                                    <div className="grid grid-cols-2 gap-1 text-xs">
+                                      {denomOrder.map(denom => {
+                                        const count = breakdown[denom] || 0;
+                                        if (count === 0) return null;
+                                        const amount = parseInt(denom) * count;
+                                        return (
+                                          <div key={denom} className="flex justify-between">
+                                            <span>{formatDenomination(denom, 'VND')}: {count}장</span>
+                                            <span className="font-medium text-blue-700">
+                                              {amount.toLocaleString()}동
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                      <div className="col-span-2 border-t border-blue-300 pt-1 mt-1">
+                                        <div className="flex justify-between font-medium text-blue-800">
+                                          <span>총계:</span>
+                                          <span>{targetAmount.toLocaleString()}동</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           )}
                         </div>
