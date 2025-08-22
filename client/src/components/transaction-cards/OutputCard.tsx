@@ -98,13 +98,16 @@ export default function OutputCard({
       console.log('Calculating denomination:', { denom, count, denomValue, totalAmount });
     });
 
-    console.log('Final totalAmount:', totalAmount);
+    console.log('Final totalAmount:', totalAmount, 'typeof:', typeof totalAmount);
+    console.log('Before update - current output.amount:', output.amount, 'typeof:', typeof output.amount);
     
     // 총액을 숫자로 업데이트
     onUpdate({ 
       denominations: updatedDenominations, 
       amount: totalAmount 
     });
+    
+    console.log('After update called');
   };
 
   return (
@@ -259,7 +262,6 @@ export default function OutputCard({
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">출금 금액:</span>
             <Badge variant="secondary" className="text-sm">
-              {console.log('Rendering amount:', output.amount, 'type:', typeof output.amount)}
               {Number(output.amount || 0).toLocaleString()} {output.currency}
             </Badge>
           </div>
