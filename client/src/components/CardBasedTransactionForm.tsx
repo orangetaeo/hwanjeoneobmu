@@ -3657,27 +3657,7 @@ export default function CardBasedTransactionForm({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-              <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-0">
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                  <span className="text-gray-600 block text-xs">입금 카드</span>
-                  <div className="text-base font-bold text-green-700">
-                    50,000 원
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-white rounded-lg shadow-sm md:hidden">
-                  <span className="text-gray-600 block text-xs">출금 카드</span>
-                  <div className="text-base font-bold text-blue-700">
-                    944,000 동
-                  </div>
-                </div>
-              </div>
-              <div className="hidden md:block text-center p-3 bg-white rounded-lg shadow-sm">
-                <span className="text-gray-600 block text-xs">출금 카드</span>
-                <div className="text-base font-bold text-blue-700">
-                  944,000 동
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">총 입금</span>
                 <span className="text-lg font-bold text-green-600">
