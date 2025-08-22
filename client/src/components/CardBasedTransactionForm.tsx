@@ -1354,7 +1354,7 @@ export default function CardBasedTransactionForm({
   };
 
   // 카드 업데이트 함수들 (입금 카드 권종별 계산 지원)
-  const updateInputCard = (id: number, field: string, value: any) => {
+  const updateInputCard = (id: string, field: string, value: any) => {
     setInputCards(prev => prev.map(card => {
       if (card.id === id) {
         const updatedCard = { ...card, [field]: value };
@@ -3691,7 +3691,11 @@ export default function CardBasedTransactionForm({
                 )}
                 
                 {/* USD 권종별 분배 미리보기 (파란 박스) */}
-                {showExchangeRates && outputCards.some(card => card.currency === 'USD' && card.amount) && (
+                {(() => {
+                  const shouldShowUSD = showExchangeRates && outputCards.some(card => card.currency === 'USD' && card.amount && parseCommaFormattedNumber(card.amount) > 0);
+                  console.log('USD 박스 표시 조건:', { showExchangeRates, outputCards: outputCards.map(c => ({ currency: c.currency, amount: c.amount })), shouldShowUSD });
+                  return shouldShowUSD;
+                })() && (
                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="text-sm font-medium text-blue-700 mb-3 flex items-center gap-2">
                       <span>💰</span>
@@ -3739,7 +3743,11 @@ export default function CardBasedTransactionForm({
                 )}
                 
                 {/* VND 권종별 분배 미리보기 (빨간 박스) */}
-                {showExchangeRates && outputCards.some(card => card.currency === 'VND' && card.amount) && (
+                {(() => {
+                  const shouldShowVND = showExchangeRates && outputCards.some(card => card.currency === 'VND' && card.amount && parseCommaFormattedNumber(card.amount) > 0);
+                  console.log('VND 박스 표시 조건:', { showExchangeRates, outputCards: outputCards.map(c => ({ currency: c.currency, amount: c.amount })), shouldShowVND });
+                  return shouldShowVND;
+                })() && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                     <div className="text-sm font-medium text-red-700 mb-3 flex items-center gap-2">
                       <span>💰</span>
