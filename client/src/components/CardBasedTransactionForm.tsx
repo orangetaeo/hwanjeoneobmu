@@ -3639,48 +3639,6 @@ export default function CardBasedTransactionForm({
                 })}
               </div>
               
-              {/* 잔고 변화 요약 */}
-              <div className="mt-4 p-3 bg-white rounded-lg border">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">💡 잔고 변화 요약</h4>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="space-y-1">
-                    <div className="text-gray-600">총 입금 금액:</div>
-                    <div className="font-medium text-green-600">
-                      {(() => {
-                        const inputChanges = Object.entries(balanceTracking).filter(([key, b]) => b.change > 0);
-                        const inputSummary: Record<string, number> = {};
-                        
-                        inputChanges.forEach(([key, b]) => {
-                          const currency = key.split('_')[0];
-                          inputSummary[currency] = (inputSummary[currency] || 0) + Math.abs(b.change);
-                        });
-                        
-                        return Object.entries(inputSummary)
-                          .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
-                          .join(', ');
-                      })()}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-gray-600">총 출금 금액:</div>
-                    <div className="font-medium text-red-600">
-                      {(() => {
-                        const outputChanges = Object.entries(balanceTracking).filter(([key, b]) => b.change < 0);
-                        const outputSummary: Record<string, number> = {};
-                        
-                        outputChanges.forEach(([key, b]) => {
-                          const currency = key.split('_')[0];
-                          outputSummary[currency] = (outputSummary[currency] || 0) + Math.abs(b.change);
-                        });
-                        
-                        return Object.entries(outputSummary)
-                          .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
-                          .join(', ');
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         ) : null;
