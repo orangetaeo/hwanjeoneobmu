@@ -1108,6 +1108,17 @@ export default function CardBasedTransactionForm({
           }
         }
         
+        // 출금 카드에서 권종별 수량 변경 시 총액 자동 계산 및 포맷팅
+        if (field === 'denominations' && updatedCard.type === 'cash') {
+          let totalAmount = 0;
+          Object.entries(updatedCard.denominations || {}).forEach(([denom, count]) => {
+            const denomValue = getDenominationValue(updatedCard.currency, denom);
+            totalAmount += denomValue * count;
+          });
+          // 권종별 계산 결과를 천단위 콤마 포맷팅 적용
+          updatedCard.amount = addCommas(totalAmount.toString());
+        }
+        
         return updatedCard;
       }
       return card;
@@ -1219,9 +1230,44 @@ export default function CardBasedTransactionForm({
     return { isValid: errors.length === 0, errors };
   };
 
+  // 출금 카드 권종별 총액과 목표 금액 일치 검증
+  const validateOutputCardAmounts = () => {
+    const errors: string[] = [];
+    
+    outputCards.forEach((card, index) => {
+      if (card.type === 'cash' && card.denominations && Object.keys(card.denominations).length > 0) {
+        // 권종별 총액 계산
+        let denominationTotal = 0;
+        Object.entries(card.denominations).forEach(([denom, count]) => {
+          const denomValue = getDenominationValue(card.currency, denom);
+          denominationTotal += denomValue * count;
+        });
+        
+        // 목표 금액
+        const targetAmount = parseCommaFormattedNumber(card.amount) || 0;
+        
+        // 금액 불일치 검사
+        if (denominationTotal !== targetAmount) {
+          const difference = Math.abs(denominationTotal - targetAmount);
+          const currencyUnit = card.currency === 'KRW' ? '원' : card.currency === 'VND' ? '동' : '달러';
+          errors.push(
+            `출금 카드 ${index + 1}: 권종별 총액(${denominationTotal.toLocaleString()}${currencyUnit})과 ` + 
+            `목표 금액(${targetAmount.toLocaleString()}${currencyUnit})이 ${difference.toLocaleString()}${currencyUnit} 차이납니다`
+          );
+        }
+      }
+    });
+    
+    return errors;
+  };
+
   // 전체 거래 유효성 검증
   const validateTransaction = () => {
     const errors: string[] = [];
+    
+    // 권종별 총액과 목표 금액 일치 검증 추가
+    const amountValidationErrors = validateOutputCardAmounts();
+    errors.push(...amountValidationErrors);
 
     // 계좌이체 거래인지 확인
     const isAccountTransfer = selectedTransactionType.includes('_to_') && 
@@ -1329,7 +1375,13 @@ export default function CardBasedTransactionForm({
       return validation.isValid;
     });
     
-    return allInventoryValid;
+    if (!allInventoryValid) return false;
+    
+    // 출금 카드 권종별 총액과 목표 금액 일치 검증
+    const amountValidationErrors = validateOutputCardAmounts();
+    if (amountValidationErrors.length > 0) return false;
+    
+    return true;
   }, [inputCards, outputCards, customerName, assets]);
 
   // 복합 거래를 단일 거래들로 분해 (개선된 버전)
