@@ -67,6 +67,17 @@ router.get('/transactions/:id', requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
+// 현금 자산 권종 데이터 정리 API
+router.post('/cleanup-cash-denominations', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    await storage.cleanupCashDenominations(req.user!.id);
+    res.json({ message: '현금 자산 권종 데이터 정리가 완료되었습니다.' });
+  } catch (error) {
+    console.error('Error cleaning up cash denominations:', error);
+    res.status(500).json({ error: 'Failed to cleanup cash denominations' });
+  }
+});
+
 // 거래 상태 변경 API
 router.put('/transactions/:id/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

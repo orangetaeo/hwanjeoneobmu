@@ -706,7 +706,7 @@ export class DatabaseStorage implements IStorage {
         asset.name === 'Bithumb USDT' || 
         asset.name.includes('Bithumb')
       );
-      result = foundAsset;
+      result = foundAsset || undefined;
       
       console.log('빗썸 유연 검색 결과:', result);
     }
@@ -1486,6 +1486,98 @@ export class DatabaseStorage implements IStorage {
     }
     
     console.log('=== VND 계좌 → 현금 출금 자산 이동 완료 ===');
+  }
+
+  // 현금 자산 권종 데이터 정리 함수
+  public async cleanupCashDenominations(userId: string): Promise<void> {
+    console.log('=== 현금 자산 권종 데이터 정리 시작 ===');
+
+    const cashAssets = await db.select().from(assets).where(eq(assets.userId, userId));
+    const cashAssetsOnly = cashAssets.filter(asset => asset.type === 'cash');
+
+    for (const asset of cashAssetsOnly) {
+      const metadata = asset.metadata as any || {};
+      const denominations = metadata.denominations || {};
+
+      let cleanedDenominations: Record<string, number> = {};
+      let hasChanges = false;
+
+      if (asset.currency === 'KRW') {
+        // KRW 권종 정리
+        const validKRWDenoms = ['50000', '10000', '5000', '1000'];
+        
+        // 중복 권종 통합 및 잘못된 권종 제거
+        for (const validDenom of validKRWDenoms) {
+          let total = 0;
+          
+          // 다양한 형태의 키 확인하고 통합
+          const keys = [`${validDenom}`, `${parseInt(validDenom).toLocaleString()}`];
+          for (const key of keys) {
+            if (denominations[key]) {
+              total += parseInt(denominations[key] as string) || 0;
+              if (key !== validDenom) hasChanges = true;
+            }
+          }
+          
+          if (total > 0) {
+            cleanedDenominations[validDenom] = total;
+          }
+        }
+
+        console.log(`KRW 권종 정리: ${asset.name}`, {
+          기존: denominations,
+          정리후: cleanedDenominations
+        });
+
+      } else if (asset.currency === 'USD') {
+        // USD 권종 정리
+        const validUSDDenoms = ['100', '50', '20', '10', '5', '2', '1'];
+        
+        for (const validDenom of validUSDDenoms) {
+          if (denominations[validDenom] && parseInt(denominations[validDenom] as string) > 0) {
+            cleanedDenominations[validDenom] = parseInt(denominations[validDenom] as string);
+          }
+        }
+
+        // 잘못된 권종 제거 확인
+        const originalKeys = Object.keys(denominations);
+        if (originalKeys.some(key => !validUSDDenoms.includes(key))) {
+          hasChanges = true;
+        }
+
+        console.log(`USD 권종 정리: ${asset.name}`, {
+          기존: denominations,
+          정리후: cleanedDenominations
+        });
+
+      } else if (asset.currency === 'VND') {
+        // VND는 이미 정상적으로 보이므로 그대로 유지
+        cleanedDenominations = { ...denominations };
+        
+        console.log(`VND 권종 확인: ${asset.name}`, {
+          권종: denominations
+        });
+      }
+
+      // 변경사항이 있으면 업데이트
+      if (hasChanges || Object.keys(cleanedDenominations).length !== Object.keys(denominations).length) {
+        await db.update(assets)
+          .set({
+            metadata: {
+              ...metadata,
+              denominations: cleanedDenominations
+            },
+            updatedAt: new Date()
+          })
+          .where(eq(assets.id, asset.id));
+
+        console.log(`✅ ${asset.name} 권종 데이터 정리 완료`);
+      } else {
+        console.log(`✓ ${asset.name} 권종 데이터 정상`);
+      }
+    }
+
+    console.log('=== 현금 자산 권종 데이터 정리 완료 ===');
   }
 }
 
