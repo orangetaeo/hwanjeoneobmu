@@ -2837,12 +2837,11 @@ export default function CardBasedTransactionForm({
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(balanceTracking)
-                  .sort(([keyA], [keyB]) => {
-                    // KRW 현금 먼저, 그 다음 VND 현금, 나머지는 알파벳 순서
-                    if (keyA.includes('KRW_cash')) return -1;
-                    if (keyB.includes('KRW_cash')) return 1;
-                    if (keyA.includes('VND_cash')) return -1;
-                    if (keyB.includes('VND_cash')) return 1;
+                  .sort(([keyA, balanceA], [keyB, balanceB]) => {
+                    // 입금(양수)을 왼쪽에, 출금(음수)을 오른쪽에 배치
+                    if (balanceA.change > 0 && balanceB.change < 0) return -1;
+                    if (balanceA.change < 0 && balanceB.change > 0) return 1;
+                    // 같은 타입 내에서는 알파벳 순서
                     return keyA.localeCompare(keyB);
                   })
                   .map(([key, balance]) => {
