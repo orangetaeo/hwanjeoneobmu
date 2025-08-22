@@ -149,7 +149,7 @@ export default function CardBasedTransactionForm({
   const [isAnonymousTransaction, setIsAnonymousTransaction] = useState(true);
 
   // UI 상태
-  const [collapsedCards, setCollapsedCards] = useState<Set<number>>(new Set());
+  const [collapsedCards, setCollapsedCards] = useState<Set<string>>(new Set());
   const [showExchangeRates, setShowExchangeRates] = useState(true);
   const [showSystemSettings, setShowSystemSettings] = useState(false);
   const [showSellRates, setShowSellRates] = useState(false);
@@ -173,7 +173,7 @@ export default function CardBasedTransactionForm({
     if (inputCards.length === 0 && outputCards.length === 0) {
       // 기본 입금 카드 추가 (KRW 현금)
       const defaultInputCard: TransactionCard = {
-        id: Date.now(),
+        id: Date.now().toString(),
         type: 'cash',
         currency: 'KRW',
         amount: '',
@@ -185,7 +185,7 @@ export default function CardBasedTransactionForm({
       
       // 기본 출금 카드 추가 (VND 현금)
       const defaultOutputCard: TransactionCard = {
-        id: Date.now() + 1,
+        id: (Date.now() + 1).toString(),
         type: 'cash',
         currency: 'VND',
         amount: '',
@@ -234,7 +234,7 @@ export default function CardBasedTransactionForm({
     }
     
     const newCard: TransactionCard = {
-      id: Date.now(),
+      id: Date.now().toString(),
       type: 'cash',
       currency: 'KRW',
       amount: '',
@@ -248,7 +248,7 @@ export default function CardBasedTransactionForm({
 
   const addOutputCard = () => {
     const newCard: TransactionCard = {
-      id: Date.now(),
+      id: Date.now().toString(),
       type: 'cash', 
       currency: 'VND',
       amount: '',
@@ -261,16 +261,16 @@ export default function CardBasedTransactionForm({
   };
 
   // 카드 제거
-  const removeInputCard = (id: number) => {
+  const removeInputCard = (id: string) => {
     setInputCards(inputCards.filter(card => card.id !== id));
   };
 
-  const removeOutputCard = (id: number) => {
+  const removeOutputCard = (id: string) => {
     setOutputCards(outputCards.filter(card => card.id !== id));
   };
 
   // 카드 토글 (접기/펴기)
-  const toggleCardCollapse = (id: number) => {
+  const toggleCardCollapse = (id: string) => {
     const newCollapsed = new Set(collapsedCards);
     if (newCollapsed.has(id)) {
       newCollapsed.delete(id);
@@ -1372,7 +1372,7 @@ export default function CardBasedTransactionForm({
     }));
   };
 
-  const updateOutputCard = (id: number, field: string, value: any) => {
+  const updateOutputCard = (id: string, field: string, value: any) => {
     setOutputCards(prev => prev.map(card => {
       if (card.id === id) {
         const updatedCard = { ...card, [field]: value };
