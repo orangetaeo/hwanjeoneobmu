@@ -36,7 +36,7 @@ export default function TransactionSummary({
     return acc;
   }, {} as Record<string, number>);
 
-  const allCurrencies = [...new Set([...Object.keys(inputSummary), ...Object.keys(outputSummary)])];
+  const allCurrencies = Array.from(new Set([...Object.keys(inputSummary), ...Object.keys(outputSummary)]));
 
   return (
     <Card>
@@ -104,7 +104,7 @@ export default function TransactionSummary({
                     <span className="text-blue-600">
                       입금: {(inputSummary[currency] || 0).toLocaleString()}
                     </span>
-                    <span className="text-green-600">
+                    <span className="text-green-600 text-base font-medium">
                       출금: {(outputSummary[currency] || 0).toLocaleString()}
                     </span>
                   </div>

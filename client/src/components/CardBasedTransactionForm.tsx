@@ -531,20 +531,23 @@ export default function CardBasedTransactionForm({
       }
     }
     
-    updateOutputCard(card.id, 'denominations', adjustedDenoms);
-    
+    // 부족한 수량이 있으면 권종 분배를 하지 않고 경고만 표시
     if (remaining > 0) {
       toast({
-        title: "자동 조정 완료",
-        description: `보유량 내에서 조정했습니다. ${remaining.toLocaleString()} ${card.currency}가 부족합니다.`,
+        title: "권종 부족",
+        description: `${remaining.toLocaleString()} ${card.currency}가 부족합니다. 거래를 진행할 수 없습니다.`,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "자동 조정 완료",
-        description: "보유량에 맞춰 권종을 조정했습니다.",
-      });
+      // 권종 분배를 업데이트하지 않음
+      return;
     }
+    
+    // 완전히 조정 가능한 경우에만 업데이트
+    updateOutputCard(card.id, 'denominations', adjustedDenoms);
+    toast({
+      title: "자동 조정 완료",
+      description: "보유량에 맞춰 권종을 조정했습니다.",
+    });
   };
 
   // 자동 조정 시스템 - 목표 초과 시 재분배
@@ -2617,7 +2620,8 @@ export default function CardBasedTransactionForm({
                               <div className="text-xs text-yellow-700 space-y-1">
                                 <div>원래 금액: {originalAmount.toLocaleString()} VND</div>
                                 <div>처리 금액: {(originalAmount - floorDiff).toLocaleString()} VND</div>
-                                <div className="font-medium text-yellow-800">
+                                {/* 사업자용 수익 정보는 숨김 처리 */}
+                                <div className="font-medium text-yellow-800 hidden">
                                   차액: {floorDiff.toLocaleString()} VND (사업자 수익)
                                 </div>
                               </div>
