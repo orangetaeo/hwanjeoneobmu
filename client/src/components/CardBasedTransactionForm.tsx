@@ -1218,7 +1218,7 @@ export default function CardBasedTransactionForm({
                     {(() => {
                       // 보상카드인 경우 원래 통화와 금액 표시
                       if (conn.toCard.isCompensation && conn.toCard.originalCurrency && conn.toCard.originalAmount) {
-                        return `보상카드: ${conn.toCard.originalAmount} ${conn.toCard.originalCurrency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency} (재고 부족)`;
+                        return `${formatCurrency(conn.inputAmount, conn.fromCard.currency)} ${conn.fromCard.currency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency} (재고부족 ${conn.toCard.originalAmount} ${conn.toCard.originalCurrency} 보상)`;
                       }
                       // 일반 카드 표시
                       return `${formatCurrency(conn.inputAmount, conn.fromCard.currency)} ${conn.fromCard.currency} → ${formatCurrency(conn.outputAmount, conn.toCard.currency)} ${conn.toCard.currency}`;
@@ -3061,11 +3061,11 @@ export default function CardBasedTransactionForm({
                           <Badge className="bg-blue-100 text-blue-800 text-xs">실시간</Badge>
                         </div>
                         
-                        {showSellRates && (
-                        <div className="grid grid-cols-1 gap-2">
+                        {showSellRates && inputCards.length > 0 && (
+                        <div className="grid grid-cols-1 gap-2 mt-2 p-3 bg-white border rounded-lg">
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-blue-700 font-medium">
-                              {inputCards[0].currency} → {card.currency}
+                              {inputCards[0].currency} → {card.currency} 환율
                             </span>
                             <span className="text-lg font-bold text-blue-900">
                               {(() => {
@@ -3080,6 +3080,16 @@ export default function CardBasedTransactionForm({
                                 // USD → KRW의 경우 일반 표시
                                 if (inputCards[0].currency === 'USD' && card.currency === 'KRW') {
                                   return `1 USD = ${Math.round(rate).toLocaleString()} KRW`;
+                                }
+                                
+                                // KRW → VND의 경우
+                                if (inputCards[0].currency === 'KRW' && card.currency === 'VND') {
+                                  return `1 KRW = ${rate.toFixed(2)} VND`;
+                                }
+                                
+                                // USD → VND의 경우
+                                if (inputCards[0].currency === 'USD' && card.currency === 'VND') {
+                                  return `1 USD = ${Math.round(rate).toLocaleString()} VND`;
                                 }
                                 
                                 // 기타 통화 쌍
@@ -3220,7 +3230,7 @@ export default function CardBasedTransactionForm({
                                         const amount = parseInt(denom) * count;
                                         return (
                                           <div key={denom} className="flex justify-between">
-                                            <span>{formatDenomination(denom, 'VND')}: {count}장</span>
+                                            <span>{denom === '500000' ? '50만동' : denom === '200000' ? '20만동' : denom === '100000' ? '10만동' : denom === '50000' ? '5만동' : denom === '20000' ? '2만동' : denom === '10000' ? '1만동' : denom === '5000' ? '5천동' : denom === '1000' ? '1천동' : `${denom}동`}: {count}장</span>
                                             <span className="font-medium text-blue-700">
                                               {amount.toLocaleString()}동
                                             </span>
@@ -3244,40 +3254,63 @@ export default function CardBasedTransactionForm({
                         )}
                         
                         {/* 권종별 분배 미리보기 (환율 정보와 함께 표시) */}
-                        {showSellRates && card.currency === 'VND' && card.amount && (
-                          <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg">
-                            <div className="text-xs font-medium text-emerald-700 mb-2">💰 예상 권종별 분배</div>
+                        {showSellRates && card.currency === 'VND' && card.amount && inputCards.length > 0 && (
+                          <div className="mt-2 p-3 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg">
+                            <div className="text-sm font-medium text-emerald-700 mb-3 flex items-center gap-2">
+                              <span>💰</span>
+                              <span>예상 권종별 분배</span>
+                              <span className="text-xs text-emerald-600">({inputCards[0].currency} → VND)</span>
+                            </div>
                             {(() => {
                               const targetAmount = parseCommaFormattedNumber(card.amount);
+                              console.log('VND 분배 미리보기:', { targetAmount, cardAmount: card.amount, showSellRates });
+                              
                               if (targetAmount > 0) {
                                 const breakdown = calculateVNDBreakdown(targetAmount);
                                 const denomOrder = ['500000', '200000', '100000', '50000', '20000', '10000', '5000', '1000'];
                                 
                                 return (
-                                  <div className="grid grid-cols-2 gap-1 text-xs">
-                                    {denomOrder.map(denom => {
-                                      const count = breakdown[denom] || 0;
-                                      if (count === 0) return null;
-                                      const amount = parseInt(denom) * count;
-                                      return (
-                                        <div key={denom} className="flex justify-between bg-white rounded px-1 py-0.5">
-                                          <span className="text-emerald-600">{denom === '500000' ? '50만동' : denom === '200000' ? '20만동' : denom === '100000' ? '10만동' : denom === '50000' ? '5만동' : denom === '20000' ? '2만동' : denom === '10000' ? '1만동' : denom === '5000' ? '5천동' : denom === '1000' ? '1천동' : `${denom}동`}: {count}장</span>
-                                          <span className="font-medium text-emerald-800">
-                                            {amount.toLocaleString()}동
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                    <div className="col-span-2 border-t border-emerald-300 pt-1 mt-1 bg-emerald-100 rounded px-1">
-                                      <div className="flex justify-between font-bold text-emerald-900">
-                                        <span>총 지급액:</span>
-                                        <span>{targetAmount.toLocaleString()}동</span>
+                                  <div className="space-y-2">
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                      {denomOrder.map(denom => {
+                                        const count = breakdown[denom] || 0;
+                                        if (count === 0) return null;
+                                        const amount = parseInt(denom) * count;
+                                        return (
+                                          <div key={denom} className="flex justify-between bg-white rounded-md px-2 py-1 shadow-sm">
+                                            <span className="text-emerald-600 font-medium">
+                                              {denom === '500000' ? '50만동' : 
+                                               denom === '200000' ? '20만동' : 
+                                               denom === '100000' ? '10만동' : 
+                                               denom === '50000' ? '5만동' : 
+                                               denom === '20000' ? '2만동' : 
+                                               denom === '10000' ? '1만동' : 
+                                               denom === '5000' ? '5천동' : 
+                                               denom === '1000' ? '1천동' : `${denom}동`}
+                                            </span>
+                                            <div className="text-right">
+                                              <div className="text-emerald-800 font-bold">{count}장</div>
+                                              <div className="text-xs text-emerald-600">{amount.toLocaleString()}동</div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="border-t border-emerald-300 pt-2 mt-2">
+                                      <div className="flex justify-between items-center bg-emerald-100 rounded-md px-2 py-1.5">
+                                        <span className="font-bold text-emerald-900">총 지급액:</span>
+                                        <span className="font-bold text-emerald-900 text-lg">{targetAmount.toLocaleString()}동</span>
                                       </div>
                                     </div>
                                   </div>
                                 );
                               }
-                              return <div className="text-emerald-600 text-xs">금액을 입력하세요</div>;
+                              return (
+                                <div className="text-center py-4">
+                                  <div className="text-emerald-600 text-sm">VND 금액을 입력하면</div>
+                                  <div className="text-emerald-600 text-sm">권종별 분배를 미리 확인할 수 있습니다</div>
+                                </div>
+                              );
                             })()}
                           </div>
                         )}
