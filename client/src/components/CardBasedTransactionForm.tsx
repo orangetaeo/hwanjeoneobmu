@@ -2218,9 +2218,9 @@ export default function CardBasedTransactionForm({
         </div>
 
         {/* 연결 화살표 (큰 화면에서만 표시) */}
-        <div className="hidden xl:flex justify-center items-center my-8">
-          <div className="bg-white border-2 border-primary rounded-full p-3 shadow-lg">
-            <ArrowRight className="text-primary" size={24} />
+        <div className="hidden xl:flex justify-center items-center my-4">
+          <div className="bg-white border-2 border-primary rounded-full p-2 shadow-md">
+            <ArrowRight className="text-primary" size={20} />
           </div>
         </div>
 
