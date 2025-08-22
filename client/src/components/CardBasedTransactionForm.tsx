@@ -132,11 +132,13 @@ export default function CardBasedTransactionForm({
   const bankNameInputRef = useRef<HTMLInputElement>(null);
   
   // 익명 거래 설정
-  const [isAnonymousTransaction, setIsAnonymousTransaction] = useState(false);
+  const [isAnonymousTransaction, setIsAnonymousTransaction] = useState(true);
 
   // UI 상태
   const [collapsedCards, setCollapsedCards] = useState<Set<number>>(new Set());
   const [showExchangeRates, setShowExchangeRates] = useState(true);
+  const [showSystemSettings, setShowSystemSettings] = useState(false);
+  const [showSellRates, setShowSellRates] = useState(false);
 
   // 자동 환율 계산 활성화 여부
   const [autoCalculation, setAutoCalculation] = useState(true);
@@ -152,23 +154,64 @@ export default function CardBasedTransactionForm({
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  // 자동 포커스 기능 - 출금 카드에서 실제 계좌를 선택했을 때 고객 계좌 정보 첫 필드에 포커스
+  // 컴포넌트 초기화 시 기본 카드들 추가
   useEffect(() => {
-    const hasSelectedAccount = outputCards.some(card => card.type === 'account' && card.accountId);
-    if (hasSelectedAccount && bankNameInputRef.current) {
-      // 약간의 딜레이를 줘서 DOM이 완전히 렌더링된 후 포커스
+    if (inputCards.length === 0 && outputCards.length === 0) {
+      // 기본 입금 카드 추가 (KRW 현금)
+      const defaultInputCard: TransactionCard = {
+        id: Date.now(),
+        type: 'cash',
+        currency: 'KRW',
+        amount: '',
+        accountId: '',
+        denominations: {},
+        isValid: false,
+        errors: []
+      };
+      
+      // 기본 출금 카드 추가 (VND 현금)
+      const defaultOutputCard: TransactionCard = {
+        id: Date.now() + 1,
+        type: 'cash',
+        currency: 'VND',
+        amount: '',
+        accountId: '',
+        denominations: {},
+        isValid: false,
+        errors: []
+      };
+      
+      setInputCards([defaultInputCard]);
+      setOutputCards([defaultOutputCard]);
+    }
+  }, []);
+
+  // 자동 포커스 기능 개선 - 계좌 선택 시에만 실행되도록 최적화
+  const [previousOutputCards, setPreviousOutputCards] = useState<TransactionCard[]>([]);
+  
+  useEffect(() => {
+    // 새로 계좌가 선택된 경우에만 포커스
+    const newlySelectedAccount = outputCards.find((card, index) => {
+      const previousCard = previousOutputCards[index];
+      return card.type === 'account' && card.accountId && 
+             (!previousCard || previousCard.type !== 'account' || !previousCard.accountId);
+    });
+    
+    if (newlySelectedAccount && bankNameInputRef.current) {
       setTimeout(() => {
         bankNameInputRef.current?.focus();
       }, 100);
     }
-  }, [outputCards]);
+    
+    setPreviousOutputCards([...outputCards]);
+  }, [outputCards, previousOutputCards]);
 
   // 카드 추가 함수들
   const addInputCard = () => {
     const newCard: TransactionCard = {
       id: Date.now(),
       type: 'cash',
-      currency: 'VND',
+      currency: 'KRW',
       amount: '',
       accountId: '',
       denominations: {},
@@ -182,7 +225,7 @@ export default function CardBasedTransactionForm({
     const newCard: TransactionCard = {
       id: Date.now(),
       type: 'cash', 
-      currency: 'KRW',
+      currency: 'VND',
       amount: '',
       accountId: '',
       denominations: {},
@@ -750,35 +793,58 @@ export default function CardBasedTransactionForm({
 
   // 실시간 잔고 추적 계산
   const calculateBalanceTracking = () => {
-    const balanceChanges: Record<string, { current: number; projected: number; change: number }> = {};
+    const balanceChanges: Record<string, { 
+      current: number; 
+      projected: number; 
+      change: number; 
+      assetName?: string; 
+      changeType: 'increase' | 'decrease' 
+    }> = {};
     
-    // 현재 잔고 계산
+    // 현재 잔고 계산 - 모든 자산 유형 지원
     assets.forEach(asset => {
-      if (asset.type === 'cash' || asset.type === 'bank_account') {
-        balanceChanges[`${asset.currency}_${asset.type}`] = {
-          current: asset.balance,
-          projected: asset.balance,
-          change: 0
-        };
+      if (asset.type === 'cash' || asset.type === 'bank_account' || asset.type === 'exchange_account') {
+        const assetType = asset.type === 'cash' ? 'cash' : 'account';
+        const key = `${asset.currency}_${assetType}`;
+        
+        if (!balanceChanges[key]) {
+          balanceChanges[key] = {
+            current: asset.balance,
+            projected: asset.balance,
+            change: 0,
+            assetName: asset.name,
+            changeType: 'increase'
+          };
+        } else {
+          balanceChanges[key].current += asset.balance;
+          balanceChanges[key].projected += asset.balance;
+        }
       }
     });
     
-    // 예상 잔고 변화 계산
+    // 예상 잔고 변화 계산 - 입금 카드 (사업자가 지급하는 것)
     inputCards.forEach(card => {
-      const key = `${card.currency}_${card.type}`;
+      const assetType = card.type === 'cash' ? 'cash' : 'account';
+      const key = `${card.currency}_${assetType}`;
       const amount = parseCommaFormattedNumber(card.amount);
-      if (balanceChanges[key]) {
+      
+      if (balanceChanges[key] && amount > 0) {
         balanceChanges[key].projected -= amount;
         balanceChanges[key].change -= amount;
+        balanceChanges[key].changeType = 'decrease';
       }
     });
     
+    // 예상 잔고 변화 계산 - 출금 카드 (사업자가 수취하는 것)
     outputCards.forEach(card => {
-      const key = `${card.currency}_${card.type}`;
+      const assetType = card.type === 'cash' ? 'cash' : 'account';
+      const key = `${card.currency}_${assetType}`;
       const amount = parseCommaFormattedNumber(card.amount);
-      if (balanceChanges[key]) {
+      
+      if (balanceChanges[key] && amount > 0) {
         balanceChanges[key].projected += amount;
         balanceChanges[key].change += amount;
+        balanceChanges[key].changeType = 'increase';
       }
     });
     
@@ -878,7 +944,7 @@ export default function CardBasedTransactionForm({
                     {conn.fromCard.currency} → {conn.toCard.currency}
                   </span>
                   <span className="font-medium">
-                    {formatCurrency(conn.inputAmount, conn.fromCard.currency)} → {formatCurrency(conn.outputAmount, conn.toCard.currency)}
+                    {formatCurrency(conn.inputAmount, conn.fromCard.currency)} {conn.fromCard.currency} → {formatCurrency(conn.outputAmount, conn.toCard.currency)} {conn.toCard.currency}
                   </span>
                 </div>
               ))}
@@ -1960,7 +2026,18 @@ export default function CardBasedTransactionForm({
           {/* 시스템 설정 옵션들 */}
           <div className="space-y-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-semibold text-blue-800">⚙️ 시스템 설정</h4>
+              <div className="flex items-center space-x-2">
+                <h4 className="text-sm font-semibold text-blue-800">⚙️ 시스템 설정</h4>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSystemSettings(!showSystemSettings)}
+                  className="h-6 w-6 p-0"
+                >
+                  {showSystemSettings ? <EyeOff size={12} /> : <Eye size={12} />}
+                </Button>
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -1973,6 +2050,8 @@ export default function CardBasedTransactionForm({
               </Button>
             </div>
             
+            {showSystemSettings && (
+            <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* 자동 환율 계산 */}
               <div className="flex items-center space-x-2 p-2 bg-white rounded border">
@@ -2027,6 +2106,8 @@ export default function CardBasedTransactionForm({
               💡 팁: 자동 환율 계산은 입금 금액 변경 시 출금 금액을 자동으로 계산합니다. 
               자동 조정은 권종 분배가 목표를 초과할 때 자동으로 재분배합니다.
             </div>
+            </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -2355,10 +2436,22 @@ export default function CardBasedTransactionForm({
                       {/* 기본 환율 정보 */}
                       <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg shadow-sm">
                         <div className="flex items-center justify-between mb-2">
-                          <div className="text-sm font-bold text-blue-800">💱 매매시세</div>
+                          <div className="flex items-center space-x-2">
+                            <div className="text-sm font-bold text-blue-800">💱 매매시세</div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowSellRates(!showSellRates)}
+                              className="h-6 w-6 p-0"
+                            >
+                              {showSellRates ? <EyeOff size={12} /> : <Eye size={12} />}
+                            </Button>
+                          </div>
                           <Badge className="bg-blue-100 text-blue-800 text-xs">실시간</Badge>
                         </div>
                         
+                        {showSellRates && (
                         <div className="grid grid-cols-1 gap-2">
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-blue-700 font-medium">
@@ -2444,6 +2537,7 @@ export default function CardBasedTransactionForm({
                             </div>
                           )}
                         </div>
+                        )}
                       </div>
                       
                       {/* VND Floor 차액 표시 */}
@@ -2672,6 +2766,13 @@ export default function CardBasedTransactionForm({
                   const [currency, type] = key.split('_');
                   const isIncrease = balance.change > 0;
                   
+                  // 통화 단위 표시 개선
+                  const currencyDisplay = currency === 'KRW' ? '원' : currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency;
+                  
+                  // 변화 유형 표시 개선 (사업자 관점)
+                  const changeLabel = isIncrease ? '수취' : '지급';
+                  const changeDescription = `${currencyDisplay} ${type === 'cash' ? '현금' : '계좌'} ${changeLabel}`;
+                  
                   return (
                     <div key={key} className={`p-3 rounded-lg border ${
                       isIncrease ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
@@ -2683,9 +2784,16 @@ export default function CardBasedTransactionForm({
                         <Badge className={`text-xs ${
                           isIncrease ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {isIncrease ? '입금' : '출금'}
+                          {changeLabel}
                         </Badge>
                       </div>
+                      
+                      {/* 자산명 표시 (계좌의 경우) */}
+                      {balance.assetName && type === 'account' && (
+                        <div className="text-xs text-gray-500 mb-2">
+                          {balance.assetName}
+                        </div>
+                      )}
                       
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
