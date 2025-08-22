@@ -1285,7 +1285,7 @@ export default function CardBasedTransactionForm({
         </svg>
         
         {/* 연결 정보 표시 */}
-        <div className="relative z-20 pt-3 bg-gradient-to-r from-blue-50 to-green-50 p-3 rounded-lg border">
+        <div className="relative z-0 pt-3 bg-gradient-to-r from-blue-50 to-green-50 p-3 rounded-lg border">
           <div className="text-center">
             <div className="text-sm font-medium text-gray-700 mb-2">💫 카드 연결 흐름</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -4131,7 +4131,7 @@ export default function CardBasedTransactionForm({
       })()}
 
       {/* 실행 버튼 */}
-      <div className="flex justify-end space-x-4 sticky bottom-4 bg-white p-4 rounded-lg shadow-lg border">
+      <div className="flex justify-end space-x-4 sticky bottom-4 bg-white p-4 rounded-lg shadow-lg border z-50">
         <Button variant="outline" onClick={onClose} className="min-w-24">
           취소
         </Button>
