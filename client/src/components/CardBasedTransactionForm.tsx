@@ -364,6 +364,12 @@ export default function CardBasedTransactionForm({
             finalRate = 1 / rateValue;
           }
           
+          // KRW → USD의 경우 소수점 표시 개선
+          if (fromCurrency === 'KRW' && toCurrency === 'USD') {
+            const formattedRate = finalRate >= 0.001 ? finalRate : parseFloat(finalRate.toFixed(6));
+            console.log(`환전상 일반 시세 적용: ${fromCurrency}→${toCurrency} (${rateType}) = ${formattedRate}`);
+            return formattedRate;
+          }
           console.log(`환전상 일반 시세 적용: ${fromCurrency}→${toCurrency} (${rateType}) = ${finalRate}`);
           return finalRate;
         }
@@ -864,13 +870,23 @@ export default function CardBasedTransactionForm({
       riskLevel = riskLevel === 'low' ? 'medium' : 'high';
     }
     
-    // 보유량 부족 확인
-    const hasInventoryIssues = [...inputCards, ...outputCards].some(card => {
+    // 보유량 부족 확인 (보상카드로 해결되지 않은 경우만)
+    const hasUnresolvedInventoryIssues = [...inputCards, ...outputCards].some(card => {
+      // 보상카드는 위험 평가에서 제외
+      if (card.isCompensation) return false;
+      
       const validation = validateInventory(card);
-      return !validation.isValid;
+      if (validation.isValid) return false;
+      
+      // 이 카드에 대한 보상카드가 있는지 확인
+      const hasCompensation = outputCards.some(compCard => 
+        compCard.isCompensation && compCard.originalCardId === card.id
+      );
+      
+      return !hasCompensation; // 보상카드가 없으면 해결되지 않은 문제
     });
     
-    if (hasInventoryIssues) {
+    if (hasUnresolvedInventoryIssues) {
       reasons.push('보유량 부족 위험이 있습니다');
       riskLevel = 'high';
     }
@@ -1830,8 +1846,11 @@ export default function CardBasedTransactionForm({
     
     if (!allAccountsSelected) return false;
     
-    // 보유 수량 검증
+    // 보유 수량 검증 (보상카드 제외)
     const allInventoryValid = [...inputCards, ...outputCards].every(card => {
+      // 보상카드는 재고 검증에서 제외
+      if (card.isCompensation) return true;
+      
       const validation = validateInventory(card);
       return validation.isValid;
     });
@@ -3040,10 +3059,17 @@ export default function CardBasedTransactionForm({
                               {inputCards[0].currency} → {card.currency}
                             </span>
                             <span className="text-lg font-bold text-blue-900">
-                              {getExchangeRate(inputCards[0].currency, card.currency).toLocaleString('ko-KR', {
-                                minimumFractionDigits: card.currency === 'VND' ? 0 : 2,
-                                maximumFractionDigits: card.currency === 'VND' ? 0 : 2
-                              })}
+                              {(() => {
+                                const rate = getExchangeRate(inputCards[0].currency, card.currency);
+                                // KRW → USD의 경우 특별 처리
+                                if (inputCards[0].currency === 'KRW' && card.currency === 'USD') {
+                                  return rate >= 0.001 ? rate.toFixed(4) : rate.toFixed(6);
+                                }
+                                return rate.toLocaleString('ko-KR', {
+                                  minimumFractionDigits: card.currency === 'VND' ? 0 : 2,
+                                  maximumFractionDigits: card.currency === 'VND' ? 0 : 2
+                                });
+                              })()}
                             </span>
                           </div>
                           
@@ -3439,19 +3465,37 @@ export default function CardBasedTransactionForm({
                   <div className="space-y-1">
                     <div className="text-gray-600">총 입금 금액:</div>
                     <div className="font-medium text-green-600">
-                      {Object.entries(balanceTracking)
-                        .filter(([key, b]) => b.change > 0)
-                        .reduce((sum, [key, b]) => sum + Math.abs(b.change), 0)
-                        .toLocaleString()} {Object.entries(balanceTracking).find(([key, b]) => b.change > 0)?.[0].split('_')[0] || 'KRW'}
+                      {(() => {
+                        const inputChanges = Object.entries(balanceTracking).filter(([key, b]) => b.change > 0);
+                        const inputSummary: Record<string, number> = {};
+                        
+                        inputChanges.forEach(([key, b]) => {
+                          const currency = key.split('_')[0];
+                          inputSummary[currency] = (inputSummary[currency] || 0) + Math.abs(b.change);
+                        });
+                        
+                        return Object.entries(inputSummary)
+                          .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
+                          .join(', ');
+                      })()}
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-gray-600">총 출금 금액:</div>
                     <div className="font-medium text-red-600">
-                      {Object.entries(balanceTracking)
-                        .filter(([key, b]) => b.change < 0)
-                        .reduce((sum, [key, b]) => sum + Math.abs(b.change), 0)
-                        .toLocaleString()} {Object.entries(balanceTracking).find(([key, b]) => b.change < 0)?.[0].split('_')[0] || 'KRW'}
+                      {(() => {
+                        const outputChanges = Object.entries(balanceTracking).filter(([key, b]) => b.change < 0);
+                        const outputSummary: Record<string, number> = {};
+                        
+                        outputChanges.forEach(([key, b]) => {
+                          const currency = key.split('_')[0];
+                          outputSummary[currency] = (outputSummary[currency] || 0) + Math.abs(b.change);
+                        });
+                        
+                        return Object.entries(outputSummary)
+                          .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
+                          .join(', ');
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -59,10 +59,10 @@ export default function TransactionSummary({
                 {inputs.map((input, index) => (
                   <div key={input.id} className="flex justify-between items-center">
                     <span className="text-sm">
-                      {input.type === 'cash' ? '현금' : '계좌'} #{index + 1}
+                      {input.type === 'cash' ? '현금' : '계좌'}카드 1개
                     </span>
                     <Badge variant="outline">
-                      {input.amount.toLocaleString()} {input.currency}
+                      {input.amount.toLocaleString()} {input.currency === 'USD' ? '달러' : input.currency === 'KRW' ? '원' : input.currency === 'VND' ? '동' : input.currency}
                     </Badge>
                   </div>
                 ))}
@@ -77,16 +77,31 @@ export default function TransactionSummary({
               <p className="text-sm text-gray-400">출금 정보가 없습니다</p>
             ) : (
               <div className="space-y-1">
-                {outputs.map((output, index) => (
-                  <div key={output.id} className="flex justify-between items-center">
-                    <span className="text-sm">
-                      {output.type === 'cash' ? '현금' : '계좌'} #{index + 1} ({output.percentage}%)
-                    </span>
-                    <Badge variant="outline">
-                      {output.amount.toLocaleString()} {output.currency}
-                    </Badge>
-                  </div>
-                ))}
+                {(() => {
+                  const normalCards = outputs.filter(output => !output.isCompensation);
+                  const compensationCards = outputs.filter(output => output.isCompensation);
+                  
+                  return (
+                    <>
+                      {normalCards.map((output, index) => (
+                        <div key={output.id} className="flex justify-between items-center">
+                          <span className="text-sm">출금카드 1개</span>
+                          <Badge variant="outline">
+                            {output.amount.toLocaleString()} {output.currency === 'USD' ? '달러' : output.currency === 'KRW' ? '원' : output.currency === 'VND' ? '동' : output.currency}
+                          </Badge>
+                        </div>
+                      ))}
+                      {compensationCards.map((output, index) => (
+                        <div key={output.id} className="flex justify-between items-center">
+                          <span className="text-sm">보상카드 1개</span>
+                          <Badge variant="outline">
+                            {output.amount.toLocaleString()} {output.currency === 'USD' ? '달러' : output.currency === 'KRW' ? '원' : output.currency === 'VND' ? '동' : output.currency}
+                          </Badge>
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
