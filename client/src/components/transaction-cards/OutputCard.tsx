@@ -241,7 +241,10 @@ export default function OutputCard({
                       type="number"
                       placeholder="0"
                       value={output.denominations?.[denom.value] || ''}
-                      onChange={(e) => updateDenomination(denom.value, e.target.value)}
+                      onChange={(e) => {
+                        console.log('Input onChange triggered:', { denom: denom.value, value: e.target.value });
+                        updateDenomination(denom.value, e.target.value);
+                      }}
                       data-testid={`input-output-denomination-${output.id}-${denom.value}`}
                     />
                   </div>
@@ -256,7 +259,8 @@ export default function OutputCard({
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">출금 금액:</span>
             <Badge variant="secondary" className="text-sm">
-              {Number(output.amount).toLocaleString()} {output.currency}
+              {console.log('Rendering amount:', output.amount, 'type:', typeof output.amount)}
+              {Number(output.amount || 0).toLocaleString()} {output.currency}
             </Badge>
           </div>
         </div>
