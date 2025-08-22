@@ -2972,7 +2972,7 @@ export default function CardBasedTransactionForm({
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <span className="text-gray-600 block text-xs">입금 카드</span>
                   <div className="text-xs font-bold text-green-700">
-                    {totalInputAmount > 0 ? `${totalInputAmount.toLocaleString()} ${inputCards[0]?.currency === 'KRW' ? '원' : inputCards[0]?.currency === 'VND' ? '동' : inputCards[0]?.currency || 'KRW'}` : '0 원'}
+                    {totalInputAmount > 0 ? `${totalInputAmount.toLocaleString()} 원` : '0 원'}
                   </div>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm md:hidden">
@@ -2981,7 +2981,7 @@ export default function CardBasedTransactionForm({
                     {Object.entries(outputTotalsByCurrency).length > 0 ? 
                       Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
                         <div key={currency}>
-                          {amount.toLocaleString()} {currency === 'KRW' ? '원' : currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency}
+                          {amount.toLocaleString()} {currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency === 'KRW' ? '원' : currency}
                         </div>
                       )) : 
                       <span>0 동</span>
@@ -2995,7 +2995,7 @@ export default function CardBasedTransactionForm({
                   {Object.entries(outputTotalsByCurrency).length > 0 ? 
                     Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
                       <div key={currency}>
-                        {amount.toLocaleString()} {currency === 'KRW' ? '원' : currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency}
+                        {amount.toLocaleString()} {currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency === 'KRW' ? '원' : currency}
                       </div>
                     )) : 
                     <span>0 동</span>
