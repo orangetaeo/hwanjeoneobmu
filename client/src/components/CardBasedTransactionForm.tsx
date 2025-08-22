@@ -1532,14 +1532,17 @@ export default function CardBasedTransactionForm({
     }
   };
 
-  // 보상용 새 출금카드 생성
+  // 보상용 새 출금카드 생성 (권종별 분배 포함)
   const createCompensationCard = (currency: string, amount: number, originalCard: TransactionCard, shortageInfo: { denom: string; shortfall: number }) => {
+    // 보상 금액에 대한 권종별 분배 자동 계산
+    const compensationDenominations = calculateOptimalDenominations(currency, amount);
+    
     const newCard: TransactionCard = {
       id: `compensation-${Date.now()}`,
       type: 'cash',
       currency: currency,
       amount: amount.toString(),
-      denominations: {},
+      denominations: compensationDenominations,
       isCompensation: true,
       originalCardId: originalCard.id,
       compensationReason: `${originalCard.currency} ${shortageInfo.denom}권 ${shortageInfo.shortfall}장 부족으로 인한 보상`
@@ -1551,9 +1554,38 @@ export default function CardBasedTransactionForm({
     // 사용자에게 알림
     toast({
       title: "재고 부족 보상",
-      description: `${originalCard.currency} ${shortageInfo.denom}권 부족으로 ${currency} ${amount.toLocaleString()}으로 보상합니다.`,
+      description: `${originalCard.currency} ${shortageInfo.denom}권 부족으로 ${currency} ${amount.toLocaleString()}${currency === 'KRW' ? '원' : currency === 'VND' ? '동' : '달러'}로 보상합니다.`,
       duration: 5000,
     });
+  };
+
+  // 보상 금액에 대한 최적 권종별 분배 계산
+  const calculateOptimalDenominations = (currency: string, amount: number): Record<string, number> => {
+    const denominations: Record<string, number> = {};
+    let remainingAmount = amount;
+    
+    // 통화별 권종 정의 (큰 액면부터)
+    const currencyDenominations: Record<string, number[]> = {
+      'VND': [500000, 200000, 100000, 50000, 20000, 10000, 5000, 2000, 1000],
+      'KRW': [50000, 10000, 5000, 1000],
+      'USD': [100, 50, 20, 10, 5, 1]
+    };
+    
+    const availableDenoms = currencyDenominations[currency] || [];
+    
+    // 큰 권종부터 차례로 계산
+    for (const denom of availableDenoms) {
+      if (remainingAmount >= denom) {
+        const count = Math.floor(remainingAmount / denom);
+        if (count > 0) {
+          denominations[denom.toString()] = count;
+          remainingAmount -= count * denom;
+        }
+      }
+    }
+    
+    console.log(`보상 권종별 분배 계산: ${currency} ${amount} → `, denominations);
+    return denominations;
   };
 
   // 카드를 보상 처리된 것으로 표시
