@@ -1701,7 +1701,7 @@ export default function CardBasedTransactionForm({
       id: `compensation-${Date.now()}`,
       type: 'cash',
       currency: currency,
-      amount: amount.toString(),
+      amount: amount.toLocaleString(), // 콤마 포함한 형태로 저장
       denominations: compensationDenominations,
       isCompensation: true,
       originalCardId: originalCard.id,
