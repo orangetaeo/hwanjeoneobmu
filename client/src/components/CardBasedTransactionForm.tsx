@@ -2675,7 +2675,12 @@ export default function CardBasedTransactionForm({
                     {/* 통화 선택 */}
                     <div className="space-y-2">
                       <Label className="text-sm">통화</Label>
-                      <Select value={card.currency} onValueChange={(value) => updateInputCard(card.id, 'currency', value)}>
+                      <Select value={card.currency} onValueChange={(value) => {
+                        // 통화 변경 시 기존 금액과 권종별 분배 초기화
+                        updateInputCard(card.id, 'currency', value);
+                        updateInputCard(card.id, 'amount', '');
+                        updateInputCard(card.id, 'denominations', {});
+                      }}>
                         <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
@@ -2899,7 +2904,12 @@ export default function CardBasedTransactionForm({
                     {/* 통화 선택 */}
                     <div className="space-y-2">
                       <Label className="text-sm">통화</Label>
-                      <Select value={card.currency} onValueChange={(value) => updateOutputCard(card.id, 'currency', value)}>
+                      <Select value={card.currency} onValueChange={(value) => {
+                        // 통화 변경 시 기존 금액과 권종별 분배 초기화
+                        updateOutputCard(card.id, 'currency', value);
+                        updateOutputCard(card.id, 'amount', '');
+                        updateOutputCard(card.id, 'denominations', {});
+                      }}>
                         <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
