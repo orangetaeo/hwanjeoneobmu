@@ -826,21 +826,8 @@ export default function CardBasedTransactionForm({
       }
     });
     
-    // 예상 잔고 변화 계산 - 입금 카드 (사업자가 지급하는 것)
+    // 예상 잔고 변화 계산 - 입금 카드 (고객이 입금하는 것, 사업자 잔고 증가)
     inputCards.forEach(card => {
-      const assetType = card.type === 'cash' ? 'cash' : 'account';
-      const key = `${card.currency}_${assetType}`;
-      const amount = parseCommaFormattedNumber(card.amount);
-      
-      if (balanceChanges[key] && amount > 0) {
-        balanceChanges[key].projected -= amount;
-        balanceChanges[key].change -= amount;
-        balanceChanges[key].changeType = 'decrease';
-      }
-    });
-    
-    // 예상 잔고 변화 계산 - 출금 카드 (사업자가 수취하는 것)
-    outputCards.forEach(card => {
       const assetType = card.type === 'cash' ? 'cash' : 'account';
       const key = `${card.currency}_${assetType}`;
       const amount = parseCommaFormattedNumber(card.amount);
@@ -849,6 +836,19 @@ export default function CardBasedTransactionForm({
         balanceChanges[key].projected += amount;
         balanceChanges[key].change += amount;
         balanceChanges[key].changeType = 'increase';
+      }
+    });
+    
+    // 예상 잔고 변화 계산 - 출금 카드 (고객이 출금하는 것, 사업자 잔고 감소)
+    outputCards.forEach(card => {
+      const assetType = card.type === 'cash' ? 'cash' : 'account';
+      const key = `${card.currency}_${assetType}`;
+      const amount = parseCommaFormattedNumber(card.amount);
+      
+      if (balanceChanges[key] && amount > 0) {
+        balanceChanges[key].projected -= amount;
+        balanceChanges[key].change -= amount;
+        balanceChanges[key].changeType = 'decrease';
       }
     });
     
@@ -2960,11 +2960,11 @@ export default function CardBasedTransactionForm({
                 </span>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                <span className="text-gray-600 block text-xs">총 출금</span>
+                <span className="text-gray-600 block text-sm font-medium">총 출금</span>
                 <div className="space-y-1">
                   {Object.entries(outputTotalsByCurrency).length > 0 ? 
                     Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
-                      <div key={currency} className="text-sm font-bold text-blue-600">
+                      <div key={currency} className="text-lg font-bold text-blue-600">
                         {formatCurrency(amount, currency)}
                       </div>
                     )) : 
