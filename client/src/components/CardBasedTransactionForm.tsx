@@ -3680,7 +3680,20 @@ export default function CardBasedTransactionForm({
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">보상 금액</span>
                 <span className="text-lg font-bold text-orange-600">
-                  25,000 동
+                  {(() => {
+                    const compensationCards = outputCards.filter(card => card.isCompensation);
+                    if (compensationCards.length === 0) {
+                      return '-';
+                    }
+                    
+                    const totalCompensation = compensationCards.reduce((total, card) => {
+                      const amount = parseCommaFormattedNumber(card.amount) || 0;
+                      return total + amount;
+                    }, 0);
+                    
+                    const currency = compensationCards[0]?.currency || 'VND';
+                    return formatCurrency(totalCompensation, currency);
+                  })()}
                 </span>
               </div>
             </div>
