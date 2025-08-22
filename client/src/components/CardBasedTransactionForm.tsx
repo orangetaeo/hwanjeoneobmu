@@ -1067,7 +1067,8 @@ export default function CardBasedTransactionForm({
             const denomValue = getDenominationValue(updatedCard.currency, denom);
             totalAmount += denomValue * count;
           });
-          updatedCard.amount = totalAmount.toString();
+          // 권종별 계산 결과를 천단위 콤마 포맷팅 적용
+          updatedCard.amount = formatNumberWithCommas(totalAmount.toString());
         }
         
         // 자동 계산이 활성화된 경우 출금 카드 업데이트
@@ -1151,6 +1152,15 @@ export default function CardBasedTransactionForm({
 
   const totalInputAmount = calculateTotalInKRW(inputCards, true);  // 입금 카드는 권종별 계산
   const totalOutputAmount = calculateTotalInKRW(outputCards, false); // 출금 카드는 기존 방식
+
+  // 통화별 출금 총액 계산 (KRW 환산 없이)
+  const outputTotalsByCurrency = outputCards.reduce<Record<string, number>>((totals, card) => {
+    const amount = parseCommaFormattedNumber(card.amount) || 0;
+    if (amount > 0) {
+      totals[card.currency] = (totals[card.currency] || 0) + amount;
+    }
+    return totals;
+  }, {});
 
   // 통화별 계좌 필터링
   const getAccountsByCurrency = (currency: string) => {
@@ -2305,11 +2315,11 @@ export default function CardBasedTransactionForm({
             <div className="flex items-center space-x-2">
               <h3 className="text-xl font-bold text-blue-700">출금</h3>
               <Badge variant="secondary">{outputCards.length}개</Badge>
-              {totalOutputAmount > 0 && (
-                <Badge className="bg-blue-100 text-blue-800">
-                  총 {formatCurrency(totalOutputAmount, outputCards[0]?.currency || 'KRW')}
+              {Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
+                <Badge key={currency} className="bg-blue-100 text-blue-800">
+                  {formatCurrency(amount, currency)}
                 </Badge>
-              )}
+              ))}
             </div>
             <Button 
               variant="outline" 
@@ -2770,7 +2780,7 @@ export default function CardBasedTransactionForm({
                   const currencyDisplay = currency === 'KRW' ? '원' : currency === 'VND' ? '동' : currency === 'USD' ? '달러' : currency;
                   
                   // 변화 유형 표시 개선 (사업자 관점)
-                  const changeLabel = isIncrease ? '수취' : '지급';
+                  const changeLabel = isIncrease ? '입금' : '지급';
                   const changeDescription = `${currencyDisplay} ${type === 'cash' ? '현금' : '계좌'} ${changeLabel}`;
                   
                   return (
@@ -2894,9 +2904,16 @@ export default function CardBasedTransactionForm({
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">총 출금</span>
-                <span className="text-lg font-bold text-blue-600">
-                  {formatCurrency(totalOutputAmount, outputCards[0]?.currency || 'KRW')}
-                </span>
+                <div className="space-y-1">
+                  {Object.entries(outputTotalsByCurrency).length > 0 ? 
+                    Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
+                      <div key={currency} className="text-sm font-bold text-blue-600">
+                        {formatCurrency(amount, currency)}
+                      </div>
+                    )) : 
+                    <span className="text-lg font-bold text-blue-600">-</span>
+                  }
+                </div>
               </div>
             </div>
             
@@ -2940,49 +2957,39 @@ export default function CardBasedTransactionForm({
             })()}
             
             {/* 환율 정보 */}
-            {showExchangeRates && inputCards.length > 0 && outputCards.length > 0 && (
+            {inputCards.length > 0 && outputCards.length > 0 && (
               <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm font-medium text-indigo-800">적용된 환율</div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowExchangeRates(!showExchangeRates)}
+                    className="flex items-center gap-2 text-sm font-medium text-indigo-800 hover:bg-indigo-50"
                   >
-                    <EyeOff size={14} />
+                    <span>적용된 환율</span>
+                    {showExchangeRates ? <EyeOff size={14} /> : <Eye size={14} />}
                   </Button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  {outputCards.map((output, index) => {
-                    const inputCurrency = inputCards[0]?.currency || 'VND';
-                    if (inputCurrency === output.currency) return null;
-                    const rate = getExchangeRate(inputCurrency, output.currency);
-                    return (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span className="font-medium">{inputCurrency} → {output.currency}:</span>
-                        <span className="font-bold text-indigo-600">
-                          {rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                {showExchangeRates && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    {outputCards.map((output, index) => {
+                      const inputCurrency = inputCards[0]?.currency || 'VND';
+                      if (inputCurrency === output.currency) return null;
+                      const rate = getExchangeRate(inputCurrency, output.currency);
+                      return (
+                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="font-medium">{inputCurrency} → {output.currency}:</span>
+                          <span className="font-bold text-indigo-600">
+                            {rate.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* 금액 차이 표시 */}
-            {inputCards.length > 0 && outputCards.length > 0 && totalInputAmount !== totalOutputAmount && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-2 text-yellow-800">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span className="font-medium text-sm">입출금 차액</span>
-                </div>
-                <div className="text-sm text-yellow-700 mt-1">
-                  차액: {formatCurrency(Math.abs(totalInputAmount - totalOutputAmount), inputCards[0]?.currency || 'KRW')} 
-                  {totalInputAmount > totalOutputAmount ? ' (잔액)' : ' (부족)'}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       )}
