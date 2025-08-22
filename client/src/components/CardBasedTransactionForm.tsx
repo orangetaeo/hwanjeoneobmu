@@ -2971,16 +2971,36 @@ export default function CardBasedTransactionForm({
               <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-0">
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                   <span className="text-gray-600 block text-xs">입금 카드</span>
-                  <span className="text-2xl font-bold text-green-700">{inputCards.length}</span>
+                  <span className="text-xs font-bold text-green-700">
+                    {formatCurrency(totalInputAmount, inputCards[0]?.currency || 'KRW')}
+                  </span>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm md:hidden">
                   <span className="text-gray-600 block text-xs">출금 카드</span>
-                  <span className="text-2xl font-bold text-blue-700">{outputCards.length}</span>
+                  <div className="text-xs font-bold text-blue-700">
+                    {Object.entries(outputTotalsByCurrency).length > 0 ? 
+                      Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
+                        <div key={currency}>
+                          {formatCurrency(amount, currency)}
+                        </div>
+                      )) : 
+                      <span>-</span>
+                    }
+                  </div>
                 </div>
               </div>
               <div className="hidden md:block text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">출금 카드</span>
-                <span className="text-2xl font-bold text-blue-700">{outputCards.length}</span>
+                <div className="text-xs font-bold text-blue-700">
+                  {Object.entries(outputTotalsByCurrency).length > 0 ? 
+                    Object.entries(outputTotalsByCurrency).map(([currency, amount]) => (
+                      <div key={currency}>
+                        {formatCurrency(amount, currency)}
+                      </div>
+                    )) : 
+                    <span>-</span>
+                  }
+                </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                 <span className="text-gray-600 block text-xs">총 입금</span>
