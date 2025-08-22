@@ -104,7 +104,7 @@ export default function TransactionSummary({
                     <span className="text-blue-600">
                       입금: {(inputSummary[currency] || 0).toLocaleString()}
                     </span>
-                    <span className="text-green-600 text-base font-medium">
+                    <span className="text-green-600 text-lg font-bold">
                       출금: {(outputSummary[currency] || 0).toLocaleString()}
                     </span>
                   </div>

@@ -3179,7 +3179,7 @@ export default function CardBasedTransactionForm({
                           {formatCurrency(feeAnalysis.breakdown.transferFees, 'KRW')}
                         </div>
                       </div>
-                      <div className="p-2 bg-yellow-50 border border-yellow-200 rounded">
+                      <div className="p-2 bg-yellow-50 border border-yellow-200 rounded hidden">
                         <div className="text-yellow-600 text-xs">VND Floor 수익</div>
                         <div className="font-bold text-yellow-700">
                           {formatCurrency(feeAnalysis.breakdown.vndFloorProfit, 'KRW')}
