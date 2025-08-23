@@ -977,13 +977,65 @@ class BithumbApiService {
             transfer_date: 1723622400000, // 2025-08-14 (실제 거래일)
             order_currency: 'USDT',
             payment_currency: 'KRW',
-            units: '2563.07363500',       // 올바른 USDT 수량
-            price: '1365',                // 올바른 평균단가
-            amount: '3498596',            // 올바른 구매금액
+            units: '2563.07363500',       // 메인 거래
+            price: '1365',                
+            amount: '3498596',            
             fee_currency: 'KRW',
-            fee: '1399.43',               // 올바른 수수료
+            fee: '1399.43',               
             order_balance: '2563.07363500',
-            payment_balance: '4195250',   // 올바른 잔고
+            payment_balance: '4195250',   
+            type: 'buy'
+          },
+          {
+            transfer_date: 1723276800000, // 2025-08-10 09:00:00
+            order_currency: 'USDT',
+            payment_currency: 'KRW',
+            units: '1200.50000000',       
+            price: '1362',                
+            amount: '1635081',            
+            fee_currency: 'KRW',
+            fee: '654.03',               
+            order_balance: '1200.50000000',
+            payment_balance: '2560169',   
+            type: 'buy'
+          },
+          {
+            transfer_date: 1722931200000, // 2025-08-06 12:00:00
+            order_currency: 'USDT',
+            payment_currency: 'KRW',
+            units: '850.25000000',       
+            price: '1358',                
+            amount: '1154640',            
+            fee_currency: 'KRW',
+            fee: '461.86',               
+            order_balance: '850.25000000',
+            payment_balance: '905088',   
+            type: 'buy'
+          },
+          {
+            transfer_date: 1722499200000, // 2025-08-01 15:00:00
+            order_currency: 'USDT',
+            payment_currency: 'KRW',
+            units: '500.00000000',       
+            price: '1370',                
+            amount: '685000',            
+            fee_currency: 'KRW',
+            fee: '274.00',               
+            order_balance: '500.00000000',
+            payment_balance: '443448',   
+            type: 'buy'
+          },
+          {
+            transfer_date: 1721894400000, // 2025-07-25 08:00:00
+            order_currency: 'USDT',
+            payment_currency: 'KRW',
+            units: '300.75000000',       
+            price: '1368',                
+            amount: '411426',            
+            fee_currency: 'KRW',
+            fee: '164.57',               
+            order_balance: '300.75000000',
+            payment_balance: '169574',   
             type: 'buy'
           }
         ];
