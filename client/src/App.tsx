@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import HomePage from "@/pages/HomePage";
-import BithumbSettings from "@/pages/BithumbSettings";
+import ApiSettings from "@/pages/BithumbSettings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,7 +18,8 @@ function Router() {
       <Route path="/transactions" component={HomePage} />
       <Route path="/rates" component={HomePage} />
       <Route path="/exchange-rates" component={HomePage} />
-      <Route path="/bithumb-settings" component={BithumbSettings} />
+      <Route path="/bithumb-settings" component={ApiSettings} />
+      <Route path="/api-settings" component={ApiSettings} />
       <Route component={NotFound} />
     </Switch>
   );

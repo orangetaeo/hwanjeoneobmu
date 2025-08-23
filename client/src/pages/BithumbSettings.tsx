@@ -5,14 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Eye, EyeOff, Key, TestTube, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
+import { Loader2, Eye, EyeOff, Key, TestTube, AlertCircle, CheckCircle, ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface BithumbApiKeys {
   connectKey: string;
   secretKey: string;
   api2Key: string;
+  apiVersion: string;
 }
 
 interface TestResult {
@@ -20,30 +23,53 @@ interface TestResult {
   message: string;
 }
 
-export default function BithumbSettings() {
-  const [formData, setFormData] = useState({
-    connectKey: "",
-    secretKey: "",
-    api2Key: ""
+interface ServiceConfig {
+  [key: string]: {
+    label: string;
+    required: boolean;
+    maxLength?: number;
+    options?: string[];
+  };
+}
+
+interface AllApiKeys {
+  [service: string]: {
+    [key: string]: string;
+  };
+}
+
+interface ServicesResponse {
+  services: string[];
+  configs: {
+    [service: string]: ServiceConfig;
+  };
+}
+
+export default function ApiSettings() {
+  const [selectedService, setSelectedService] = useState<string>("bithumb");
+  const [expandedServices, setExpandedServices] = useState<Record<string, boolean>>({
+    bithumb: true
   });
-  
-  const [showKeys, setShowKeys] = useState({
-    connectKey: false,
-    secretKey: false,
-    api2Key: false
-  });
+  const [formData, setFormData] = useState<Record<string, Record<string, string>>>({});
+  const [showKeys, setShowKeys] = useState<Record<string, Record<string, boolean>>>({});
 
   const queryClient = useQueryClient();
 
-  // 현재 API key 조회
-  const { data: apiKeys, isLoading } = useQuery<BithumbApiKeys>({
-    queryKey: ['/api/bithumb/api-keys'],
+  // 모든 서비스 정보 조회
+  const { data: servicesData, isLoading: servicesLoading } = useQuery<ServicesResponse>({
+    queryKey: ['/api/api-keys/services'],
   });
 
-  // API key 업데이트
+  // 모든 API key 조회
+  const { data: allApiKeys, isLoading: keysLoading } = useQuery<AllApiKeys>({
+    queryKey: ['/api/api-keys'],
+  });
+
+  // 서비스별 API key 업데이트
   const updateMutation = useMutation({
-    mutationFn: async (data: Partial<BithumbApiKeys>) => {
-      const response = await fetch('/api/bithumb/api-keys', {
+    mutationFn: async ({ service, data }: { service: string; data: any }) => {
+      const url = service === 'bithumb' ? '/api/bithumb/api-keys' : `/api/api-keys/${service}`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -54,13 +80,16 @@ export default function BithumbSettings() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       toast({
         title: "성공",
-        description: "API Key가 성공적으로 업데이트되었습니다.",
+        description: result.message || "API Key가 성공적으로 업데이트되었습니다.",
       });
-      setFormData({ connectKey: "", secretKey: "", api2Key: "" });
-      queryClient.invalidateQueries({ queryKey: ['/api/bithumb/api-keys'] });
+      setFormData(prev => ({ ...prev, [variables.service]: {} }));
+      queryClient.invalidateQueries({ queryKey: ['/api/api-keys'] });
+      if (variables.service === 'bithumb') {
+        queryClient.invalidateQueries({ queryKey: ['/api/bithumb/api-keys'] });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -73,8 +102,9 @@ export default function BithumbSettings() {
 
   // API 연결 테스트
   const testMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/bithumb/test-connection', {
+    mutationFn: async (service: string) => {
+      const url = service === 'bithumb' ? '/api/bithumb/test-connection' : `/api/api-keys/${service}/test`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -99,14 +129,17 @@ export default function BithumbSettings() {
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (service: string) => (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 변경할 필드만 포함
-    const updates: Partial<BithumbApiKeys> = {};
-    if (formData.connectKey.trim()) updates.connectKey = formData.connectKey.trim();
-    if (formData.secretKey.trim()) updates.secretKey = formData.secretKey.trim();
-    if (formData.api2Key.trim()) updates.api2Key = formData.api2Key.trim();
+    const serviceFormData = formData[service] || {};
+    const updates: any = {};
+    
+    Object.keys(serviceFormData).forEach(key => {
+      if (serviceFormData[key] && serviceFormData[key].trim()) {
+        updates[key] = serviceFormData[key].trim();
+      }
+    });
     
     if (Object.keys(updates).length === 0) {
       toast({
@@ -117,14 +150,48 @@ export default function BithumbSettings() {
       return;
     }
     
-    updateMutation.mutate(updates);
+    updateMutation.mutate({ service, data: updates });
   };
 
-  const toggleShowKey = (keyType: keyof typeof showKeys) => {
-    setShowKeys(prev => ({ ...prev, [keyType]: !prev[keyType] }));
+  const toggleShowKey = (service: string, keyType: string) => {
+    setShowKeys(prev => ({
+      ...prev,
+      [service]: {
+        ...prev[service],
+        [keyType]: !prev[service]?.[keyType]
+      }
+    }));
   };
 
-  if (isLoading) {
+  const updateFormData = (service: string, key: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [service]: {
+        ...prev[service],
+        [key]: value
+      }
+    }));
+  };
+
+  const toggleServiceExpanded = (service: string) => {
+    setExpandedServices(prev => ({
+      ...prev,
+      [service]: !prev[service]
+    }));
+  };
+
+  const getServiceDisplayName = (service: string) => {
+    const names: Record<string, string> = {
+      bithumb: '빗썸 (Bithumb)',
+      firebase: 'Firebase',
+      binance: '바이낸스 (Binance)',
+      coinGecko: 'CoinGecko',
+      openExchangeRates: 'Open Exchange Rates'
+    };
+    return names[service] || service;
+  };
+
+  if (servicesLoading || keysLoading) {
     return (
       <div className="min-h-screen bg-background p-4 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -147,175 +214,179 @@ export default function BithumbSettings() {
 
         <div className="flex items-center gap-3 mb-6">
           <Key className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">빗썸 API 설정</h1>
+          <h1 className="text-2xl font-bold">API 키 관리</h1>
         </div>
 
-        {/* 현재 API Key 정보 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              현재 설정된 API Key
-            </CardTitle>
-            <CardDescription>
-              보안을 위해 일부만 표시됩니다
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label>Connect Key (32자리)</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input
-                    value={showKeys.connectKey ? apiKeys?.connectKey.replace(/\*/g, '●') || '' : apiKeys?.connectKey || ''}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleShowKey('connectKey')}
-                  >
-                    {showKeys.connectKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              
-              <div>
-                <Label>Secret Key (32자리)</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input
-                    value={showKeys.secretKey ? apiKeys?.secretKey.replace(/\*/g, '●') || '' : apiKeys?.secretKey || ''}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleShowKey('secretKey')}
-                  >
-                    {showKeys.secretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              
-              <div>
-                <Label>API 2.0 Key (48자리)</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input
-                    value={showKeys.api2Key ? apiKeys?.api2Key.replace(/\*/g, '●') || '' : apiKeys?.api2Key || ''}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleShowKey('api2Key')}
-                  >
-                    {showKeys.api2Key ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-            </div>
+        {/* 서비스별 API Key 관리 */}
+        <div className="space-y-4">
+          {servicesData?.services.map((service) => {
+            const serviceConfig = servicesData.configs[service];
+            const serviceKeys = allApiKeys?.[service] || {};
+            const isExpanded = expandedServices[service];
+            
+            return (
+              <Card key={service}>
+                <Collapsible 
+                  open={isExpanded} 
+                  onOpenChange={() => toggleServiceExpanded(service)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Key className="h-5 w-5" />
+                          <div>
+                            <CardTitle className="text-lg">{getServiceDisplayName(service)}</CardTitle>
+                            <CardDescription>
+                              {service === 'bithumb' && `API ${serviceKeys.apiVersion || '1.0'} 버전`}
+                              {service === 'firebase' && 'Firebase 실시간 환율 서비스'}
+                              {service === 'binance' && 'Binance 거래소 API'}
+                              {service === 'coinGecko' && 'CoinGecko 가격 데이터 API'}
+                              {service === 'openExchangeRates' && '환율 데이터 API'}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                      </div>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <CardContent className="space-y-6">
+                      {/* 현재 설정된 키 표시 */}
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm text-muted-foreground">현재 설정된 키</h4>
+                        {Object.keys(serviceConfig).map((key) => {
+                          const config = serviceConfig[key];
+                          const currentValue = serviceKeys[key] || '';
+                          
+                          if (key === 'apiVersion' && service === 'bithumb') {
+                            return (
+                              <div key={key}>
+                                <Label>{config.label}</Label>
+                                <div className="mt-1">
+                                  <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                                    {currentValue || '1.0'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div key={key}>
+                              <Label>{config.label}</Label>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Input
+                                  value={showKeys[service]?.[key] ? currentValue.replace(/\*/g, '●') : currentValue}
+                                  readOnly
+                                  className="font-mono text-sm"
+                                  placeholder={currentValue ? "" : "설정되지 않음"}
+                                />
+                                {currentValue && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => toggleShowKey(service, key)}
+                                  >
+                                    {showKeys[service]?.[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
 
-            <div className="pt-4">
-              <Button
-                onClick={() => testMutation.mutate()}
-                disabled={testMutation.isPending}
-                variant="outline"
-                className="w-full"
-              >
-                {testMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <TestTube className="h-4 w-4 mr-2" />
-                )}
-                API 연결 테스트
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                      {/* API 연결 테스트 */}
+                      <Button
+                        onClick={() => testMutation.mutate(service)}
+                        disabled={testMutation.isPending}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {testMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <TestTube className="h-4 w-4 mr-2" />
+                        )}
+                        {getServiceDisplayName(service)} 연결 테스트
+                      </Button>
 
-        {/* API Key 변경 폼 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>API Key 변경</CardTitle>
-            <CardDescription>
-              새로운 API Key를 입력하여 변경할 수 있습니다. 변경하지 않을 항목은 비워두세요.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                빗썸에서 발급받은 정확한 API Key를 입력하세요. 잘못된 키를 입력하면 거래소 연동이 되지 않습니다.
-              </AlertDescription>
-            </Alert>
+                      {/* 키 변경 폼 */}
+                      <div className="pt-4 border-t">
+                        <h4 className="font-medium mb-4">키 변경</h4>
+                        <form onSubmit={handleSubmit(service)} className="space-y-4">
+                          {Object.keys(serviceConfig).map((key) => {
+                            const config = serviceConfig[key];
+                            
+                            if (key === 'apiVersion' && service === 'bithumb' && config.options) {
+                              return (
+                                <div key={key}>
+                                  <Label htmlFor={`${service}-${key}`}>{config.label}</Label>
+                                  <Select
+                                    value={formData[service]?.[key] || ''}
+                                    onValueChange={(value) => updateFormData(service, key, value)}
+                                  >
+                                    <SelectTrigger className="mt-1">
+                                      <SelectValue placeholder={`${config.label} 선택`} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {config.options.map((option) => (
+                                        <SelectItem key={option} value={option}>
+                                          API {option} 버전
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              );
+                            }
+                            
+                            return (
+                              <div key={key}>
+                                <Label htmlFor={`${service}-${key}`}>
+                                  {config.label} {config.maxLength && `(${config.maxLength}자리)`}
+                                </Label>
+                                <Input
+                                  id={`${service}-${key}`}
+                                  type="text"
+                                  placeholder={`새로운 ${config.label}를 입력하세요`}
+                                  value={formData[service]?.[key] || ''}
+                                  onChange={(e) => updateFormData(service, key, e.target.value)}
+                                  className="font-mono mt-1"
+                                  maxLength={config.maxLength}
+                                />
+                                {config.maxLength && (
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    현재: {formData[service]?.[key]?.length || 0}/{config.maxLength}자
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="connectKey">Connect Key (32자리)</Label>
-                <Input
-                  id="connectKey"
-                  type="text"
-                  placeholder="새로운 Connect Key를 입력하세요"
-                  value={formData.connectKey}
-                  onChange={(e) => setFormData(prev => ({ ...prev, connectKey: e.target.value }))}
-                  className="font-mono"
-                  maxLength={32}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  현재: {formData.connectKey.length}/32자
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="secretKey">Secret Key (32자리)</Label>
-                <Input
-                  id="secretKey"
-                  type="text"
-                  placeholder="새로운 Secret Key를 입력하세요"
-                  value={formData.secretKey}
-                  onChange={(e) => setFormData(prev => ({ ...prev, secretKey: e.target.value }))}
-                  className="font-mono"
-                  maxLength={32}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  현재: {formData.secretKey.length}/32자
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="api2Key">API 2.0 Key (48자리)</Label>
-                <Input
-                  id="api2Key"
-                  type="text"
-                  placeholder="새로운 API 2.0 Key를 입력하세요"
-                  value={formData.api2Key}
-                  onChange={(e) => setFormData(prev => ({ ...prev, api2Key: e.target.value }))}
-                  className="font-mono"
-                  maxLength={48}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  현재: {formData.api2Key.length}/48자
-                </p>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending}
-                className="w-full"
-              >
-                {updateMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                )}
-                API Key 업데이트
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                          <Button
+                            type="submit"
+                            disabled={updateMutation.isPending}
+                            className="w-full"
+                          >
+                            {updateMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                            )}
+                            {getServiceDisplayName(service)} API Key 업데이트
+                          </Button>
+                        </form>
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

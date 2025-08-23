@@ -1131,12 +1131,12 @@ export default function HomePage() {
                 <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-xs lg:text-sm text-gray-600 hidden sm:inline">실시간 연동</span>
               </div>
-              <Link href="/bithumb-settings">
+              <Link href="/api-settings">
                 <Button 
                   variant="ghost" 
                   size="sm"
                   className="p-1.5 lg:p-2"
-                  data-testid="header-bithumb-settings"
+                  data-testid="header-api-settings"
                 >
                   <Key className="w-4 h-4 lg:w-5 lg:h-5" />
                 </Button>
@@ -1261,15 +1261,15 @@ export default function HomePage() {
                   </Button>
                 </li>
                 <li className="pt-4 border-t">
-                  <Link href="/bithumb-settings">
+                  <Link href="/api-settings">
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      data-testid="mobile-menu-bithumb-settings"
+                      data-testid="mobile-menu-api-settings"
                     >
                       <Key className="w-5 h-5 mr-3" />
-                      빗썸 API 설정
+                      API 키 관리
                     </Button>
                   </Link>
                 </li>

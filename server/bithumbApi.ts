@@ -316,15 +316,16 @@ class BithumbApiService {
   }
 
   // API Key 관리 메서드
-  getApiKeys(): { connectKey: string; secretKey: string; api2Key: string } {
+  getApiKeys(): { connectKey: string; secretKey: string; api2Key: string; apiVersion: string } {
     return {
       connectKey: this.config.connectKey.substring(0, 8) + '****' + this.config.connectKey.substring(this.config.connectKey.length - 4),
       secretKey: this.config.secretKey.substring(0, 8) + '****' + this.config.secretKey.substring(this.config.secretKey.length - 4),
-      api2Key: this.config.api2Key!.substring(0, 8) + '****' + this.config.api2Key!.substring(this.config.api2Key!.length - 4)
+      api2Key: this.config.api2Key!.substring(0, 8) + '****' + this.config.api2Key!.substring(this.config.api2Key!.length - 4),
+      apiVersion: this.config.apiVersion
     };
   }
 
-  updateApiKeys(newKeys: { connectKey?: string; secretKey?: string; api2Key?: string }): void {
+  updateApiKeys(newKeys: { connectKey?: string; secretKey?: string; api2Key?: string; apiVersion?: '1.0' | '2.0' }): void {
     if (newKeys.connectKey) {
       this.config.connectKey = newKeys.connectKey;
     }
@@ -334,8 +335,12 @@ class BithumbApiService {
     if (newKeys.api2Key) {
       this.config.api2Key = newKeys.api2Key;
     }
+    if (newKeys.apiVersion) {
+      this.config.apiVersion = newKeys.apiVersion;
+    }
     
     console.log('Bithumb API keys updated:', {
+      apiVersion: this.config.apiVersion,
       connectKeyLength: this.config.connectKey.length,
       secretKeyLength: this.config.secretKey.length,
       api2KeyLength: this.config.api2Key?.length,

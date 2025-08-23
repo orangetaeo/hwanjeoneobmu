@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { storage } from './storage';
 import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema, insertExchangeRateHistorySchema, transactions, assets, rates, exchangeRates, userSettings } from '@shared/schema';
 import { bithumbApi } from './bithumbApi';
+import { apiKeyService } from './apiKeyService';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 
@@ -894,7 +895,7 @@ router.get('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, r
 
 router.post('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { connectKey, secretKey, api2Key } = req.body;
+    const { connectKey, secretKey, api2Key, apiVersion } = req.body;
     
     // 입력 검증
     const updates: any = {};
@@ -919,6 +920,10 @@ router.post('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, 
       updates.api2Key = api2Key.trim();
     }
     
+    if (apiVersion && ['1.0', '2.0'].includes(apiVersion)) {
+      updates.apiVersion = apiVersion;
+    }
+    
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: '변경할 API Key를 입력하세요.' });
     }
@@ -927,12 +932,12 @@ router.post('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, 
     
     res.json({ 
       success: true, 
-      message: 'API Key가 성공적으로 업데이트되었습니다.',
+      message: 'Bithumb API Key가 성공적으로 업데이트되었습니다.',
       updatedKeys: Object.keys(updates)
     });
   } catch (error) {
-    console.error('Error updating API keys:', error);
-    res.status(500).json({ error: 'Failed to update API keys' });
+    console.error('Error updating Bithumb API keys:', error);
+    res.status(500).json({ error: 'Failed to update Bithumb API keys' });
   }
 });
 
@@ -943,6 +948,125 @@ router.post('/bithumb/test-connection', requireAuth, async (req: AuthenticatedRe
   } catch (error) {
     console.error('Error testing API connection:', error);
     res.status(500).json({ error: 'Failed to test API connection' });
+  }
+});
+
+// 통합 API Key 관리
+router.get('/api-keys', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { service } = req.query;
+    
+    const allKeys: any = {
+      bithumb: bithumbApi.getApiKeys(),
+      ...apiKeyService.getApiKeys()
+    };
+    
+    if (service && typeof service === 'string') {
+      if (service === 'bithumb') {
+        res.json(allKeys.bithumb);
+      } else if (allKeys[service]) {
+        res.json(allKeys[service]);
+      } else {
+        res.status(404).json({ error: 'Service not found' });
+      }
+    } else {
+      res.json(allKeys);
+    }
+  } catch (error) {
+    console.error('Error fetching API keys:', error);
+    res.status(500).json({ error: 'Failed to fetch API keys' });
+  }
+});
+
+router.post('/api-keys/:service', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { service } = req.params;
+    const updates = req.body;
+    
+    if (service === 'bithumb') {
+      // 빗썸은 기존 엔드포인트 사용
+      return res.status(400).json({ error: 'Use /api/bithumb/api-keys for Bithumb' });
+    }
+    
+    // 입력 검증
+    const serviceConfig = apiKeyService.getServiceConfig(service);
+    if (Object.keys(serviceConfig).length === 0) {
+      return res.status(400).json({ error: 'Unknown service' });
+    }
+    
+    const validatedUpdates: any = {};
+    Object.keys(updates).forEach(key => {
+      if (serviceConfig[key] && updates[key] && updates[key].trim()) {
+        const value = updates[key].trim();
+        const config = serviceConfig[key];
+        
+        if (config.maxLength && value.length > config.maxLength) {
+          throw new Error(`${config.label}는 최대 ${config.maxLength}자까지 입력 가능합니다.`);
+        }
+        
+        validatedUpdates[key] = value;
+      }
+    });
+    
+    if (Object.keys(validatedUpdates).length === 0) {
+      return res.status(400).json({ error: '변경할 API Key를 입력하세요.' });
+    }
+    
+    apiKeyService.updateApiKeys(service, validatedUpdates);
+    
+    res.json({
+      success: true,
+      message: `${service.charAt(0).toUpperCase() + service.slice(1)} API Key가 성공적으로 업데이트되었습니다.`,
+      updatedKeys: Object.keys(validatedUpdates)
+    });
+  } catch (error) {
+    console.error('Error updating API keys:', error);
+    res.status(400).json({ error: error instanceof Error ? error.message : 'Failed to update API keys' });
+  }
+});
+
+router.post('/api-keys/:service/test', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { service } = req.params;
+    
+    if (service === 'bithumb') {
+      const result = await bithumbApi.testApiConnection();
+      res.json(result);
+    } else {
+      const result = await apiKeyService.testConnection(service);
+      res.json(result);
+    }
+  } catch (error) {
+    console.error('Error testing API connection:', error);
+    res.status(500).json({ error: 'Failed to test API connection' });
+  }
+});
+
+router.get('/api-keys/services', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const services = ['bithumb', ...apiKeyService.getAllServices()];
+    const serviceConfigs: any = {
+      bithumb: {
+        connectKey: { label: 'Connect Key', required: true, maxLength: 32 },
+        secretKey: { label: 'Secret Key', required: true, maxLength: 32 },
+        api2Key: { label: 'API 2.0 Key', required: false, maxLength: 48 },
+        apiVersion: { label: 'API 버전', required: true, options: ['1.0', '2.0'] }
+      }
+    };
+    
+    services.forEach(service => {
+      if (service !== 'bithumb') {
+        serviceConfigs[service] = apiKeyService.getServiceConfig(service);
+      }
+    });
+    
+    res.json({
+      services,
+      configs: serviceConfigs
+    });
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    res.status(500).json({ error: 'Failed to fetch services' });
   }
 });
 
