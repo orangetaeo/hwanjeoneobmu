@@ -115,9 +115,13 @@ class BithumbApiService {
     return jwtToken;
   }
 
-  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성
+  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (v1.0 키 사용)
   private generateApiSignHeaders(endpoint: string, params: any = {}): any {
     const nonce = Date.now().toString();
+    
+    // v1.0 Connect Key와 Secret Key 사용
+    const connectKey = process.env.BITHUMB_CONNECT_KEY || 'd246ce56dfd29be42f34a2a466d881b837b00b2908aadd';
+    const connectSecret = process.env.BITHUMB_CONNECT_SECRET || '1546457014d984d20bd716ccd0e9e99e';
     
     // 파라미터를 쿼리 스트링으로 변환
     const queryString = Object.keys(params)
@@ -125,22 +129,23 @@ class BithumbApiService {
       .map(key => `${key}=${params[key]}`)
       .join('&');
     
-    // API-Sign 생성: endpoint + queryString + nonce + secretKey
-    const signatureString = endpoint + queryString + nonce + this.config.secretKey;
+    // API-Sign 생성: endpoint + queryString + nonce + connectSecret
+    const signatureString = endpoint + queryString + nonce + connectSecret;
     const signature = crypto
       .createHash('sha512')
       .update(signatureString, 'utf-8')
       .digest('hex');
     
-    console.log('🔐 v1.2.0 API-Sign 생성:', {
+    console.log('🔐 v1.2.0 API-Sign 생성 (v1.0 키 사용):', {
       endpoint,
       nonce,
       queryString,
+      connectKeyPreview: connectKey.substring(0, 10) + '...',
       signaturePreview: signature.substring(0, 20) + '...'
     });
     
     return {
-      'Api-Key': this.config.apiKey,
+      'Api-Key': connectKey,  // v1.0 Connect Key 사용
       'Api-Nonce': nonce,
       'Api-Sign': signature,
       'Content-Type': 'application/x-www-form-urlencoded'
