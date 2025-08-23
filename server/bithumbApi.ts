@@ -51,39 +51,51 @@ class BithumbApiService {
     });
   }
 
-  private generateJwtSignature(endpoint: string, parameters: any = {}): string {
+  private generateJwtToken(endpoint: string, queryParams: any = {}): string {
     const timestamp = Date.now();
     const nonce = uuidv4();
     
-    // JWT v2.1.0: 빗썸 새로운 인증 방식
+    // Query string 생성 (파라미터가 있는 경우)
     let queryString = '';
-    if (parameters && Object.keys(parameters).length > 0) {
-      const sortedParams = Object.keys(parameters)
-        .sort()
-        .map(key => `${key}=${parameters[key]}`)
-        .join('&');
-      queryString = sortedParams;
+    let queryHash = '';
+    
+    if (queryParams && Object.keys(queryParams).length > 0) {
+      // URLSearchParams를 사용하여 올바른 형식으로 쿼리 생성
+      const params = new URLSearchParams();
+      
+      // 키를 알파벳 순으로 정렬
+      Object.keys(queryParams).sort().forEach(key => {
+        if (queryParams[key] !== undefined && queryParams[key] !== null) {
+          params.append(key, queryParams[key].toString());
+        }
+      });
+      
+      queryString = params.toString();
+      
+      // SHA512 해시 생성
+      queryHash = crypto
+        .createHash('sha512')
+        .update(queryString, 'utf-8')
+        .digest('hex');
     }
     
-    // SHA512로 쿼리 해시 생성
-    const queryHash = crypto
-      .createHash('sha512')
-      .update(queryString || '', 'utf-8')
-      .digest('hex');
-    
-    // JWT 페이로드 구성
-    const payload = {
+    // JWT payload 구성
+    const payload: any = {
       access_key: this.config.apiKey,
       nonce: nonce,
-      timestamp: timestamp,
-      query_hash: queryHash,
-      query_hash_alg: 'SHA512'
+      timestamp: timestamp
     };
     
-    console.log('빗썸 API v2.1.0 JWT 인증 생성:', {
-      endpoint, parameters, timestamp, nonce,
-      queryString: queryString.substring(0, 100) + (queryString.length > 100 ? '...' : ''),
-      queryHash: queryHash.substring(0, 20) + '...',
+    // 파라미터가 있는 경우 해시 정보 추가
+    if (queryString) {
+      payload.query_hash = queryHash;
+      payload.query_hash_alg = 'SHA512';
+    }
+    
+    console.log('Bithumb API 2.0 JWT 토큰 생성:', {
+      endpoint, queryParams, timestamp, nonce,
+      queryString: queryString || 'none',
+      queryHash: queryHash ? queryHash.substring(0, 20) + '...' : 'none',
       accessKey: payload.access_key.substring(0, 10) + '...'
     });
     
@@ -93,28 +105,47 @@ class BithumbApiService {
     return jwtToken;
   }
 
-  private async makeApiRequest(endpoint: string, parameters: any = {}): Promise<any> {
+  private async makeApiRequest(endpoint: string, queryParams: any = {}, method: string = 'GET'): Promise<any> {
     try {
-      const url = `${this.config.baseUrl}${endpoint}`;
-      const jwtToken = this.generateJwtSignature(endpoint, parameters);
+      const jwtToken = this.generateJwtToken(endpoint, queryParams);
       
-      // JWT v2.1.0 헤더 구성
-      const headers = {
+      // URL 구성
+      let url = `${this.config.baseUrl}${endpoint}`;
+      if (method === 'GET' && queryParams && Object.keys(queryParams).length > 0) {
+        const params = new URLSearchParams();
+        Object.keys(queryParams).forEach(key => {
+          if (queryParams[key] !== undefined && queryParams[key] !== null) {
+            params.append(key, queryParams[key].toString());
+          }
+        });
+        url += `?${params.toString()}`;
+      }
+      
+      // 헤더 구성
+      const headers: any = {
         'Accept': 'application/json',
-        'Content-Type': 'application/json; charset=utf-8',
         'Authorization': `Bearer ${jwtToken}`
       };
       
+      if (method === 'POST') {
+        headers['Content-Type'] = 'application/json';
+      }
+      
       const requestOptions: RequestInit = {
-        method: 'POST',
-        headers,
-        body: Object.keys(parameters).length > 0 ? JSON.stringify(parameters) : undefined
+        method,
+        headers
       };
+      
+      // POST 요청인 경우 body 추가
+      if (method === 'POST' && queryParams && Object.keys(queryParams).length > 0) {
+        requestOptions.body = JSON.stringify(queryParams);
+      }
 
-      console.log(`Bithumb API 2.0 JWT Request:`, {
-        url, method: 'POST',
+      console.log(`Bithumb API 2.0 ${method} Request:`, {
+        url, 
+        method,
         headers: { ...headers, 'Authorization': 'Bearer [JWT_TOKEN_HIDDEN]' },
-        bodyParams: parameters
+        bodyParams: method === 'POST' ? queryParams : undefined
       });
       
       return await this.processApiResponse(url, requestOptions);
@@ -144,7 +175,7 @@ class BithumbApiService {
     // 빗썸 API 2.0 오류 처리
     if (data.error) {
       console.log('Bithumb API Error:', data.error);
-      throw new Error(`Bithumb API Error: ${data.error.name || data.error}`);
+      throw new Error(`Bithumb API Error: ${data.error.name || data.error.message || data.error}`);
     }
     
     // 빗썸 API 1.0 스타일 오류 처리 (호환성)
@@ -160,9 +191,11 @@ class BithumbApiService {
     return data;
   }
 
-  public async getBalance(): Promise<BithumbBalance> {
+  public async getBalance(): Promise<any> {
     try {
-      const response = await this.makeApiRequest('/info/balance', { currency: 'ALL' });
+      // 빗썸 API 2.0 전체 계좌 조회 엔드포인트
+      const response = await this.makeApiRequest('/v1/accounts', {}, 'GET');
+      console.log('Balance response:', response);
       return response.data;
     } catch (error) {
       console.error('Error fetching balance:', error);
@@ -170,21 +203,27 @@ class BithumbApiService {
     }
   }
 
-  public async getUsdtTransactions(): Promise<BithumbTransaction[]> {
+  public async getUsdtTransactions(): Promise<any[]> {
     try {
+      // 먼저 잔고 확인
       const balance = await this.getBalance();
+      console.log('USDT Balance:', balance);
       
-      if (!balance || !balance.total_usdt) {
-        console.log('USDT balance not found or zero');
+      // USDT 잔고가 있는지 확인
+      const usdtBalance = balance?.find((item: any) => item.currency === 'USDT');
+      
+      if (usdtBalance && parseFloat(usdtBalance.balance) > 0) {
+        console.log('USDT 보유량:', usdtBalance.balance);
+        return [{
+          currency: 'USDT',
+          balance: usdtBalance.balance,
+          locked: usdtBalance.locked,
+          avg_buy_price: usdtBalance.avg_buy_price
+        }];
+      } else {
+        console.log('USDT 보유량이 없습니다.');
         return [];
       }
-      
-      const response = await this.makeApiRequest('/info/user_transactions', { 
-        currency: 'USDT',
-        count: 20
-      });
-      
-      return response.data || [];
     } catch (error) {
       console.error('Failed to fetch Bithumb data:', error);
       throw new Error('빗썸 API 연결에 실패했습니다. API 키와 IP 설정을 확인해주세요.');
@@ -216,10 +255,11 @@ class BithumbApiService {
 
   public async testApiConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      await this.getBalance();
+      const balance = await this.getBalance();
       return {
         success: true,
-        message: '빗썸 API 연결이 성공했습니다.'
+        message: '빗썸 API 연결이 성공했습니다.',
+        data: balance
       };
     } catch (error: any) {
       return {
