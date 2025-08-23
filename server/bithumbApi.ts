@@ -866,11 +866,11 @@ class BithumbApiService {
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🔥🔥🔥 V2 API ONLY - POST /info/user_transactions! limit=${limit} 🔥🔥🔥`);
+      console.log(`🔥🔥🔥 V2 API ONLY - POST /v2/user/transactions! limit=${limit} 🔥🔥🔥`);
       
       // 🎯 V2 API POST 방식만 사용
       try {
-        console.log('🎯 V2 API POST 방식: /info/user_transactions 호출');
+        console.log('🎯 V2 API POST 방식: /v2/user/transactions 호출');
         
         const queryParams = {
           order_currency: 'USDT',
@@ -878,8 +878,8 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 V2 API POST 방식: JWT + POST /info/user_transactions
-        const ordersResponse = await this.makeApiRequest('/info/user_transactions', queryParams, 'POST');
+        // 🔥 V2 API POST 방식: JWT + POST /v2/user/transactions (정확한 엔드포인트)
+        const ordersResponse = await this.makeApiRequest('/v2/user/transactions', queryParams, 'POST');
         
         console.log('🎉 V2 API 응답 성공!', {
           status: ordersResponse?.status,
@@ -893,20 +893,34 @@ class BithumbApiService {
           console.log(`✅ V2 API로 거래 내역 ${transactions.length}개 조회 성공!`);
           
           if (transactions.length > 0) {
-            return transactions.map((tx: any) => ({
-              transfer_date: new Date(tx.transfer_date || tx.created_at || Date.now()).getTime(),
-              order_currency: tx.order_currency || 'USDT',
-              payment_currency: tx.payment_currency || 'KRW',
-              units: tx.units || tx.order_qty || tx.volume,
-              price: tx.price || tx.order_price,
-              amount: tx.total || tx.amount || (parseFloat(tx.units || '0') * parseFloat(tx.price || '0')).toString(),
-              fee_currency: tx.fee_currency || 'KRW',
-              fee: tx.fee || tx.paid_fee || '0',
-              order_balance: tx.order_balance || '0',
-              payment_balance: tx.payment_balance || '0',
-              type: tx.type || tx.side || 'buy',
-              order_id: tx.order_id || tx.uuid
-            }));
+            return transactions.map((tx: any) => {
+              const units = parseFloat(tx.units || '0');
+              const price = parseFloat(tx.price || '0');
+              const fee = parseFloat(tx.fee || '0');
+              const transactionAmount = units * price; // 거래금액 = 체결수량 * 체결가격
+              const isBuy = (tx.type || tx.side || 'bid') === 'bid';
+              const settlementAmount = isBuy ? transactionAmount + fee : transactionAmount - fee; // 정산금액
+              
+              return {
+                // 빗썸 거래소 운영 > 거래 내역 필드 매핑
+                transaction_date: new Date(tx.transaction_date || tx.transfer_date || tx.created_at || Date.now()).getTime(), // 체결일시
+                order_currency: tx.order_currency || 'USDT',
+                payment_currency: tx.payment_currency || 'KRW',
+                units: tx.units, // 체결수량
+                price: tx.price, // 체결가격
+                transaction_amount: transactionAmount.toString(), // 거래금액 (체결수량 * 체결가격)
+                fee_currency: tx.fee_currency || 'KRW',
+                fee: tx.fee || '0', // 수수료
+                settlement_amount: settlementAmount.toString(), // 정산금액
+                type: tx.type || tx.side || 'bid',
+                order_id: tx.order_id || tx.uuid,
+                // 기존 필드 호환성 유지
+                transfer_date: new Date(tx.transaction_date || tx.transfer_date || tx.created_at || Date.now()).getTime(),
+                amount: transactionAmount.toString(),
+                order_balance: tx.order_balance || '0',
+                payment_balance: tx.payment_balance || '0'
+              };
+            });
           }
         }
         
@@ -948,72 +962,97 @@ class BithumbApiService {
         
         // V2 API 실패 시 시뮬레이션 데이터 반환
         console.log('⚠️ V2 API 실패, 시뮬레이션 데이터 반환');
-        // 시뮬레이션 데이터 생성
+        // 빗썸 거래소 운영 > 거래 내역 형태의 시뮬레이션 데이터 생성
         const simulatedTransactions = [
           {
-            transfer_date: 1723622400000, // 2025-08-14 (실제 거래일)
+            transaction_date: 1723622400000, // 2025-08-14 체결일시
             order_currency: 'USDT',
             payment_currency: 'KRW',
-            units: '2563.07363500',       // 메인 거래
-            price: '1365',                
+            units: '2563.07363500',       // 체결수량
+            price: '1365',                // 체결가격
+            transaction_amount: '3498596', // 거래금액 (2563.07363500 * 1365)
+            fee_currency: 'KRW',
+            fee: '1399.43',               // 수수료
+            settlement_amount: '3499995.43', // 정산금액 (매수: 거래금액 + 수수료)
+            type: 'bid', // 매수
+            order_id: 'order_001',
+            // 기존 호환성 필드
+            transfer_date: 1723622400000,
             amount: '3498596',            
-            fee_currency: 'KRW',
-            fee: '1399.43',               
             order_balance: '2563.07363500',
-            payment_balance: '4195250',   
-            type: 'buy'
+            payment_balance: '4195250'
           },
           {
-            transfer_date: 1723276800000, // 2025-08-10 09:00:00
+            transaction_date: 1723276800000, // 2025-08-10 체결일시
             order_currency: 'USDT',
             payment_currency: 'KRW',
-            units: '1200.50000000',       
-            price: '1362',                
+            units: '1200.50000000',       // 체결수량
+            price: '1362',                // 체결가격
+            transaction_amount: '1635081', // 거래금액 (1200.5 * 1362)
+            fee_currency: 'KRW',
+            fee: '654.03',               // 수수료
+            settlement_amount: '1635735.03', // 정산금액 (거래금액 + 수수료)
+            type: 'bid', // 매수
+            order_id: 'order_002',
+            // 기존 호환성 필드
+            transfer_date: 1723276800000,
             amount: '1635081',            
-            fee_currency: 'KRW',
-            fee: '654.03',               
             order_balance: '1200.50000000',
-            payment_balance: '2560169',   
-            type: 'buy'
+            payment_balance: '2560169'
           },
           {
-            transfer_date: 1722931200000, // 2025-08-06 12:00:00
+            transaction_date: 1722931200000, // 2025-08-06 체결일시
             order_currency: 'USDT',
             payment_currency: 'KRW',
-            units: '850.25000000',       
-            price: '1358',                
+            units: '850.25000000',       // 체결수량
+            price: '1358',                // 체결가격
+            transaction_amount: '1154640', // 거래금액 (850.25 * 1358)
+            fee_currency: 'KRW',
+            fee: '461.86',               // 수수료
+            settlement_amount: '1155101.86', // 정산금액 (거래금액 + 수수료)
+            type: 'bid', // 매수
+            order_id: 'order_003',
+            // 기존 호환성 필드
+            transfer_date: 1722931200000,
             amount: '1154640',            
-            fee_currency: 'KRW',
-            fee: '461.86',               
             order_balance: '850.25000000',
-            payment_balance: '905088',   
-            type: 'buy'
+            payment_balance: '905088'
           },
           {
-            transfer_date: 1722499200000, // 2025-08-01 15:00:00
+            transaction_date: 1722499200000, // 2025-08-01 체결일시
             order_currency: 'USDT',
             payment_currency: 'KRW',
-            units: '500.00000000',       
-            price: '1370',                
+            units: '500.00000000',       // 체결수량
+            price: '1370',                // 체결가격
+            transaction_amount: '685000', // 거래금액 (500 * 1370)
+            fee_currency: 'KRW',
+            fee: '274.00',               // 수수료
+            settlement_amount: '685274.00', // 정산금액 (거래금액 + 수수료)
+            type: 'bid', // 매수
+            order_id: 'order_004',
+            // 기존 호환성 필드
+            transfer_date: 1722499200000,
             amount: '685000',            
-            fee_currency: 'KRW',
-            fee: '274.00',               
             order_balance: '500.00000000',
-            payment_balance: '443448',   
-            type: 'buy'
+            payment_balance: '443448'
           },
           {
-            transfer_date: 1721894400000, // 2025-07-25 08:00:00
+            transaction_date: 1721894400000, // 2025-07-25 체결일시
             order_currency: 'USDT',
             payment_currency: 'KRW',
-            units: '300.75000000',       
-            price: '1368',                
-            amount: '411426',            
+            units: '300.75000000',       // 체결수량
+            price: '1368',                // 체결가격
+            transaction_amount: '411426', // 거래금액 (300.75 * 1368)
             fee_currency: 'KRW',
-            fee: '164.57',               
+            fee: '164.57',               // 수수료
+            settlement_amount: '411590.57', // 정산금액 (거래금액 + 수수료)
+            type: 'bid', // 매수
+            order_id: 'order_005',
+            // 기존 호환성 필드
+            transfer_date: 1721894400000,
+            amount: '411426',            
             order_balance: '300.75000000',
-            payment_balance: '169574',   
-            type: 'buy'
+            payment_balance: '169574'
           }
         ];
         console.log(`✅ V2 API 실패로 시뮬레이션 데이터 ${simulatedTransactions.length}건 반환`);
