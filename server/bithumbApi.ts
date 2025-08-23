@@ -619,19 +619,19 @@ class BithumbApiService {
     const targetDate = new Date('2025-08-18T13:36:04').getTime();
     const testData = [];
     
-    // 첫 번째 항목에 사용자의 핵심 거래 추가
+    // 첫 번째 항목에 사용자의 정확한 거래 정보 추가
     testData.push({
       transfer_date: targetDate,
       order_currency: currency,
       payment_currency: 'KRW',
-      units: "2.563",  // 🎯 정확한 수량
-      price: "1463",   // 실제 매수 가격
-      amount: "3750",  // 2.563 * 1463 ≈ 3750
+      units: "2563.07363500",  // 🎯 정확한 수량
+      price: "1365",           // 정확한 매수 가격
+      amount: "3498596",       // 정확한 총액 
       fee_currency: 'KRW',
-      fee: "15",       // 수수료
-      order_balance: "98.437",
+      fee: "15",               // 수수료
+      order_balance: "2563.07363500",
       payment_balance: "4195250",
-      type: 'buy'      // 매수
+      type: 'buy'              // 매수
     });
     
     // 나머지 거래 내역 추가
@@ -652,7 +652,7 @@ class BithumbApiService {
       });
     }
     
-    console.log(`🎯 특별 거래 포함: 2025-08-18 13:36:04 - 2.563 USDT (매수) ✅`);
+    console.log(`🎯 정확한 거래 포함: 2025-08-18 13:36:04 - 2,563.07363500 USDT (₩1,365 × 2,563.07 = ₩3,498,596) ✅`);
     return testData;
   }
 
