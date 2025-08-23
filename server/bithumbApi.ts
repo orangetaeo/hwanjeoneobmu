@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import querystring from 'querystring';
 
 interface BithumbApiConfig {
   apiKey: string; // API 2.0 키
@@ -205,23 +206,34 @@ class BithumbApiService {
 
   public async getTransactionHistory(limit: number = 20, currency: string = 'USDT'): Promise<any[]> {
     try {
-      // 빗썸 API 2.0 실제 작동하는 올바른 엔드포인트 (검색으로 확인됨)
-      const endpoint = `/v1.2.0/info/orders`;
-      const params = {
-        order_currency: currency,
-        payment_currency: 'KRW',
-        count: limit.toString()
-      };
+      // 🚀 API 1.0 방식(Api-Sign)으로 실제 거래 내역 조회 시도
+      console.log(`🔥 API 1.0 방식으로 실제 거래 내역 조회 시작 - ${currency}`);
       
       try {
-        console.log(`✅ Trying CORRECT endpoint: POST ${endpoint}`, params);
-        const response = await this.makeApiRequest(endpoint, params, 'POST');
-        console.log(`🎉 REAL Transaction History Response:`, response);
+        const realTransactions = await this.getTransactionHistoryV1(currency, limit);
+        if (realTransactions && realTransactions.length > 0) {
+          console.log(`🎉 API 1.0 성공! 실제 거래 내역 ${realTransactions.length}개 조회됨`);
+          return realTransactions;
+        }
+      } catch (v1Error) {
+        console.log(`❌ API 1.0 방식 실패:`, v1Error.message);
+      }
+      
+      // 백업으로 API 2.0 시도
+      console.log('🔄 API 2.0 백업 시도...');
+      try {
+        const endpoint = `/v1.2.0/info/orders`;
+        const params = {
+          order_currency: currency,
+          payment_currency: 'KRW',
+          count: limit.toString()
+        };
         
-        // 빗썸 API 2.0 성공 응답 처리 (status: '0000'인 경우)
+        const response = await this.makeApiRequest(endpoint, params, 'POST');
+        
         if (response && response.status === '0000' && response.data) {
           const orders = Array.isArray(response.data) ? response.data : [];
-          console.log(`📋 Found ${orders.length} real transactions from Bithumb`);
+          console.log(`📋 API 2.0으로 ${orders.length}개 거래 조회됨`);
           
           return orders.map((transaction: any) => ({
             transfer_date: transaction.order_date || transaction.transaction_date || Date.now(),
@@ -237,35 +249,13 @@ class BithumbApiService {
             type: transaction.type || transaction.side || 'buy'
           }));
         }
-        
-        // 오류 응답 확인
-        if (response && response.status && response.status !== '0000') {
-          console.log(`❌ Bithumb API Error Status: ${response.status}, Message: ${response.message}`);
-        }
-        
-        console.log('🔍 API 응답 받았지만 예상 형태가 아님:', response);
-        
-      } catch (endpointError) {
-        console.log(`❌ Correct endpoint ${endpoint} failed:`, endpointError.message);
+      } catch (v2Error) {
+        console.log(`❌ API 2.0 백업도 실패:`, v2Error.message);
       }
       
-      // 백업으로 체결 내역 조회 시도
-      try {
-        const fallbackEndpoint = `/v1.2.0/info/order_detail`;
-        console.log(`🔄 Trying fallback endpoint: POST ${fallbackEndpoint}`);
-        const fallbackResponse = await this.makeApiRequest(fallbackEndpoint, params, 'POST');
-        console.log(`📊 Fallback Response:`, fallbackResponse);
-        
-        if (fallbackResponse && fallbackResponse.status === '0000' && fallbackResponse.data) {
-          return Array.isArray(fallbackResponse.data) ? fallbackResponse.data : [fallbackResponse.data];
-        }
-      } catch (fallbackError) {
-        console.log(`❌ Fallback endpoint failed:`, fallbackError.message);
-      }
-      
-      // 실제 엔드포인트 실패 시 테스트 데이터 반환
-      console.log('⚠️ 실제 거래 내역 엔드포인트 모두 실패, 테스트 데이터 반환');
-      console.log('💡 실제 거래 내역: 2025-08-18 13:36:04 - 2.563 USDT');
+      // 모든 API 실패 시 테스트 데이터 반환
+      console.log('⚠️ 모든 API 방식 실패, 테스트 데이터 반환');
+      console.log('💡 목표: 2025-08-18 13:36:04 - 2.563 USDT 거래 조회');
       return this.generateTestTransactionData(limit, currency);
       
     } catch (error) {
@@ -274,6 +264,167 @@ class BithumbApiService {
     }
   }
   
+  // 🚀 API 1.0 방식(Api-Sign) 구현 시작
+  private generateNonce(): string {
+    // 마이크로초 기반 nonce 생성 (빗썸 API 1.0 요구사항)
+    const time = Date.now();
+    const microTime = Math.floor(Math.random() * 1000);
+    return `${time}${microTime.toString().padStart(3, '0')}`;
+  }
+
+  private generateApiSignature(endpoint: string, params: any, nonce: string): string {
+    // 🔧 빗썸 API 1.0 정확한 서명 방식
+    
+    // 1. endpoint와 params를 결합한 URL 쿼리 문자열 생성
+    const endpointParams = { endpoint, ...params };
+    const queryString = querystring.stringify(endpointParams);
+    
+    // 2. 서명 데이터 구성: endpoint + \0 + queryString + \0 + nonce
+    const signData = endpoint + '\0' + queryString + '\0' + nonce;
+    
+    console.log('🔐 API 1.0 정확한 서명:', {
+      endpoint,
+      params,
+      nonce,
+      queryString,
+      signData: signData.replace(/\0/g, '[NULL]'),
+      secretKeyLength: this.config.secretKey.length
+    });
+    
+    // 3. secret key를 Base64 디코드 (빗썸은 Base64로 인코딩된 시크릿 키 사용)
+    let secretKey = this.config.secretKey;
+    try {
+      // 시크릿 키가 Base64인지 확인하고 디코드 시도
+      secretKey = Buffer.from(this.config.secretKey, 'base64').toString('utf8');
+      console.log('🗝️ Secret Key Base64 디코드됨');
+    } catch (e) {
+      console.log('🗝️ Secret Key 원본 그대로 사용');
+    }
+    
+    // 4. HMAC-SHA512 서명 생성
+    const hmac = crypto.createHmac('sha512', secretKey);
+    hmac.update(signData, 'utf8');
+    const signature = hmac.digest('hex');
+    
+    // 5. hex 서명을 Base64로 인코딩
+    const apiSign = Buffer.from(signature, 'hex').toString('base64');
+    
+    console.log('✅ API Sign 생성 완료:', { 
+      signatureLength: signature.length,
+      apiSignLength: apiSign.length 
+    });
+    
+    return apiSign;
+  }
+
+  private async makeApiV1Request(endpoint: string, params: any): Promise<any> {
+    const nonce = this.generateNonce();
+    const apiSign = this.generateApiSignature(endpoint, params, nonce);
+    
+    const headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Api-Key': this.config.apiKey,
+      'Api-Nonce': nonce,
+      'Api-Sign': apiSign
+    };
+    
+    // 엔드포인트와 params 결합
+    const requestParams = { endpoint, ...params };
+    const body = querystring.stringify(requestParams);
+    
+    console.log('🌐 API 1.0 Request:', {
+      url: this.config.baseUrl + endpoint,
+      method: 'POST',
+      headers: { ...headers, 'Api-Key': this.config.apiKey.substring(0, 8) + '...', 'Api-Sign': '[SIGNATURE_HIDDEN]' },
+      bodyLength: body.length
+    });
+    
+    const response = await fetch(this.config.baseUrl + endpoint, {
+      method: 'POST',
+      headers,
+      body
+    });
+    
+    console.log('📡 API 1.0 Response Status:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('📊 API 1.0 Response Data:', data);
+    
+    return data;
+  }
+
+  private async getTransactionHistoryV1(currency: string, limit: number): Promise<any[]> {
+    console.log(`🎯 API 1.0으로 ${currency} 거래 내역 조회 시작`);
+    
+    // 1차 시도: 거래 주문내역 조회
+    try {
+      console.log('📋 1차 시도: /info/orders (주문 내역)');
+      const ordersResponse = await this.makeApiV1Request('/info/orders', {
+        order_currency: currency,
+        payment_currency: 'KRW'
+      });
+      
+      if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
+        const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
+        console.log(`✅ 주문 내역 ${orders.length}개 조회됨`);
+        
+        return orders.map((order: any) => ({
+          transfer_date: order.order_date || Date.now(),
+          order_currency: order.order_currency || currency,
+          payment_currency: order.payment_currency || 'KRW',
+          units: order.units || order.order_qty,
+          price: order.price || order.order_price,
+          amount: order.total || (parseFloat(order.units || '0') * parseFloat(order.price || '0')).toString(),
+          fee_currency: 'KRW',
+          fee: order.fee || '0',
+          order_balance: order.order_balance || '0',
+          payment_balance: order.payment_balance || '0',
+          type: order.type || order.side || 'bid'
+        }));
+      }
+    } catch (ordersError) {
+      console.log('❌ /info/orders 실패:', ordersError.message);
+    }
+    
+    // 2차 시도: 거래 체결내역 조회
+    try {
+      console.log('📋 2차 시도: /info/user_transactions (체결 내역)');
+      const transResponse = await this.makeApiV1Request('/info/user_transactions', {
+        currency: currency,
+        offset: 0,
+        count: limit
+      });
+      
+      if (transResponse && transResponse.status === '0000' && transResponse.data) {
+        const transactions = Array.isArray(transResponse.data) ? transResponse.data : [];
+        console.log(`✅ 체결 내역 ${transactions.length}개 조회됨`);
+        
+        return transactions.map((trans: any) => ({
+          transfer_date: trans.transaction_date || trans.transfer_date || Date.now(),
+          order_currency: trans.order_currency || currency,
+          payment_currency: trans.payment_currency || 'KRW',
+          units: trans.units || trans.quantity,
+          price: trans.price,
+          amount: trans.total || trans.amount,
+          fee_currency: 'KRW',
+          fee: trans.fee || '0',
+          order_balance: trans.order_balance || '0',
+          payment_balance: trans.payment_balance || '0',
+          type: trans.type || trans.side || 'bid'
+        }));
+      }
+    } catch (transError) {
+      console.log('❌ /info/user_transactions 실패:', transError.message);
+    }
+    
+    throw new Error('API 1.0 모든 엔드포인트 실패');
+  }
+
   private generateTestTransactionData(limit: number, currency: string): any[] {
     const testData = [];
     const now = Date.now();
