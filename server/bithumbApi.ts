@@ -220,10 +220,8 @@ class BithumbApiService {
     const connectKey = process.env.BITHUMB_CONNECT_KEY || this.config.apiKey;
     const connectSecret = process.env.BITHUMB_CONNECT_SECRET || this.config.secretKey;
     
-    // 마이크로초 단위 nonce 생성 (빗썸 API 1.0 요구사항)
-    const mt = Date.now() / 1000;
-    const mtArray = mt.toString().split('.');
-    const nonce = mtArray[0] + (mtArray[1] || '000').substring(0, 3);
+    // 🔧 단순한 밀리초 nonce 생성 (빗썸 서버 기대 형식)
+    const nonce = Date.now().toString();
     
     // 🎯 빗썸 공식: 파라미터만 URL 인코딩 (endpoint 제외)
     const strData = new URLSearchParams(params).toString();
@@ -275,10 +273,18 @@ class BithumbApiService {
         }
       });
       
-      const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
-        method: 'POST',
-        headers,
-        body
+      // 🔧 GET 방식으로 변경 - 파라미터는 쿼리스트링으로
+      const url = `${this.config.baseUrl}${endpoint}?${body}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'api-client-type': headers['api-client-type'],
+          'Api-Key': headers['Api-Key'],
+          'Api-Nonce': headers['Api-Nonce'],
+          'Api-Sign': headers['Api-Sign']
+          // Content-Type 헤더 제거 (GET 방식에서는 불필요)
+        }
       });
       
       const textResponse = await response.text();
