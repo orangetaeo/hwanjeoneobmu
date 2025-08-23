@@ -974,7 +974,7 @@ class BithumbApiService {
         // 시뮬레이션 데이터 생성
         const simulatedTransactions = [
           {
-            transfer_date: Date.now() - 86400000, // 어제
+            transfer_date: 1723622400000, // 2025-08-14 (실제 거래일)
             order_currency: 'USDT',
             payment_currency: 'KRW',
             units: '2563.07363500',       // 올바른 USDT 수량
