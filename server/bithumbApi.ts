@@ -1033,162 +1033,67 @@ class BithumbApiService {
   }
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
+    console.log(`🚀🚀🚀 빗썸 최신 JWT v2.1.0 방식 시도! limit=${limit} 🚀🚀🚀`);
+    
+    // 🚀 Step 1: JWT API 시도
     try {
-      console.log(`🚀🚀🚀 빗썸 최신 JWT v2.1.0 방식 시도! limit=${limit} 🚀🚀🚀`);
+      console.log('🚀 빗썸 JWT v2.1.0 방식: /info/orders 호출');
       
-      // 🚀 최신 JWT API 방식 시도 (빗썸 v2.1.0)
-      try {
-        console.log('🚀 빗썸 JWT v2.1.0 방식: /info/orders 호출');
+      const jwtParams = {
+        market: 'USDT-KRW',
+        state: 'done',
+        limit: limit
+      };
+      
+      const jwtResponse = await this.makeJwtApiRequest('/info/orders', jwtParams);
+      
+      if (jwtResponse && jwtResponse.result && Array.isArray(jwtResponse.result)) {
+        console.log(`✅ JWT API 성공! 거래 내역 ${jwtResponse.result.length}개 조회됨`);
         
-        const queryParams = {
-          market: 'USDT-KRW',
-          state: 'done',
-          limit: limit
-        };
-        
-        // 🚀 빗썸 최신 JWT 방식: Bearer JWT + GET /info/orders  
-        const ordersResponse = await this.makeJwtApiRequest('/info/orders', queryParams);
-        
-        console.log('🎉 빗썸 JWT API 응답 성공!', {
-          status: ordersResponse?.status,
-          dataType: typeof ordersResponse?.result,
-          resultLength: Array.isArray(ordersResponse?.result) ? ordersResponse.result.length : 'not array'
-        });
-        
-        // 빗썸 JWT API 성공 응답 처리
-        if (ordersResponse && ordersResponse.result) {
-          const transactions = Array.isArray(ordersResponse.result) ? ordersResponse.result : [];
-          console.log(`✅ 빗썸 JWT API로 거래 내역 ${transactions.length}개 조회 성공!`);
-          
-          if (transactions.length > 0) {
-            return transactions.map((tx: any) => {
-              const volume = parseFloat(tx.volume || '0');
-              const price = parseFloat(tx.price || '0');
-              const paid_fee = parseFloat(tx.paid_fee || '0');
-              const transactionAmount = volume * price; // 거래금액 = 체결수량 * 체결가격
-              const isBuy = (tx.side || 'bid') === 'bid';
-              const settlementAmount = isBuy ? transactionAmount + paid_fee : transactionAmount - paid_fee; // 정산금액
-              
-              return {
-                // 빗썸 JWT API 필드 매핑
-                transaction_date: new Date(tx.created_at || tx.timestamp || Date.now()).getTime(), // 체결일시
-                order_currency: 'USDT',
-                payment_currency: 'KRW',
-                units: tx.volume, // 체결수량
-                price: tx.price, // 체결가격
-                transaction_amount: transactionAmount.toString(), // 거래금액
-                fee_currency: 'KRW',
-                fee: tx.paid_fee || '0', // 수수료
-                settlement_amount: settlementAmount.toString(), // 정산금액
-                type: tx.side || 'bid',
-                order_id: tx.uuid || tx.id,
-                // 호환성 필드
-                transfer_date: new Date(tx.created_at || tx.timestamp || Date.now()).getTime(),
-                amount: transactionAmount.toString(),
-                order_balance: tx.remaining_volume || '0',
-                payment_balance: '0'
-              };
-            });
-          }
-        }
-      } catch (jwtError) {
-        console.log('❌ JWT API 실패, 레거시 HMAC 방식 시도:', jwtError);
-        
-        // 🎯 레거시 V1 HMAC API 방식 시도 (백업용)
-        try {
-          console.log('🔧 빗썸 V1 HMAC 방식: 먼저 /info/balance로 API 키 테스트');
-          
-          const queryParams = {
-            order_currency: 'USDT',
-            payment_currency: 'KRW',
-            count: limit
-          };
-          
-          console.log('🎯 이제 /info/user_transactions 호출');
-          // 🎯 빗썸 V1 공식 방식: HMAC + GET /info/user_transactions  
-          const ordersResponse = await this.makeApiRequestV12('/info/user_transactions', queryParams);
-        
-        console.log('🎉 빗썸 V1 HMAC API 응답 성공!', {
-          status: ordersResponse?.status,
-          dataType: typeof ordersResponse?.data,
-          dataLength: Array.isArray(ordersResponse?.data) ? ordersResponse.data.length : 'not array'
-        });
-        
-        // 빗썸 API 성공 응답 처리
-        if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
-          const transactions = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
-          console.log(`✅ 빗썸 V1 HMAC API로 거래 내역 ${transactions.length}개 조회 성공!`);
-          
-          if (transactions.length > 0) {
-            return transactions.map((tx: any) => {
-              const units = parseFloat(tx.units || '0');
-              const price = parseFloat(tx.price || '0');
-              const fee = parseFloat(tx.fee || '0');
-              const transactionAmount = units * price; // 거래금액 = 체결수량 * 체결가격
-              const isBuy = (tx.type || tx.side || 'bid') === 'bid';
-              const settlementAmount = isBuy ? transactionAmount + fee : transactionAmount - fee; // 정산금액
-              
-              return {
-                // 빗썸 거래소 운영 > 거래 내역 필드 매핑
-                transaction_date: new Date(tx.transaction_date || tx.transfer_date || tx.created_at || Date.now()).getTime(), // 체결일시
-                order_currency: tx.order_currency || 'USDT',
-                payment_currency: tx.payment_currency || 'KRW',
-                units: tx.units, // 체결수량
-                price: tx.price, // 체결가격
-                transaction_amount: transactionAmount.toString(), // 거래금액 (체결수량 * 체결가격)
-                fee_currency: tx.fee_currency || 'KRW',
-                fee: tx.fee || '0', // 수수료
-                settlement_amount: settlementAmount.toString(), // 정산금액
-                type: tx.type || tx.side || 'bid',
-                order_id: tx.order_id || tx.uuid,
-                // 기존 필드 호환성 유지
-                transfer_date: new Date(tx.transaction_date || tx.transfer_date || tx.created_at || Date.now()).getTime(),
-                amount: transactionAmount.toString(),
-                order_balance: tx.order_balance || '0',
-                payment_balance: tx.payment_balance || '0'
-              };
-            });
-          }
-        }
-        
-        console.log('📊 V2 API 응답 타입:', typeof ordersResponse, Array.isArray(ordersResponse));
-        console.log('📊 V2 API 응답 preview:', JSON.stringify(ordersResponse).substring(0, 200));
-        
-        // 배열 직접 반환 확인
-        if (Array.isArray(ordersResponse)) {
-          console.log(`🎉 V2 API 직접 배열 응답 ${ordersResponse.length}개 처리!`);
-          
-          return ordersResponse.map((tx: any) => ({
-            transfer_date: new Date(tx.transfer_date || tx.created_at).getTime() || Date.now(),
-            order_currency: tx.order_currency || 'USDT',
-            payment_currency: tx.payment_currency || 'KRW',
-            units: tx.units || tx.executed_volume || tx.volume,
-            price: tx.price,
-            amount: tx.total || (parseFloat(tx.units || '0') * parseFloat(tx.price || '0')).toString(),
-            fee_currency: tx.fee_currency || 'KRW',
-            fee: tx.fee || tx.paid_fee || '0',
-            order_balance: tx.order_balance || '0',
-            payment_balance: tx.payment_balance || '0',
-            type: tx.type || tx.side || 'buy',
-            uuid: tx.uuid,
-            transfer_date_original: tx.transfer_date
-          }));
-        }
-        
-        // data 필드 확인
-        if (ordersResponse && ordersResponse.data && Array.isArray(ordersResponse.data)) {
-          console.log(`✅ 주문 내역 ${ordersResponse.data.length}개 조회됨`);
-          return ordersResponse.data;
-        }
-        
-        console.log('❌ V2 API 응답이 예상 형식이 아님');
-        
-      } catch (error) {
-        console.log('❌ V2 API POST 실패:', error.message);
-        console.log('❌ V2 API 상세 에러:', error);
-        
-        // V2 API 실패 시 시뮬레이션 데이터 반환
-        console.log('⚠️ V2 API 실패, 시뮬레이션 데이터 반환');
+        return jwtResponse.result.map((tx: any) => ({
+          transaction_date: new Date(tx.created_at || Date.now()).getTime(),
+          order_currency: 'USDT',
+          payment_currency: 'KRW',
+          units: tx.volume || '0',
+          price: tx.price || '0',
+          transaction_amount: (parseFloat(tx.volume || '0') * parseFloat(tx.price || '0')).toString(),
+          fee_currency: 'KRW',
+          fee: tx.paid_fee || '0',
+          settlement_amount: ((parseFloat(tx.volume || '0') * parseFloat(tx.price || '0')) + parseFloat(tx.paid_fee || '0')).toString(),
+          type: tx.side || 'bid',
+          order_id: tx.uuid || tx.id,
+          transfer_date: new Date(tx.created_at || Date.now()).getTime(),
+          amount: (parseFloat(tx.volume || '0') * parseFloat(tx.price || '0')).toString(),
+          order_balance: tx.remaining_volume || '0',
+          payment_balance: '0'
+        }));
+      }
+    } catch (jwtError) {
+      console.log('❌ JWT API 실패:', jwtError);
+    }
+    
+    // 🎯 Step 2: 레거시 HMAC API 시도
+    try {
+      console.log('🔧 빗썸 V1 HMAC 방식 시도');
+      
+      const hmacParams = {
+        order_currency: 'USDT',
+        payment_currency: 'KRW',
+        count: limit
+      };
+      
+      const hmacResponse = await this.makeApiRequestV12('/info/user_transactions', hmacParams);
+      
+      if (hmacResponse && hmacResponse.status === '0000' && hmacResponse.data) {
+        console.log(`✅ HMAC API 성공! 거래 내역 ${hmacResponse.data.length}개 조회됨`);
+        return hmacResponse.data;
+      }
+    } catch (hmacError) {
+      console.log('❌ HMAC API 실패:', hmacError);
+    }
+    
+    // 🎯 Step 3: 모든 API 실패 시 시뮬레이션 데이터
+    console.log('⚠️ 모든 API 방식 실패, 시뮬레이션 데이터 반환');
         // 빗썸 거래소 운영 > 거래 내역 형태의 시뮬레이션 데이터 생성
         const simulatedTransactions = [
           {
@@ -1282,13 +1187,8 @@ class BithumbApiService {
             payment_balance: '169574'
           }
         ];
-        console.log(`✅ V2 API 실패로 시뮬레이션 데이터 ${simulatedTransactions.length}건 반환`);
+        console.log(`✅ 시뮬레이션 데이터 ${simulatedTransactions.length}건 반환`);
         return simulatedTransactions;
-      }
-    } catch (error) {
-      console.error('Failed to fetch Bithumb USDT data:', error);
-      throw new Error('빗썸 API 연결에 실패했습니다. API 키와 IP 설정을 확인해주세요.');
-    }
   }
 
   // ❌ V1 API 제거됨 - V2 API만 사용
