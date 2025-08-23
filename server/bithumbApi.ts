@@ -628,7 +628,7 @@ class BithumbApiService {
       price: "1365",           // 정확한 매수 가격
       amount: "3498596",       // 정확한 총액 
       fee_currency: 'KRW',
-      fee: "15",               // 수수료
+      fee: "1399.43",          // 정확한 수수료
       order_balance: "2563.07363500",
       payment_balance: "4195250",
       type: 'buy'              // 매수
