@@ -866,11 +866,11 @@ class BithumbApiService {
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🔥🔥🔥 V2 API ONLY - POST /v2/user/transactions! limit=${limit} 🔥🔥🔥`);
+      console.log(`🔥🔥🔥 빗썸 공식 HMAC 방식 - POST /info/user_transactions! limit=${limit} 🔥🔥🔥`);
       
       // 🎯 V2 API POST 방식만 사용
       try {
-        console.log('🎯 V2 API POST 방식: /v2/user/transactions 호출');
+        console.log('🎯 빗썸 공식 HMAC-SHA256 방식: /info/user_transactions 호출');
         
         const queryParams = {
           order_currency: 'USDT',
@@ -878,10 +878,10 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 V2 API POST 방식: JWT + POST /v2/user/transactions (정확한 엔드포인트)
-        const ordersResponse = await this.makeApiRequest('/v2/user/transactions', queryParams, 'POST');
+        // 🔥 빗썸 공식 방식: HMAC-SHA256 + POST /info/user_transactions
+        const ordersResponse = await this.makeApiRequestV12('/info/user_transactions', queryParams);
         
-        console.log('🎉 V2 API 응답 성공!', {
+        console.log('🎉 빗썸 HMAC API 응답 성공!', {
           status: ordersResponse?.status,
           dataType: typeof ordersResponse?.data,
           dataLength: Array.isArray(ordersResponse?.data) ? ordersResponse.data.length : 'not array'
@@ -890,7 +890,7 @@ class BithumbApiService {
         // 빗썸 API 성공 응답 처리
         if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
           const transactions = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
-          console.log(`✅ V2 API로 거래 내역 ${transactions.length}개 조회 성공!`);
+          console.log(`✅ 빗썸 HMAC API로 거래 내역 ${transactions.length}개 조회 성공!`);
           
           if (transactions.length > 0) {
             return transactions.map((tx: any) => {
