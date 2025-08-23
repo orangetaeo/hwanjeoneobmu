@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto, { createHmac } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import querystring from 'querystring';
@@ -648,18 +648,47 @@ class BithumbApiService {
       console.log(`🔥🔥🔥 COMPLETELY NEW getUsdtTransactions METHOD CALLED! limit=${limit} 🔥🔥🔥`);
       console.log(`🚨 NEW CODE - try block entered`);
       
-      // 🚀 빗썸 공식 주문 리스트 조회 API 직접 시도
+      // 🔥 빗썸 HMAC SHA512 인증 방식 (최우선 시도)
       try {
-        console.log('🎉 1차 시도: /info/orders (빗썸 공식 주문 리스트 조회)');
+        console.log('🔥 1차 시도: HMAC SHA512 인증으로 /info/orders 호출');
         
         const queryParams = {
           order_currency: 'USDT',
           payment_currency: 'KRW',
-          count: limit,
-          after: 0
+          count: limit
         };
         
-        const ordersResponse = await this.makeApiV2Request('/info/orders', queryParams);
+        // 🔥 HMAC SHA512 인증 방식으로 변경
+        const ordersResponse = await this.makeHmacRequest('/info/orders', queryParams);
+        
+        console.log('🎉 HMAC 응답 성공!', {
+          status: ordersResponse?.status,
+          dataType: typeof ordersResponse?.data,
+          dataLength: Array.isArray(ordersResponse?.data) ? ordersResponse.data.length : 'not array'
+        });
+        
+        // 빗썸 API 성공 응답 처리
+        if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
+          const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
+          console.log(`✅ HMAC로 주문 내역 ${orders.length}개 조회 성공!`);
+          
+          if (orders.length > 0) {
+            return orders.map((order: any) => ({
+              transfer_date: new Date(order.order_date || order.created_at || Date.now()).getTime(),
+              order_currency: order.order_currency || 'USDT',
+              payment_currency: order.payment_currency || 'KRW',
+              units: order.units || order.order_qty || order.volume,
+              price: order.price || order.order_price,
+              amount: order.total || order.amount || (parseFloat(order.units || '0') * parseFloat(order.price || '0')).toString(),
+              fee_currency: 'KRW',
+              fee: order.fee || order.paid_fee || '0',
+              order_balance: order.order_balance || '0',
+              payment_balance: order.payment_balance || '0',
+              type: order.type || order.side || 'buy',
+              order_id: order.order_id || order.uuid
+            }));
+          }
+        }
         
         console.log('📊 /orders 응답 타입:', typeof ordersResponse, Array.isArray(ordersResponse));
         console.log('📊 /orders 응답 preview:', JSON.stringify(ordersResponse).substring(0, 200));
@@ -692,7 +721,8 @@ class BithumbApiService {
         }
         
       } catch (ordersError: any) {
-        console.log('❌ /orders 실패:', ordersError.message);
+        console.log('❌ HMAC /info/orders 실패:', ordersError.message);
+        console.log('❌ HMAC 상세 에러:', ordersError);
       }
       
       // 2차 시도: 기존 방식
@@ -710,6 +740,81 @@ class BithumbApiService {
     } catch (error) {
       console.error('Failed to fetch Bithumb USDT data:', error);
       throw new Error('빗썸 API 연결에 실패했습니다. API 키와 IP 설정을 확인해주세요.');
+    }
+  }
+
+  // 🔥 HMAC SHA512 인증 방식 (빗썸 공식 방식) - 테스트용 public으로 변경
+  public async makeHmacRequest(endpoint: string, params: any = {}): Promise<any> {
+    const nonce = Date.now() * 1000; // microseconds
+    
+    // 파라미터에 endpoint 추가 (빗썸 API 요구사항)
+    const requestParams = {
+      ...params,
+      endpoint
+    };
+    
+    // 쿼리 스트링 생성
+    const queryString = querystring.stringify(requestParams);
+    
+    // HMAC SHA512 서명 생성
+    const message = endpoint + queryString + nonce;
+    const signature = createHmac('sha512', this.config.secretKey)
+      .update(message, 'utf8')
+      .digest('base64');
+    
+    console.log('🔐 HMAC SHA512 서명 생성:', {
+      endpoint,
+      nonce,
+      messageLength: message.length,
+      signatureLength: signature.length
+    });
+    
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Api-Key': this.config.apiKey,
+      'Api-Sign': signature,
+      'Api-Nonce': nonce.toString()
+    };
+    
+    console.log('🌐 빗썸 HMAC API Request:', {
+      url: `${this.config.baseUrl}${endpoint}`,
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Api-Key': this.config.apiKey.substring(0, 8) + '...',
+        'Api-Sign': signature.substring(0, 20) + '...'
+      },
+      bodySize: queryString.length
+    });
+    
+    const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: queryString
+    });
+    
+    console.log('📡 HMAC Response Status:', response.status);
+    console.log('📡 HMAC Response Headers:', Object.fromEntries(response.headers.entries()));
+    
+    const textResponse = await response.text();
+    console.log('📡 HMAC Raw Response:', textResponse.substring(0, 500));
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${textResponse}`);
+    }
+    
+    try {
+      const data = JSON.parse(textResponse);
+      
+      // 빗썸 API 오류 처리
+      if (data.status && data.status !== '0000') {
+        throw new Error(`Bithumb API Error: ${data.message} (Code: ${data.status})`);
+      }
+      
+      return data;
+    } catch (parseError) {
+      console.error('JSON 파싱 실패:', parseError);
+      throw new Error(`Invalid JSON response: ${textResponse}`);
     }
   }
 

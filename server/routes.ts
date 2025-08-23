@@ -390,7 +390,7 @@ router.get('/bithumb/balance', requireAuth, async (req: AuthenticatedRequest, re
 
 router.get('/bithumb/transactions', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const transactions = await bithumbApi.getTransactionHistory('USDT');
+    const transactions = await bithumbApi.getTransactionHistory(20, 'USDT');
     res.json(transactions);
   } catch (error) {
     console.error('Error fetching Bithumb transactions:', error);
@@ -425,6 +425,41 @@ router.get('/bithumb/transactions-full', requireAuth, async (req: AuthenticatedR
     res.status(500).json({ 
       error: 'Failed to fetch transaction history from Bithumb API',
       details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// 🔥 HMAC SHA512 인증 방식 직접 테스트 엔드포인트
+router.get('/bithumb/test-hmac', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('🔥🔥🔥 HMAC SHA512 테스트 엔드포인트 호출됨! 🔥🔥🔥');
+    
+    const queryParams = {
+      order_currency: 'USDT',
+      payment_currency: 'KRW',
+      count: 5
+    };
+    
+    console.log('📡 HMAC 테스트 시작...');
+    console.log('📡 테스트 파라미터:', queryParams);
+    
+    // 실제 HMAC 방식으로 빗썸 API 호출
+    const result = await bithumbApi.makeHmacRequest('/info/orders', queryParams);
+    console.log('📡 HMAC 테스트 결과:', result);
+    
+    res.json({
+      success: true,
+      method: 'HMAC SHA512',
+      endpoint: '/info/orders',
+      result: result
+    });
+    
+  } catch (error) {
+    console.error('❌ HMAC 테스트 실패:', error);
+    res.status(500).json({ 
+      success: false,
+      method: 'HMAC SHA512',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
