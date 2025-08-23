@@ -40,8 +40,8 @@ class BithumbApiService {
     console.log('🚨🚨🚨 NEW BITHUMB API SERVICE CONSTRUCTOR CALLED! 🚨🚨🚨');
     
     this.config = {
-      apiKey: process.env.BITHUMB_API_KEY || '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd',
-      secretKey: process.env.BITHUMB_SECRET_KEY || 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2',
+      apiKey: process.env.BITHUMB_API_KEY_V2 || process.env.BITHUMB_API_KEY || '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd',
+      secretKey: process.env.BITHUMB_SECRET_KEY_V2 || process.env.BITHUMB_SECRET_KEY || 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2',
       baseUrl: 'https://api.bithumb.com'
     };
     
@@ -50,7 +50,8 @@ class BithumbApiService {
       secretKeyLength: this.config.secretKey.length,
       baseUrl: this.config.baseUrl,
       apiKeyPreview: this.config.apiKey.substring(0, 8) + '...',
-      secretKeyPreview: this.config.secretKey.substring(0, 8) + '...'
+      secretKeyPreview: this.config.secretKey.substring(0, 8) + '...',
+      usingV2Keys: !!(process.env.BITHUMB_API_KEY_V2 && process.env.BITHUMB_SECRET_KEY_V2)
     });
   }
 

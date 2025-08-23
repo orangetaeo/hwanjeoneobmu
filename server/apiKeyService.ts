@@ -18,6 +18,12 @@ class ApiKeyService {
       apiKey: process.env.BINANCE_API_KEY || '',
       secretKey: process.env.BINANCE_SECRET_KEY || ''
     },
+    bithumb: {
+      connectKey: process.env.BITHUMB_CONNECT_KEY || '',
+      connectSecret: process.env.BITHUMB_CONNECT_SECRET || '',
+      apiKeyV2: process.env.BITHUMB_API_KEY_V2 || '',
+      secretKeyV2: process.env.BITHUMB_SECRET_KEY_V2 || ''
+    },
     coinGecko: {
       apiKey: process.env.COINGECKO_API_KEY || ''
     },
@@ -228,6 +234,12 @@ class ApiKeyService {
       },
       openExchangeRates: {
         apiKey: { label: 'API Key', required: false, maxLength: 32 }
+      },
+      bithumb: {
+        connectKey: { label: 'Connect Key (v1.0)', required: true, maxLength: 32 },
+        connectSecret: { label: 'Connect Secret (v1.0)', required: true, maxLength: 32 },
+        apiKeyV2: { label: 'API Key (v2.0)', required: true, maxLength: 48 },
+        secretKeyV2: { label: 'Secret Key (v2.0)', required: true, maxLength: 84 }
       }
     };
 
