@@ -887,11 +887,11 @@ class BithumbApiService {
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🔥🔥🔥 V2 API ONLY - POST /info/user_transactions! limit=${limit} 🔥🔥🔥`);
+      console.log(`🔥🔥🔥 V2 API ONLY - POST /v1/user/transactions! limit=${limit} 🔥🔥🔥`);
       
       // 🎯 V2 API POST 방식만 사용
       try {
-        console.log('🎯 V2 API POST 방식: /info/user_transactions 호출');
+        console.log('🎯 V2 API POST 방식: /v1/user/transactions 호출');
         
         const queryParams = {
           order_currency: 'USDT',
@@ -899,8 +899,8 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 V2 API POST 방식: JWT + POST /info/user_transactions
-        const ordersResponse = await this.makeApiRequest('/info/user_transactions', queryParams, 'POST');
+        // 🔥 V2 API POST 방식: JWT + POST /v1/user/transactions
+        const ordersResponse = await this.makeApiRequest('/v1/user/transactions', queryParams, 'POST');
         
         console.log('🎉 V2 API 응답 성공!', {
           status: ordersResponse?.status,
