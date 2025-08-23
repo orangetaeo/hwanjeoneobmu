@@ -250,7 +250,7 @@ class BithumbApiService {
     });
     
     return {
-      'api-client-type': '0',  // 기본값: Ascii Code 0 
+      'api-client-type': '2',  // 🔧 API 클라이언트 타입 변경
       'Api-Key': connectKey,
       'Api-Nonce': nonce,
       'Api-Sign': apiSign,
@@ -952,7 +952,15 @@ class BithumbApiService {
       
       // 🎯 V1 HMAC API 방식 시도 (올바른 조합!)
       try {
-        console.log('🎯 빗썸 V1 HMAC 방식: /info/user_transactions 호출');
+        console.log('🔧 빗썸 V1 HMAC 방식: 먼저 /info/balance로 API 키 테스트');
+        
+        // 🔧 먼저 기본 balance 엔드포인트로 API 키 검증
+        try {
+          const balanceResponse = await this.makeApiRequestV12('/info/balance', { currency: 'ALL' });
+          console.log('✅ Balance API 성공! API 키가 정상 작동합니다');
+        } catch (balanceError) {
+          console.log('❌ Balance API도 실패 - API 키 문제일 가능성:', balanceError);
+        }
         
         const queryParams = {
           order_currency: 'USDT',
@@ -960,7 +968,8 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🎯 빗썸 V1 공식 방식: HMAC + POST /info/user_transactions  
+        console.log('🎯 이제 /info/user_transactions 호출');
+        // 🎯 빗썸 V1 공식 방식: HMAC + GET /info/user_transactions  
         const ordersResponse = await this.makeApiRequestV12('/info/user_transactions', queryParams);
         
         console.log('🎉 빗썸 V1 HMAC API 응답 성공!', {
