@@ -139,11 +139,11 @@ class BithumbApiService {
     return jwtToken;
   }
 
-  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (V2 키 사용)
+  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (V1 Connect Key 필요)
   private generateApiSignHeaders(endpoint: string, params: any = {}): any {
-    // 실제 V2 API Key와 Secret Key 사용
-    const connectKey = this.config.apiKey; // V2 API 키 사용
-    const connectSecret = this.config.secretKey; // V2 Secret 키 사용
+    // V1 Connect Key와 Secret 사용 (V2 키로는 작동하지 않음)
+    const connectKey = process.env.BITHUMB_CONNECT_KEY || this.config.apiKey;
+    const connectSecret = process.env.BITHUMB_CONNECT_SECRET || this.config.secretKey;
     
     // 마이크로초 단위 nonce 생성 (빗썸 API 1.0 요구사항)
     const mt = Date.now() / 1000;
@@ -166,7 +166,7 @@ class BithumbApiService {
     // Base64 인코딩
     const apiSign = Buffer.from(hexOutput, 'utf-8').toString('base64');
     
-    console.log('🔐 빗썸 HMAC API-Sign 생성 (V2 키 사용):', {
+    console.log('🔐 빗썸 HMAC API-Sign 생성 (V1 Connect Key 필요):', {
       endpoint,
       nonce,
       strData,
@@ -174,7 +174,8 @@ class BithumbApiService {
       secretKeyLength: connectSecret.length,
       dataLength: data.length,
       signaturePreview: apiSign.substring(0, 20) + '...',
-      usingV2Keys: true
+      needsV1Key: !process.env.BITHUMB_CONNECT_KEY,
+      keySource: process.env.BITHUMB_CONNECT_KEY ? 'V1_ENV' : 'V2_FALLBACK'
     });
     
     return {
@@ -868,11 +869,11 @@ class BithumbApiService {
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🔥🔥🔥 빗썸 V2 JWT 방식 - POST /v2/user/transactions! limit=${limit} 🔥🔥🔥`);
+      console.log(`🔥🔥🔥 빗썸 V1 HMAC 방식 - POST /info/user_transactions! limit=${limit} 🔥🔥🔥`);
       
       // 🎯 V2 API POST 방식만 사용
       try {
-        console.log('🎯 빗썸 V2 JWT 방식: /v2/user/transactions 호출');
+        console.log('🎯 빗썸 V1 HMAC 방식: /info/user_transactions 호출');
         
         const queryParams = {
           order_currency: 'USDT',
@@ -880,10 +881,10 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 빗썸 V2 공식 방식: JWT + POST /v2/user/transactions
-        const ordersResponse = await this.makeApiRequest('/v2/user/transactions', queryParams, 'POST');
+        // 🔥 빗썸 V1 공식 방식: HMAC + POST /info/user_transactions  
+        const ordersResponse = await this.makeApiRequestV12('/info/user_transactions', queryParams);
         
-        console.log('🎉 빗썸 V2 JWT API 응답 성공!', {
+        console.log('🎉 빗썸 V1 HMAC API 응답 성공!', {
           status: ordersResponse?.status,
           dataType: typeof ordersResponse?.data,
           dataLength: Array.isArray(ordersResponse?.data) ? ordersResponse.data.length : 'not array'
@@ -892,7 +893,7 @@ class BithumbApiService {
         // 빗썸 API 성공 응답 처리
         if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
           const transactions = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
-          console.log(`✅ 빗썸 V2 JWT API로 거래 내역 ${transactions.length}개 조회 성공!`);
+          console.log(`✅ 빗썸 V1 HMAC API로 거래 내역 ${transactions.length}개 조회 성공!`);
           
           if (transactions.length > 0) {
             return transactions.map((tx: any) => {
