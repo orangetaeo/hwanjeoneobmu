@@ -900,8 +900,8 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 올바른 빗썸 API 방식: JWT + GET /v1/orders
-        const ordersResponse = await this.makeApiRequest('/v1/orders', queryParams, 'GET');
+        // 🔥 V2 API POST 방식: JWT + POST /info/user_transactions
+        const ordersResponse = await this.makeApiRequest('/info/user_transactions', queryParams, 'POST');
         
         console.log('🎉 HMAC 응답 성공!', {
           status: ordersResponse?.status,
