@@ -907,20 +907,21 @@ router.post('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, 
     }
     
     if (secretKey && secretKey.trim()) {
-      if (secretKey.length !== 32) {
-        return res.status(400).json({ error: 'Secret Key는 32자리여야 합니다.' });
+      // API 2.0의 Secret Key는 Base64 인코딩될 수 있으므로 길이 제한 완화
+      if (secretKey.length < 16) {
+        return res.status(400).json({ error: 'Secret Key는 최소 16자리여야 합니다.' });
       }
       updates.secretKey = secretKey.trim();
     }
     
     if (api2Key && api2Key.trim()) {
-      if (api2Key.length !== 48) {
-        return res.status(400).json({ error: 'API 2.0 Key는 48자리여야 합니다.' });
+      if (api2Key.length < 32) {
+        return res.status(400).json({ error: 'API 2.0 Key는 최소 32자리여야 합니다.' });
       }
       updates.api2Key = api2Key.trim();
     }
     
-    if (apiVersion && ['1.0', '2.0'].includes(apiVersion)) {
+    if (apiVersion && ['1.0', '2.0', '2.1'].includes(apiVersion)) {
       updates.apiVersion = apiVersion;
     }
     
