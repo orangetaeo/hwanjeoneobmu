@@ -40,7 +40,7 @@ class BithumbApiService {
     console.log('🚨🚨🚨 NEW BITHUMB API SERVICE CONSTRUCTOR CALLED! 🚨🚨🚨');
     
     this.config = {
-      apiKey: process.env.BITHUMB_API2_KEY || 'b98ea5c12a3d00694290f5a394682ee9b79ebdc62a7d8fda',
+      apiKey: process.env.BITHUMB_API_KEY || 'b98ea5c12a3d00694290f5a394682ee9b79ebdc62a7d8fda',
       secretKey: process.env.BITHUMB_SECRET_KEY || 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2',
       baseUrl: 'https://api.bithumb.com'
     };
