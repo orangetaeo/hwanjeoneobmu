@@ -55,7 +55,7 @@ class BithumbApiService {
     });
   }
 
-  private generateJwtToken(endpoint: string, queryParams: any = {}): string {
+  private generateJwtToken(endpoint: string, queryParams: any = {}, method: string = 'POST'): string {
     const timestamp = Date.now();
     const nonce = uuidv4();
     
@@ -70,7 +70,7 @@ class BithumbApiService {
       
       sortedKeys.forEach(key => {
         if (queryParams[key] !== undefined && queryParams[key] !== null) {
-          queryPairs.push(`${key}=${queryParams[key]}`);
+          queryPairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(queryParams[key])}`);
         }
       });
       
@@ -79,7 +79,9 @@ class BithumbApiService {
       console.log('🔍 빗썸 공식 쿼리 생성:', {
         originalParams: queryParams,
         sortedKeys,
-        finalQueryString: queryString
+        finalQueryString: queryString,
+        method: method,
+        encodedProperly: true
       });
       
       // 🎯 빗썸 공식: SHA512 해시 생성
@@ -222,7 +224,7 @@ class BithumbApiService {
         generatedQuery: queryString
       });
       
-      const jwtToken = this.generateJwtToken(endpoint, queryParams);
+      const jwtToken = this.generateJwtToken(endpoint, queryParams, method);
       
       // URL 구성 - JWT와 동일한 쿼리 사용
       let url = `${this.config.baseUrl}${endpoint}`;
@@ -887,11 +889,11 @@ class BithumbApiService {
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🔥🔥🔥 V2 API ONLY - POST /v1/user/transactions! limit=${limit} 🔥🔥🔥`);
+      console.log(`🔥🔥🔥 V2 API ONLY - POST /info/user_transactions! limit=${limit} 🔥🔥🔥`);
       
       // 🎯 V2 API POST 방식만 사용
       try {
-        console.log('🎯 V2 API POST 방식: /v1/user/transactions 호출');
+        console.log('🎯 V2 API POST 방식: /info/user_transactions 호출');
         
         const queryParams = {
           order_currency: 'USDT',
@@ -899,8 +901,8 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 V2 API POST 방식: JWT + POST /v1/user/transactions
-        const ordersResponse = await this.makeApiRequest('/v1/user/transactions', queryParams, 'POST');
+        // 🔥 V2 API POST 방식: JWT + POST /info/user_transactions
+        const ordersResponse = await this.makeApiRequest('/info/user_transactions', queryParams, 'POST');
         
         console.log('🎉 V2 API 응답 성공!', {
           status: ordersResponse?.status,
