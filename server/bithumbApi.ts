@@ -1,11 +1,13 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 interface BithumbApiConfig {
   connectKey: string;
   secretKey: string;
   api2Key?: string; // API 2.0 키 추가
   baseUrl: string;
-  apiVersion: '1.0' | '2.0';
+  apiVersion: '1.0' | '2.0' | '2.1';
 }
 
 interface BithumbBalance {
@@ -57,7 +59,7 @@ class BithumbApiService {
   }
 
   private generateHmacSignature(endpoint: string, parameters: any = {}): { signature: string; nonce: string; timestamp?: string } {
-    if (this.config.apiVersion === '2.0') {
+    if (this.config.apiVersion === '2.0' || this.config.apiVersion === '2.1') {
       return this.generateApi2Signature(endpoint, parameters);
     }
     
@@ -108,10 +110,10 @@ class BithumbApiService {
   }
   
   private generateApi2Signature(endpoint: string, parameters: any = {}): { signature: string; nonce: string; timestamp: string } {
-    const timestamp = Date.now().toString();
-    const nonce = timestamp;
+    const timestamp = Date.now();
+    const nonce = uuidv4();
     
-    // API 2.0: JWT-style 서명 생성
+    // JWT v2.1.0: 빗썸 새로운 인증 방식
     let queryString = '';
     if (parameters && Object.keys(parameters).length > 0) {
       const sortedParams = Object.keys(parameters)
@@ -121,28 +123,39 @@ class BithumbApiService {
       queryString = sortedParams;
     }
     
-    // API 2.0 서명 메시지: queryString + nonce
-    const message = queryString + nonce;
-    
-    console.log('빗썸 API 2.0 HMAC SHA512 서명 생성:', {
-      endpoint, parameters, timestamp, nonce,
-      queryString: queryString.substring(0, 100) + (queryString.length > 100 ? '...' : ''),
-      message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
-    });
-    
-    const signature = crypto
-      .createHmac('sha512', this.config.secretKey)
-      .update(message, 'utf-8')
+    // SHA512로 쿼리 해시 생성
+    const queryHash = crypto
+      .createHash('sha512')
+      .update(queryString || '', 'utf-8')
       .digest('hex');
     
-    return { signature, nonce, timestamp };
+    // JWT 페이로드 구성
+    const payload = {
+      access_key: this.config.api2Key || this.config.connectKey,
+      nonce: nonce,
+      timestamp: timestamp,
+      query_hash: queryHash,
+      query_hash_alg: 'SHA512'
+    };
+    
+    console.log('빗썸 API v2.1.0 JWT 인증 생성:', {
+      endpoint, parameters, timestamp, nonce,
+      queryString: queryString.substring(0, 100) + (queryString.length > 100 ? '...' : ''),
+      queryHash: queryHash.substring(0, 20) + '...',
+      accessKey: payload.access_key.substring(0, 10) + '...'
+    });
+    
+    // JWT 토큰 생성 (HS256 알고리즘)
+    const jwtToken = jwt.sign(payload, this.config.secretKey, { algorithm: 'HS256' });
+    
+    return { signature: jwtToken, nonce, timestamp: timestamp.toString() };
   }
 
   private async makeApiRequest(endpoint: string, parameters: any = {}): Promise<any> {
     try {
       const url = `${this.config.baseUrl}${endpoint}`;
       
-      if (this.config.apiVersion === '2.0') {
+      if (this.config.apiVersion === '2.0' || this.config.apiVersion === '2.1') {
         return await this.makeApi2Request(url, endpoint, parameters);
       }
       
@@ -196,14 +209,13 @@ class BithumbApiService {
   }
   
   private async makeApi2Request(url: string, endpoint: string, parameters: any = {}): Promise<any> {
-    const { signature, nonce } = this.generateHmacSignature(endpoint, parameters);
+    const { signature } = this.generateHmacSignature(endpoint, parameters);
     
+    // JWT v2.1.0 헤더 구성
     const headers = {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Api-Key': this.config.api2Key!,
-      'Api-Sign': signature,
-      'Api-Nonce': nonce
+      'Content-Type': 'application/json; charset=utf-8',
+      'Authorization': `Bearer ${signature}`
     };
     
     const requestOptions: RequestInit = {
@@ -212,9 +224,9 @@ class BithumbApiService {
       body: Object.keys(parameters).length > 0 ? JSON.stringify(parameters) : undefined
     };
 
-    console.log(`Bithumb API ${this.config.apiVersion} Request:`, {
+    console.log(`Bithumb API ${this.config.apiVersion} JWT Request:`, {
       url, method: 'POST',
-      headers: { ...headers, 'Api-Key': headers['Api-Key'].substring(0, 10) + '...', 'Api-Sign': '[HIDDEN]' },
+      headers: { ...headers, 'Authorization': 'Bearer [JWT_TOKEN_HIDDEN]' },
       bodyParams: parameters
     });
     
