@@ -139,11 +139,11 @@ class BithumbApiService {
     return jwtToken;
   }
 
-  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (올바른 v1.0 방식)
+  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (V2 키 사용)
   private generateApiSignHeaders(endpoint: string, params: any = {}): any {
-    // v1.0 Connect Key와 Secret Key 사용
-    const connectKey = process.env.BITHUMB_CONNECT_KEY || 'd246ce56dfd4358c5ae038f61cdb3e6b';
-    const connectSecret = process.env.BITHUMB_CONNECT_SECRET || '1546457014d984d20bd716ccd0e9e99e';
+    // 실제 V2 API Key와 Secret Key 사용
+    const connectKey = this.config.apiKey; // V2 API 키 사용
+    const connectSecret = this.config.secretKey; // V2 Secret 키 사용
     
     // 마이크로초 단위 nonce 생성 (빗썸 API 1.0 요구사항)
     const mt = Date.now() / 1000;
@@ -166,13 +166,15 @@ class BithumbApiService {
     // Base64 인코딩
     const apiSign = Buffer.from(hexOutput, 'utf-8').toString('base64');
     
-    console.log('🔐 v1.2.0 API-Sign 생성 (올바른 v1.0 방식):', {
+    console.log('🔐 빗썸 HMAC API-Sign 생성 (V2 키 사용):', {
       endpoint,
       nonce,
       strData,
       connectKeyPreview: connectKey.substring(0, 10) + '...',
+      secretKeyLength: connectSecret.length,
       dataLength: data.length,
-      signaturePreview: apiSign.substring(0, 20) + '...'
+      signaturePreview: apiSign.substring(0, 20) + '...',
+      usingV2Keys: true
     });
     
     return {
