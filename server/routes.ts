@@ -1334,4 +1334,27 @@ router.get('/api-keys/services', requireAuth, async (req: AuthenticatedRequest, 
   }
 });
 
+// 🎯 빗썸 v1.2.0 거래 체결내역 직접 테스트
+router.get('/bithumb/v12-test', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('🎯 v1.2.0 거래 체결내역 직접 테스트 시작...');
+    const transactions = await bithumbApi.getUserTransactions('USDT');
+    
+    res.json({
+      success: true,
+      message: 'v1.2.0 거래 체결내역 조회 완료',
+      count: transactions.length,
+      transactions: transactions,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('v1.2.0 거래 체결내역 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 export default router;

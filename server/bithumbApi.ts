@@ -114,6 +114,76 @@ class BithumbApiService {
     return jwtToken;
   }
 
+  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성
+  private generateApiSignHeaders(endpoint: string, params: any = {}): any {
+    const nonce = Date.now().toString();
+    
+    // 파라미터를 쿼리 스트링으로 변환
+    const queryString = Object.keys(params)
+      .sort()
+      .map(key => `${key}=${params[key]}`)
+      .join('&');
+    
+    // API-Sign 생성: endpoint + queryString + nonce + secretKey
+    const signatureString = endpoint + queryString + nonce + this.config.secretKey;
+    const signature = crypto
+      .createHash('sha512')
+      .update(signatureString, 'utf-8')
+      .digest('hex');
+    
+    console.log('🔐 v1.2.0 API-Sign 생성:', {
+      endpoint,
+      nonce,
+      queryString,
+      signaturePreview: signature.substring(0, 20) + '...'
+    });
+    
+    return {
+      'Api-Key': this.config.apiKey,
+      'Api-Nonce': nonce,
+      'Api-Sign': signature,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    };
+  }
+
+  // 🎯 빗썸 v1.2.0 API 요청
+  private async makeApiRequestV12(endpoint: string, params: any = {}): Promise<any> {
+    try {
+      const headers = this.generateApiSignHeaders(endpoint, params);
+      const body = new URLSearchParams(params).toString();
+      
+      console.log(`📡 빗썸 v1.2.0 ${endpoint} 요청:`, {
+        url: `${this.config.baseUrl}${endpoint}`,
+        params,
+        headersPreview: {
+          'Api-Key': headers['Api-Key'].substring(0, 10) + '...',
+          'Api-Nonce': headers['Api-Nonce']
+        }
+      });
+      
+      const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body
+      });
+      
+      const textResponse = await response.text();
+      console.log('📡 v1.2.0 응답 상태:', response.status);
+      console.log('📡 v1.2.0 응답:', textResponse.substring(0, 200) + '...');
+      
+      const data = JSON.parse(textResponse);
+      
+      if (data.status !== '0000') {
+        throw new Error(`Bithumb v1.2.0 API Error: ${data.status} - ${data.message}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('❌ v1.2.0 API 요청 실패:', error);
+      throw error;
+    }
+  }
+
   private async makeApiRequest(endpoint: string, queryParams: any = {}, method: string = 'GET'): Promise<any> {
     try {
       // 🎯 빗썸 공식: 쿼리 문자열을 일관되게 생성
@@ -228,8 +298,44 @@ class BithumbApiService {
     }
   }
 
+  // 🎯 빗썸 v1.2.0 거래 체결내역 조회 (실제 완료된 거래)
+  async getUserTransactions(currency: string = 'USDT'): Promise<any[]> {
+    console.log(`📋 빗썸 v1.2.0 거래 체결내역 조회 시작... currency: ${currency}`);
+    
+    try {
+      // v1.2.0 방식 파라미터
+      const params = {
+        order_currency: currency.toUpperCase(),
+        payment_currency: 'KRW',
+        count: '50',  // 최대 50건
+        searchGb: '0'  // 0: 전체, 1: 매수완료, 2: 매도완료
+      };
+      
+      const result = await this.makeApiRequestV12('/info/user_transactions', params);
+      
+      console.log('✅ 빗썸 v1.2.0 거래내역 조회 성공:', result);
+      return result?.data || [];
+    } catch (error) {
+      console.error('❌ 빗썸 v1.2.0 거래내역 조회 실패:', error);
+      throw error;
+    }
+  }
+
   public async getTransactionHistory(limit: number = 20, currency: string = 'USDT'): Promise<any[]> {
     try {
+      // 🎯 v1.2.0 거래 체결내역 조회 (실제 완료된 거래)
+      console.log(`🔥 v1.2.0 방식으로 실제 거래 체결내역 조회 시작 - ${currency}`);
+      
+      try {
+        const realTransactions = await this.getUserTransactions(currency);
+        if (realTransactions && realTransactions.length > 0) {
+          console.log(`🎉 v1.2.0 성공! 실제 거래 체결내역 ${realTransactions.length}개 조회됨`);
+          return realTransactions.slice(0, limit);  // limit만큼만 반환
+        }
+      } catch (v12Error) {
+        console.log(`❌ v1.2.0 방식 실패:`, v12Error.message);
+      }
+      
       // 🚀 API 2.0 JWT 방식으로 실제 거래 내역 조회 시도
       console.log(`🔥 API 2.0 JWT 방식으로 실제 거래 내역 조회 시작 - ${currency}`);
       
@@ -280,6 +386,19 @@ class BithumbApiService {
       // 모든 API 실패 시 테스트 데이터 반환
       console.log('⚠️ 모든 API 방식 실패, 테스트 데이터 반환');
       console.log('💡 목표: 2025-08-18 13:36:04 - 2.563 USDT 거래 조회');
+      console.log('🎯 v1.2.0 API-Sign 방식 최종 시도...');
+      
+      // 최종으로 v1.2.0 방식 시도
+      try {
+        const finalTransactions = await this.getUserTransactions(currency);
+        if (finalTransactions && finalTransactions.length > 0) {
+          console.log(`🎉 v1.2.0 최종 성공! 실제 거래 체결내역 ${finalTransactions.length}개 조회됨`);
+          return finalTransactions.slice(0, limit);
+        }
+      } catch (finalError) {
+        console.log(`❌ v1.2.0 최종 시도도 실패:`, finalError.message);
+      }
+      
       return this.generateTestTransactionData(limit, currency);
       
     } catch (error) {
