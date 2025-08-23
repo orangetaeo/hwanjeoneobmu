@@ -225,12 +225,10 @@ class BithumbApiService {
     const mtArray = mt.toString().split('.');
     const nonce = mtArray[0] + (mtArray[1] || '000').substring(0, 3);
     
-    // 파라미터를 URL 인코딩으로 변환
-    const endpointItem = { endpoint: endpoint };
-    const uriArray = { ...endpointItem, ...params };
-    const strData = new URLSearchParams(uriArray).toString();
+    // 🎯 빗썸 공식: 파라미터만 URL 인코딩 (endpoint 제외)
+    const strData = new URLSearchParams(params).toString();
     
-    // 빗썸 API 1.0 시그니처 형식: endpoint + NULL + str_data + NULL + nonce
+    // 🎯 빗썸 API 1.0 시그니처 형식: endpoint + NULL + str_data + NULL + nonce
     const data = endpoint + '\0' + strData + '\0' + nonce;
     
     // HMAC-SHA512로 해시 생성
@@ -238,8 +236,8 @@ class BithumbApiService {
     hmac.update(data, 'utf-8');
     const hexOutput = hmac.digest('hex');
     
-    // Base64 인코딩
-    const apiSign = Buffer.from(hexOutput, 'utf-8').toString('base64');
+    // 🔧 올바른 Base64 인코딩: hex를 binary로 변환 후 base64
+    const apiSign = Buffer.from(hexOutput, 'hex').toString('base64');
     
     console.log('🔐 빗썸 HMAC API-Sign 생성 (V1 Connect Key 필요):', {
       endpoint,

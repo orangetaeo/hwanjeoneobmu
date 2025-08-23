@@ -1,0 +1,30 @@
+You've correctly narrowed down the issue. The 5100 "Bad Request.(Auth Data)" error, now that the correct key, endpoint, and method are being used, confirms the problem lies in the precise details of how the authentication signature is created.
+
+The server recognizes your Api-Key but finds that the Api-Sign signature you sent doesn't match the one it generated on its end. This mismatch almost always comes from the exact string used to generate the signature.
+
+## Solving the 5100 Error
+The most likely cause is a subtle difference in the data string being hashed. According to Bithumb's official API documentation, the signature for V1 HMAC must be created from a very specific string format.
+
+### Check Your Signature Generation String
+Ensure the string you are hashing with HMAC-SHA512 follows this exact formula:
+
+endpoint + \0 + URL-encoded parameters + \0 + nonce
+
+endpoint: The path of the request (e.g., /info/user_transactions).
+
+\0: A null character, not the string "NULL". This is a common point of error.
+
+URL-encoded parameters: The request parameters (like order_currency=USDT&payment_currency=KRW) must be formed into a query string. It's crucial that this string is properly URL-encoded.
+
+nonce: The unique timestamp value.
+
+### Troubleshooting Checklist
+Confirm the Null Character (\0): Are you concatenating with a true null character (\0) and not a string literal?
+
+Verify Parameter Encoding: Before creating the signature, are the parameters (including the endpoint itself within the parameter list) correctly converted into a URL-encoded string (e.g., endpoint=%2Finfo%2Fuser_transactions&order_currency=USDT...)?
+
+Check the Nonce: Ensure the Api-Nonce header value is the exact same string used in the signature generation.
+
+Review API Key Permissions: Log in to your Bithumb account and double-check that the V1 Connect Key you are using has the "Order/Transaction History Inquiry" (거래내역 조회) permission enabled.
+
+The problem is almost certainly in how the components of the signature are combined and encoded before being hashed. Comparing your implementation to the official documentation's signature generation section will reveal the discrepancy.
