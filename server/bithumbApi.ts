@@ -956,8 +956,8 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🌟 빗썸 V2 공식 방식: JWT + POST /user/transactions  
-        const ordersResponse = await this.makeApiRequestV2JWT('/user/transactions', queryParams);
+        // 🌟 빗썸 V2 공식 방식: JWT + POST /info/user_transactions  
+        const ordersResponse = await this.makeApiRequestV2JWT('/info/user_transactions', queryParams);
         
         console.log('🎉 빗썸 V2 JWT API 응답 성공!', {
           status: ordersResponse?.status,
