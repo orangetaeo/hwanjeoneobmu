@@ -40,7 +40,7 @@ class BithumbApiService {
     console.log('🚨🚨🚨 NEW BITHUMB API SERVICE CONSTRUCTOR CALLED! 🚨🚨🚨');
     
     this.config = {
-      apiKey: process.env.BITHUMB_API_KEY || 'b98ea5c12a3d00694290f5a394682ee9b79ebdc62a7d8fda',
+      apiKey: process.env.BITHUMB_API_KEY || '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd',
       secretKey: process.env.BITHUMB_SECRET_KEY || 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2',
       baseUrl: 'https://api.bithumb.com'
     };
@@ -658,8 +658,8 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 HMAC SHA512 인증 방식으로 변경
-        const ordersResponse = await this.makeHmacRequest('/info/orders', queryParams);
+        // 🔥 올바른 빗썸 API 방식: JWT + GET /v1/orders
+        const ordersResponse = await this.makeApiRequest('/v1/orders', queryParams, 'GET');
         
         console.log('🎉 HMAC 응답 성공!', {
           status: ordersResponse?.status,
@@ -743,7 +743,56 @@ class BithumbApiService {
     }
   }
 
-  // 🔥 HMAC SHA512 인증 방식 (빗썸 공식 방식) - 테스트용 public으로 변경
+  // 🔥 API 1.0 HMAC SHA512 인증 방식 (Connect Key 사용)
+  public async makeHmacV1Request(endpoint: string, params: any = {}): Promise<any> {
+    const connectKey = 'd246ce56dfd4358c5ae038f61cdb3e6b';
+    const secretKey = '1546457014d984d20bd716ccd0e9e99e';
+    const nonce = Date.now() * 1000;
+    
+    const requestParams = {
+      ...params,
+      endpoint
+    };
+    
+    const queryString = querystring.stringify(requestParams);
+    const message = endpoint + queryString + nonce;
+    const signature = createHmac('sha512', secretKey)
+      .update(message, 'utf8')
+      .digest('base64');
+    
+    console.log('🔐 API 1.0 HMAC 서명 생성:', {
+      endpoint, nonce, connectKey: connectKey.substring(0, 8) + '...'
+    });
+    
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Api-Key': connectKey,
+      'Api-Sign': signature,
+      'Api-Nonce': nonce.toString()
+    };
+    
+    const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: queryString
+    });
+    
+    const textResponse = await response.text();
+    console.log('📡 API 1.0 Response:', textResponse.substring(0, 200));
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${textResponse}`);
+    }
+    
+    const data = JSON.parse(textResponse);
+    if (data.status && data.status !== '0000') {
+      throw new Error(`Bithumb API Error: ${data.message} (Code: ${data.status})`);
+    }
+    
+    return data;
+  }
+
+  // 🔥 API 2.0 HMAC SHA512 인증 방식 (API Key 사용) - 테스트용 public으로 변경
   public async makeHmacRequest(endpoint: string, params: any = {}): Promise<any> {
     const nonce = Date.now() * 1000; // microseconds
     

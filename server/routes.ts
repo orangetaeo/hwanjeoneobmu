@@ -429,10 +429,91 @@ router.get('/bithumb/transactions-full', requireAuth, async (req: AuthenticatedR
   }
 });
 
-// 🔥 HMAC SHA512 인증 방식 직접 테스트 엔드포인트
+// 🔥 빗썸 공식 JWT 방식 직접 구현 테스트
+router.get('/bithumb/test-jwt', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('🎯 빗썸 공식 JWT 방식 테스트 시작!');
+    
+    const jwt = require('jsonwebtoken');
+    const crypto = require('crypto');
+    const querystring = require('querystring');
+    
+    const accessKey = '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd';
+    const secretKey = 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2';
+    
+    // 빗썸 공식 문서 기준 쿼리
+    const query = 'market=KRW-USDT&limit=5&page=1&order_by=desc&state=done';
+    
+    // SHA512 해시
+    const hash = crypto.createHash('SHA512');
+    const queryHash = hash.update(query, 'utf-8').digest('hex');
+    
+    // JWT 페이로드
+    const payload = {
+      access_key: accessKey,
+      nonce: Date.now(),
+      timestamp: Date.now(),
+      query_hash: queryHash,
+      query_hash_alg: 'SHA512'
+    };
+    
+    console.log('🔐 JWT 페이로드:', {
+      accessKeyLength: accessKey.length,
+      nonce: payload.nonce,
+      timestamp: payload.timestamp,
+      queryHashLength: queryHash.length
+    });
+    
+    // JWT 토큰 생성
+    const jwtToken = jwt.sign(payload, secretKey);
+    console.log('🎫 JWT 토큰 생성 완료:', jwtToken.substring(0, 50) + '...');
+    
+    // API 호출
+    const apiUrl = `https://api.bithumb.com/v1/orders?${query}`;
+    console.log('📡 API 호출:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📡 응답 상태:', response.status);
+    const responseText = await response.text();
+    console.log('📡 응답 내용:', responseText.substring(0, 200));
+    
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = { raw: responseText };
+    }
+    
+    res.json({
+      success: response.ok,
+      method: 'JWT Bearer Token (빗썸 공식)',
+      endpoint: '/v1/orders',
+      status: response.status,
+      query,
+      data: responseData
+    });
+    
+  } catch (error) {
+    console.error('❌ 빗썸 JWT 실패:', error);
+    res.status(500).json({
+      success: false,
+      method: 'JWT Bearer Token (빗썸 공식)',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// 🔥 빗썸 API 1.0과 2.0 모두 테스트하는 엔드포인트
 router.get('/bithumb/test-hmac', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    console.log('🔥🔥🔥 HMAC SHA512 테스트 엔드포인트 호출됨! 🔥🔥🔥');
+    console.log('🔥🔥🔥 빗썸 API 1.0 & 2.0 테스트 시작! 🔥🔥🔥');
     
     const queryParams = {
       order_currency: 'USDT',
@@ -440,25 +521,60 @@ router.get('/bithumb/test-hmac', requireAuth, async (req: AuthenticatedRequest, 
       count: 5
     };
     
-    console.log('📡 HMAC 테스트 시작...');
-    console.log('📡 테스트 파라미터:', queryParams);
+    const results: any = { jwt: null, v1: null, v2: null };
     
-    // 실제 HMAC 방식으로 빗썸 API 호출
-    const result = await bithumbApi.makeHmacRequest('/info/orders', queryParams);
-    console.log('📡 HMAC 테스트 결과:', result);
+    // JWT 방식 테스트 (올바른 빗썸 API)
+    try {
+      console.log('📡 JWT 방식 테스트 시작...');
+      
+      // 올바른 쿼리 파라미터 (빗썸 공식 문서 기준)
+      const correctParams = {
+        market: 'KRW-USDT',
+        limit: 5,
+        page: 1,
+        order_by: 'desc',
+        state: 'done'  // 체결 완료된 주문만 조회
+      };
+      
+      const jwtResult = await bithumbApi.makeApiRequest('/v1/orders', correctParams, 'GET');
+      console.log('✅ JWT 방식 성공:', jwtResult);
+      results.jwt = { success: true, data: jwtResult };
+    } catch (jwtError: any) {
+      console.log('❌ JWT 방식 실패:', jwtError.message);
+      results.jwt = { success: false, error: jwtError.message };
+    }
+    
+    // 기존 방식들도 유지 (비교용)
+    try {
+      console.log('📡 API 1.0 테스트 시작...');
+      const v1Result = await bithumbApi.makeHmacV1Request('/info/orders', queryParams);
+      console.log('✅ API 1.0 성공:', v1Result);
+      results.v1 = { success: true, data: v1Result };
+    } catch (v1Error) {
+      console.log('❌ API 1.0 실패:', v1Error.message);
+      results.v1 = { success: false, error: v1Error.message };
+    }
+    
+    try {
+      console.log('📡 API 2.0 테스트 시작...');
+      const v2Result = await bithumbApi.makeHmacRequest('/info/orders', queryParams);
+      console.log('✅ API 2.0 성공:', v2Result);
+      results.v2 = { success: true, data: v2Result };
+    } catch (v2Error) {
+      console.log('❌ API 2.0 실패:', v2Error.message);
+      results.v2 = { success: false, error: v2Error.message };
+    }
     
     res.json({
       success: true,
-      method: 'HMAC SHA512',
-      endpoint: '/info/orders',
-      result: result
+      message: 'API 1.0과 2.0 테스트 완료',
+      results: results
     });
     
   } catch (error) {
-    console.error('❌ HMAC 테스트 실패:', error);
+    console.error('❌ 전체 테스트 실패:', error);
     res.status(500).json({ 
       success: false,
-      method: 'HMAC SHA512',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
