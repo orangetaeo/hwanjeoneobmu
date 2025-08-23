@@ -37,13 +37,15 @@ class BithumbApiService {
   private config: BithumbApiConfig;
 
   constructor() {
+    console.log('🚨🚨🚨 NEW BITHUMB API SERVICE CONSTRUCTOR CALLED! 🚨🚨🚨');
+    
     this.config = {
       apiKey: process.env.BITHUMB_API2_KEY || 'b98ea5c12a3d00694290f5a394682ee9b79ebdc62a7d8fda',
       secretKey: process.env.BITHUMB_SECRET_KEY || 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2',
       baseUrl: 'https://api.bithumb.com'
     };
     
-    console.log('Bithumb API 2.0 Service initialized with:', {
+    console.log('🚨 NEW Constructor - Bithumb API 2.0 Service initialized with:', {
       apiKeyLength: this.config.apiKey.length,
       secretKeyLength: this.config.secretKey.length,
       baseUrl: this.config.baseUrl,
@@ -358,9 +360,68 @@ class BithumbApiService {
   private async getTransactionHistoryV2(currency: string, limit: number): Promise<any[]> {
     console.log(`🎯 API 2.0 JWT로 ${currency} 거래 내역 조회 시작`);
     
-    // 1차 시도: 계좌 거래 내역 조회 
+    // 🎯 1차 시도: 빗썸 공식 주문 리스트 조회 (JWT API)
     try {
-      console.log('📋 1차 시도: /v2/account/transactions (계좌 거래 내역)');
+      console.log('🎉 1차 시도: /orders (빗썸 공식 주문 리스트 조회)');
+      const ordersResponse = await this.makeApiV2Request('/orders', {
+        market: `${currency}-KRW`,
+        state: 'done',
+        limit: limit,
+        order_by: 'desc'
+      });
+      
+      console.log('📊 /orders 응답 타입:', typeof ordersResponse, Array.isArray(ordersResponse));
+      
+      // 빗썸 공식 주문 리스트 API는 배열을 직접 반환 (data 감싸지 않음)
+      if (ordersResponse && Array.isArray(ordersResponse)) {
+        const orders = ordersResponse;
+        console.log(`🎉 빗썸 공식 주문 리스트 ${orders.length}개 조회 성공!`);
+        
+        return orders.map((order: any) => ({
+          transfer_date: new Date(order.created_at).getTime() || Date.now(),
+          order_currency: order.market?.split('-')[0] || currency,
+          payment_currency: order.market?.split('-')[1] || 'KRW',
+          units: order.executed_volume || order.volume,
+          price: order.price,
+          amount: (parseFloat(order.executed_volume || '0') * parseFloat(order.price || '0')).toString(),
+          fee_currency: 'KRW',
+          fee: order.paid_fee || '0',
+          order_balance: '0',
+          payment_balance: '0',
+          type: order.side || 'bid',
+          uuid: order.uuid,
+          state: order.state
+        }));
+      }
+      
+      // 기존 방식으로 data 필드 확인
+      if (ordersResponse && ordersResponse.data && Array.isArray(ordersResponse.data)) {
+        const orders = ordersResponse.data;
+        console.log(`✅ 주문 내역 ${orders.length}개 조회됨`);
+        
+        return orders.map((order: any) => ({
+          transfer_date: new Date(order.created_at).getTime() || Date.now(),
+          order_currency: order.market?.split('-')[0] || currency,
+          payment_currency: order.market?.split('-')[1] || 'KRW',
+          units: order.executed_volume || order.volume,
+          price: order.price,
+          amount: (parseFloat(order.executed_volume || '0') * parseFloat(order.price || '0')).toString(),
+          fee_currency: 'KRW',
+          fee: order.paid_fee || '0',
+          order_balance: '0',
+          payment_balance: '0',
+          type: order.side || 'bid',
+          uuid: order.uuid,
+          state: order.state
+        }));
+      }
+    } catch (ordersError: any) {
+      console.log('❌ /orders 실패:', ordersError.message);
+    }
+    
+    // 2차 시도: 계좌 거래 내역 조회 
+    try {
+      console.log('📋 2차 시도: /v2/account/transactions (계좌 거래 내역)');
       const transResponse = await this.makeApiV2Request('/v2/account/transactions', {
         currency: currency,
         offset: 0,
@@ -398,31 +459,57 @@ class BithumbApiService {
       console.log('❌ /orders/{uuid} 실패:', ordersError.message);
     }
     
-    // 3차 시도: 주문 리스트 조회
+    // 3차 시도: 주문 리스트 조회 (빗썸 공식 JWT API)
     try {
-      console.log('📋 3차 시도: /orders (주문 리스트 조회)');
+      console.log('📋 3차 시도: /orders (빗썸 공식 주문 리스트 조회)');
       const ordersResponse = await this.makeApiV2Request('/orders', {
         market: `${currency}-KRW`,
         state: 'done',
-        limit: limit
+        limit: limit,
+        order_by: 'desc'
       });
       
-      if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
-        const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
+      // 빗썸 공식 주문 리스트 API는 배열을 직접 반환 (data 감싸지 않음)
+      if (ordersResponse && Array.isArray(ordersResponse)) {
+        const orders = ordersResponse;
+        console.log(`🎉 빗썸 공식 주문 리스트 ${orders.length}개 조회 성공!`);
+        
+        return orders.map((order: any) => ({
+          transfer_date: new Date(order.created_at).getTime() || Date.now(),
+          order_currency: order.market?.split('-')[0] || currency,
+          payment_currency: order.market?.split('-')[1] || 'KRW',
+          units: order.executed_volume || order.volume,
+          price: order.price,
+          amount: (parseFloat(order.executed_volume || '0') * parseFloat(order.price || '0')).toString(),
+          fee_currency: 'KRW',
+          fee: order.paid_fee || '0',
+          order_balance: '0',
+          payment_balance: '0',
+          type: order.side || 'bid',
+          uuid: order.uuid,
+          state: order.state
+        }));
+      }
+      
+      // 기존 방식으로 data 필드 확인
+      if (ordersResponse && ordersResponse.data && Array.isArray(ordersResponse.data)) {
+        const orders = ordersResponse.data;
         console.log(`✅ 주문 내역 ${orders.length}개 조회됨`);
         
         return orders.map((order: any) => ({
-          transfer_date: order.order_date || Date.now(),
-          order_currency: order.order_currency || currency,
-          payment_currency: order.payment_currency || 'KRW',
-          units: order.units || order.order_qty,
-          price: order.price || order.order_price,
-          amount: order.total || (parseFloat(order.units || '0') * parseFloat(order.price || '0')).toString(),
+          transfer_date: new Date(order.created_at).getTime() || Date.now(),
+          order_currency: order.market?.split('-')[0] || currency,
+          payment_currency: order.market?.split('-')[1] || 'KRW',
+          units: order.executed_volume || order.volume,
+          price: order.price,
+          amount: (parseFloat(order.executed_volume || '0') * parseFloat(order.price || '0')).toString(),
           fee_currency: 'KRW',
-          fee: order.fee || '0',
-          order_balance: order.order_balance || '0',
-          payment_balance: order.payment_balance || '0',
-          type: order.type || order.side || 'bid'
+          fee: order.paid_fee || '0',
+          order_balance: '0',
+          payment_balance: '0',
+          type: order.side || 'bid',
+          uuid: order.uuid,
+          state: order.state
         }));
       }
     } catch (ordersError) {
@@ -550,9 +637,60 @@ class BithumbApiService {
     return testData;
   }
 
-  public async getUsdtTransactions(limit: number = 20): Promise<any[]> {
+  public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      // 전체 거래 내역 조회
+      console.log(`🔥🔥🔥 COMPLETELY NEW getUsdtTransactions METHOD CALLED! limit=${limit} 🔥🔥🔥`);
+      console.log(`🚨 NEW CODE - try block entered`);
+      
+      // 🚀 빗썸 공식 주문 리스트 조회 API 직접 시도
+      try {
+        console.log('🎉 1차 시도: /orders (빗썸 공식 주문 리스트 조회)');
+        
+        const queryParams = {
+          market: 'USDT-KRW',
+          state: 'done',
+          limit: limit,
+          order_by: 'desc'
+        };
+        
+        const ordersResponse = await this.makeApiV2Request('/orders', queryParams);
+        
+        console.log('📊 /orders 응답 타입:', typeof ordersResponse, Array.isArray(ordersResponse));
+        console.log('📊 /orders 응답 preview:', JSON.stringify(ordersResponse).substring(0, 200));
+        
+        // 배열 직접 반환 확인
+        if (Array.isArray(ordersResponse)) {
+          console.log(`🎉 빗썸 공식 주문 리스트 ${ordersResponse.length}개 조회 성공!`);
+          
+          return ordersResponse.map((order: any) => ({
+            transfer_date: new Date(order.created_at).getTime() || Date.now(),
+            order_currency: order.market?.split('-')[0] || 'USDT',
+            payment_currency: order.market?.split('-')[1] || 'KRW',
+            units: order.executed_volume || order.volume,
+            price: order.price,
+            amount: (parseFloat(order.executed_volume || '0') * parseFloat(order.price || '0')).toString(),
+            fee_currency: 'KRW',
+            fee: order.paid_fee || '0',
+            order_balance: '0',
+            payment_balance: '0',
+            type: order.side || 'bid',
+            uuid: order.uuid,
+            state: order.state
+          }));
+        }
+        
+        // data 필드 확인
+        if (ordersResponse && ordersResponse.data && Array.isArray(ordersResponse.data)) {
+          console.log(`✅ 주문 내역 ${ordersResponse.data.length}개 조회됨`);
+          return ordersResponse.data;
+        }
+        
+      } catch (ordersError: any) {
+        console.log('❌ /orders 실패:', ordersError.message);
+      }
+      
+      // 2차 시도: 기존 방식
+      console.log('📋 2차 시도: 기존 거래 내역 조회 방식');
       const transactions = await this.getTransactionHistory(limit);
       
       // USDT 관련 거래만 필터링

@@ -401,7 +401,7 @@ router.get('/bithumb/transactions', requireAuth, async (req: AuthenticatedReques
 router.get('/bithumb/usdt-data', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;
-    const data = await bithumbApi.getUsdtTransactions(limit);
+    const data = await bithumbApi.getUsdtTransactionsNEW(limit);
     res.json(data);
   } catch (error) {
     console.error('Error fetching Bithumb USDT data:', error);
