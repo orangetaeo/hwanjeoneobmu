@@ -417,7 +417,8 @@ router.get('/bithumb/transactions-full', requireAuth, async (req: AuthenticatedR
   try {
     const limit = parseInt(req.query.limit as string) || 20;
     const currency = req.query.currency as string || 'USDT';
-    const data = await bithumbApi.getTransactionHistory(limit, currency);
+    console.log(`🚀 프론트엔드에서 요청: /transactions-full limit=${limit} currency=${currency}`);
+    const data = await bithumbApi.getUsdtTransactionsNEW(limit);
     res.json(data);
   } catch (error) {
     console.error('Error fetching Bithumb transaction history:', error);
