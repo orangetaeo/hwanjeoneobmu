@@ -969,7 +969,24 @@ class BithumbApiService {
         
         // V2 API 실패 시 시뮬레이션 데이터 반환
         console.log('⚠️ V2 API 실패, 시뮬레이션 데이터 반환');
-        return this.generateSimulatedTransactions('USDT', limit);
+        // 시뮬레이션 데이터 생성
+        const simulatedTransactions = [
+          {
+            transfer_date: Date.now() - 86400000, // 어제
+            order_currency: 'USDT',
+            payment_currency: 'KRW',
+            units: '2.563',
+            price: '1375',
+            amount: '3524',
+            fee_currency: 'KRW',
+            fee: '14.1',
+            order_balance: '2.563',
+            payment_balance: '3524',
+            type: 'buy'
+          }
+        ];
+        console.log(`✅ V2 API 실패로 시뮬레이션 데이터 ${simulatedTransactions.length}건 반환`);
+        return simulatedTransactions;
       }
     } catch (error) {
       console.error('Failed to fetch Bithumb USDT data:', error);
