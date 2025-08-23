@@ -961,31 +961,152 @@ class BithumbApiService {
     return realTransactions.slice(0, limit);
   }
 
+  // 🚀 빗썸 JWT 인증 토큰 생성 (최신 V2.1.0 API)
+  private generateJwtToken(params: any = {}): string {
+    const payload: any = {
+      access_key: this.config.apiKey,
+      nonce: uuidv4(),
+      timestamp: Date.now()
+    };
+
+    // 파라미터가 있을 경우 SHA512 해시 추가
+    if (params && Object.keys(params).length > 0) {
+      const queryString = new URLSearchParams(params).toString();
+      const queryHash = crypto.createHash('sha512').update(queryString).digest('hex');
+      payload.query_hash = queryHash;
+      payload.query_hash_alg = 'SHA512';
+    }
+
+    console.log('🚀 빗썸 JWT 토큰 생성:', {
+      payload: { ...payload, access_key: payload.access_key.substring(0, 10) + '...' },
+      queryString: params && Object.keys(params).length > 0 ? new URLSearchParams(params).toString() : 'NO_PARAMS'
+    });
+
+    return jwt.sign(payload, this.config.secretKey, { algorithm: 'HS256' });
+  }
+
+  // 🚀 빗썸 최신 V2.1.0 JWT API 요청
+  private async makeJwtApiRequest(endpoint: string, params: any = {}, method: string = 'GET'): Promise<any> {
+    try {
+      const jwtToken = this.generateJwtToken(params);
+      const headers = {
+        'Authorization': `Bearer ${jwtToken}`,
+        'Content-Type': 'application/json'
+      };
+
+      console.log(`🚀 빗썸 JWT v2.1.0 ${method} ${endpoint} 요청:`, {
+        url: `${this.config.baseUrl}${endpoint}`,
+        params,
+        authPreview: `Bearer ${jwtToken.substring(0, 20)}...`
+      });
+
+      let url = `${this.config.baseUrl}${endpoint}`;
+      let body: string | undefined;
+
+      if (method === 'GET' && Object.keys(params).length > 0) {
+        url += '?' + new URLSearchParams(params).toString();
+      } else if (method === 'POST') {
+        body = JSON.stringify(params);
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers,
+        body
+      });
+
+      const textResponse = await response.text();
+      console.log('🚀 JWT v2.1.0 응답 상태:', response.status);
+      console.log('🚀 JWT v2.1.0 응답:', textResponse.substring(0, 300) + '...');
+
+      const data = JSON.parse(textResponse);
+      
+      if (!response.ok) {
+        throw new Error(`Bithumb JWT API Error: ${response.status} - ${data.error?.message || data.message || 'Unknown error'}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('❌ JWT API 요청 실패:', error);
+      throw error;
+    }
+  }
+
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🎯🎯🎯 빗썸 V1 HMAC 방식 시도 - /info/user_transactions! limit=${limit} 🎯🎯🎯`);
+      console.log(`🚀🚀🚀 빗썸 최신 JWT v2.1.0 방식 시도! limit=${limit} 🚀🚀🚀`);
       
-      // 🎯 V1 HMAC API 방식 시도 (올바른 조합!)
+      // 🚀 최신 JWT API 방식 시도 (빗썸 v2.1.0)
       try {
-        console.log('🔧 빗썸 V1 HMAC 방식: 먼저 /info/balance로 API 키 테스트');
-        
-        // 🔧 먼저 기본 balance 엔드포인트로 API 키 검증
-        try {
-          const balanceResponse = await this.makeApiRequestV12('/info/balance', { currency: 'ALL' });
-          console.log('✅ Balance API 성공! API 키가 정상 작동합니다');
-        } catch (balanceError) {
-          console.log('❌ Balance API도 실패 - API 키 문제일 가능성:', balanceError);
-        }
+        console.log('🚀 빗썸 JWT v2.1.0 방식: /info/orders 호출');
         
         const queryParams = {
-          order_currency: 'USDT',
-          payment_currency: 'KRW',
-          count: limit
+          market: 'USDT-KRW',
+          state: 'done',
+          limit: limit
         };
         
-        console.log('🎯 이제 /info/user_transactions 호출');
-        // 🎯 빗썸 V1 공식 방식: HMAC + GET /info/user_transactions  
-        const ordersResponse = await this.makeApiRequestV12('/info/user_transactions', queryParams);
+        // 🚀 빗썸 최신 JWT 방식: Bearer JWT + GET /info/orders  
+        const ordersResponse = await this.makeJwtApiRequest('/info/orders', queryParams);
+        
+        console.log('🎉 빗썸 JWT API 응답 성공!', {
+          status: ordersResponse?.status,
+          dataType: typeof ordersResponse?.result,
+          resultLength: Array.isArray(ordersResponse?.result) ? ordersResponse.result.length : 'not array'
+        });
+        
+        // 빗썸 JWT API 성공 응답 처리
+        if (ordersResponse && ordersResponse.result) {
+          const transactions = Array.isArray(ordersResponse.result) ? ordersResponse.result : [];
+          console.log(`✅ 빗썸 JWT API로 거래 내역 ${transactions.length}개 조회 성공!`);
+          
+          if (transactions.length > 0) {
+            return transactions.map((tx: any) => {
+              const volume = parseFloat(tx.volume || '0');
+              const price = parseFloat(tx.price || '0');
+              const paid_fee = parseFloat(tx.paid_fee || '0');
+              const transactionAmount = volume * price; // 거래금액 = 체결수량 * 체결가격
+              const isBuy = (tx.side || 'bid') === 'bid';
+              const settlementAmount = isBuy ? transactionAmount + paid_fee : transactionAmount - paid_fee; // 정산금액
+              
+              return {
+                // 빗썸 JWT API 필드 매핑
+                transaction_date: new Date(tx.created_at || tx.timestamp || Date.now()).getTime(), // 체결일시
+                order_currency: 'USDT',
+                payment_currency: 'KRW',
+                units: tx.volume, // 체결수량
+                price: tx.price, // 체결가격
+                transaction_amount: transactionAmount.toString(), // 거래금액
+                fee_currency: 'KRW',
+                fee: tx.paid_fee || '0', // 수수료
+                settlement_amount: settlementAmount.toString(), // 정산금액
+                type: tx.side || 'bid',
+                order_id: tx.uuid || tx.id,
+                // 호환성 필드
+                transfer_date: new Date(tx.created_at || tx.timestamp || Date.now()).getTime(),
+                amount: transactionAmount.toString(),
+                order_balance: tx.remaining_volume || '0',
+                payment_balance: '0'
+              };
+            });
+          }
+        }
+      } catch (jwtError) {
+        console.log('❌ JWT API 실패, 레거시 HMAC 방식 시도:', jwtError);
+        
+        // 🎯 레거시 V1 HMAC API 방식 시도 (백업용)
+        try {
+          console.log('🔧 빗썸 V1 HMAC 방식: 먼저 /info/balance로 API 키 테스트');
+          
+          const queryParams = {
+            order_currency: 'USDT',
+            payment_currency: 'KRW',
+            count: limit
+          };
+          
+          console.log('🎯 이제 /info/user_transactions 호출');
+          // 🎯 빗썸 V1 공식 방식: HMAC + GET /info/user_transactions  
+          const ordersResponse = await this.makeApiRequestV12('/info/user_transactions', queryParams);
         
         console.log('🎉 빗썸 V1 HMAC API 응답 성공!', {
           status: ordersResponse?.status,
