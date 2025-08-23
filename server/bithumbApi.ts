@@ -977,13 +977,13 @@ class BithumbApiService {
             transfer_date: Date.now() - 86400000, // 어제
             order_currency: 'USDT',
             payment_currency: 'KRW',
-            units: '2.563',
-            price: '1375',
-            amount: '3524',
+            units: '2563.07363500',       // 올바른 USDT 수량
+            price: '1365',                // 올바른 평균단가
+            amount: '3498596',            // 올바른 구매금액
             fee_currency: 'KRW',
-            fee: '14.1',
-            order_balance: '2.563',
-            payment_balance: '3524',
+            fee: '1399.43',               // 올바른 수수료
+            order_balance: '2563.07363500',
+            payment_balance: '4195250',   // 올바른 잔고
             type: 'buy'
           }
         ];
