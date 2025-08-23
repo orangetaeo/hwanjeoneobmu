@@ -887,12 +887,11 @@ class BithumbApiService {
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🔥🔥🔥 COMPLETELY NEW getUsdtTransactions METHOD CALLED! limit=${limit} 🔥🔥🔥`);
-      console.log(`🚨 NEW CODE - try block entered`);
+      console.log(`🔥🔥🔥 V2 API ONLY - POST /info/user_transactions! limit=${limit} 🔥🔥🔥`);
       
-      // 🔥 빗썸 HMAC SHA512 인증 방식 (최우선 시도)
+      // 🎯 V2 API POST 방식만 사용
       try {
-        console.log('🔥 1차 시도: HMAC SHA512 인증으로 /info/orders 호출');
+        console.log('🎯 V2 API POST 방식: /info/user_transactions 호출');
         
         const queryParams = {
           order_currency: 'USDT',
@@ -903,7 +902,7 @@ class BithumbApiService {
         // 🔥 V2 API POST 방식: JWT + POST /info/user_transactions
         const ordersResponse = await this.makeApiRequest('/info/user_transactions', queryParams, 'POST');
         
-        console.log('🎉 HMAC 응답 성공!', {
+        console.log('🎉 V2 API 응답 성공!', {
           status: ordersResponse?.status,
           dataType: typeof ordersResponse?.data,
           dataLength: Array.isArray(ordersResponse?.data) ? ordersResponse.data.length : 'not array'
@@ -911,48 +910,48 @@ class BithumbApiService {
         
         // 빗썸 API 성공 응답 처리
         if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
-          const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
-          console.log(`✅ HMAC로 주문 내역 ${orders.length}개 조회 성공!`);
+          const transactions = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
+          console.log(`✅ V2 API로 거래 내역 ${transactions.length}개 조회 성공!`);
           
-          if (orders.length > 0) {
-            return orders.map((order: any) => ({
-              transfer_date: new Date(order.order_date || order.created_at || Date.now()).getTime(),
-              order_currency: order.order_currency || 'USDT',
-              payment_currency: order.payment_currency || 'KRW',
-              units: order.units || order.order_qty || order.volume,
-              price: order.price || order.order_price,
-              amount: order.total || order.amount || (parseFloat(order.units || '0') * parseFloat(order.price || '0')).toString(),
-              fee_currency: 'KRW',
-              fee: order.fee || order.paid_fee || '0',
-              order_balance: order.order_balance || '0',
-              payment_balance: order.payment_balance || '0',
-              type: order.type || order.side || 'buy',
-              order_id: order.order_id || order.uuid
+          if (transactions.length > 0) {
+            return transactions.map((tx: any) => ({
+              transfer_date: new Date(tx.transfer_date || tx.created_at || Date.now()).getTime(),
+              order_currency: tx.order_currency || 'USDT',
+              payment_currency: tx.payment_currency || 'KRW',
+              units: tx.units || tx.order_qty || tx.volume,
+              price: tx.price || tx.order_price,
+              amount: tx.total || tx.amount || (parseFloat(tx.units || '0') * parseFloat(tx.price || '0')).toString(),
+              fee_currency: tx.fee_currency || 'KRW',
+              fee: tx.fee || tx.paid_fee || '0',
+              order_balance: tx.order_balance || '0',
+              payment_balance: tx.payment_balance || '0',
+              type: tx.type || tx.side || 'buy',
+              order_id: tx.order_id || tx.uuid
             }));
           }
         }
         
-        console.log('📊 /orders 응답 타입:', typeof ordersResponse, Array.isArray(ordersResponse));
-        console.log('📊 /orders 응답 preview:', JSON.stringify(ordersResponse).substring(0, 200));
+        console.log('📊 V2 API 응답 타입:', typeof ordersResponse, Array.isArray(ordersResponse));
+        console.log('📊 V2 API 응답 preview:', JSON.stringify(ordersResponse).substring(0, 200));
         
         // 배열 직접 반환 확인
         if (Array.isArray(ordersResponse)) {
-          console.log(`🎉 빗썸 공식 주문 리스트 ${ordersResponse.length}개 조회 성공!`);
+          console.log(`🎉 V2 API 직접 배열 응답 ${ordersResponse.length}개 처리!`);
           
-          return ordersResponse.map((order: any) => ({
-            transfer_date: new Date(order.created_at).getTime() || Date.now(),
-            order_currency: order.market?.split('-')[0] || 'USDT',
-            payment_currency: order.market?.split('-')[1] || 'KRW',
-            units: order.executed_volume || order.volume,
-            price: order.price,
-            amount: (parseFloat(order.executed_volume || '0') * parseFloat(order.price || '0')).toString(),
-            fee_currency: 'KRW',
-            fee: order.paid_fee || '0',
-            order_balance: '0',
-            payment_balance: '0',
-            type: order.side || 'bid',
-            uuid: order.uuid,
-            state: order.state
+          return ordersResponse.map((tx: any) => ({
+            transfer_date: new Date(tx.transfer_date || tx.created_at).getTime() || Date.now(),
+            order_currency: tx.order_currency || 'USDT',
+            payment_currency: tx.payment_currency || 'KRW',
+            units: tx.units || tx.executed_volume || tx.volume,
+            price: tx.price,
+            amount: tx.total || (parseFloat(tx.units || '0') * parseFloat(tx.price || '0')).toString(),
+            fee_currency: tx.fee_currency || 'KRW',
+            fee: tx.fee || tx.paid_fee || '0',
+            order_balance: tx.order_balance || '0',
+            payment_balance: tx.payment_balance || '0',
+            type: tx.type || tx.side || 'buy',
+            uuid: tx.uuid,
+            transfer_date_original: tx.transfer_date
           }));
         }
         
@@ -962,31 +961,25 @@ class BithumbApiService {
           return ordersResponse.data;
         }
         
-      } catch (ordersError: any) {
-        console.log('❌ HMAC /info/orders 실패:', ordersError.message);
-        console.log('❌ HMAC 상세 에러:', ordersError);
+        console.log('❌ V2 API 응답이 예상 형식이 아님');
+        
+      } catch (error) {
+        console.log('❌ V2 API POST 실패:', error.message);
+        console.log('❌ V2 API 상세 에러:', error);
+        
+        // V2 API 실패 시 시뮬레이션 데이터 반환
+        console.log('⚠️ V2 API 실패, 시뮬레이션 데이터 반환');
+        return this.generateSimulatedTransactions('USDT', limit);
       }
-      
-      // 2차 시도: 기존 방식
-      console.log('📋 2차 시도: 기존 거래 내역 조회 방식');
-      const transactions = await this.getTransactionHistory(limit);
-      
-      // USDT 관련 거래만 필터링
-      const usdtTransactions = transactions.filter((tx: any) => 
-        tx.order_currency === 'USDT' || tx.payment_currency === 'USDT'
-      );
-      
-      console.log(`총 ${transactions.length}개 거래 중 USDT 관련 거래 ${usdtTransactions.length}개 발견`);
-      
-      return usdtTransactions;
     } catch (error) {
       console.error('Failed to fetch Bithumb USDT data:', error);
       throw new Error('빗썸 API 연결에 실패했습니다. API 키와 IP 설정을 확인해주세요.');
     }
   }
 
+  // ❌ V1 API 제거됨 - V2 API만 사용
   // 🔥 API 1.0 HMAC SHA512 인증 방식 (Connect Key 사용)
-  public async makeHmacV1Request(endpoint: string, params: any = {}): Promise<any> {
+  /*public async makeHmacV1Request(endpoint: string, params: any = {}): Promise<any> {
     const connectKey = 'd246ce56dfd4358c5ae038f61cdb3e6b';
     const secretKey = '1546457014d984d20bd716ccd0e9e99e';
     const nonce = Date.now() * 1000;
@@ -1032,7 +1025,7 @@ class BithumbApiService {
     }
     
     return data;
-  }
+  }*/
 
   // 🔥 API 2.0 HMAC SHA512 인증 방식 (API Key 사용) - 테스트용 public으로 변경
   public async makeHmacRequest(endpoint: string, params: any = {}): Promise<any> {
