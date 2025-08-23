@@ -429,48 +429,61 @@ router.get('/bithumb/transactions-full', requireAuth, async (req: AuthenticatedR
   }
 });
 
-// 🔥 빗썸 공식 JWT 방식 직접 구현 테스트
-router.get('/bithumb/test-jwt', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+// 🎯 빗썸 공식 API 종합 테스트
+router.get('/bithumb/official-test', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    console.log('🎯 빗썸 공식 JWT 방식 테스트 시작!');
+    console.log('🎯🎯🎯 빗썸 공식 API 종합 테스트 시작! 🎯🎯🎯');
+    
+    const testResults = await bithumbApi.runOfficialApiTest();
+    
+    res.json({
+      success: true,
+      message: '빗썸 공식 API 테스트 완료',
+      results: testResults,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ 빗썸 공식 API 테스트 실패:', error);
+    res.status(500).json({
+      success: false,
+      message: '빗썸 공식 API 테스트 실패',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// 🔥 빗썸 계좌 조회 테스트 (파라미터 없음, 간단)
+router.get('/bithumb/test-accounts', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('💰💰💰 빗썸 계좌 조회 테스트 시작! 💰💰💰');
     
     const jwt = require('jsonwebtoken');
-    const crypto = require('crypto');
-    const querystring = require('querystring');
+    const { v4: uuidv4 } = require('uuid');
     
     const accessKey = '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd';
     const secretKey = 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2';
     
-    // 빗썸 공식 문서 기준 쿼리
-    const query = 'market=KRW-USDT&limit=5&page=1&order_by=desc&state=done';
-    
-    // SHA512 해시
-    const hash = crypto.createHash('SHA512');
-    const queryHash = hash.update(query, 'utf-8').digest('hex');
-    
-    // JWT 페이로드
+    // 계좌 조회는 파라미터 없음 (더 간단)
     const payload = {
       access_key: accessKey,
-      nonce: Date.now(),
-      timestamp: Date.now(),
-      query_hash: queryHash,
-      query_hash_alg: 'SHA512'
+      nonce: uuidv4(),
+      timestamp: Date.now()
     };
     
-    console.log('🔐 JWT 페이로드:', {
-      accessKeyLength: accessKey.length,
+    console.log('🔐 계좌 조회 JWT 페이로드:', {
+      access_key: accessKey.substring(0, 8) + '...',
       nonce: payload.nonce,
-      timestamp: payload.timestamp,
-      queryHashLength: queryHash.length
+      timestamp: payload.timestamp
     });
     
-    // JWT 토큰 생성
-    const jwtToken = jwt.sign(payload, secretKey);
-    console.log('🎫 JWT 토큰 생성 완료:', jwtToken.substring(0, 50) + '...');
+    // HS256 서명
+    const jwtToken = jwt.sign(payload, secretKey, { algorithm: 'HS256' });
+    console.log('✅ JWT 토큰 (HS256):', jwtToken.substring(0, 50) + '...');
     
-    // API 호출
-    const apiUrl = `https://api.bithumb.com/v1/orders?${query}`;
-    console.log('📡 API 호출:', apiUrl);
+    // 빗썸 계좌 조회 API
+    const apiUrl = 'https://api.bithumb.com/v1/accounts';
+    console.log('📡 빗썸 계좌 URL:', apiUrl);
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -480,31 +493,123 @@ router.get('/bithumb/test-jwt', requireAuth, async (req: AuthenticatedRequest, r
       }
     });
     
-    console.log('📡 응답 상태:', response.status);
+    console.log('📡 빗썸 응답 상태:', response.status);
     const responseText = await response.text();
-    console.log('📡 응답 내용:', responseText.substring(0, 200));
+    console.log('📡 빗썸 응답 내용:', responseText.substring(0, 300));
     
     let responseData;
     try {
       responseData = JSON.parse(responseText);
-    } catch {
-      responseData = { raw: responseText };
+      console.log('✅ JSON 파싱 성공! 계좌 개수:', responseData.length || 0);
+    } catch (parseError) {
+      console.log('❌ JSON 파싱 실패:', parseError.message);
+      responseData = { raw: responseText.substring(0, 500) };
     }
     
     res.json({
       success: response.ok,
-      method: 'JWT Bearer Token (빗썸 공식)',
-      endpoint: '/v1/orders',
+      method: 'JWT Bearer Token (HS256) - 계좌 조회',
+      endpoint: '/v1/accounts',
       status: response.status,
-      query,
       data: responseData
     });
     
   } catch (error) {
-    console.error('❌ 빗썸 JWT 실패:', error);
+    console.error('❌ 빗썸 계좌 조회 실패:', error);
     res.status(500).json({
       success: false,
-      method: 'JWT Bearer Token (빗썸 공식)',
+      method: 'JWT Bearer Token (HS256) - 계좌 조회',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// 🔥 빗썸 공식 JWT 방식 (HS256 서명) 완전 구현
+router.get('/bithumb/test-jwt', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('🎯🎯🎯 빗썸 공식 API 사양 JWT 테스트! 🎯🎯🎯');
+    
+    const jwt = require('jsonwebtoken');
+    const crypto = require('crypto');
+    const { v4: uuidv4 } = require('uuid');
+    
+    const accessKey = '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd';
+    const secretKey = 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2';
+    
+    // 빗썸 공식 문서 정확한 쿼리 형식
+    const query = 'market=KRW-USDT&limit=5&page=1&order_by=desc&state=done';
+    
+    // SHA512 해시 (빗썸 공식)
+    const hash = crypto.createHash('SHA512');
+    const queryHash = hash.update(query, 'utf-8').digest('hex');
+    
+    // 빗썸 공식 JWT 페이로드
+    const payload = {
+      access_key: accessKey,
+      nonce: uuidv4(),  // UUID 형식 (공식 문서 기준)
+      timestamp: Date.now(),  // 밀리초
+      query_hash: queryHash,
+      query_hash_alg: 'SHA512'
+    };
+    
+    console.log('🔐 빗썸 공식 JWT 페이로드:', {
+      access_key: accessKey.substring(0, 8) + '...',
+      nonce: payload.nonce,
+      timestamp: payload.timestamp,
+      query_hash: queryHash.substring(0, 16) + '...',
+      query_hash_alg: 'SHA512'
+    });
+    
+    // ⭐ 핵심: HS256 서명 (빗썸 공식 권장)
+    const jwtToken = jwt.sign(payload, secretKey, { algorithm: 'HS256' });
+    console.log('✅ JWT 토큰 (HS256):', jwtToken.substring(0, 50) + '...');
+    
+    // 빗썸 공식 API 호출
+    const apiUrl = `https://api.bithumb.com/v1/orders?${query}`;
+    console.log('📡 빗썸 공식 URL:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📡 빗썸 응답 상태:', response.status);
+    console.log('📡 빗썸 응답 헤더:', Object.fromEntries(response.headers.entries()));
+    
+    const responseText = await response.text();
+    console.log('📡 빗썸 응답 내용:', responseText.substring(0, 300));
+    
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+      console.log('✅ JSON 파싱 성공!');
+    } catch (parseError) {
+      console.log('❌ JSON 파싱 실패:', parseError.message);
+      responseData = { raw: responseText.substring(0, 500) };
+    }
+    
+    res.json({
+      success: response.ok,
+      method: 'JWT Bearer Token (빗썸 공식 HS256)',
+      endpoint: '/v1/orders',
+      status: response.status,
+      query,
+      payload_info: {
+        algorithm: 'HS256',
+        nonce_type: 'UUID',
+        query_hash_alg: 'SHA512'
+      },
+      data: responseData
+    });
+    
+  } catch (error) {
+    console.error('❌ 빗썸 공식 JWT 실패:', error);
+    res.status(500).json({
+      success: false,
+      method: 'JWT Bearer Token (빗썸 공식 HS256)',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }

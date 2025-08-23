@@ -58,26 +58,32 @@ class BithumbApiService {
     const timestamp = Date.now();
     const nonce = uuidv4();
     
-    // Query string 생성 (파라미터가 있는 경우)
+    // 🎯 빗썸 공식 문서 기준 쿼리 해시 생성
     let queryString = '';
     let queryHash = '';
     
     if (queryParams && Object.keys(queryParams).length > 0) {
-      // URLSearchParams를 사용하여 올바른 형식으로 쿼리 생성
-      const params = new URLSearchParams();
+      // 🔍 빗썸 공식: 키를 알파벳 순 정렬 후 쿼리 생성
+      const sortedKeys = Object.keys(queryParams).sort();
+      const queryPairs: string[] = [];
       
-      // 키를 알파벳 순으로 정렬
-      Object.keys(queryParams).sort().forEach(key => {
+      sortedKeys.forEach(key => {
         if (queryParams[key] !== undefined && queryParams[key] !== null) {
-          params.append(key, queryParams[key].toString());
+          queryPairs.push(`${key}=${queryParams[key]}`);
         }
       });
       
-      queryString = params.toString();
+      queryString = queryPairs.join('&');
       
-      // SHA512 해시 생성
+      console.log('🔍 빗썸 공식 쿼리 생성:', {
+        originalParams: queryParams,
+        sortedKeys,
+        finalQueryString: queryString
+      });
+      
+      // 🎯 빗썸 공식: SHA512 해시 생성
       queryHash = crypto
-        .createHash('sha512')
+        .createHash('SHA512')
         .update(queryString, 'utf-8')
         .digest('hex');
     }
@@ -110,18 +116,34 @@ class BithumbApiService {
 
   private async makeApiRequest(endpoint: string, queryParams: any = {}, method: string = 'GET'): Promise<any> {
     try {
-      const jwtToken = this.generateJwtToken(endpoint, queryParams);
-      
-      // URL 구성
-      let url = `${this.config.baseUrl}${endpoint}`;
-      if (method === 'GET' && queryParams && Object.keys(queryParams).length > 0) {
-        const params = new URLSearchParams();
-        Object.keys(queryParams).forEach(key => {
+      // 🎯 빗썸 공식: 쿼리 문자열을 일관되게 생성
+      let queryString = '';
+      if (queryParams && Object.keys(queryParams).length > 0) {
+        // JWT 토큰 생성과 동일한 방식으로 쿼리 생성
+        const sortedKeys = Object.keys(queryParams).sort();
+        const queryPairs: string[] = [];
+        
+        sortedKeys.forEach(key => {
           if (queryParams[key] !== undefined && queryParams[key] !== null) {
-            params.append(key, queryParams[key].toString());
+            queryPairs.push(`${key}=${queryParams[key]}`);
           }
         });
-        url += `?${params.toString()}`;
+        
+        queryString = queryPairs.join('&');
+      }
+      
+      console.log('🔍 makeApiRequest 쿼리 생성:', {
+        endpoint,
+        queryParams,
+        generatedQuery: queryString
+      });
+      
+      const jwtToken = this.generateJwtToken(endpoint, queryParams);
+      
+      // URL 구성 - JWT와 동일한 쿼리 사용
+      let url = `${this.config.baseUrl}${endpoint}`;
+      if (method === 'GET' && queryString) {
+        url += `?${queryString}`;
       }
       
       // 헤더 구성
@@ -904,6 +926,87 @@ class BithumbApiService {
         message: error.message || '빗썸 API 연결에 실패했습니다.'
       };
     }
+  }
+  // 🎯 빗썸 공식 계좌 조회 API
+  public async getAccounts(): Promise<any> {
+    try {
+      console.log('💰 빗썸 공식 계좌 조회 시작...');
+      
+      const response = await this.makeApiRequest('/v1/accounts', {}, 'GET');
+      
+      console.log('✅ 빗썸 계좌 조회 성공:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ 빗썸 계좌 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 🎯 빗썸 공식 주문 리스트 조회 API
+  public async getOrders(options: { 
+    market?: string; 
+    state?: string; 
+    limit?: number; 
+    page?: number; 
+    order_by?: string; 
+  } = {}): Promise<any> {
+    try {
+      console.log('📋 빗썸 공식 주문 리스트 조회 시작...', options);
+      
+      const params = {
+        market: options.market || 'KRW-USDT',
+        state: options.state || 'done',  // done: 체결 완료
+        limit: options.limit || 5,
+        page: options.page || 1,
+        order_by: options.order_by || 'desc'
+      };
+      
+      const response = await this.makeApiRequest('/v1/orders', params, 'GET');
+      
+      console.log('✅ 빗썸 주문 조회 성공:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ 빗썸 주문 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 🎯 빗썸 API 종합 테스트
+  public async runOfficialApiTest(): Promise<any> {
+    console.log('🚀🚀🚀 빗썸 공식 API 종합 테스트 시작! 🚀🚀🚀');
+    
+    const results = {
+      accounts: null,
+      orders: null,
+      errors: []
+    };
+    
+    // 1. 계좌 조회 테스트
+    try {
+      console.log('1️⃣ 계좌 조회 테스트...');
+      results.accounts = await this.getAccounts();
+    } catch (error) {
+      console.error('❌ 계좌 조회 테스트 실패:', error);
+      results.errors.push(`계좌 조회: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    // 2. 주문 리스트 조회 테스트
+    try {
+      console.log('2️⃣ 주문 리스트 조회 테스트...');
+      results.orders = await this.getOrders({
+        market: 'KRW-USDT',
+        state: 'done',
+        limit: 5
+      });
+    } catch (error) {
+      console.error('❌ 주문 조회 테스트 실패:', error);
+      results.errors.push(`주문 조회: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
+    console.log('🏁 빗썸 공식 API 테스트 완료!', results);
+    return results;
   }
 }
 
