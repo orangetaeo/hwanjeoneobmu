@@ -650,16 +650,16 @@ class BithumbApiService {
       
       // 🚀 빗썸 공식 주문 리스트 조회 API 직접 시도
       try {
-        console.log('🎉 1차 시도: /orders (빗썸 공식 주문 리스트 조회)');
+        console.log('🎉 1차 시도: /info/orders (빗썸 공식 주문 리스트 조회)');
         
         const queryParams = {
-          market: 'USDT-KRW',
-          state: 'done',
-          limit: limit,
-          order_by: 'desc'
+          order_currency: 'USDT',
+          payment_currency: 'KRW',
+          count: limit,
+          after: 0
         };
         
-        const ordersResponse = await this.makeApiV2Request('/orders', queryParams);
+        const ordersResponse = await this.makeApiV2Request('/info/orders', queryParams);
         
         console.log('📊 /orders 응답 타입:', typeof ordersResponse, Array.isArray(ordersResponse));
         console.log('📊 /orders 응답 preview:', JSON.stringify(ordersResponse).substring(0, 200));
