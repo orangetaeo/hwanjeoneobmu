@@ -389,13 +389,22 @@ class BithumbApiService {
       console.log('❌ /v2/account/transactions 실패:', transError.message);
     }
     
-    // 2차 시도: 주문 조회
+    // 2차 시도: 개별 주문 조회 (/orders/{uuid})
     try {
-      console.log('📋 2차 시도: /v2.1.0/info/orders (주문 조회)');
-      const ordersResponse = await this.makeApiV2Request('/v2.1.0/info/orders', {
-        order_currency: currency,
-        payment_currency: 'KRW',
-        count: limit
+      console.log('📋 2차 시도: /orders/{uuid} (개별 주문 조회)');
+      // 이 API는 특정 UUID가 필요하므로 스킵하고 다른 방법 시도
+      console.log('❌ /orders/{uuid}는 특정 UUID 필요하므로 스킵');
+    } catch (ordersError) {
+      console.log('❌ /orders/{uuid} 실패:', ordersError.message);
+    }
+    
+    // 3차 시도: 주문 리스트 조회
+    try {
+      console.log('📋 3차 시도: /orders (주문 리스트 조회)');
+      const ordersResponse = await this.makeApiV2Request('/orders', {
+        market: `${currency}-KRW`,
+        state: 'done',
+        limit: limit
       });
       
       if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
@@ -420,21 +429,19 @@ class BithumbApiService {
       console.log('❌ /v2.1.0/info/orders 실패:', ordersError.message);
     }
     
-    // 3차 시도: 출금 조회
+    // 4차 시도: 체결 내역 조회
     try {
-      console.log('📋 3차 시도: /v2.1.0/info/user_transactions (거래 내역)');
-      const userTransResponse = await this.makeApiV2Request('/v2.1.0/info/user_transactions', {
-        order_currency: currency,
-        payment_currency: 'KRW',
-        offset: 0,
-        count: limit
+      console.log('📋 4차 시도: /fills (체결 내역 조회)');
+      const fillsResponse = await this.makeApiV2Request('/fills', {
+        market: `${currency}-KRW`,
+        limit: limit
       });
       
-      if (userTransResponse && userTransResponse.status === '0000' && userTransResponse.data) {
-        const userTrans = Array.isArray(userTransResponse.data) ? userTransResponse.data : [];
-        console.log(`✅ 사용자 거래 내역 ${userTrans.length}개 조회됨`);
+      if (fillsResponse && fillsResponse.status === '0000' && fillsResponse.data) {
+        const fills = Array.isArray(fillsResponse.data) ? fillsResponse.data : [];
+        console.log(`✅ 체결 내역 ${fills.length}개 조회됨`);
         
-        return userTrans.map((trans: any) => ({
+        return fills.map((trans: any) => ({
           transfer_date: trans.transaction_date || trans.transfer_date || Date.now(),
           order_currency: trans.order_currency || currency,
           payment_currency: trans.payment_currency || 'KRW',
@@ -448,8 +455,73 @@ class BithumbApiService {
           type: trans.type || trans.side || 'bid'
         }));
       }
-    } catch (userTransError) {
-      console.log('❌ /v2.1.0/info/user_transactions 실패:', userTransError.message);
+    } catch (fillsError) {
+      console.log('❌ /fills 실패:', fillsError.message);
+    }
+    
+    // 5차 시도: 정확한 빗썸 거래 주문내역 조회
+    try {
+      console.log('📋 5차 시도: /info/orders (빗썸 공식 거래 주문내역)');
+      const ordersResponse = await this.makeApiV2Request('/info/orders', {
+        order_currency: currency,
+        payment_currency: 'KRW',
+        count: limit,
+        after: undefined
+      });
+      
+      if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
+        const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
+        console.log(`✅ 빗썸 주문 내역 ${orders.length}개 조회됨`);
+        
+        return orders.map((order: any) => ({
+          transfer_date: order.order_date || order.created_at || Date.now(),
+          order_currency: order.order_currency || currency,
+          payment_currency: order.payment_currency || 'KRW',
+          units: order.units || order.volume,
+          price: order.price,
+          amount: order.total || order.funds,
+          fee_currency: 'KRW',
+          fee: order.fee || order.paid_fee || '0',
+          order_balance: order.order_balance || '0',
+          payment_balance: order.payment_balance || '0',
+          type: order.type || order.side || 'bid'
+        }));
+      }
+    } catch (bithumbOrdersError) {
+      console.log('❌ /info/orders 실패:', bithumbOrdersError.message);
+    }
+    
+    // 6차 시도: 정확한 빗썸 거래 체결내역 조회
+    try {
+      console.log('📋 6차 시도: /info/user_transactions (빗썸 공식 거래 체결내역)');
+      const transResponse = await this.makeApiV2Request('/info/user_transactions', {
+        order_currency: currency,
+        payment_currency: 'KRW',
+        count: limit,
+        offset: 0,
+        searchGb: 0
+      });
+      
+      if (transResponse && transResponse.status === '0000' && transResponse.data) {
+        const transactions = Array.isArray(transResponse.data) ? transResponse.data : [];
+        console.log(`✅ 빗썸 체결 내역 ${transactions.length}개 조회됨`);
+        
+        return transactions.map((trans: any) => ({
+          transfer_date: trans.transfer_date || trans.created_at || Date.now(),
+          order_currency: trans.order_currency || currency,
+          payment_currency: trans.payment_currency || 'KRW',
+          units: trans.units || trans.volume,
+          price: trans.price,
+          amount: trans.total || trans.funds,
+          fee_currency: 'KRW',
+          fee: trans.fee || trans.paid_fee || '0',
+          order_balance: trans.order_balance || '0',
+          payment_balance: trans.payment_balance || '0',
+          type: trans.type || trans.side || 'bid'
+        }));
+      }
+    } catch (bithumbTransError) {
+      console.log('❌ /info/user_transactions 실패:', bithumbTransError.message);
     }
     
     throw new Error('API 2.0 모든 거래내역 엔드포인트 실패');
