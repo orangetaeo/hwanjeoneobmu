@@ -237,15 +237,30 @@ class BithumbApiService {
     // 🔧 올바른 Base64 인코딩: hex를 binary로 변환 후 base64
     const apiSign = Buffer.from(hexOutput, 'hex').toString('base64');
     
-    console.log('🔐 빗썸 HMAC API-Sign 생성 (V1 Connect Key 필요):', {
+    console.log('🔐 빗썸 HMAC 서명 생성 상세 디버깅:', {
+      // 입력 데이터
       endpoint,
       nonce,
+      params,
       strData,
+      
+      // 서명 생성 과정
+      rawData: data,
+      rawDataHex: Buffer.from(data, 'utf-8').toString('hex'),
+      hmacInput: `endpoint: "${endpoint}" + NULL + strData: "${strData}" + NULL + nonce: "${nonce}"`,
+      
+      // 키 정보
       connectKeyPreview: connectKey.substring(0, 10) + '...',
+      connectKeyLength: connectKey.length,
+      secretKeyPreview: connectSecret.substring(0, 10) + '...',
       secretKeyLength: connectSecret.length,
-      dataLength: data.length,
-      signaturePreview: apiSign.substring(0, 20) + '...',
-      needsV1Key: !process.env.BITHUMB_CONNECT_KEY,
+      
+      // 결과
+      hexSignature: hexOutput.substring(0, 40) + '...',
+      base64Signature: apiSign,
+      signatureLength: apiSign.length,
+      
+      // 검증
       keySource: process.env.BITHUMB_CONNECT_KEY ? 'V1_ENV' : 'V2_FALLBACK'
     });
     
