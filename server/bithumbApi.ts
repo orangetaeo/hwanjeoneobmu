@@ -115,39 +115,47 @@ class BithumbApiService {
     return jwtToken;
   }
 
-  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (v1.0 키 사용)
+  // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (올바른 v1.0 방식)
   private generateApiSignHeaders(endpoint: string, params: any = {}): any {
-    const nonce = Date.now().toString();
-    
     // v1.0 Connect Key와 Secret Key 사용
-    const connectKey = process.env.BITHUMB_CONNECT_KEY || 'd246ce56dfd29be42f34a2a466d881b837b00b2908aadd';
+    const connectKey = process.env.BITHUMB_CONNECT_KEY || 'd246ce56dfd4358c5ae038f61cdb3e6b';
     const connectSecret = process.env.BITHUMB_CONNECT_SECRET || '1546457014d984d20bd716ccd0e9e99e';
     
-    // 파라미터를 쿼리 스트링으로 변환
-    const queryString = Object.keys(params)
-      .sort()
-      .map(key => `${key}=${params[key]}`)
-      .join('&');
+    // 마이크로초 단위 nonce 생성 (빗썸 API 1.0 요구사항)
+    const mt = Date.now() / 1000;
+    const mtArray = mt.toString().split('.');
+    const nonce = mtArray[0] + (mtArray[1] || '000').substring(0, 3);
     
-    // API-Sign 생성: endpoint + queryString + nonce + connectSecret
-    const signatureString = endpoint + queryString + nonce + connectSecret;
-    const signature = crypto
-      .createHash('sha512')
-      .update(signatureString, 'utf-8')
-      .digest('hex');
+    // 파라미터를 URL 인코딩으로 변환
+    const endpointItem = { endpoint: endpoint };
+    const uriArray = { ...endpointItem, ...params };
+    const strData = new URLSearchParams(uriArray).toString();
     
-    console.log('🔐 v1.2.0 API-Sign 생성 (v1.0 키 사용):', {
+    // 빗썸 API 1.0 시그니처 형식: endpoint + NULL + str_data + NULL + nonce
+    const data = endpoint + '\0' + strData + '\0' + nonce;
+    
+    // HMAC-SHA512로 해시 생성
+    const hmac = crypto.createHmac('sha512', connectSecret);
+    hmac.update(data, 'utf-8');
+    const hexOutput = hmac.digest('hex');
+    
+    // Base64 인코딩
+    const apiSign = Buffer.from(hexOutput, 'utf-8').toString('base64');
+    
+    console.log('🔐 v1.2.0 API-Sign 생성 (올바른 v1.0 방식):', {
       endpoint,
       nonce,
-      queryString,
+      strData,
       connectKeyPreview: connectKey.substring(0, 10) + '...',
-      signaturePreview: signature.substring(0, 20) + '...'
+      dataLength: data.length,
+      signaturePreview: apiSign.substring(0, 20) + '...'
     });
     
     return {
-      'Api-Key': connectKey,  // v1.0 Connect Key 사용
+      'api-client-type': '2',  // 구분자 유형 (NULL 사용)
+      'Api-Key': connectKey,
       'Api-Nonce': nonce,
-      'Api-Sign': signature,
+      'Api-Sign': apiSign,
       'Content-Type': 'application/x-www-form-urlencoded'
     };
   }
