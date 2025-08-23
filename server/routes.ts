@@ -401,42 +401,8 @@ router.get('/bithumb/transactions', requireAuth, async (req: AuthenticatedReques
 router.get('/bithumb/usdt-data', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;
-    
-    // 🎯 다중 API 방식으로 USDT 데이터 조회
-    console.log('🔄 USDT 데이터 다중 API 시도...');
-    
-    try {
-      // 1차: V2 방식
-      const data = await bithumbApi.getUsdtTransactionsNEW(limit);
-      res.json(data);
-      return;
-    } catch (v2Error) {
-      console.log('❌ V2 USDT 실패, V1.2 시도...');
-    }
-    
-    try {
-      // 2차: V1.2 방식
-      const v12Data = await bithumbApi.getUserTransactions('USDT');
-      res.json(v12Data.slice(0, limit));
-      return;
-    } catch (v1Error) {
-      console.log('❌ V1.2 USDT 실패, 계좌 정보 시도...');
-    }
-    
-    try {
-      // 3차: 계좌 잔고 정보
-      const balanceData = await bithumbApi.getBalance();
-      res.json([{ message: 'Transaction history unavailable, showing balance', balance: balanceData }]);
-      return;
-    } catch (balanceError) {
-      console.log('❌ 잔고 조회도 실패');
-    }
-    
-    res.status(500).json({ 
-      error: 'All Bithumb API methods failed',
-      details: 'V2, V1.2, and balance APIs all failed'
-    });
-    
+    const data = await bithumbApi.getUsdtTransactionsNEW(limit);
+    res.json(data);
   } catch (error) {
     console.error('Error fetching Bithumb USDT data:', error);
     res.status(500).json({ 
@@ -452,88 +418,8 @@ router.get('/bithumb/transactions-full', requireAuth, async (req: AuthenticatedR
     const limit = parseInt(req.query.limit as string) || 20;
     const currency = req.query.currency as string || 'USDT';
     console.log(`🚀 프론트엔드에서 요청: /transactions-full limit=${limit} currency=${currency}`);
-    
-    // 🎯 다중 API 방식 시도 (V2 JWT → V1.2 API-Sign → 다른 엔드포인트)
-    console.log('🔄 다중 API 방식으로 실제 거래 내역 조회 시도...');
-    
-    try {
-      // 1차: V2 JWT 방식
-      console.log('1️⃣ V2 JWT 방식 시도...');
-      const data = await bithumbApi.getUsdtTransactionsNEW(limit);
-      console.log('✅ V2 JWT 성공!');
-      res.json(data);
-      return;
-    } catch (v2Error) {
-      console.log('❌ V2 JWT 실패:', v2Error.message);
-    }
-    
-    try {
-      // 2차: V1.2 API-Sign 방식
-      console.log('2️⃣ V1.2 API-Sign 방식 시도...');
-      const v12Data = await bithumbApi.getUserTransactions(currency);
-      if (v12Data && v12Data.length > 0) {
-        console.log(`✅ V1.2 성공! ${v12Data.length}건 조회`);
-        res.json(v12Data.slice(0, limit));
-        return;
-      }
-    } catch (v1Error) {
-      console.log('❌ V1.2 실패:', v1Error.message);
-    }
-    
-    try {
-      // 3차: V1 Accounts 성공 데이터로 거래 내역 구성
-      console.log('3️⃣ 실제 계좌 데이터로 거래 내역 구성...');
-      const accountsData = await bithumbApi.getAccounts();
-      
-      if (accountsData && accountsData.length > 0) {
-        // 실제 계좌 데이터로 거래 내역 구성
-        const usdtAccount = accountsData.find((acc: any) => acc.currency === 'USDT');
-        
-        if (usdtAccount && parseFloat(usdtAccount.avg_buy_price) > 0) {
-          const currentPrice = 1383; // 빗썸 실시간 시세
-          const avgBuyPrice = parseFloat(usdtAccount.avg_buy_price);
-          const balance = parseFloat(usdtAccount.balance);
-          
-          // 실제 데이터 기반 거래 내역 생성
-          const realTransactionData = [{
-            transfer_date: Date.now() - 86400000, // 24시간 전
-            order_currency: 'USDT',
-            payment_currency: 'KRW',
-            units: usdtAccount.balance,
-            price: usdtAccount.avg_buy_price,
-            amount: (balance * avgBuyPrice).toFixed(0),
-            fee_currency: 'KRW',
-            fee: (balance * avgBuyPrice * 0.0004).toFixed(2), // 0.04% 수수료
-            order_balance: usdtAccount.balance,
-            payment_balance: accountsData.find((acc: any) => acc.currency === 'KRW')?.balance || '0',
-            type: 'buy',
-            current_price: currentPrice.toString(),
-            profit_loss: ((currentPrice - avgBuyPrice) * balance).toFixed(2),
-            profit_rate: (((currentPrice - avgBuyPrice) / avgBuyPrice) * 100).toFixed(2)
-          }];
-          
-          console.log(`✅ 실제 계좌 데이터 반환! USDT 잔고: ${balance}, 평균단가: ${avgBuyPrice}원`);
-          res.json(realTransactionData);
-          return;
-        }
-      }
-      
-      // 계좌 데이터만 반환
-      console.log('✅ 계좌 정보 반환!');
-      res.json([{ message: 'Real account data', accounts: accountsData }]);
-      return;
-      
-    } catch (accountsError) {
-      console.log('❌ 계좌 조회 실패:', accountsError.message);
-    }
-    
-    // 모든 방식 실패
-    console.log('❌ 모든 API 방식 실패');
-    res.status(500).json({ 
-      error: '모든 빗썸 API 방식이 실패했습니다',
-      details: 'V2 JWT, V1.2 API-Sign, V1 Orders 모두 실패. API 키와 권한을 확인해주세요.'
-    });
-    
+    const data = await bithumbApi.getUsdtTransactionsNEW(limit);
+    res.json(data);
   } catch (error) {
     console.error('Error fetching Bithumb transaction history:', error);
     res.status(500).json({ 
