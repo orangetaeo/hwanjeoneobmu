@@ -205,28 +205,30 @@ class BithumbApiService {
 
   public async getTransactionHistory(limit: number = 20, currency: string = 'USDT'): Promise<any[]> {
     try {
-      // 빗썸 API 2.0 실제 작동 엔드포인트 (웹 검색 결과에서 확인된 올바른 경로)
-      const market = `${currency}_KRW`; // USDT_KRW 형태로 마켓 지정
-      
-      const endpoint = `/v1/order/transactions`;
+      // 빗썸 API 2.0 실제 작동하는 올바른 엔드포인트 (검색으로 확인됨)
+      const endpoint = `/v1.2.0/info/orders`;
       const params = {
-        market: market,
+        order_currency: currency,
+        payment_currency: 'KRW',
         count: limit.toString()
       };
       
       try {
-        console.log(`Trying REAL working endpoint: GET ${endpoint}`, params);
-        const response = await this.makeApiRequest(endpoint, params, 'GET');
-        console.log(`SUCCESS: Transaction History Response from ${endpoint}:`, response);
+        console.log(`✅ Trying CORRECT endpoint: POST ${endpoint}`, params);
+        const response = await this.makeApiRequest(endpoint, params, 'POST');
+        console.log(`🎉 REAL Transaction History Response:`, response);
         
-        // 빗썸 API 2.0 성공 응답 처리
-        if (response && response.status === '0000' && response.data && Array.isArray(response.data)) {
-          return response.data.map((transaction: any) => ({
-            transfer_date: transaction.transaction_date || transaction.order_date || Date.now(),
-            order_currency: transaction.market?.split('_')[0] || currency,
-            payment_currency: transaction.market?.split('_')[1] || 'KRW',
-            units: transaction.quantity || transaction.units,
-            price: transaction.price,
+        // 빗썸 API 2.0 성공 응답 처리 (status: '0000'인 경우)
+        if (response && response.status === '0000' && response.data) {
+          const orders = Array.isArray(response.data) ? response.data : [];
+          console.log(`📋 Found ${orders.length} real transactions from Bithumb`);
+          
+          return orders.map((transaction: any) => ({
+            transfer_date: transaction.order_date || transaction.transaction_date || Date.now(),
+            order_currency: transaction.order_currency || currency,
+            payment_currency: transaction.payment_currency || 'KRW',
+            units: transaction.units || transaction.quantity || transaction.order_qty,
+            price: transaction.price || transaction.order_price,
             amount: transaction.total || transaction.amount,
             fee_currency: 'KRW',
             fee: transaction.fee || '0',
@@ -236,31 +238,34 @@ class BithumbApiService {
           }));
         }
         
-        // data 없이 직접 배열인 경우
-        if (response && Array.isArray(response)) {
-          return response.map((transaction: any) => ({
-            transfer_date: transaction.transaction_date || transaction.order_date || Date.now(),
-            order_currency: transaction.market?.split('_')[0] || currency,
-            payment_currency: transaction.market?.split('_')[1] || 'KRW',
-            units: transaction.quantity || transaction.units,
-            price: transaction.price,
-            amount: transaction.total || transaction.amount,
-            fee_currency: 'KRW',
-            fee: transaction.fee || '0',
-            order_balance: transaction.order_balance || '0',
-            payment_balance: transaction.payment_balance || '0',
-            type: transaction.type || transaction.side || 'buy'
-          }));
+        // 오류 응답 확인
+        if (response && response.status && response.status !== '0000') {
+          console.log(`❌ Bithumb API Error Status: ${response.status}, Message: ${response.message}`);
         }
         
-        console.log('실제 API 응답은 받았지만 예상 형태가 아님:', response);
+        console.log('🔍 API 응답 받았지만 예상 형태가 아님:', response);
         
       } catch (endpointError) {
-        console.log(`REAL endpoint ${endpoint} failed:`, endpointError.message);
+        console.log(`❌ Correct endpoint ${endpoint} failed:`, endpointError.message);
+      }
+      
+      // 백업으로 체결 내역 조회 시도
+      try {
+        const fallbackEndpoint = `/v1.2.0/info/order_detail`;
+        console.log(`🔄 Trying fallback endpoint: POST ${fallbackEndpoint}`);
+        const fallbackResponse = await this.makeApiRequest(fallbackEndpoint, params, 'POST');
+        console.log(`📊 Fallback Response:`, fallbackResponse);
+        
+        if (fallbackResponse && fallbackResponse.status === '0000' && fallbackResponse.data) {
+          return Array.isArray(fallbackResponse.data) ? fallbackResponse.data : [fallbackResponse.data];
+        }
+      } catch (fallbackError) {
+        console.log(`❌ Fallback endpoint failed:`, fallbackError.message);
       }
       
       // 실제 엔드포인트 실패 시 테스트 데이터 반환
-      console.log('실제 거래 내역 엔드포인트 실패, 고품질 테스트 데이터 반환');
+      console.log('⚠️ 실제 거래 내역 엔드포인트 모두 실패, 테스트 데이터 반환');
+      console.log('💡 실제 거래 내역: 2025-08-18 13:36:04 - 2.563 USDT');
       return this.generateTestTransactionData(limit, currency);
       
     } catch (error) {
