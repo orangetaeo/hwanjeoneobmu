@@ -400,12 +400,29 @@ router.get('/bithumb/transactions', requireAuth, async (req: AuthenticatedReques
 
 router.get('/bithumb/usdt-data', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const data = await bithumbApi.getUsdtTransactions();
+    const limit = parseInt(req.query.limit as string) || 20;
+    const data = await bithumbApi.getUsdtTransactions(limit);
     res.json(data);
   } catch (error) {
     console.error('Error fetching Bithumb USDT data:', error);
     res.status(500).json({ 
       error: 'Failed to fetch USDT data from Bithumb API',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// 빗썸 거래 내역 조회 (전체) - 개수 선택 기능 포함
+router.get('/bithumb/transactions-full', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 20;
+    const currency = req.query.currency as string || 'USDT';
+    const data = await bithumbApi.getTransactionHistory(limit, currency);
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching Bithumb transaction history:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch transaction history from Bithumb API',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
