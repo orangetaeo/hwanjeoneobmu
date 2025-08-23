@@ -20,6 +20,7 @@ function Router() {
       <Route path="/exchange-rates" component={HomePage} />
       <Route path="/bithumb-settings" component={ApiSettings} />
       <Route path="/api-settings" component={ApiSettings} />
+      <Route path="/api-keys" component={ApiSettings} />
       <Route component={NotFound} />
     </Switch>
   );
