@@ -39,9 +39,24 @@ class BithumbApiService {
   constructor() {
     console.log('🚨🚨🚨 NEW BITHUMB API SERVICE CONSTRUCTOR CALLED! 🚨🚨🚨');
     
+    // 환경 변수 직접 확인
+    const v2ApiKey = process.env.BITHUMB_API_KEY_V2;
+    const v2SecretKey = process.env.BITHUMB_SECRET_KEY_V2;
+    const v1ApiKey = process.env.BITHUMB_API_KEY;
+    const v1SecretKey = process.env.BITHUMB_SECRET_KEY;
+    
+    console.log('🔍 환경 변수 직접 확인:', {
+      v2ApiKeyExists: !!v2ApiKey,
+      v2SecretKeyExists: !!v2SecretKey,
+      v1ApiKeyExists: !!v1ApiKey,
+      v1SecretKeyExists: !!v1SecretKey,
+      v2ApiKeyLength: v2ApiKey?.length || 0,
+      v2SecretKeyLength: v2SecretKey?.length || 0
+    });
+    
     this.config = {
-      apiKey: process.env.BITHUMB_API_KEY_V2 || process.env.BITHUMB_API_KEY || '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd',
-      secretKey: process.env.BITHUMB_SECRET_KEY_V2 || process.env.BITHUMB_SECRET_KEY || 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2',
+      apiKey: v2ApiKey || v1ApiKey || '27522b3429dfd29be42f34a2a466d881b837b00b2908aadd',
+      secretKey: v2SecretKey || v1SecretKey || 'ZDBhYzA1MjU4ODI2MzUyMjJhMzYyZWRhZGI5MGVlNTY0NGE0YTY2NmQ0OGJiODNjYmIwYzI4MDlhY2Q5MTk2',
       baseUrl: 'https://api.bithumb.com'
     };
     
@@ -104,11 +119,18 @@ class BithumbApiService {
       payload.query_hash_alg = 'SHA512';
     }
     
-    console.log('Bithumb API 2.0 JWT 토큰 생성:', {
-      endpoint, queryParams, timestamp, nonce,
+    console.log('🔐 Bithumb API 2.0 JWT 토큰 생성 상세:', {
+      endpoint, 
+      queryParams, 
+      timestamp, 
+      nonce,
       queryString: queryString || 'none',
       queryHash: queryHash ? queryHash.substring(0, 20) + '...' : 'none',
-      accessKey: payload.access_key.substring(0, 10) + '...'
+      accessKey: payload.access_key.substring(0, 10) + '...',
+      secretKeyLength: this.config.secretKey.length,
+      secretKeyPreview: this.config.secretKey.substring(0, 10) + '...',
+      usingV2Keys: !!(process.env.BITHUMB_API_KEY_V2 && process.env.BITHUMB_SECRET_KEY_V2),
+      fullPayload: payload
     });
     
     // JWT 토큰 생성 (HS256 알고리즘)
@@ -432,55 +454,10 @@ class BithumbApiService {
     return nonce;
   }
 
-  private generateJwtToken(params: any = {}): string {
-    // 🎯 빗썸 API 2.0 JWT 토큰 생성 (공식 문서 기준)
-    
-    const nonce = uuidv4(); // UUID 문자열
-    const timestamp = Date.now(); // 밀리초 단위
-    
-    // query string 생성 및 해시 계산
-    let queryHash = '';
-    let queryHashAlg = '';
-    
-    if (params && Object.keys(params).length > 0) {
-      const queryString = querystring.stringify(params);
-      queryHash = crypto.createHash('sha512').update(queryString, 'utf8').digest('hex');
-      queryHashAlg = 'SHA512';
-      
-      console.log('🔐 JWT Query 해시 생성:', {
-        params,
-        queryString,
-        queryHashLength: queryHash.length
-      });
-    }
-    
-    // JWT 페이로드 구성
-    const payload: any = {
-      access_key: this.config.apiKey,
-      nonce: nonce,
-      timestamp: timestamp
-    };
-    
-    if (queryHash) {
-      payload.query_hash = queryHash;
-      payload.query_hash_alg = queryHashAlg;
-    }
-    
-    console.log('🎫 JWT 페이로드:', {
-      access_key: this.config.apiKey.substring(0, 8) + '...',
-      nonce: nonce.substring(0, 8) + '...',
-      timestamp,
-      query_hash: queryHash ? queryHash.substring(0, 16) + '...' : 'N/A'
-    });
-    
-    // JWT 토큰 생성 (HS256 방식)
-    const jwtToken = jwt.sign(payload, this.config.secretKey, { algorithm: 'HS256' });
-    
-    return jwtToken;
-  }
+  // ❌ 중복된 JWT 함수 제거됨 - 라인 58의 올바른 함수 사용
 
   private async makeApiV2Request(endpoint: string, params: any): Promise<any> {
-    const jwtToken = this.generateJwtToken(params);
+    const jwtToken = this.generateJwtToken(endpoint, params, 'POST');
     
     const headers = {
       'Authorization': `Bearer ${jwtToken}`,
