@@ -314,6 +314,51 @@ class BithumbApiService {
       throw new Error('빗썸 API 연결에 실패했습니다. API 키와 IP 설정을 확인해주세요.');
     }
   }
+
+  // API Key 관리 메서드
+  getApiKeys(): { connectKey: string; secretKey: string; api2Key: string } {
+    return {
+      connectKey: this.config.connectKey.substring(0, 8) + '****' + this.config.connectKey.substring(this.config.connectKey.length - 4),
+      secretKey: this.config.secretKey.substring(0, 8) + '****' + this.config.secretKey.substring(this.config.secretKey.length - 4),
+      api2Key: this.config.api2Key!.substring(0, 8) + '****' + this.config.api2Key!.substring(this.config.api2Key!.length - 4)
+    };
+  }
+
+  updateApiKeys(newKeys: { connectKey?: string; secretKey?: string; api2Key?: string }): void {
+    if (newKeys.connectKey) {
+      this.config.connectKey = newKeys.connectKey;
+    }
+    if (newKeys.secretKey) {
+      this.config.secretKey = newKeys.secretKey;
+    }
+    if (newKeys.api2Key) {
+      this.config.api2Key = newKeys.api2Key;
+    }
+    
+    console.log('Bithumb API keys updated:', {
+      connectKeyLength: this.config.connectKey.length,
+      secretKeyLength: this.config.secretKey.length,
+      api2KeyLength: this.config.api2Key?.length,
+      connectKeyPreview: this.config.connectKey.substring(0, 8) + '...',
+      secretKeyPreview: this.config.secretKey.substring(0, 8) + '...',
+      api2KeyPreview: this.config.api2Key?.substring(0, 8) + '...'
+    });
+  }
+
+  async testApiConnection(): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.getBalance();
+      return {
+        success: true,
+        message: 'API 연결이 성공적으로 확인되었습니다.'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'API 연결 테스트 실패'
+      };
+    }
+  }
 }
 
 export const bithumbApi = new BithumbApiService();

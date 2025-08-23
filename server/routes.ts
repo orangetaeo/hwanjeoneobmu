@@ -881,4 +881,69 @@ router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequ
   }
 });
 
+// 빗썸 API Key 관리
+router.get('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const apiKeys = bithumbApi.getApiKeys();
+    res.json(apiKeys);
+  } catch (error) {
+    console.error('Error fetching API keys:', error);
+    res.status(500).json({ error: 'Failed to fetch API keys' });
+  }
+});
+
+router.post('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { connectKey, secretKey, api2Key } = req.body;
+    
+    // 입력 검증
+    const updates: any = {};
+    if (connectKey && connectKey.trim()) {
+      if (connectKey.length !== 32) {
+        return res.status(400).json({ error: 'Connect Key는 32자리여야 합니다.' });
+      }
+      updates.connectKey = connectKey.trim();
+    }
+    
+    if (secretKey && secretKey.trim()) {
+      if (secretKey.length !== 32) {
+        return res.status(400).json({ error: 'Secret Key는 32자리여야 합니다.' });
+      }
+      updates.secretKey = secretKey.trim();
+    }
+    
+    if (api2Key && api2Key.trim()) {
+      if (api2Key.length !== 48) {
+        return res.status(400).json({ error: 'API 2.0 Key는 48자리여야 합니다.' });
+      }
+      updates.api2Key = api2Key.trim();
+    }
+    
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: '변경할 API Key를 입력하세요.' });
+    }
+    
+    bithumbApi.updateApiKeys(updates);
+    
+    res.json({ 
+      success: true, 
+      message: 'API Key가 성공적으로 업데이트되었습니다.',
+      updatedKeys: Object.keys(updates)
+    });
+  } catch (error) {
+    console.error('Error updating API keys:', error);
+    res.status(500).json({ error: 'Failed to update API keys' });
+  }
+});
+
+router.post('/bithumb/test-connection', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await bithumbApi.testApiConnection();
+    res.json(result);
+  } catch (error) {
+    console.error('Error testing API connection:', error);
+    res.status(500).json({ error: 'Failed to test API connection' });
+  }
+});
+
 export default router;

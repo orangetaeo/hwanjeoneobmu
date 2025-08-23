@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { 
   Home, 
   TrendingUp, 
@@ -12,7 +12,8 @@ import {
   Coins,
   Menu,
   X,
-  Calculator
+  Calculator,
+  Key
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 // Firebase는 실시간 환율 전용으로 제한 - 데이터 저장은 PostgreSQL 사용
@@ -1130,6 +1131,16 @@ export default function HomePage() {
                 <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-xs lg:text-sm text-gray-600 hidden sm:inline">실시간 연동</span>
               </div>
+              <Link href="/bithumb-settings">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="p-1.5 lg:p-2"
+                  data-testid="header-bithumb-settings"
+                >
+                  <Key className="w-4 h-4 lg:w-5 lg:h-5" />
+                </Button>
+              </Link>
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -1250,6 +1261,19 @@ export default function HomePage() {
                   </Button>
                 </li>
                 <li className="pt-4 border-t">
+                  <Link href="/bithumb-settings">
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      data-testid="mobile-menu-bithumb-settings"
+                    >
+                      <Key className="w-5 h-5 mr-3" />
+                      빗썸 API 설정
+                    </Button>
+                  </Link>
+                </li>
+                <li>
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start"
@@ -1257,7 +1281,7 @@ export default function HomePage() {
                     data-testid="mobile-menu-settings"
                   >
                     <Settings className="w-5 h-5 mr-3" />
-                    설정
+                    일반 설정
                   </Button>
                 </li>
               </ul>
