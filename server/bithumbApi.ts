@@ -139,6 +139,81 @@ class BithumbApiService {
     return jwtToken;
   }
 
+  // 🌟 빗썸 V2 JWT 방식 인증 헤더 생성 (공식 문서 기준)
+  private createV2JWTHeaders(params: any = {}): any {
+    const accessKey = process.env.BITHUMB_API_KEY_V2!;
+    const secretKey = process.env.BITHUMB_SECRET_KEY_V2!;
+
+    // JWT 페이로드 구성 (공식 문서 기준)
+    const payload: any = {
+      access_key: accessKey,
+      nonce: uuidv4(),
+      timestamp: Date.now()
+    };
+
+    // 파라미터가 있는 경우 query_hash 추가
+    if (params && Object.keys(params).length > 0) {
+      const query = querystring.encode(params);
+      const hash = crypto.createHash('SHA512');
+      hash.update(query, 'utf-8');
+      payload.query_hash = hash.digest('hex');
+      payload.query_hash_alg = 'SHA512';
+    }
+
+    console.log('🌟 빗썸 V2 JWT 토큰 생성:', {
+      accessKeyPreview: accessKey.substring(0, 10) + '...',
+      secretKeyLength: secretKey.length,
+      hasParams: Object.keys(params).length > 0,
+      payload: { 
+        ...payload, 
+        access_key: '***HIDDEN***', 
+        query_hash: payload.query_hash?.substring(0, 20) + '...' 
+      }
+    });
+
+    // JWT 토큰 생성 (HS256 방식)
+    const jwtToken = jwt.sign(payload, secretKey, { algorithm: 'HS256' });
+
+    return {
+      'Authorization': `Bearer ${jwtToken}`,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  // 🌟 빗썸 V2 JWT 방식 - POST 요청
+  private async makeApiRequestV2JWT(endpoint: string, params: any = {}): Promise<any> {
+    const headers = this.createV2JWTHeaders(params);
+    
+    console.log(`🌟 빗썸 V2 JWT ${endpoint} 요청:`, {
+      url: `${this.config.baseUrl}${endpoint}`,
+      params,
+      headersPreview: {
+        'Authorization': 'Bearer ' + headers['Authorization']?.substring(7, 30) + '...'
+      }
+    });
+
+    try {
+      const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(params)
+      });
+
+      console.log(`🌟 V2 JWT 응답 상태:`, response.status);
+      const data = await response.json();
+      console.log(`🌟 V2 JWT 응답:`, JSON.stringify(data).substring(0, 100) + '...');
+
+      if (!response.ok || data.status !== '0000') {
+        throw new Error(`Bithumb V2 JWT API Error: ${data.status} - ${data.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.log(`❌ V2 JWT API 요청 실패:`, error);
+      throw error;
+    }
+  }
+
   // 🎯 빗썸 v1.2.0 API-Sign 방식 인증 헤더 생성 (V1 Connect Key 필요)
   private generateApiSignHeaders(endpoint: string, params: any = {}): any {
     // V1 Connect Key와 Secret 사용 (V2 키로는 작동하지 않음)
@@ -179,7 +254,7 @@ class BithumbApiService {
     });
     
     return {
-      'api-client-type': '2',  // 구분자 유형 (NULL 사용)
+      'api-client-type': '0',  // 기본값: Ascii Code 0 
       'Api-Key': connectKey,
       'Api-Nonce': nonce,
       'Api-Sign': apiSign,
@@ -869,11 +944,11 @@ class BithumbApiService {
 
   public async getUsdtTransactionsNEW(limit: number = 20): Promise<any[]> {
     try {
-      console.log(`🔥🔥🔥 빗썸 V1 HMAC 방식 - POST /info/user_transactions! limit=${limit} 🔥🔥🔥`);
+      console.log(`🌟🌟🌟 빗썸 V2 JWT 방식 시도 - /user/transactions! limit=${limit} 🌟🌟🌟`);
       
-      // 🎯 V2 API POST 방식만 사용
+      // 🌟 V2 JWT API 방식 시도
       try {
-        console.log('🎯 빗썸 V1 HMAC 방식: /info/user_transactions 호출');
+        console.log('🌟 빗썸 V2 JWT 방식: /user/transactions 호출');
         
         const queryParams = {
           order_currency: 'USDT',
@@ -881,10 +956,10 @@ class BithumbApiService {
           count: limit
         };
         
-        // 🔥 빗썸 V1 공식 방식: HMAC + POST /info/user_transactions  
-        const ordersResponse = await this.makeApiRequestV12('/info/user_transactions', queryParams);
+        // 🌟 빗썸 V2 공식 방식: JWT + POST /user/transactions  
+        const ordersResponse = await this.makeApiRequestV2JWT('/user/transactions', queryParams);
         
-        console.log('🎉 빗썸 V1 HMAC API 응답 성공!', {
+        console.log('🎉 빗썸 V2 JWT API 응답 성공!', {
           status: ordersResponse?.status,
           dataType: typeof ordersResponse?.data,
           dataLength: Array.isArray(ordersResponse?.data) ? ordersResponse.data.length : 'not array'
@@ -893,7 +968,7 @@ class BithumbApiService {
         // 빗썸 API 성공 응답 처리
         if (ordersResponse && ordersResponse.status === '0000' && ordersResponse.data) {
           const transactions = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
-          console.log(`✅ 빗썸 V1 HMAC API로 거래 내역 ${transactions.length}개 조회 성공!`);
+          console.log(`✅ 빗썸 V2 JWT API로 거래 내역 ${transactions.length}개 조회 성공!`);
           
           if (transactions.length > 0) {
             return transactions.map((tx: any) => {
