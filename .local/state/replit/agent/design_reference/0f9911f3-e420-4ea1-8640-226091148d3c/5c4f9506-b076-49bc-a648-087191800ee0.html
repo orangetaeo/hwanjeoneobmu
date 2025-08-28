@@ -1,0 +1,965 @@
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자산 관리 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af'
+                        },
+                        success: {
+                            50: '#ecfdf5',
+                            500: '#10b981',
+                            600: '#059669'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- @COMPONENT: AppHeader -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-chart-line text-primary-500 text-2xl"></i>
+                    <h1 class="text-xl font-bold text-gray-900">자산 관리</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- @STATE: realTimeStatus:boolean = true -->
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-gray-600">실시간 연동</span>
+                    </div>
+                    <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-cog text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: AppHeader -->
+
+    <!-- @COMPONENT: MobileNavigation -->
+    <nav class="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
+        <div class="flex justify-around items-center h-16">
+            <button data-tab="dashboard" class="flex flex-col items-center space-y-1 p-2 text-primary-500">
+                <i class="fas fa-home text-lg"></i>
+                <span class="text-xs font-medium">대시보드</span>
+            </button>
+            <button data-tab="assets" class="flex flex-col items-center space-y-1 p-2 text-gray-400">
+                <i class="fas fa-wallet text-lg"></i>
+                <span class="text-xs">자산</span>
+            </button>
+            <button data-tab="rates" class="flex flex-col items-center space-y-1 p-2 text-gray-400">
+                <i class="fas fa-exchange-alt text-lg"></i>
+                <span class="text-xs">환율</span>
+            </button>
+            <button data-tab="transactions" class="flex flex-col items-center space-y-1 p-2 text-gray-400">
+                <i class="fas fa-list text-lg"></i>
+                <span class="text-xs">거래내역</span>
+            </button>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: MobileNavigation -->
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
+        <div class="flex flex-col lg:flex-row gap-6">
+            
+            <!-- @COMPONENT: DesktopSidebar -->
+            <aside class="hidden md:block w-64 flex-shrink-0">
+                <nav class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <ul class="space-y-2">
+                        <li>
+                            <button data-tab="dashboard" class="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-md">
+                                <i class="fas fa-home"></i>
+                                <span>대시보드</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button data-tab="assets" class="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
+                                <i class="fas fa-wallet"></i>
+                                <span>자산 관리</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button data-tab="rates" class="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
+                                <i class="fas fa-exchange-alt"></i>
+                                <span>실시간 환율</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button data-tab="transactions" class="w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
+                                <i class="fas fa-list"></i>
+                                <span>거래 내역</span>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Real-time Exchange Rates Widget -->
+                <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-primary-500"></i>
+                        실시간 환율
+                    </h3>
+                    <div class="space-y-2">
+                        <!-- @MAP: realTimeRates.map(rate => ( -->
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600" data-bind="rate.pair">USD/KRW</span>
+                            <div class="text-right">
+                                <div class="font-medium text-gray-900" data-bind="rate.value">1,326.50</div>
+                                <div class="text-xs text-success-600 flex items-center">
+                                    <i class="fas fa-arrow-up mr-1"></i>
+                                    <span data-bind="rate.change">+0.15%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600">USD/VND</span>
+                            <div class="text-right">
+                                <div class="font-medium text-gray-900">24,120</div>
+                                <div class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-arrow-down mr-1"></i>
+                                    <span>-0.08%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600">BTC/USDT</span>
+                            <div class="text-right">
+                                <div class="font-medium text-gray-900">43,850</div>
+                                <div class="text-xs text-success-600 flex items-center">
+                                    <i class="fas fa-arrow-up mr-1"></i>
+                                    <span>+2.34%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </aside>
+            <!-- @END_COMPONENT: DesktopSidebar -->
+
+            <!-- @COMPONENT: MainContent -->
+            <main class="flex-1 min-w-0">
+                
+                <!-- Dashboard View -->
+                <!-- @STATE: activeTab:string = 'dashboard' -->
+                <div id="dashboard-view" class="space-y-6">
+                    
+                    <!-- Asset Overview Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- @MAP: assetOverview.map(asset => ( -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600" data-bind="asset.name">현금 자산</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="asset.totalValue">₩4,200,000</p>
+                                    <p class="text-sm text-success-600 flex items-center mt-1">
+                                        <i class="fas fa-arrow-up mr-1"></i>
+                                        <span data-bind="asset.change">+2.5%</span>
+                                    </p>
+                                </div>
+                                <div class="p-3 bg-primary-50 rounded-full">
+                                    <i class="fas fa-money-bill-wave text-primary-500 text-xl" data-bind="asset.icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">은행 계좌</p>
+                                    <p class="text-2xl font-bold text-gray-900">₩15,800,000</p>
+                                    <p class="text-sm text-success-600 flex items-center mt-1">
+                                        <i class="fas fa-arrow-up mr-1"></i>
+                                        <span>+1.2%</span>
+                                    </p>
+                                </div>
+                                <div class="p-3 bg-success-50 rounded-full">
+                                    <i class="fas fa-university text-success-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">거래소</p>
+                                    <p class="text-2xl font-bold text-gray-900">$2,450</p>
+                                    <p class="text-sm text-red-600 flex items-center mt-1">
+                                        <i class="fas fa-arrow-down mr-1"></i>
+                                        <span>-0.8%</span>
+                                    </p>
+                                </div>
+                                <div class="p-3 bg-amber-50 rounded-full">
+                                    <i class="fas fa-coins text-amber-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600">바이낸스</p>
+                                    <p class="text-2xl font-bold text-gray-900">₮1,850</p>
+                                    <p class="text-sm text-success-600 flex items-center mt-1">
+                                        <i class="fas fa-arrow-up mr-1"></i>
+                                        <span>+4.2%</span>
+                                    </p>
+                                </div>
+                                <div class="p-3 bg-yellow-50 rounded-full">
+                                    <i class="fab fa-bitcoin text-yellow-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+
+                    <!-- Recent Transactions & Quick Actions -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Recent Transactions -->
+                        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
+                            <div class="p-6 border-b border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-semibold text-gray-900">최근 거래</h3>
+                                    <button class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                        전체 보기 <i class="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <!-- @MAP: recentTransactions.map(transaction => ( -->
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="p-2 bg-primary-100 rounded-full">
+                                                <i class="fas fa-exchange-alt text-primary-600" data-bind="transaction.icon"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-900" data-bind="transaction.description">USD → KRW 환전</p>
+                                                <p class="text-sm text-gray-500" data-bind="transaction.date">2024년 1월 15일 14:30</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-semibold text-gray-900" data-bind="transaction.amount">₩132,650</p>
+                                            <p class="text-sm text-gray-500" data-bind="transaction.rate">@1,326.50</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="p-2 bg-success-100 rounded-full">
+                                                <i class="fas fa-plus text-success-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-900">현금 추가</p>
+                                                <p class="text-sm text-gray-500">2024년 1월 14일 09:15</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-semibold text-success-600">+₩500,000</p>
+                                            <p class="text-sm text-gray-500">50,000원권 x 10장</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="p-2 bg-amber-100 rounded-full">
+                                                <i class="fab fa-bitcoin text-amber-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-900">BTC 매수</p>
+                                                <p class="text-sm text-gray-500">2024년 1월 13일 16:45</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-semibold text-gray-900">0.05 BTC</p>
+                                            <p class="text-sm text-gray-500">@43,200 USDT</p>
+                                        </div>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                            <div class="p-6 border-b border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-900">빠른 작업</h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-4">
+                                    <button data-event="click:openAddCashModal" class="w-full flex items-center space-x-3 p-4 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
+                                        <i class="fas fa-plus text-primary-600"></i>
+                                        <span class="font-medium text-primary-700">현금 추가</span>
+                                    </button>
+                                    
+                                    <button data-event="click:openExchangeModal" class="w-full flex items-center space-x-3 p-4 bg-success-50 hover:bg-success-100 rounded-lg transition-colors">
+                                        <i class="fas fa-exchange-alt text-success-600"></i>
+                                        <span class="font-medium text-success-700">환전하기</span>
+                                    </button>
+                                    
+                                    <button data-event="click:openTransferModal" class="w-full flex items-center space-x-3 p-4 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors">
+                                        <i class="fas fa-arrow-right text-amber-600"></i>
+                                        <span class="font-medium text-amber-700">이체하기</span>
+                                    </button>
+                                    
+                                    <button data-event="click:openReportsView" class="w-full flex items-center space-x-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                                        <i class="fas fa-chart-bar text-gray-600"></i>
+                                        <span class="font-medium text-gray-700">리포트 보기</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assets Management View -->
+                <div id="assets-view" class="space-y-6 hidden">
+                    
+                    <!-- Asset Type Tabs -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div class="border-b border-gray-200">
+                            <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+                                <button data-asset-tab="cash" class="border-primary-500 text-primary-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                    현금 자산
+                                </button>
+                                <button data-asset-tab="korean-banks" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                    한국 은행
+                                </button>
+                                <button data-asset-tab="vietnamese-banks" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                    베트남 은행
+                                </button>
+                                <button data-asset-tab="exchanges" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                    거래소
+                                </button>
+                                <button data-asset-tab="binance" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                    바이낸스
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- Cash Assets Tab Content -->
+                        <div id="cash-assets" class="p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900">현금 자산 관리</h3>
+                                <button data-event="click:openAddCashAsset" class="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors">
+                                    <i class="fas fa-plus"></i>
+                                    <span>현금 추가</span>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <!-- @MAP: cashAssets.map(asset => ( -->
+                                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900 flex items-center">
+                                                <span data-bind="asset.currency">KRW</span>
+                                                <span class="ml-2 text-2xl" data-bind="asset.symbol">₩</span>
+                                            </h4>
+                                            <p class="text-sm text-gray-600" data-bind="asset.name">KRW 현금</p>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button data-event="click:editAsset" class="p-2 text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button data-event="click:deleteAsset" class="p-2 text-gray-400 hover:text-red-600">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <p class="text-2xl font-bold text-gray-900" data-bind="asset.totalBalance">₩3,540,000</p>
+                                    </div>
+
+                                    <!-- Denomination Breakdown -->
+                                    <div class="space-y-2">
+                                        <h5 class="text-sm font-medium text-gray-700">지폐 구성</h5>
+                                        <!-- @MAP: asset.denominations.map(denom => ( -->
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600" data-bind="denom.type">50,000원권</span>
+                                            <span class="font-medium" data-bind="denom.count">59장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">10,000원권</span>
+                                            <span class="font-medium">59장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">5,000원권</span>
+                                            <span class="font-medium">0장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">1,000원권</span>
+                                            <span class="font-medium">0장</span>
+                                        </div>
+                                        <!-- @END_MAP )) -->
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900 flex items-center">
+                                                <span>USD</span>
+                                                <span class="ml-2 text-2xl">$</span>
+                                            </h4>
+                                            <p class="text-sm text-gray-600">USD 현금</p>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-red-600">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <p class="text-2xl font-bold text-gray-900">$436</p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <h5 class="text-sm font-medium text-gray-700">지폐 구성</h5>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">$100</span>
+                                            <span class="font-medium">2장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">$50</span>
+                                            <span class="font-medium">1장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">$20</span>
+                                            <span class="font-medium">3장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">$10, $5, $1</span>
+                                            <span class="font-medium">42장</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900 flex items-center">
+                                                <span>VND</span>
+                                                <span class="ml-2 text-2xl">₫</span>
+                                            </h4>
+                                            <p class="text-sm text-gray-600">VND 현금</p>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="p-2 text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-red-600">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <p class="text-2xl font-bold text-gray-900">₫30,790,000</p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <h5 class="text-sm font-medium text-gray-700">지폐 구성</h5>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">500,000₫</span>
+                                            <span class="font-medium">56장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">200,000₫</span>
+                                            <span class="font-medium">10장</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-gray-600">기타</span>
+                                            <span class="font-medium">17장</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Rates View -->
+                <div id="rates-view" class="space-y-6 hidden">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-900">실시간 환율 정보</h3>
+                                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                                    <i class="fas fa-clock"></i>
+                                    <span>마지막 업데이트: 방금 전</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <!-- Fiat Exchange Rates -->
+                            <div class="mb-8">
+                                <h4 class="text-md font-semibold text-gray-900 mb-4">법정화폐 환율</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <!-- @MAP: fiatRates.map(rate => ( -->
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <p class="font-medium text-gray-900" data-bind="rate.pair">USD/KRW</p>
+                                                <p class="text-2xl font-bold text-gray-900" data-bind="rate.value">1,326.50</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="flex items-center text-sm text-success-600">
+                                                    <i class="fas fa-arrow-up mr-1"></i>
+                                                    <span data-bind="rate.change">+0.15%</span>
+                                                </div>
+                                                <p class="text-xs text-gray-500 mt-1" data-bind="rate.changeValue">+2.00</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <p class="font-medium text-gray-900">USD/VND</p>
+                                                <p class="text-2xl font-bold text-gray-900">24,120</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="flex items-center text-sm text-red-600">
+                                                    <i class="fas fa-arrow-down mr-1"></i>
+                                                    <span>-0.08%</span>
+                                                </div>
+                                                <p class="text-xs text-gray-500 mt-1">-20</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <p class="font-medium text-gray-900">KRW/VND</p>
+                                                <p class="text-2xl font-bold text-gray-900">18.18</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="flex items-center text-sm text-success-600">
+                                                    <i class="fas fa-arrow-up mr-1"></i>
+                                                    <span>+0.23%</span>
+                                                </div>
+                                                <p class="text-xs text-gray-500 mt-1">+0.04</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+
+                            <!-- Cryptocurrency Rates -->
+                            <div>
+                                <h4 class="text-md font-semibold text-gray-900 mb-4">암호화폐 시세</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <!-- @MAP: cryptoRates.map(crypto => ( -->
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fab fa-bitcoin text-amber-500" data-bind="crypto.icon"></i>
+                                                <span class="font-medium text-gray-900" data-bind="crypto.symbol">BTC</span>
+                                            </div>
+                                            <div class="flex items-center text-sm text-success-600">
+                                                <i class="fas fa-arrow-up mr-1"></i>
+                                                <span data-bind="crypto.change">+2.34%</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-xl font-bold text-gray-900" data-bind="crypto.price">$43,850</p>
+                                        <p class="text-sm text-gray-500" data-bind="crypto.krwPrice">₩58,145,000</p>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fab fa-ethereum text-blue-500"></i>
+                                                <span class="font-medium text-gray-900">ETH</span>
+                                            </div>
+                                            <div class="flex items-center text-sm text-red-600">
+                                                <i class="fas fa-arrow-down mr-1"></i>
+                                                <span>-1.15%</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-xl font-bold text-gray-900">$2,850</p>
+                                        <p class="text-sm text-gray-500">₩3,780,000</p>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
+                                                    <span class="text-xs font-bold text-white">₮</span>
+                                                </div>
+                                                <span class="font-medium text-gray-900">USDT</span>
+                                            </div>
+                                            <div class="flex items-center text-sm text-gray-600">
+                                                <span>0.00%</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-xl font-bold text-gray-900">$1.00</p>
+                                        <p class="text-sm text-gray-500">₩1,327</p>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                                                    <span class="text-xs font-bold text-white">A</span>
+                                                </div>
+                                                <span class="font-medium text-gray-900">ADA</span>
+                                            </div>
+                                            <div class="flex items-center text-sm text-success-600">
+                                                <i class="fas fa-arrow-up mr-1"></i>
+                                                <span>+5.67%</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-xl font-bold text-gray-900">$0.52</p>
+                                        <p class="text-sm text-gray-500">₩690</p>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions View -->
+                <div id="transactions-view" class="space-y-6 hidden">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                                <h3 class="text-lg font-semibold text-gray-900">거래 내역</h3>
+                                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                                    <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                        <option>전체 거래</option>
+                                        <option>환전</option>
+                                        <option>현금 추가/차감</option>
+                                        <option>이체</option>
+                                    </select>
+                                    <button class="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors">
+                                        <i class="fas fa-plus"></i>
+                                        <span>새 거래</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                <!-- @MAP: transactions.map(transaction => ( -->
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-3 bg-primary-100 rounded-full">
+                                            <i class="fas fa-exchange-alt text-primary-600" data-bind="transaction.typeIcon"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900" data-bind="transaction.title">USD → KRW 환전</p>
+                                            <p class="text-sm text-gray-500" data-bind="transaction.description">$100 → ₩132,650</p>
+                                            <p class="text-xs text-gray-400" data-bind="transaction.timestamp">2024년 1월 15일 14:30</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-semibold text-gray-900" data-bind="transaction.amount">₩132,650</p>
+                                        <p class="text-sm text-gray-500" data-bind="transaction.rate">환율: 1,326.50</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <button class="text-primary-600 hover:text-primary-700 text-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-700 text-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-3 bg-success-100 rounded-full">
+                                            <i class="fas fa-plus text-success-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">현금 추가</p>
+                                            <p class="text-sm text-gray-500">KRW 50,000원권 x 10장</p>
+                                            <p class="text-xs text-gray-400">2024년 1월 14일 09:15</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-semibold text-success-600">+₩500,000</p>
+                                        <p class="text-sm text-gray-500">현금 자산</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <button class="text-primary-600 hover:text-primary-700 text-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-700 text-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-3 bg-amber-100 rounded-full">
+                                            <i class="fab fa-bitcoin text-amber-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">BTC 매수</p>
+                                            <p class="text-sm text-gray-500">바이낸스에서 0.05 BTC 매수</p>
+                                            <p class="text-xs text-gray-400">2024년 1월 13일 16:45</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-semibold text-gray-900">0.05 BTC</p>
+                                        <p class="text-sm text-gray-500">@43,200 USDT</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <button class="text-primary-600 hover:text-primary-700 text-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-700 text-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="p-3 bg-red-100 rounded-full">
+                                            <i class="fas fa-minus text-red-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">현금 차감</p>
+                                            <p class="text-sm text-gray-500">VND 500,000₫ x 20장</p>
+                                            <p class="text-xs text-gray-400">2024년 1월 12일 11:20</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-semibold text-red-600">-₫10,000,000</p>
+                                        <p class="text-sm text-gray-500">현금 자산</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <button class="text-primary-600 hover:text-primary-700 text-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-700 text-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+
+                            <!-- Pagination -->
+                            <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+                                <p class="text-sm text-gray-500">
+                                    총 <span class="font-medium">127</span>개 거래 중 <span class="font-medium">1-10</span>개 표시
+                                </p>
+                                <div class="flex space-x-2">
+                                    <button class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-md">이전</button>
+                                    <button class="px-3 py-2 text-sm text-white bg-primary-600 rounded-md">1</button>
+                                    <button class="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md">2</button>
+                                    <button class="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md">3</button>
+                                    <button class="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md">다음</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+            <!-- @END_COMPONENT: MainContent -->
+        </div>
+    </div>
+
+    <!-- @COMPONENT: AddCashModal -->
+    <!-- @STATE: showAddCashModal:boolean = false -->
+    <div id="add-cash-modal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">현금 추가</h3>
+                    <button data-event="click:closeModal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">통화 선택</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="KRW">KRW (한국 원)</option>
+                            <option value="USD">USD (미국 달러)</option>
+                            <option value="VND">VND (베트남 동)</option>
+                            <option value="USDT">USDT (테더)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">지폐 단위</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="50000">50,000원권</option>
+                            <option value="10000">10,000원권</option>
+                            <option value="5000">5,000원권</option>
+                            <option value="1000">1,000원권</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">장수</label>
+                        <input type="number" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                               placeholder="장수를 입력하세요" 
+                               min="1">
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">추가될 금액:</span>
+                            <span class="font-medium text-gray-900" data-bind="calculatedAmount">₩500,000</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-gray-200">
+                <div class="flex space-x-4">
+                    <button data-event="click:closeModal" class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
+                        취소
+                    </button>
+                    <button data-event="click:submitAddCash" class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors">
+                        추가
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AddCashModal -->
+
+    <script>
+        // TODO: Implement business logic, API calls, or state management
+        (function() {
+            // Tab switching functionality
+            const tabButtons = document.querySelectorAll('[data-tab]');
+            const views = {
+                'dashboard': document.getElementById('dashboard-view'),
+                'assets': document.getElementById('assets-view'),
+                'rates': document.getElementById('rates-view'),
+                'transactions': document.getElementById('transactions-view')
+            };
+
+            function switchTab(activeTab) {
+                // Hide all views
+                Object.values(views).forEach(view => {
+                    if (view) view.classList.add('hidden');
+                });
+                
+                // Show active view
+                if (views[activeTab]) {
+                    views[activeTab].classList.remove('hidden');
+                }
+
+                // Update button states
+                tabButtons.forEach(button => {
+                    const tab = button.getAttribute('data-tab');
+                    const isActive = tab === activeTab;
+                    
+                    // Desktop sidebar buttons
+                    if (button.closest('aside')) {
+                        button.className = isActive 
+                            ? 'w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-md'
+                            : 'w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors';
+                    }
+                    
+                    // Mobile navigation buttons
+                    if (button.closest('nav')) {
+                        const icon = button.querySelector('i');
+                        const text = button.querySelector('span');
+                        if (isActive) {
+                            button.className = 'flex flex-col items-center space-y-1 p-2 text-primary-500';
+                            if (text) text.className = 'text-xs font-medium';
+                        } else {
+                            button.className = 'flex flex-col items-center space-y-1 p-2 text-gray-400';
+                            if (text) text.className = 'text-xs';
+                        }
+                    }
+                });
+            }
+
+            // Add click event listeners
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tab = button.getAttribute('data-tab');
+                    switchTab(tab);
+                });
+            });
+
+            // Modal functionality
+            const addCashModal = document.getElementById('add-cash-modal');
+            const modalOpenButtons = document.querySelectorAll('[data-event*="openAddCashModal"]');
+            const modalCloseButtons = document.querySelectorAll('[data-event*="closeModal"]');
+
+            modalOpenButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    addCashModal.classList.remove('hidden');
+                });
+            });
+
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    addCashModal.classList.add('hidden');
+                });
+            });
+
+            // Close modal when clicking outside
+            addCashModal.addEventListener('click', (e) => {
+                if (e.target === addCashModal) {
+                    addCashModal.classList.add('hidden');
+                }
+            });
+
+            // Asset tab switching
+            const assetTabButtons = document.querySelectorAll('[data-asset-tab]');
+            assetTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Update tab button states
+                    assetTabButtons.forEach(btn => {
+                        btn.className = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm';
+                    });
+                    button.className = 'border-primary-500 text-primary-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm';
+                    
+                    // TODO: Switch asset tab content based on data-asset-tab value
+                });
+            });
+
+            // Initialize with dashboard view
+            switchTab('dashboard');
+        })();
+    </script>
+</body>
+</html>
