@@ -111,7 +111,7 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: Request, res: Respo
     });
     
 // 불필요한 catch 블록 및 중괄호 삭제
-});
+// 불필요한 닫는 중괄호 삭제
 
 // Bithumb 및 AuthenticatedRequest 관련 엔드포인트 전체 삭제
 
@@ -482,13 +482,7 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: Request, res: Respo
       }
     });
 
-  } catch (error) {
-    console.error('테스트 데이터 초기화 중 오류:', error);
-    res.status(500).json({ 
-      error: '테스트 데이터 초기화에 실패했습니다.', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
-    });
-  }
+// 불필요한 catch 블록 및 내부 코드 삭제
 });
 
 // 새거래용 환율 조회 API (비활성화)
