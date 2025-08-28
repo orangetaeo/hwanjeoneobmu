@@ -110,91 +110,10 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: Request, res: Respo
       data: responseData
     });
     
-  } catch (error) {
-    console.error('❌ 빗썸 공식 JWT 실패:', error);
-    res.status(500).json({
-      success: false,
-      method: 'JWT Bearer Token (빗썸 공식 HS256)',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+// 불필요한 catch 블록 및 중괄호 삭제
 });
 
-// 🔥 빗썸 API 1.0과 2.0 모두 테스트하는 엔드포인트
-router.get('/bithumb/test-hmac', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    console.log('🔥🔥🔥 빗썸 API 1.0 & 2.0 테스트 시작! 🔥🔥🔥');
-    
-    const queryParams = {
-      order_currency: 'USDT',
-      payment_currency: 'KRW',
-      count: 5
-    };
-    
-    const results: any = { jwt: null, v1: null, v2: null };
-    
-    // JWT 방식 테스트 (올바른 빗썸 API)
-    try {
-      console.log('📡 JWT 방식 테스트 시작...');
-      
-      // 올바른 쿼리 파라미터 (빗썸 공식 문서 기준)
-      const correctParams = {
-        market: 'KRW-USDT',
-        limit: 5,
-        page: 1,
-        order_by: 'desc',
-        state: 'done'  // 체결 완료된 주문만 조회
-      };
-      
-      const jwtResult = await bithumbApi.makeApiRequest('/v1/orders', correctParams, 'GET');
-      console.log('✅ JWT 방식 성공:', jwtResult);
-      results.jwt = { success: true, data: jwtResult };
-    } catch (jwtError: any) {
-      console.log('❌ JWT 방식 실패:', jwtError.message);
-      results.jwt = { success: false, error: jwtError.message };
-    }
-    
-    // 기존 방식들도 유지 (비교용)
-    try {
-      console.log('📡 API 1.0 테스트 시작...');
-      const v1Result = await bithumbApi.makeHmacV1Request('/info/orders', queryParams);
-      console.log('✅ API 1.0 성공:', v1Result);
-      results.v1 = { success: true, data: v1Result };
-    } catch (v1Error) {
-      console.log('❌ API 1.0 실패:', v1Error.message);
-      results.v1 = { success: false, error: v1Error.message };
-    }
-    
-    try {
-      console.log('📡 API 2.0 테스트 시작...');
-      const v2Result = await bithumbApi.makeHmacRequest('/info/orders', queryParams);
-      console.log('✅ API 2.0 성공:', v2Result);
-      results.v2 = { success: true, data: v2Result };
-    } catch (v2Error) {
-      console.log('❌ API 2.0 실패:', v2Error.message);
-      results.v2 = { success: false, error: v2Error.message };
-    }
-    
-    res.json({
-      success: true,
-      message: 'API 1.0과 2.0 테스트 완료',
-      results: results
-    });
-    
-  } catch (error) {
-    console.error('❌ 전체 테스트 실패:', error);
-    res.status(500).json({ 
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-// Test data initialization endpoint
-router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    console.log(`테스트 데이터 초기화 시작 - 사용자: ${userId}`);
+// Bithumb 및 AuthenticatedRequest 관련 엔드포인트 전체 삭제
 
     // 1. 기존 데이터 모두 삭제
     await db.delete(transactions).where(eq(transactions.userId, userId));
