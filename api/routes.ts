@@ -10,46 +10,39 @@ import { eq } from 'drizzle-orm';
 const router = Router();
 
 // Extended Request interface
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
-}
+// interface AuthenticatedRequest extends Request {
+//   user?: { id: string };
+// }
 
 // Middleware to check authentication (mock for development)
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   // For development, create a mock user
   if (!req.user) {
     req.user = { id: 'dev-user-1' };
   }
-  console.log('Auth middleware - User ID:', req.user.id);
+  console.log('Auth middleware - User ID:', (req.user as any).id);
   next();
 };
 
 // Transactions Routes
-router.post('/transactions', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/transactions', requireAuth, async (req: Request, res: Response) => {
   try {
     console.log('Transaction request body:', JSON.stringify(req.body, null, 2));
-    console.log('User ID from request:', req.user!.id);
-    
+  console.log('User ID from request:', (req.user as any).id);
     const validatedData = insertTransactionSchema.parse(req.body);
     console.log('Validated data:', JSON.stringify(validatedData, null, 2));
-    
-    const transaction = await storage.createTransactionWithAssetMovement(req.user!.id, validatedData);
+  const transaction = await storage.createTransactionWithAssetMovement((req.user as any).id, validatedData);
     res.json(transaction);
   } catch (error) {
     console.error('Error creating transaction:', error);
-    if (error instanceof Error) {
-    }
-    res.json(transaction);
-  } catch (error) {
-    console.error('Error fetching transaction:', error);
-    res.status(500).json({ error: 'Failed to fetch transaction' });
+    res.status(400).json({ error: 'Invalid transaction data', details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
 // 현금 자산 권종 데이터 정리 API
-router.post('/cleanup-cash-denominations', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/cleanup-cash-denominations', requireAuth, async (req: Request, res: Response) => {
   try {
-    await storage.cleanupCashDenominations(req.user!.id);
+  await storage.cleanupCashDenominations((req.user as any).id);
     res.json({ message: '현금 자산 권종 데이터 정리가 완료되었습니다.' });
   } catch (error) {
     console.error('Error cleaning up cash denominations:', error);
