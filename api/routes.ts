@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
 import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema, insertExchangeRateHistorySchema, transactions, assets, rates, exchangeRates, userSettings } from '@shared/schema';
-import bithumbApi from './bithumbApi';
+// import bithumbApi from './bithumbApi';
 import { apiKeyService } from './apiKeyService';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
@@ -78,7 +78,7 @@ router.post('/cleanup-cash-denominations', requireAuth, async (req: Authenticate
     res.status(500).json({ error: 'Failed to cleanup cash denominations' });
   }
 });
-
+/*
 // 거래 상태 변경 API
 router.put('/transactions/:id/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -1157,26 +1157,8 @@ router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequ
 });
 
 // 빗썸 API Key 관리
-router.get('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const apiKeys = bithumbApi.getApiKeys();
-    res.json(apiKeys);
-  } catch (error) {
-    console.error('Error fetching API keys:', error);
-    res.status(500).json({ error: 'Failed to fetch API keys' });
-  }
-});
-
-router.post('/bithumb/api-keys', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { apiKey, secretKey } = req.body;
-    
-    // 입력 검증
-    const updates: any = {};
-    
-    if (apiKey && apiKey.trim()) {
-      if (apiKey.length < 32) {
-        return res.status(400).json({ error: 'API Key는 최소 32자리여야 합니다.' });
+// router.get('/bithumb/v12-test', requireAuth, async (req: AuthenticatedRequest, res: Response) => { /* ...비활성화... */ });
+*/
       }
       updates.apiKey = apiKey.trim();
     }
