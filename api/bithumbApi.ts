@@ -343,7 +343,7 @@ class BithumbApiService {
         generatedQuery: queryString
       });
       
-      const jwtToken = this.generateJwtTokenFromParams(endpoint, queryParams, method);
+  const jwtToken = this.generateJwtTokenFromParams(queryParams);
       
       // URL 구성 - JWT와 동일한 쿼리 사용
       let url = `${this.config.baseUrl}${endpoint}`;
@@ -560,7 +560,7 @@ class BithumbApiService {
   // ❌ 중복된 JWT 함수 제거됨 - 라인 58의 올바른 함수 사용
 
   private async makeApiV2Request(endpoint: string, params: any): Promise<any> {
-    const jwtToken = this.generateJwtTokenFromParams(endpoint, params, 'POST');
+  const jwtToken = this.generateJwtTokenFromParams(params);
     
     const headers = {
       'Authorization': `Bearer ${jwtToken}`,
@@ -1345,7 +1345,7 @@ class BithumbApiService {
     });
   }
 
-  public async testApiConnection(): Promise<{ success: boolean; message: string }> {
+  public async testApiConnection(): Promise<{ success: boolean; message: string; data?: any }> {
     try {
       const balance = await this.getBalance();
       return {
@@ -1356,7 +1356,8 @@ class BithumbApiService {
     } catch (error: any) {
       return {
         success: false,
-        message: error.message || '빗썸 API 연결에 실패했습니다.'
+        message: error.message || '빗썸 API 연결에 실패했습니다.',
+        data: null
       };
     }
   }
@@ -1410,7 +1411,7 @@ class BithumbApiService {
   public async runOfficialApiTest(): Promise<any> {
     console.log('🚀🚀🚀 빗썸 공식 API 종합 테스트 시작! 🚀🚀🚀');
     
-    const results = {
+    const results: { accounts: any; orders: any; errors: string[] } = {
       accounts: null,
       orders: null,
       errors: []
