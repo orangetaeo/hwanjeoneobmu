@@ -487,7 +487,8 @@ class BithumbApiService {
           return realTransactions;
         }
       } catch (v2Error) {
-        console.log(`❌ API 2.0 JWT 방식 실패:`, v2Error.message);
+        const msg = v2Error instanceof Error ? v2Error.message : String(v2Error);
+        console.log(`❌ API 2.0 JWT 방식 실패:`, msg);
       }
       
       // 백업으로 API 2.0 시도
@@ -521,7 +522,8 @@ class BithumbApiService {
           }));
         }
       } catch (v2Error) {
-        console.log(`❌ API 2.0 백업도 실패:`, v2Error.message);
+        const msg = v2Error instanceof Error ? v2Error.message : String(v2Error);
+        console.log(`❌ API 2.0 백업도 실패:`, msg);
       }
       
       // 모든 API 실패 시 테스트 데이터 반환
@@ -537,13 +539,15 @@ class BithumbApiService {
           return finalTransactions.slice(0, limit);
         }
       } catch (finalError) {
-        console.log(`❌ v1.2.0 최종 시도도 실패:`, finalError.message);
+        const msg = finalError instanceof Error ? finalError.message : String(finalError);
+        console.log(`❌ v1.2.0 최종 시도도 실패:`, msg);
       }
       
       return this.generateTestTransactionData(limit, currency);
       
     } catch (error) {
-      console.error('Failed to fetch transaction history:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Failed to fetch transaction history:', msg);
       return this.generateTestTransactionData(limit, currency);
     }
   }
@@ -684,7 +688,8 @@ class BithumbApiService {
         }));
       }
     } catch (transError) {
-      console.log('❌ /v2/account/transactions 실패:', transError.message);
+      const msg = transError instanceof Error ? transError.message : String(transError);
+      console.log('❌ /v2/account/transactions 실패:', msg);
     }
     
     // 2차 시도: 개별 주문 조회 (/orders/{uuid})
@@ -693,7 +698,8 @@ class BithumbApiService {
       // 이 API는 특정 UUID가 필요하므로 스킵하고 다른 방법 시도
       console.log('❌ /orders/{uuid}는 특정 UUID 필요하므로 스킵');
     } catch (ordersError) {
-      console.log('❌ /orders/{uuid} 실패:', ordersError.message);
+      const msg = ordersError instanceof Error ? ordersError.message : String(ordersError);
+      console.log('❌ /orders/{uuid} 실패:', msg);
     }
     
     // 3차 시도: 주문 리스트 조회 (빗썸 공식 JWT API)
@@ -750,7 +756,8 @@ class BithumbApiService {
         }));
       }
     } catch (ordersError) {
-      console.log('❌ /v2.1.0/info/orders 실패:', ordersError.message);
+      const msg = ordersError instanceof Error ? ordersError.message : String(ordersError);
+      console.log('❌ /v2.1.0/info/orders 실패:', msg);
     }
     
     // 4차 시도: 체결 내역 조회
@@ -780,7 +787,8 @@ class BithumbApiService {
         }));
       }
     } catch (fillsError) {
-      console.log('❌ /fills 실패:', fillsError.message);
+      const msg = fillsError instanceof Error ? fillsError.message : String(fillsError);
+      console.log('❌ /fills 실패:', msg);
     }
     
     // 5차 시도: 정확한 빗썸 거래 주문내역 조회
@@ -812,7 +820,8 @@ class BithumbApiService {
         }));
       }
     } catch (bithumbOrdersError) {
-      console.log('❌ /info/orders 실패:', bithumbOrdersError.message);
+      const msg = bithumbOrdersError instanceof Error ? bithumbOrdersError.message : String(bithumbOrdersError);
+      console.log('❌ /info/orders 실패:', msg);
     }
     
     // 6차 시도: 정확한 빗썸 거래 체결내역 조회
@@ -845,7 +854,8 @@ class BithumbApiService {
         }));
       }
     } catch (bithumbTransError) {
-      console.log('❌ /info/user_transactions 실패:', bithumbTransError.message);
+      const msg = bithumbTransError instanceof Error ? bithumbTransError.message : String(bithumbTransError);
+      console.log('❌ /info/user_transactions 실패:', msg);
     }
     
     throw new Error('API 2.0 모든 거래내역 엔드포인트 실패');
