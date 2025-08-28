@@ -70,7 +70,7 @@ class BithumbApiService {
     });
   }
 
-  private generateJwtToken(endpoint: string, queryParams: any = {}, method: string = 'POST'): string {
+  private generateJwtTokenFromParams(endpoint: string, queryParams: any = {}, method: string = 'POST'): string {
     const timestamp = Date.now();
     const nonce = uuidv4();
     
@@ -343,7 +343,7 @@ class BithumbApiService {
         generatedQuery: queryString
       });
       
-      const jwtToken = this.generateJwtToken(endpoint, queryParams, method);
+      const jwtToken = this.generateJwtTokenFromParams(endpoint, queryParams, method);
       
       // URL 구성 - JWT와 동일한 쿼리 사용
       let url = `${this.config.baseUrl}${endpoint}`;
@@ -554,7 +554,7 @@ class BithumbApiService {
   // ❌ 중복된 JWT 함수 제거됨 - 라인 58의 올바른 함수 사용
 
   private async makeApiV2Request(endpoint: string, params: any): Promise<any> {
-    const jwtToken = this.generateJwtToken(endpoint, params, 'POST');
+    const jwtToken = this.generateJwtTokenFromParams(endpoint, params, 'POST');
     
     const headers = {
       'Authorization': `Bearer ${jwtToken}`,
@@ -962,7 +962,7 @@ class BithumbApiService {
   }
 
   // 🚀 빗썸 JWT 인증 토큰 생성 (최신 V2.1.0 API)
-  private generateJwtToken(params: any = {}): string {
+  private generateJwtTokenFromParams(params: any = {}): string {
     const payload: any = {
       access_key: this.config.apiKey,
       nonce: uuidv4(),
@@ -988,7 +988,7 @@ class BithumbApiService {
   // 🚀 빗썸 최신 V2.1.0 JWT API 요청
   private async makeJwtApiRequest(endpoint: string, params: any = {}, method: string = 'GET'): Promise<any> {
     try {
-      const jwtToken = this.generateJwtToken(params);
+      const jwtToken = this.generateJwtTokenFromParams(params);
       const headers = {
         'Authorization': `Bearer ${jwtToken}`,
         'Content-Type': 'application/json'
