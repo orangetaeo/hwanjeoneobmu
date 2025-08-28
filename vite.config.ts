@@ -16,9 +16,6 @@ export default defineConfig({
         ]
       : []),
   ],
-    build: {
-    chunkSizeWarningLimit: 1000,
-  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -27,10 +24,14 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
+  
+  // ✅ [수정] 두 개의 build 객체를 하나로 합쳤습니다.
   build: {
+    chunkSizeWarningLimit: 1000,
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
+
   server: {
     fs: {
       strict: true,
