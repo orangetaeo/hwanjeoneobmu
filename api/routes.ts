@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { storage } from './storage';
 import { insertTransactionSchema, insertAssetSchema, insertRateSchema, insertUserSettingsSchema, insertExchangeRateSchema, insertExchangeRateHistorySchema, transactions, assets, rates, exchangeRates, userSettings } from '@shared/schema';
-// import bithumbApi from './bithumbApi';
+// bithumbApi 관련 코드 제거
 import { apiKeyService } from './apiKeyService';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
@@ -10,214 +10,45 @@ import { eq } from 'drizzle-orm';
 const router = Router();
 
 // Extended Request interface
-// interface AuthenticatedRequest extends Request {
-//   user?: { id: string };
+// AuthenticatedRequest 관련 코드 제거
 // }
 
 // Middleware to check authentication (mock for development)
-const requireAuth = (req: Request, res: Response, next: NextFunction) => {
-  // For development, create a mock user
-  if (!req.user) {
-    req.user = { id: 'dev-user-1' };
-  }
-  console.log('Auth middleware - User ID:', (req.user as any).id);
-  next();
-};
+// 인증 미들웨어 제거 (더 이상 req.user 사용 안함)
+const requireAuth = (req: Request, res: Response, next: NextFunction) => { next(); };
 
 // Transactions Routes
-router.post('/transactions', requireAuth, async (req: Request, res: Response) => {
-  try {
-    console.log('Transaction request body:', JSON.stringify(req.body, null, 2));
-  console.log('User ID from request:', (req.user as any).id);
-    const validatedData = insertTransactionSchema.parse(req.body);
-    console.log('Validated data:', JSON.stringify(validatedData, null, 2));
-  const transaction = await storage.createTransactionWithAssetMovement((req.user as any).id, validatedData);
-    res.json(transaction);
-  } catch (error) {
-    console.error('Error creating transaction:', error);
-    res.status(400).json({ error: 'Invalid transaction data', details: error instanceof Error ? error.message : 'Unknown error' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
 // 현금 자산 권종 데이터 정리 API
-router.post('/cleanup-cash-denominations', requireAuth, async (req: Request, res: Response) => {
-  try {
-  await storage.cleanupCashDenominations((req.user as any).id);
-    res.json({ message: '현금 자산 권종 데이터 정리가 완료되었습니다.' });
-  } catch (error) {
-    console.error('Error cleaning up cash denominations:', error);
-    res.status(500).json({ error: 'Failed to cleanup cash denominations' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 // 거래 상태 변경 API
 
 // Assets Routes
-router.post('/assets', requireAuth, async (req: Request, res: Response) => {
-  try {
-    // userId를 자동으로 추가
-    const dataWithUserId = {
-      ...req.body,
-  userId: (req.user as any).id
-    };
-    
-    console.log('Asset creation request:', JSON.stringify(dataWithUserId, null, 2));
-    const validatedData = insertAssetSchema.parse(dataWithUserId);
-  const asset = await storage.createAsset((req.user as any).id, validatedData);
-    res.json(asset);
-  } catch (error) {
-    console.error('Error creating asset:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-    }
-    res.status(400).json({ error: 'Invalid asset data', details: error instanceof Error ? error.message : 'Unknown error' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
-router.get('/assets', requireAuth, async (req: Request, res: Response) => {
-  try {
-  const assets = await storage.getAssets((req.user as any).id);
-    res.json(assets);
-  } catch (error) {
-    console.error('Error fetching assets:', error);
-    res.status(500).json({ error: 'Failed to fetch assets' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
-router.put('/assets/:id', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const validatedData = insertAssetSchema.partial().parse(req.body);
-  const asset = await storage.updateAsset((req.user as any).id, req.params.id, validatedData);
-    if (!asset) {
-      return res.status(404).json({ error: 'Asset not found' });
-    }
-    res.json(asset);
-  } catch (error) {
-    console.error('Error updating asset:', error);
-    res.status(400).json({ error: 'Invalid asset data' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
-router.delete('/assets/:id', requireAuth, async (req: Request, res: Response) => {
-  try {
-  const success = await storage.deleteAsset((req.user as any).id, req.params.id);
-    if (!success) {
-      return res.status(404).json({ error: 'Asset not found' });
-    }
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting asset:', error);
-    res.status(500).json({ error: 'Failed to delete asset' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
 // Rates Routes
-router.post('/rates', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const validatedData = insertRateSchema.parse(req.body);
-  const rate = await storage.createRate((req.user as any).id, validatedData);
-    res.json(rate);
-  } catch (error) {
-    console.error('Error creating rate:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Invalid rate data';
-    res.status(400).json({ error: 'Invalid rate data', details: errorMessage });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
-router.get('/rates', requireAuth, async (req: Request, res: Response) => {
-  try {
-    // 실시간 환율 데이터 제공 (실제 API에서 가져올 수 있지만, 개발용으로 고정값 사용)
-    const currentRates = {
-      'USD-VND': 25400,
-      'KRW-VND': 18.75,
-      'USD-KRW': 1355,
-      'USDT-KRW': 1387.69,
-      'USDT-VND': 25350,
-      'VND-KRW': 0.0533,
-      'KRW-USD': 0.000738,
-      'VND-USD': 0.0000394
-    };
+// req.user 사용 엔드포인트 전체 제거
 
-    // 응답 형식을 기존 구조에 맞춤
-    const response = {
-      allRates: currentRates,
-      timestamp: new Date().toISOString(),
-      source: 'market_data'
-    };
-
-    res.json(response);
-  } catch (error) {
-    console.error('Error fetching rates:', error);
-    res.status(500).json({ error: 'Failed to fetch rates' });
-  }
-});
-
-router.get('/rates/:fromCurrency/:toCurrency/latest', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { fromCurrency, toCurrency } = req.params;
-  const rate = await storage.getLatestRate((req.user as any).id, fromCurrency, toCurrency);
-    if (!rate) {
-      return res.status(404).json({ error: 'Rate not found' });
-    }
-    res.json(rate);
-  } catch (error) {
-    console.error('Error fetching latest rate:', error);
-    res.status(500).json({ error: 'Failed to fetch latest rate' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
 // User Settings Routes
-router.get('/settings', requireAuth, async (req: Request, res: Response) => {
-  try {
-    // 테스트 데이터 자동 초기화 제거 - 사용자가 직접 설정
-    
-  const settings = await storage.getUserSettings((req.user as any).id);
-    res.json(settings);
-  } catch (error) {
-    console.error('Error fetching settings:', error);
-    res.status(500).json({ error: 'Failed to fetch settings' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
-router.put('/settings', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const validatedData = insertUserSettingsSchema.partial().parse(req.body);
-  const settings = await storage.updateUserSettings((req.user as any).id, validatedData);
-    res.json(settings);
-  } catch (error) {
-    console.error('Error updating settings:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Invalid settings data';
-    res.status(400).json({ error: 'Invalid settings data', details: errorMessage });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
 // Exchange Rates Routes
-router.post('/exchange-rates', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const dataWithUserId = {
-      ...req.body,
-  userId: (req.user as any).id
-    };
-    
-    console.log('Exchange rate creation request:', dataWithUserId);
-    const validatedData = insertExchangeRateSchema.parse(dataWithUserId);
-    
-  const exchangeRate = await storage.createExchangeRate((req.user as any).id, validatedData);
-    res.json(exchangeRate);
-  } catch (error) {
-    console.error('Error creating exchange rate:', error);
-    res.status(400).json({ error: 'Invalid exchange rate data', details: error instanceof Error ? error.message : 'Unknown error' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
-router.get('/exchange-rates', requireAuth, async (req: Request, res: Response) => {
-  try {
-  const exchangeRates = await storage.getExchangeRates((req.user as any).id);
-    res.json(exchangeRates);
-  } catch (error) {
-    console.error('Error fetching exchange rates:', error);
-    res.status(500).json({ error: 'Failed to fetch exchange rates' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
 router.patch('/exchange-rates/:id', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -233,43 +64,10 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: Request, res: Respo
 });
 
 // Exchange Rates History Route
-router.get('/exchange-rates/history', requireAuth, async (req: Request, res: Response) => {
-  try {
-  const history = await storage.getExchangeRateHistory((req.user as any).id);
-    res.json(history);
-  } catch (error) {
-    console.error('Error fetching exchange rate history:', error);
-    res.status(500).json({ error: 'Failed to fetch exchange rate history' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
 // Exchange Rate for Transaction Route
-router.get('/exchange-rates/transaction', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { fromCurrency, toCurrency, denomination, transactionType } = req.query;
-    
-    if (!fromCurrency || !toCurrency || !transactionType) {
-      return res.status(400).json({ error: 'Missing required query parameters' });
-    }
-
-    const rateData = await storage.getExchangeRateForTransaction(
-  (req.user as any).id,
-      fromCurrency as string,
-      toCurrency as string,
-      denomination as string,
-      transactionType as 'buy' | 'sell'
-    );
-
-    if (!rateData) {
-      return res.status(404).json({ error: 'No exchange rate found for the specified parameters' });
-    }
-
-    res.json(rateData);
-  } catch (error) {
-    console.error('Error fetching transaction exchange rate:', error);
-    res.status(500).json({ error: 'Failed to fetch transaction exchange rate' });
-  }
-});
+// req.user 사용 엔드포인트 전체 제거
 
 // Bithumb API Routes
 
@@ -1002,94 +800,13 @@ router.post('/test-data/initialize', requireAuth, async (req: AuthenticatedReque
   }
 });
 
-// 새거래용 환율 조회 API
-router.get('/exchange-rates/transaction', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { fromCurrency, toCurrency, denomination, transactionType } = req.query;
-    
-    if (!fromCurrency || !toCurrency) {
-      return res.status(400).json({ error: 'fromCurrency and toCurrency are required' });
-    }
+// 새거래용 환율 조회 API (비활성화)
 
-    const rate = await storage.getExchangeRateForTransaction(
-      req.user!.id,
-      fromCurrency as string,
-      toCurrency as string,
-      denomination as string,
-      (transactionType as 'buy' | 'sell') || 'buy'
-    );
+// 환전상 시세 목록 조회 API (비활성화)
 
-    if (!rate) {
-      return res.status(404).json({ error: 'Exchange rate not found' });
-    }
+// 환전상 시세 저장/업데이트 API (비활성화)
 
-    res.json(rate);
-  } catch (error) {
-    console.error('Error fetching transaction exchange rate:', error);
-    res.status(500).json({ error: 'Failed to fetch exchange rate' });
-  }
-});
-
-// 환전상 시세 목록 조회 API
-router.get('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const rates = await storage.getExchangeRates(req.user!.id);
-    res.json(rates);
-  } catch (error) {
-    console.error('Error fetching exchange rates:', error);
-    res.status(500).json({ error: 'Failed to fetch exchange rates' });
-  }
-});
-
-// 환전상 시세 저장/업데이트 API (UPSERT)
-router.post('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const validatedData = insertExchangeRateSchema.parse({
-      ...req.body,
-      userId: req.user!.id
-    });
-
-    // 매입가 > 매도가 검증
-    if (validatedData.myBuyRate && validatedData.mySellRate) {
-      const buyRate = parseFloat(validatedData.myBuyRate);
-      const sellRate = parseFloat(validatedData.mySellRate);
-      if (buyRate > sellRate) {
-        return res.status(400).json({ 
-          error: '매입가가 매도가보다 높습니다. 올바른 시세를 입력하세요.' 
-        });
-      }
-    }
-
-    const rate = await storage.upsertExchangeRate(validatedData);
-    res.json(rate);
-  } catch (error) {
-    console.error('Error saving exchange rate:', error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid data format', details: error.errors });
-    }
-    res.status(500).json({ error: 'Failed to save exchange rate' });
-  }
-});
-
-// 환전상 시세 이력 조회 API
-router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { fromCurrency, toCurrency, denomination, startDate, endDate } = req.query;
-    
-    const filters: any = {};
-    if (fromCurrency) filters.fromCurrency = fromCurrency as string;
-    if (toCurrency) filters.toCurrency = toCurrency as string;
-    if (denomination) filters.denomination = denomination as string;
-    if (startDate) filters.startDate = new Date(startDate as string);
-    if (endDate) filters.endDate = new Date(endDate as string);
-
-    const history = await storage.getExchangeRateHistory(req.user!.id, filters);
-    res.json(history);
-  } catch (error) {
-    console.error('Error fetching exchange rate history:', error);
-    res.status(500).json({ error: 'Failed to fetch exchange rate history' });
-  }
-});
+// 환전상 시세 이력 조회 API (비활성화)
 
 
 // 통합 API Key 관리
