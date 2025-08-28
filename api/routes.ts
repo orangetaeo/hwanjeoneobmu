@@ -61,7 +61,7 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: Request, res: Respo
     console.error('Error updating exchange rate:', error);
     res.status(500).json({ error: 'Failed to update exchange rate' });
   }
-});
+// 불필요한 닫는 중괄호 삭제
 
 // Exchange Rates History Route
 // req.user 사용 엔드포인트 전체 제거
