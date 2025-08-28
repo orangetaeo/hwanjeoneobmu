@@ -38,28 +38,6 @@ router.post('/transactions', requireAuth, async (req: AuthenticatedRequest, res:
   } catch (error) {
     console.error('Error creating transaction:', error);
     if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    res.status(400).json({ error: 'Invalid transaction data', details: error instanceof Error ? error.message : 'Unknown error' });
-  }
-});
-
-router.get('/transactions', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const transactions = await storage.getTransactions(req.user!.id);
-    res.json(transactions);
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
-  }
-});
-
-router.get('/transactions/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const transaction = await storage.getTransactionById(req.user!.id, req.params.id);
-    if (!transaction) {
-      return res.status(404).json({ error: 'Transaction not found' });
     }
     res.json(transaction);
   } catch (error) {
@@ -1157,7 +1135,6 @@ router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequ
 });
 
 // 빗썸 API Key 관리
-// router.get('/bithumb/v12-test', requireAuth, async (req: AuthenticatedRequest, res: Response) => { /* ...비활성화... */ });
 
       }
       updates.apiKey = apiKey.trim();
