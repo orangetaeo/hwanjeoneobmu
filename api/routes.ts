@@ -49,56 +49,20 @@ router.post('/cleanup-cash-denominations', requireAuth, async (req: Request, res
     res.status(500).json({ error: 'Failed to cleanup cash denominations' });
   }
 });
-/*
 // 거래 상태 변경 API
-router.put('/transactions/:id/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { status } = req.body;
-    const validStatuses = ['pending', 'confirmed', 'cancelled'];
-    
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: '유효하지 않은 상태입니다.' });
-    }
-    
-    const transaction = await storage.getTransactionById(req.user!.id, req.params.id);
-    if (!transaction) {
-      return res.status(404).json({ error: 'Transaction not found' });
-    }
-    
-    // 상태 업데이트
-    const updatedTransaction = await storage.updateTransactionStatus(req.user!.id, req.params.id, status);
-    
-    // 상태가 confirmed로 변경되었고, 기존 상태가 pending이었다면 자산 이동 처리
-    if (status === 'confirmed' && transaction.status === 'pending') {
-      console.log('거래 상태가 confirmed로 변경됨. 자산 이동 처리 시작');
-      await storage.processTransactionConfirmation(req.user!.id, req.params.id);
-    }
-    
-    // 상태가 cancelled로 변경되었고, 기존 상태가 confirmed였다면 자산 복원 처리
-    if (status === 'cancelled' && transaction.status === 'confirmed') {
-      console.log('거래 상태가 cancelled로 변경됨. 자산 복원 처리 시작');
-      await storage.processTransactionCancellation(req.user!.id, req.params.id);
-    }
-    
-    res.json(updatedTransaction);
-  } catch (error) {
-    console.error('Error updating transaction status:', error);
-    res.status(500).json({ error: 'Failed to update transaction status' });
-  }
-});
 
 // Assets Routes
-router.post('/assets', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/assets', requireAuth, async (req: Request, res: Response) => {
   try {
     // userId를 자동으로 추가
     const dataWithUserId = {
       ...req.body,
-      userId: req.user!.id
+  userId: (req.user as any).id
     };
     
     console.log('Asset creation request:', JSON.stringify(dataWithUserId, null, 2));
     const validatedData = insertAssetSchema.parse(dataWithUserId);
-    const asset = await storage.createAsset(req.user!.id, validatedData);
+  const asset = await storage.createAsset((req.user as any).id, validatedData);
     res.json(asset);
   } catch (error) {
     console.error('Error creating asset:', error);
@@ -109,9 +73,9 @@ router.post('/assets', requireAuth, async (req: AuthenticatedRequest, res: Respo
   }
 });
 
-router.get('/assets', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/assets', requireAuth, async (req: Request, res: Response) => {
   try {
-    const assets = await storage.getAssets(req.user!.id);
+  const assets = await storage.getAssets((req.user as any).id);
     res.json(assets);
   } catch (error) {
     console.error('Error fetching assets:', error);
@@ -119,10 +83,10 @@ router.get('/assets', requireAuth, async (req: AuthenticatedRequest, res: Respon
   }
 });
 
-router.put('/assets/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.put('/assets/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const validatedData = insertAssetSchema.partial().parse(req.body);
-    const asset = await storage.updateAsset(req.user!.id, req.params.id, validatedData);
+  const asset = await storage.updateAsset((req.user as any).id, req.params.id, validatedData);
     if (!asset) {
       return res.status(404).json({ error: 'Asset not found' });
     }
@@ -133,9 +97,9 @@ router.put('/assets/:id', requireAuth, async (req: AuthenticatedRequest, res: Re
   }
 });
 
-router.delete('/assets/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/assets/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const success = await storage.deleteAsset(req.user!.id, req.params.id);
+  const success = await storage.deleteAsset((req.user as any).id, req.params.id);
     if (!success) {
       return res.status(404).json({ error: 'Asset not found' });
     }
@@ -147,10 +111,10 @@ router.delete('/assets/:id', requireAuth, async (req: AuthenticatedRequest, res:
 });
 
 // Rates Routes
-router.post('/rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/rates', requireAuth, async (req: Request, res: Response) => {
   try {
     const validatedData = insertRateSchema.parse(req.body);
-    const rate = await storage.createRate(req.user!.id, validatedData);
+  const rate = await storage.createRate((req.user as any).id, validatedData);
     res.json(rate);
   } catch (error) {
     console.error('Error creating rate:', error);
@@ -159,7 +123,7 @@ router.post('/rates', requireAuth, async (req: AuthenticatedRequest, res: Respon
   }
 });
 
-router.get('/rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/rates', requireAuth, async (req: Request, res: Response) => {
   try {
     // 실시간 환율 데이터 제공 (실제 API에서 가져올 수 있지만, 개발용으로 고정값 사용)
     const currentRates = {
@@ -187,10 +151,10 @@ router.get('/rates', requireAuth, async (req: AuthenticatedRequest, res: Respons
   }
 });
 
-router.get('/rates/:fromCurrency/:toCurrency/latest', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/rates/:fromCurrency/:toCurrency/latest', requireAuth, async (req: Request, res: Response) => {
   try {
     const { fromCurrency, toCurrency } = req.params;
-    const rate = await storage.getLatestRate(req.user!.id, fromCurrency, toCurrency);
+  const rate = await storage.getLatestRate((req.user as any).id, fromCurrency, toCurrency);
     if (!rate) {
       return res.status(404).json({ error: 'Rate not found' });
     }
@@ -202,11 +166,11 @@ router.get('/rates/:fromCurrency/:toCurrency/latest', requireAuth, async (req: A
 });
 
 // User Settings Routes
-router.get('/settings', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/settings', requireAuth, async (req: Request, res: Response) => {
   try {
     // 테스트 데이터 자동 초기화 제거 - 사용자가 직접 설정
     
-    const settings = await storage.getUserSettings(req.user!.id);
+  const settings = await storage.getUserSettings((req.user as any).id);
     res.json(settings);
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -214,10 +178,10 @@ router.get('/settings', requireAuth, async (req: AuthenticatedRequest, res: Resp
   }
 });
 
-router.put('/settings', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.put('/settings', requireAuth, async (req: Request, res: Response) => {
   try {
     const validatedData = insertUserSettingsSchema.partial().parse(req.body);
-    const settings = await storage.updateUserSettings(req.user!.id, validatedData);
+  const settings = await storage.updateUserSettings((req.user as any).id, validatedData);
     res.json(settings);
   } catch (error) {
     console.error('Error updating settings:', error);
@@ -227,17 +191,17 @@ router.put('/settings', requireAuth, async (req: AuthenticatedRequest, res: Resp
 });
 
 // Exchange Rates Routes
-router.post('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/exchange-rates', requireAuth, async (req: Request, res: Response) => {
   try {
     const dataWithUserId = {
       ...req.body,
-      userId: req.user!.id
+  userId: (req.user as any).id
     };
     
     console.log('Exchange rate creation request:', dataWithUserId);
     const validatedData = insertExchangeRateSchema.parse(dataWithUserId);
     
-    const exchangeRate = await storage.createExchangeRate(req.user!.id, validatedData);
+  const exchangeRate = await storage.createExchangeRate((req.user as any).id, validatedData);
     res.json(exchangeRate);
   } catch (error) {
     console.error('Error creating exchange rate:', error);
@@ -245,9 +209,9 @@ router.post('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, re
   }
 });
 
-router.get('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/exchange-rates', requireAuth, async (req: Request, res: Response) => {
   try {
-    const exchangeRates = await storage.getExchangeRates(req.user!.id);
+  const exchangeRates = await storage.getExchangeRates((req.user as any).id);
     res.json(exchangeRates);
   } catch (error) {
     console.error('Error fetching exchange rates:', error);
@@ -255,7 +219,7 @@ router.get('/exchange-rates', requireAuth, async (req: AuthenticatedRequest, res
   }
 });
 
-router.patch('/exchange-rates/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/exchange-rates/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const exchangeRate = await storage.updateExchangeRate(req.params.id, req.body);
     if (!exchangeRate) {
@@ -269,9 +233,9 @@ router.patch('/exchange-rates/:id', requireAuth, async (req: AuthenticatedReques
 });
 
 // Exchange Rates History Route
-router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/exchange-rates/history', requireAuth, async (req: Request, res: Response) => {
   try {
-    const history = await storage.getExchangeRateHistory(req.user!.id);
+  const history = await storage.getExchangeRateHistory((req.user as any).id);
     res.json(history);
   } catch (error) {
     console.error('Error fetching exchange rate history:', error);
@@ -280,7 +244,7 @@ router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequ
 });
 
 // Exchange Rate for Transaction Route
-router.get('/exchange-rates/transaction', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/exchange-rates/transaction', requireAuth, async (req: Request, res: Response) => {
   try {
     const { fromCurrency, toCurrency, denomination, transactionType } = req.query;
     
@@ -289,7 +253,7 @@ router.get('/exchange-rates/transaction', requireAuth, async (req: Authenticated
     }
 
     const rateData = await storage.getExchangeRateForTransaction(
-      req.user!.id,
+  (req.user as any).id,
       fromCurrency as string,
       toCurrency as string,
       denomination as string,
