@@ -39,6 +39,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  app.get('/', (req, res) => {
+  res.send('환전업무 API 서버에 오신 것을 환영합니다.');
+  });
   // Add API routes
   app.use('/api', apiRoutes);
 
