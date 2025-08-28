@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import apiRoutes from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+const apiKey = process.env.OPENAI_API_KEY;
 
 const app = express();
 app.use(express.json());
