@@ -1158,7 +1158,7 @@ router.get('/exchange-rates/history', requireAuth, async (req: AuthenticatedRequ
 
 // 빗썸 API Key 관리
 // router.get('/bithumb/v12-test', requireAuth, async (req: AuthenticatedRequest, res: Response) => { /* ...비활성화... */ });
-*/
+
       }
       updates.apiKey = apiKey.trim();
     }
