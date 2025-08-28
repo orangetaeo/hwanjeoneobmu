@@ -70,7 +70,7 @@ class BithumbApiService {
     });
   }
 
-  private generateJwtTokenFromParams(endpoint: string, queryParams: any = {}, method: string = 'POST'): string {
+  private generateJwtToken(endpoint: string, queryParams: any = {}, method: string = 'POST'): string {
     const timestamp = Date.now();
     const nonce = uuidv4();
     
@@ -468,7 +468,13 @@ class BithumbApiService {
           return realTransactions.slice(0, limit);  // limit만큼만 반환
         }
       } catch (v12Error) {
-        console.log(`❌ v1.2.0 방식 실패:`, v12Error.message);
+        if (v12Error instanceof Error) { // ✅ 이 부분을 추가
+          console.error("Bithumb V1.2 API Error:", v12Error.message); 
+          throw new Error(v12Error.message);
+        } else {
+          console.error("An unknown error occurred:", v12Error);
+          throw new Error('An unexpected error occurred');
+        }
       }
       
       // 🚀 API 2.0 JWT 방식으로 실제 거래 내역 조회 시도
